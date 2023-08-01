@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { isJoin, type PlayerState, type User } from '$lib';
-import { players } from '$lib/server/gameState';
+import { FAKE_LATENCY, players } from '$lib/server/gameState';
 
 export const POST: RequestHandler = async (r) => {
     let msg = await r.request.json()
@@ -12,7 +12,7 @@ export const POST: RequestHandler = async (r) => {
     //     return json('hero already connected', {status:401})
     // }
     console.log('logging in ' + msg.join)
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY))
 
     // new user
     if(!players.has(msg.join)){

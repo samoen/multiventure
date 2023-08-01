@@ -1,8 +1,10 @@
+import type { locations } from "./server/gameState"
 
 export type MsgFromServer = {
     yourName:string,
     players:PlayerState[],
-    scene:Scene,
+    sceneText:string,
+    actions:GameActionWithDescription[]
 }
 
 export function isMsgFromServer(msg:Object):msg is MsgFromServer{
@@ -23,16 +25,30 @@ export type PlayerState = {
 
 // type MsgFromClient = JoinGame | ChooseOption
 
-type LocationKey = 'forest' | 'castle' | 'throne'
+export type LocationKey = keyof typeof locations
+export type Scene = typeof locations[LocationKey]
+// export type Scene = {
+//     text:string,
+//     options:GameActionWithDescription[]
+// }
 
-export type Scene = {
-    text:string,
-    options:Option[]
+export type GameActionWithDescription = {
+    desc:string,
+    action:GameAction   
 }
 
-export type Option = {
-    go:LocationKey,
-    desc:string,
+export type GameAction = Travel | Attack
+export type Travel = {
+    go:LocationKey
+}
+export function isTravel(msg:Object): msg is Travel{
+    return "go" in msg
+}
+export type Attack = {
+    who:string
+}
+export function isAttack(msg:Object): msg is Attack{
+    return "who" in msg
 }
 
 export type JoinGame = {
@@ -44,14 +60,10 @@ export function isJoin(msg:Object): msg is JoinGame{
     return "join" in msg
 }
 
-export function isChoose(msg:Object): msg is ChooseOption{
-    // return msg.hasOwnProperty('option')
-    return "option" in msg
-}
 
-export type ChooseOption = {
+// export type ChooseOption = {
     // name:string,
-    option:number
-}
+    // option:number
+// }
 
 
