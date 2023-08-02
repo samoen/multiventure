@@ -31,6 +31,10 @@ export const POST = (async (r) => {
 			return json({ err: 'situation has changed, cannot', thing: msg }, { status: 401 });
 		}
 		player.playerState.in = msg.go;
+		const scene = locations[msg.go];
+		if ('gives' in scene) {
+			player.playerState.inventory.push(scene.gives);
+		}
 
 		// let nextplace = locations[pstate.in].options[msg.option].go
 		// players.get(from).playerState.in = nextplace

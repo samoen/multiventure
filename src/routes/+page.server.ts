@@ -3,10 +3,9 @@ import type { PageServerLoad } from './$types';
 
 // This runs on the server once when the page is first requested
 export const load = (async (r) => {
+	console.log('running page server load');
 
-    console.log('running page server load');
-    
-    // Check cookie to enable auto-login
+	// Check cookie to enable auto-login
 	let heroName = r.cookies.get('hero');
 	if (!heroName) {
 		return {

@@ -1,9 +1,5 @@
 <script lang="ts">
-	import {
-		isMsgFromServer,
-		type GameAction,
-		type MsgFromServer
-	} from '$lib/utils';
+	import { isMsgFromServer, type GameAction, type MsgFromServer } from '$lib/utils';
 	import { onMount } from 'svelte';
 
 	export let data;
@@ -33,6 +29,7 @@
 
 	function subscribeEvents() {
 		source = new EventSource('/api/subscribe');
+
 		source.addEventListener('world', (e) => {
 			let sMsg = JSON.parse(e.data);
 			if (!isMsgFromServer(sMsg)) {
@@ -42,6 +39,12 @@
 			lastMsgFromServer = sMsg;
 			status = 'playing';
 			loading = false;
+		});
+		source.addEventListener('closing', (e) => {
+			console.log('got closing msg');
+			source.close();
+			status = 'you logged in elsewhere, connection closed';
+			lastMsgFromServer = null;
 		});
 		source.addEventListener('error', (e) => {
 			console.log('source error');
@@ -84,7 +87,7 @@
 	let loading = true;
 </script>
 
-<p>status: {status}</p>
+<h3>status: {status}</h3>
 {#if loading}
 	<p>loading...</p>
 {/if}
@@ -136,13 +139,14 @@
 		I am {lastMsgFromServer.yourName}
 		<button on:click={logOut}>log out</button>
 	</p>
-	<p>players:</p>
+	<h3>players:</h3>
 	{#each lastMsgFromServer.players as p}
 		<p>
 			{p.heroName} is in {p.in}
+			{p.inventory.length > 0 ? `with ${p.inventory}` : ''}
 		</p>
 		<p />{/each}
-	scene:
+	<h3>scene:</h3>
 	<p>{lastMsgFromServer.sceneText}</p>
 	{#each lastMsgFromServer.actions as op, i}
 		<button on:click={() => choose(op.action)}>{op.desc}</button>

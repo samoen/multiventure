@@ -1,3 +1,5 @@
+// This file is for stuff available to both the server and browser
+
 import type { locations } from './server/gameState';
 
 export type MsgFromServer = {
@@ -11,22 +13,18 @@ export function isMsgFromServer(msg: object): msg is MsgFromServer {
 	return 'yourName' in msg;
 }
 
-export type User = {
-	connectionState: { ip: string; con: Controller };
-	playerState: PlayerState;
-};
-
-export type Controller = ReadableStreamController<unknown>;
-
 export type PlayerState = {
 	heroName: string;
 	in: LocationKey;
+	inventory: Item[];
 };
 
 // type MsgFromClient = JoinGame | ChooseOption
 
 export type LocationKey = keyof typeof locations;
 export type Scene = (typeof locations)[LocationKey];
+type ExtractGives<T> = T extends { gives: infer S } ? S : never;
+export type Item = ExtractGives<Scene>;
 // export type Scene = {
 //     text:string,
 //     options:GameActionWithDescription[]
