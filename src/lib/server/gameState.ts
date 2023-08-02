@@ -4,22 +4,35 @@ import type { GameActionWithDescription, MsgFromServer, PlayerState, Scene } fro
 
 export const FAKE_LATENCY = 500;
 export const players = new Map<string, User>();
+export const recentHappenings : string[] = [];
 
 export function sendEveryoneWorld() {
 	for (const user of players.values()) {
 		if (user.connectionState && user.connectionState.con) {
+
+			const scene = locations[user.playerState.in];
+			const sceneTexts : string[] = [scene.text]
+			if ('gives' in scene) {
+				if(!user.playerState.inventory.includes(scene.gives.item)){
+					user.playerState.inventory.push(scene.gives.item);
+					sceneTexts.push(scene.gives.how)
+				}
+			}
+
+
 			let msg: MsgFromServer = {
 				yourName: user.playerState.heroName,
 				players: Array.from(players.values()).map((u) => {
 					return u.playerState;
 				}),
-				sceneText: locations[user.playerState.in].text,
+				sceneTexts: sceneTexts,
 				actions: getAvailableActionsForPlayer(user.playerState)
 			};
 			user.connectionState.con.enqueue(encode(`world`, msg));
 		}
 	}
 }
+
 const textEncoder = new TextEncoder();
 export function encode(event: string, data: object, noretry: boolean = false) {
 	let toEncode = `event:${event}\ndata: ${JSON.stringify(data)}\n`;
@@ -43,6 +56,7 @@ export function getAvailableActionsForPlayer(p: PlayerState): GameActionWithDesc
 		return true;
 	});
 	res.push(...removedNeedsUnmet);
+	
 	return res;
 }
 
@@ -57,9 +71,9 @@ export type User = {
 
 export type ServerSentEventController = ReadableStreamController<unknown>;
 
-export const locations = {
+export const locations : Record<string,Scene> = {
 	forest: {
-		text: 'You are in the forest',
+		text: 'You find yourself in the forest',
 		options: [
 			{
 				desc: 'hike to the castle',
@@ -69,7 +83,7 @@ export const locations = {
 			},
 			{
 				desc: 'use green gem to find hidden passage',
-				needs: 'green gem',
+				needs: 'greenGem',
 				action: {
 					go: 'forestPassage'
 				}
@@ -77,7 +91,11 @@ export const locations = {
 		]
 	},
 	castle: {
-		text: 'you are at the castle',
+		text: 'You arrive at the castle',
+		gives: {
+			item:'bandage',
+			how:'A passing soldier gives you a bandage.'
+		},
 		options: [
 			{
 				desc: 'screw this go back to forest',
@@ -94,8 +112,11 @@ export const locations = {
 		]
 	},
 	throne: {
-		text: 'You enter the throne room. The King gives you a green gem and asks you to kill a monster in the forest',
-		gives: 'green gem',
+		text: 'You enter the throne room',
+		gives: {
+			item:'greenGem',
+			how:'The king gives you a green gem useful for finding forest passages'
+		},
 		options: [
 			{
 				desc: 'head back to the castle',
@@ -116,4 +137,13 @@ export const locations = {
 			}
 		]
 	}
-} as const;
+} satisfies Record<string,Scene>;
+
+export const items = {
+	greenGem:{},
+	bandage:{
+		onUse(p:PlayerState){
+			p.health += 10;
+		}
+	}
+}

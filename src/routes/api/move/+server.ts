@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { isAttack, isTravel, type MsgFromServer, type PlayerState } from '$lib/utils';
+import { isGameAction, isTravel, type MsgFromServer, type PlayerState } from '$lib/utils';
 import {
 	FAKE_LATENCY,
 	getAvailableActionsForPlayer,
@@ -14,8 +14,8 @@ export const POST = (async (r) => {
 	let msg = await r.request.json();
 
 	//console.log('got move ' + JSON.stringify(msg))
-	if (!isTravel(msg) && !isAttack(msg)) {
-		return json('malformed move', { status: 400 });
+	if (!isGameAction(msg)) {
+		return json('malformed action', { status: 400 });
 	}
 	let hero = r.cookies.get('hero');
 	if (!hero || !players.has(hero)) {
@@ -31,10 +31,12 @@ export const POST = (async (r) => {
 			return json({ err: 'situation has changed, cannot', thing: msg }, { status: 401 });
 		}
 		player.playerState.in = msg.go;
-		const scene = locations[msg.go];
-		if ('gives' in scene) {
-			player.playerState.inventory.push(scene.gives);
-		}
+		// const scene = locations[msg.go];
+		// if ('gives' in scene) {
+		// 	if(!player.playerState.inventory.includes(scene.gives.item)){
+		// 		player.playerState.inventory.push(scene.gives.item);
+		// 	}
+		// }
 
 		// let nextplace = locations[pstate.in].options[msg.option].go
 		// players.get(from).playerState.in = nextplace

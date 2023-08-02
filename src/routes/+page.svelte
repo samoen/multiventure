@@ -142,12 +142,16 @@
 	<h3>players:</h3>
 	{#each lastMsgFromServer.players as p}
 		<p>
-			{p.heroName} is in {p.in}
-			{p.inventory.length > 0 ? `with ${p.inventory}` : ''}
+			{p.heroName} is in {p.in} with {p.health}hp 
+			{p.inventory.length > 0 ? `carrying ${p.inventory}` : ''}
 		</p>
-		<p />{/each}
+		<p />
+	{/each}
 	<h3>scene:</h3>
-	<p>{lastMsgFromServer.sceneText}</p>
+	{#each lastMsgFromServer.sceneTexts as t}
+	<p>{t}</p>
+		
+	{/each}
 	{#each lastMsgFromServer.actions as op, i}
 		<button on:click={() => choose(op.action)}>{op.desc}</button>
 	{/each}

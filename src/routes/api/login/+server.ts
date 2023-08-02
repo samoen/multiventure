@@ -18,7 +18,11 @@ export const POST: RequestHandler = async (r) => {
 	if (!players.has(msg.join)) {
 		players.set(msg.join, {
 			connectionState: null,
-			playerState: { heroName: msg.join, in: 'forest', inventory: [] } satisfies PlayerState
+			playerState: { 
+				heroName: msg.join,
+				in: 'forest',
+				inventory: [],
+				health:100, } satisfies PlayerState
 		} satisfies User);
 	}
 	r.cookies.set('hero', msg.join, { path: '/' });

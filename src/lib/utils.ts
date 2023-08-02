@@ -1,11 +1,11 @@
 // This file is for stuff available to both the server and browser
 
-import type { locations } from './server/gameState';
+import type { items, locations } from './server/gameState';
 
 export type MsgFromServer = {
 	yourName: string;
 	players: PlayerState[];
-	sceneText: string;
+	sceneTexts: string[];
 	actions: GameActionWithDescription[];
 };
 
@@ -16,37 +16,55 @@ export function isMsgFromServer(msg: object): msg is MsgFromServer {
 export type PlayerState = {
 	heroName: string;
 	in: LocationKey;
-	inventory: Item[];
+	inventory: ItemKey[];
+	health:number;
 };
 
 // type MsgFromClient = JoinGame | ChooseOption
 
 export type LocationKey = keyof typeof locations;
-export type Scene = (typeof locations)[LocationKey];
-type ExtractGives<T> = T extends { gives: infer S } ? S : never;
-export type Item = ExtractGives<Scene>;
-// export type Scene = {
-//     text:string,
-//     options:GameActionWithDescription[]
-// }
+// export type Scene = (typeof locations)[LocationKey];
+// type ExtractGives<T> = T extends { gives: infer S } ? S : never;
+// export type Item = ExtractGives<Scene>;
+export type ItemKey = keyof typeof items;
+export type Item = {
+	onUse? : (on:PlayerState)=>{
+
+	}
+}
+export type ItemAquisition = {
+	item:ItemKey,
+	how:string
+}
+export type Scene = {
+    text:string,
+	gives?:ItemAquisition,
+    options:GameActionWithDescription[]
+}
+
+// export type Item
 
 export type GameActionWithDescription = {
 	desc: string;
+	needs?:ItemKey;
 	action: GameAction;
 };
 
-export type GameAction = Travel | Attack;
+export type GameAction = Travel | UseItem;
 export type Travel = {
 	go: LocationKey;
 };
+export type UseItem = {
+
+}
 export function isTravel(msg: object): msg is Travel {
 	return 'go' in msg;
 }
-export type Attack = {
-	who: string;
-};
-export function isAttack(msg: object): msg is Attack {
-	return 'who' in msg;
+// export type Attack = {
+// 	who: string;
+// };
+export function isGameAction(msg: object): msg is GameAction {
+	return isTravel(msg);
 }
 
 export type JoinGame = {
