@@ -10,27 +10,48 @@ export function sendEveryoneWorld() {
 	for (const user of players.values()) {
 		if (user.connectionState && user.connectionState.con) {
 
-			const scene = locations[user.playerState.in];
-			const sceneTexts : string[] = [scene.text]
-			if ('gives' in scene) {
-				if(!user.playerState.inventory.includes(scene.gives.item)){
-					user.playerState.inventory.push(scene.gives.item);
-					sceneTexts.push(scene.gives.how)
-				}
-			}
+			// const scene = locations[user.playerState.in];
+			// const sceneTexts : string[] = [scene.text]
+			// if ('gives' in scene) {
+			// 	if(!user.playerState.inventory.includes(scene.gives.item)){
+			// 		user.playerState.inventory.push(scene.gives.item);
+			// 		sceneTexts.push(scene.gives.how)
+			// 	}
+			// }
 
 
-			let msg: MsgFromServer = {
-				yourName: user.playerState.heroName,
-				players: Array.from(players.values()).map((u) => {
-					return u.playerState;
-				}),
-				sceneTexts: sceneTexts,
-				actions: getAvailableActionsForPlayer(user.playerState)
-			};
-			user.connectionState.con.enqueue(encode(`world`, msg));
+			// let msg: MsgFromServer = {
+			// 	yourName: user.playerState.heroName,
+			// 	players: Array.from(players.values()).map((u) => {
+			// 		return u.playerState;
+			// 	}),
+			// 	sceneTexts: sceneTexts,
+			// 	actions: getAvailableActionsForPlayer(user.playerState)
+			// };
+			const toSend = buildNextMsg(user.playerState,user.stateWhenLastTravelled)
+			user.connectionState.con.enqueue(encode(`world`, toSend));
 		}
 	}
+}
+
+export function buildNextMsg(playerState : PlayerState, lastTravelled : PlayerState):MsgFromServer{
+	const scene = locations[playerState.in];
+		const sceneTexts : string[] = [scene.text]
+		if ('gives' in scene) {
+			if(!lastTravelled.inventory.includes(scene.gives.item)){
+				sceneTexts.push(scene.gives.how)
+			}
+		}
+
+		let nextMsg: MsgFromServer = {
+			yourName: playerState.heroName,
+			players: Array.from(players.values()).map((u) => {
+				return u.playerState;
+			}),
+			sceneTexts: sceneTexts,
+			actions: getAvailableActionsForPlayer(playerState)
+		};
+		return nextMsg
 }
 
 const textEncoder = new TextEncoder();
@@ -57,6 +78,34 @@ export function getAvailableActionsForPlayer(p: PlayerState): GameActionWithDesc
 	});
 	res.push(...removedNeedsUnmet);
 	
+	const playersInRoom =  Array.from(players.entries()).filter(([id,usr])=>
+	usr.playerState.in == p.in
+	).map(([id,usr])=>id)
+	
+	const usableItems = p.inventory.filter((ik)=>{
+		if("onUse" in items[ik]){
+			return true
+		}
+		return false
+	})
+	const usableItemsActions : GameActionWithDescription[] = []
+	
+	usableItems.forEach((ik)=>{
+		// const i = items[ik]
+		// if("onUse" in i){
+			playersInRoom.forEach((pk)=>{
+				usableItemsActions.push( {
+					desc: `use ${ik} on ${pk}`,
+					action:{
+						use:ik,
+						targetHero:pk
+					}
+				} satisfies GameActionWithDescription)
+			})
+		// }
+	})
+	res.push(...usableItemsActions);
+	
 	return res;
 }
 
@@ -67,6 +116,8 @@ export type User = {
 		stream: ReadableStream;
 	};
 	playerState: PlayerState;
+	// nextMsg : MsgFromServer;
+	stateWhenLastTravelled : PlayerState;
 };
 
 export type ServerSentEventController = ReadableStreamController<unknown>;

@@ -1,9 +1,11 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { isGameAction, isTravel, type MsgFromServer, type PlayerState } from '$lib/utils';
+import { isGameAction, isTravel, isUseItem, type MsgFromServer, type PlayerState } from '$lib/utils';
 import {
+	buildNextMsg,
 	FAKE_LATENCY,
 	getAvailableActionsForPlayer,
+	items,
 	locations,
 	players,
 	sendEveryoneWorld
@@ -22,24 +24,30 @@ export const POST = (async (r) => {
 		return json('hero not found', { status: 401 });
 	}
 	let player = players.get(hero);
+	let validActions = getAvailableActionsForPlayer(player.playerState).map((awd) =>
+		JSON.stringify(awd.action)
+	);
+	if (!validActions.includes(JSON.stringify(msg))) {
+		return json({ err: 'situation has changed, cannot', thing: msg }, { status: 401 });
+	}
 	if (isTravel(msg)) {
 		console.log(`${hero} wants to go to ${msg.go}`);
-		let validActions = getAvailableActionsForPlayer(player.playerState).map((awd) =>
-			JSON.stringify(awd.action)
-		);
-		if (!validActions.includes(JSON.stringify(msg))) {
-			return json({ err: 'situation has changed, cannot', thing: msg }, { status: 401 });
-		}
+		player.stateWhenLastTravelled = structuredClone(player.playerState)
 		player.playerState.in = msg.go;
-		// const scene = locations[msg.go];
-		// if ('gives' in scene) {
-		// 	if(!player.playerState.inventory.includes(scene.gives.item)){
-		// 		player.playerState.inventory.push(scene.gives.item);
-		// 	}
-		// }
+		const scene = locations[player.playerState.in];
+		if ('gives' in scene) {
+			if(!player.playerState.inventory.includes(scene.gives.item)){
+				player.playerState.inventory.push(scene.gives.item);
+			}
+		}
+		// player.nextMsg = buildNextMsg(player.playerState)
 
-		// let nextplace = locations[pstate.in].options[msg.option].go
-		// players.get(from).playerState.in = nextplace
+	}else if(isUseItem(msg)){
+		const item = items[msg.use]
+		if("onUse" in item){
+			console.log('use item '+JSON.stringify(msg))
+			item.onUse(players.get(msg.targetHero).playerState)
+		}
 	}
 
 	// tiny timeout so endpoint returns before the event messages get sent

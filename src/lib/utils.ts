@@ -32,6 +32,11 @@ export type Item = {
 
 	}
 }
+export type UseableItem = {
+	onUse : (on:PlayerState)=>{
+	
+	}
+}
 export type ItemAquisition = {
 	item:ItemKey,
 	how:string
@@ -54,17 +59,22 @@ export type GameAction = Travel | UseItem;
 export type Travel = {
 	go: LocationKey;
 };
-export type UseItem = {
 
-}
 export function isTravel(msg: object): msg is Travel {
 	return 'go' in msg;
+}
+export type UseItem = {
+	use:ItemKey;
+	targetHero:string;
+}
+export function isUseItem(msg: object): msg is UseItem {
+	return 'use' in msg;
 }
 // export type Attack = {
 // 	who: string;
 // };
 export function isGameAction(msg: object): msg is GameAction {
-	return isTravel(msg);
+	return isTravel(msg) || isUseItem(msg);
 }
 
 export type JoinGame = {
