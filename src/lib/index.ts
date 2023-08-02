@@ -1,69 +1,66 @@
-import type { locations } from "./server/gameState"
+import type { locations } from './server/gameState';
 
 export type MsgFromServer = {
-    yourName:string,
-    players:PlayerState[],
-    sceneText:string,
-    actions:GameActionWithDescription[]
-}
+	yourName: string;
+	players: PlayerState[];
+	sceneText: string;
+	actions: GameActionWithDescription[];
+};
 
-export function isMsgFromServer(msg:Object):msg is MsgFromServer{
-    return "yourName" in msg
+export function isMsgFromServer(msg: object): msg is MsgFromServer {
+	return 'yourName' in msg;
 }
 
 export type User = {
-    connectionState:{ip:string, con:Controller}
-    playerState:PlayerState
-}
+	connectionState: { ip: string; con: Controller };
+	playerState: PlayerState;
+};
 
 export type Controller = ReadableStreamController<unknown>;
 
 export type PlayerState = {
-    heroName:string
-    in:LocationKey
-}
+	heroName: string;
+	in: LocationKey;
+};
 
 // type MsgFromClient = JoinGame | ChooseOption
 
-export type LocationKey = keyof typeof locations
-export type Scene = typeof locations[LocationKey]
+export type LocationKey = keyof typeof locations;
+export type Scene = (typeof locations)[LocationKey];
 // export type Scene = {
 //     text:string,
 //     options:GameActionWithDescription[]
 // }
 
 export type GameActionWithDescription = {
-    desc:string,
-    action:GameAction   
-}
+	desc: string;
+	action: GameAction;
+};
 
-export type GameAction = Travel | Attack
+export type GameAction = Travel | Attack;
 export type Travel = {
-    go:LocationKey
-}
-export function isTravel(msg:Object): msg is Travel{
-    return "go" in msg
+	go: LocationKey;
+};
+export function isTravel(msg: object): msg is Travel {
+	return 'go' in msg;
 }
 export type Attack = {
-    who:string
-}
-export function isAttack(msg:Object): msg is Attack{
-    return "who" in msg
+	who: string;
+};
+export function isAttack(msg: object): msg is Attack {
+	return 'who' in msg;
 }
 
 export type JoinGame = {
-    join:string
-}
+	join: string;
+};
 
-export function isJoin(msg:Object): msg is JoinGame{
-    // return msg.hasOwnProperty('join')
-    return "join" in msg
+export function isJoin(msg: object): msg is JoinGame {
+	// return msg.hasOwnProperty('join')
+	return 'join' in msg;
 }
-
 
 // export type ChooseOption = {
-    // name:string,
-    // option:number
+// name:string,
+// option:number
 // }
-
-

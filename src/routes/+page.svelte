@@ -1,7 +1,10 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
-	import { isMsgFromServer, type GameAction, type GameActionWithDescription, type MsgFromServer } from '$lib';
-	import { onDestroy, onMount } from 'svelte';
+	import {
+		isMsgFromServer,
+		type GameAction,
+		type MsgFromServer
+	} from '$lib';
+	import { onMount } from 'svelte';
 
 	export let data;
 	let loginInput: string;
@@ -31,12 +34,11 @@
 	function subscribeEvents() {
 		source = new EventSource('/api/subscribe');
 		source.addEventListener('world', (e) => {
-            
-            let sMsg = JSON.parse(e.data);
-			if(!isMsgFromServer(sMsg)){
-                console.log('malformed event from server')
-                return
-            }
+			let sMsg = JSON.parse(e.data);
+			if (!isMsgFromServer(sMsg)) {
+				console.log('malformed event from server');
+				return;
+			}
 			lastMsgFromServer = sMsg;
 			status = 'playing';
 			loading = false;
@@ -44,7 +46,7 @@
 		source.addEventListener('error', (e) => {
 			console.log('source error');
 			status = 'recovering from source error hopefully..';
-			// source.close(); 
+			// source.close();
 		});
 	}
 	let status = 'mounting';
@@ -70,10 +72,10 @@
 		let f = await fetch('/api/logout', { method: 'POST' });
 		// let r = await f.json()
 		if (source.readyState != source.CLOSED) {
-            console.log('closing con from browser');
+			console.log('closing con from browser');
 			source.close();
 		}
-        lastMsgFromServer = null;
+		lastMsgFromServer = null;
 		source = null;
 		status = 'need manual login';
 		loading = false;
@@ -128,7 +130,6 @@
 {#if lastMsgFromServer && (!source || source.readyState != source.OPEN)}
 	<p>event source got closed.. if stuck here there's a bug</p>
 {/if}
-
 
 {#if !loading && lastMsgFromServer && source && source.readyState == source.OPEN}
 	<p>
