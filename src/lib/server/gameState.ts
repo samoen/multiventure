@@ -1,4 +1,4 @@
-import type { GameActionWithDescription, MsgFromServer, PlayerState, Scene, User } from '$lib';
+import type { GameActionWithDescription, MsgFromServer, PlayerState, Scene, User } from '$lib/utils';
 
 export const FAKE_LATENCY = 500;
 export const players = new Map<string, User>();

@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { isAttack, isTravel, type MsgFromServer, type PlayerState } from '$lib';
+import { isAttack, isTravel, type MsgFromServer, type PlayerState } from '$lib/utils';
 import {
 	FAKE_LATENCY,
 	getAvailableActionsForPlayer,

@@ -1,4 +1,4 @@
-import type { Controller } from '$lib';
+import type { Controller } from '$lib/utils';
 import { players, sendEveryoneWorld } from '$lib/server/gameState';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';

@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { isJoin, type PlayerState, type User } from '$lib';
+import { isJoin, type PlayerState, type User } from '$lib/utils';
 import { FAKE_LATENCY, players } from '$lib/server/gameState';
 
 export const POST: RequestHandler = async (r) => {

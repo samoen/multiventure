@@ -3,7 +3,7 @@
 		isMsgFromServer,
 		type GameAction,
 		type MsgFromServer
-	} from '$lib';
+	} from '$lib/utils';
 	import { onMount } from 'svelte';
 
 	export let data;
