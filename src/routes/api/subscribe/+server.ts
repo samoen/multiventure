@@ -41,7 +41,7 @@ export const GET: RequestHandler = async (event) => {
 			player.connectionState.ip = ip;
 			// player.connectionState.con = controller;
 			player.connectionState.con = c;
-			sendEveryoneWorld();
+			sendEveryoneWorld(from);
 		},
 		cancel: () => {
 			console.log(`stream cancel handle for ${ip} ${from}`);

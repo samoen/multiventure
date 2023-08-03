@@ -46,14 +46,14 @@ export const POST = (async (r) => {
 		const item = items[msg.use]
 		if("onUse" in item){
 			console.log('use item '+JSON.stringify(msg))
-			item.onUse(players.get(msg.targetHero).playerState)
+			item.onUse(player.playerState, players.get(msg.targetHero).playerState)
 		}
 	}
 
 	// tiny timeout so endpoint returns before the event messages get sent
 	setTimeout(() => {
-		sendEveryoneWorld();
-	}, FAKE_LATENCY);
+		sendEveryoneWorld(hero);
+	}, 1);
 
 	return json({ sucess: 'yessir' });
 }) satisfies RequestHandler;

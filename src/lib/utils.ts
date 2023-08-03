@@ -1,8 +1,9 @@
 // This file is for stuff available to both the server and browser
 
-import type { items, locations } from './server/gameState';
+import type { SceneKey, items, locations } from './server/gameState';
 
 export type MsgFromServer = {
+	triggeredBy: string;
 	yourName: string;
 	players: PlayerState[];
 	sceneTexts: string[];
@@ -15,28 +16,26 @@ export function isMsgFromServer(msg: object): msg is MsgFromServer {
 
 export type PlayerState = {
 	heroName: string;
-	in: LocationKey;
+	in: string;
 	inventory: ItemKey[];
 	health:number;
 };
 
 // type MsgFromClient = JoinGame | ChooseOption
 
-export type LocationKey = keyof typeof locations;
+// export type LocationKey = keyof typeof locations;
 // export type Scene = (typeof locations)[LocationKey];
 // type ExtractGives<T> = T extends { gives: infer S } ? S : never;
 // export type Item = ExtractGives<Scene>;
 export type ItemKey = keyof typeof items;
 export type Item = {
-	onUse? : (on:PlayerState)=>{
-
-	}
+	onUse? : (user: PlayerState, target:PlayerState)=>void
 }
-export type UseableItem = {
-	onUse : (on:PlayerState)=>{
+// export type UseableItem = {
+// 	onUse : (on:PlayerState)=>{
 	
-	}
-}
+// 	}
+// }
 export type ItemAquisition = {
 	item:ItemKey,
 	how:string
@@ -44,7 +43,7 @@ export type ItemAquisition = {
 export type Scene = {
     text:string,
 	gives?:ItemAquisition,
-    options:GameActionWithDescription[]
+    options: GameActionWithDescription[]
 }
 
 // export type Item
@@ -57,7 +56,7 @@ export type GameActionWithDescription = {
 
 export type GameAction = Travel | UseItem;
 export type Travel = {
-	go: LocationKey;
+	go: SceneKey;
 };
 
 export function isTravel(msg: object): msg is Travel {

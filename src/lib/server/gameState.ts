@@ -1,55 +1,37 @@
 // Put things in here that should only be available to the server
 
-import type { GameActionWithDescription, MsgFromServer, PlayerState, Scene } from '$lib/utils';
+import type { GameActionWithDescription, Item, MsgFromServer, PlayerState, Scene } from '$lib/utils';
 
 export const FAKE_LATENCY = 500;
 export const players = new Map<string, User>();
 export const recentHappenings : string[] = [];
 
-export function sendEveryoneWorld() {
+export function sendEveryoneWorld(triggeredBy:string) {
 	for (const user of players.values()) {
 		if (user.connectionState && user.connectionState.con) {
-
-			// const scene = locations[user.playerState.in];
-			// const sceneTexts : string[] = [scene.text]
-			// if ('gives' in scene) {
-			// 	if(!user.playerState.inventory.includes(scene.gives.item)){
-			// 		user.playerState.inventory.push(scene.gives.item);
-			// 		sceneTexts.push(scene.gives.how)
-			// 	}
-			// }
-
-
-			// let msg: MsgFromServer = {
-			// 	yourName: user.playerState.heroName,
-			// 	players: Array.from(players.values()).map((u) => {
-			// 		return u.playerState;
-			// 	}),
-			// 	sceneTexts: sceneTexts,
-			// 	actions: getAvailableActionsForPlayer(user.playerState)
-			// };
-			const toSend = buildNextMsg(user.playerState,user.stateWhenLastTravelled)
+			const toSend = buildNextMsg(user, triggeredBy)
 			user.connectionState.con.enqueue(encode(`world`, toSend));
 		}
 	}
 }
 
-export function buildNextMsg(playerState : PlayerState, lastTravelled : PlayerState):MsgFromServer{
-	const scene = locations[playerState.in];
+export function buildNextMsg(user:User, triggeredBy:string):MsgFromServer{
+	const scene = locations[user.playerState.in];
 		const sceneTexts : string[] = [scene.text]
 		if ('gives' in scene) {
-			if(!lastTravelled.inventory.includes(scene.gives.item)){
+			if(!user.stateWhenLastTravelled.inventory.includes(scene.gives.item)){
 				sceneTexts.push(scene.gives.how)
 			}
 		}
 
 		let nextMsg: MsgFromServer = {
-			yourName: playerState.heroName,
+			triggeredBy:triggeredBy,
+			yourName: user.playerState.heroName,
 			players: Array.from(players.values()).map((u) => {
 				return u.playerState;
 			}),
 			sceneTexts: sceneTexts,
-			actions: getAvailableActionsForPlayer(playerState)
+			actions: getAvailableActionsForPlayer(user.playerState)
 		};
 		return nextMsg
 }
@@ -58,7 +40,7 @@ const textEncoder = new TextEncoder();
 export function encode(event: string, data: object, noretry: boolean = false) {
 	let toEncode = `event:${event}\ndata: ${JSON.stringify(data)}\n`;
 	if (noretry) {
-		toEncode = toEncode + `retry: 9999999\n`;
+		toEncode = toEncode + `retry: -1\n`;
 	}
 	toEncode = toEncode + `\n`;
 
@@ -94,8 +76,12 @@ export function getAvailableActionsForPlayer(p: PlayerState): GameActionWithDesc
 		// const i = items[ik]
 		// if("onUse" in i){
 			playersInRoom.forEach((pk)=>{
+				let descTarget = pk
+				if(pk == p.heroName){
+					descTarget = 'self'
+				}
 				usableItemsActions.push( {
-					desc: `use ${ik} on ${pk}`,
+					desc: `use ${ik} on ${descTarget}`,
 					action:{
 						use:ik,
 						targetHero:pk
@@ -122,7 +108,17 @@ export type User = {
 
 export type ServerSentEventController = ReadableStreamController<unknown>;
 
-export const locations : Record<string,Scene> = {
+export type SceneKey =
+ "forest" |
+ "castle" |
+ "throne" |
+ "forestPassage"
+
+export type Scenes = {
+	[key in SceneKey] : Scene
+}
+
+export const locations : Scenes = {
 	forest: {
 		text: 'You find yourself in the forest',
 		options: [
@@ -186,15 +182,16 @@ export const locations : Record<string,Scene> = {
 					go: 'forest'
 				}
 			}
-		]
+		],
 	}
-} satisfies Record<string,Scene>;
+};
 
 export const items = {
 	greenGem:{},
 	bandage:{
-		onUse(p:PlayerState){
-			p.health += 10;
+		onUse:(user: PlayerState, target:PlayerState)=>{
+			target.health += 10;
+			user.inventory = user.inventory.filter((i)=>i != 'bandage')
 		}
 	}
-}
+} as const satisfies Record<string,Item>;

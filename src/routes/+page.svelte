@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { isMsgFromServer, type GameAction, type MsgFromServer } from '$lib/utils';
+	import { isMsgFromServer, type GameAction, type MsgFromServer, type GameActionWithDescription } from '$lib/utils';
 	import { onMount } from 'svelte';
 
 	export let data;
@@ -37,8 +37,10 @@
 				return;
 			}
 			lastMsgFromServer = sMsg;
-			status = 'playing';
-			loading = false;
+			if(loading && sMsg.triggeredBy == sMsg.yourName){
+				status = 'playing';
+				loading = false;
+			}
 		});
 		source.addEventListener('closing', (e) => {
 			console.log('got closing msg');
