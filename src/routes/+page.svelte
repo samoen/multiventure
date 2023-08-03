@@ -11,10 +11,13 @@
 	let loginInput: string;
 	let source: EventSource;
 	let lastMsgFromServer: MsgFromServer;
+	let loading = true;
+	let waitingForMyEvent = true;
+	let status = 'starting up';
 
 	async function choose(act: GameAction) {
-		loading = true;
-		status = 'waiting for action';
+		waitingForMyEvent = true;
+		status = 'submitting action';
 		let f = await fetch('/api/move', {
 			method: 'POST',
 			body: JSON.stringify(act)
@@ -22,29 +25,33 @@
 		if (!f.ok) {
 			// let res = await f.json();
 			// console.log(res);
-			loading = false;
+			waitingForMyEvent = false;
 			status = 'playing';
 			return;
 		}
-		status = 'waiting for event';
+		status = 'waiting for my event';
 
 		// invalidateAll();
 		// lastMsgFromServer = res;
 	}
 
 	function subscribeEvents() {
+		status = 'subscribing to events'
+		waitingForMyEvent = true
 		source = new EventSource('/api/subscribe');
 
 		source.addEventListener('world', (e) => {
+
 			let sMsg = JSON.parse(e.data);
 			if (!isMsgFromServer(sMsg)) {
 				console.log('malformed event from server');
 				return;
 			}
 			lastMsgFromServer = sMsg;
-			if (loading && sMsg.triggeredBy == sMsg.yourName) {
+			if (waitingForMyEvent && sMsg.triggeredBy == sMsg.yourName) {
 				status = 'playing';
-				loading = false;
+				waitingForMyEvent = false
+				loading = false
 			}
 		});
 		source.addEventListener('closing', (e) => {
@@ -59,7 +66,6 @@
 			// source.close();
 		});
 	}
-	let status = 'mounting';
 	onMount(() => {
 		console.log('mounted with ' + JSON.stringify(data));
 		if (data.loggedIn && !source) {
@@ -77,21 +83,21 @@
 
 	async function logOut() {
 		// document.cook .cookies.remove('hero')
+		lastMsgFromServer = null;
 		loading = true;
-		status = 'waiting for logout';
+		status = 'submitting logout';
 		let f = await fetch('/api/logout', { method: 'POST' });
 		// let r = await f.json()
+		status = 'unsubscribing from events'
 		if (source.readyState != source.CLOSED) {
 			console.log('closing con from browser');
 			source.close();
 		}
-		lastMsgFromServer = null;
 		source = null;
 		status = 'need manual login';
 		loading = false;
 	}
 
-	let loading = true;
 </script>
 
 <h3>status: {status}</h3>
@@ -107,7 +113,7 @@
 		on:click={async () => {
 			if (!loginInput) return;
 			loading = true;
-			status = 'waiting for login';
+			status = 'submitting login';
 			let joincall = await fetch('/api/login', {
 				method: 'POST',
 				body: JSON.stringify({ join: loginInput }),
@@ -115,50 +121,49 @@
 					'Content-Type': 'application/json'
 				}
 			});
-			let res = await joincall.json();
+			// let res = await joincall.json();
 			loginInput = '';
-			// loading = false
-			// invalidateAll()
 			if (joincall.ok) {
-				status = 'waiting for first world';
+				status = 'waiting for first event';
 				subscribeEvents();
 			} else {
 				console.log('joincall not ok');
 			}
-
-			// }
 		}}>Log in</button
 	>
 {/if}
-
-<!-- {#if source && source.readyState == source.OPEN}
-<p>
-    source is open
-</p> 
-{/if} -->
 
 {#if lastMsgFromServer && (!source || source.readyState != source.OPEN)}
 	<p>event source got closed.. if stuck here there's a bug</p>
 {/if}
 
-{#if !loading && lastMsgFromServer && source && source.readyState == source.OPEN}
+{#if lastMsgFromServer && source && source.readyState == source.OPEN}
 	<p>
 		I am {lastMsgFromServer.yourName}
 		<button on:click={logOut}>log out</button>
 	</p>
-	<h3>players:</h3>
-	{#each lastMsgFromServer.players as p}
+	<h3>Other Players:</h3>
+	{#each lastMsgFromServer.otherPlayers as p}
 		<p>
-			{p.heroName} is in {p.in} with {p.health}hp
+			{p.heroName} is in {p.currentScene} with {p.health}hp
 			{p.inventory.length > 0 ? `carrying ${p.inventory}` : ''}
 		</p>
 		<p />
 	{/each}
-	<h3>scene:</h3>
+	<h3>{lastMsgFromServer.yourName}:</h3>
+	<p>Health: {lastMsgFromServer.yourHp}</p>
+	<p>Inventory: {lastMsgFromServer.yourInventory}</p>
+	<p>Current Scene: {lastMsgFromServer.yourScene}</p>
+	<h3>Scene:</h3>
 	{#each lastMsgFromServer.sceneTexts as t}
 		<p>{t}</p>
 	{/each}
 	{#each lastMsgFromServer.actions as op, i}
-		<button on:click={() => choose(op.action)}>{op.desc}</button>
+		<button 
+			on:click={() => choose(op.action)}
+			disabled={waitingForMyEvent}
+			>
+			{op.desc}
+		</button>
 	{/each}
 {/if}

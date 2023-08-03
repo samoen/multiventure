@@ -1,11 +1,11 @@
+import { FAKE_LATENCY, users } from '$lib/server/gameState';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { FAKE_LATENCY, players, sendEveryoneWorld } from '$lib/server/gameState';
 
 export const POST: RequestHandler = async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
 	let hero = r.cookies.get('hero');
-	if (!hero || !players.has(hero)) {
+	if (!hero || !users.has(hero)) {
 		return json('must be logged in to log out', { status: 401 });
 	}
 

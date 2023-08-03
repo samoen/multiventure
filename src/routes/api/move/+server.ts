@@ -1,15 +1,14 @@
-import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
-import { isGameAction, isTravel, isUseItem, type MsgFromServer } from '$lib/utils';
 import {
-	buildNextMsg,
 	FAKE_LATENCY,
 	getAvailableActionsForPlayer,
 	items,
 	locations,
-	players,
+	users,
 	sendEveryoneWorld
 } from '$lib/server/gameState';
+import { isGameAction, isTravel, isUseItem } from '$lib/utils';
+import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
 
 export const POST = (async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
@@ -20,18 +19,17 @@ export const POST = (async (r) => {
 		return json('malformed action', { status: 400 });
 	}
 	let hero = r.cookies.get('hero');
-	if (!hero || !players.has(hero)) {
+	if (!hero || !users.has(hero)) {
 		return json('hero not found', { status: 401 });
 	}
-	let player = players.get(hero);
+	let player = users.get(hero);
 	let validActions = getAvailableActionsForPlayer(player).map((awd) => JSON.stringify(awd.action));
 	if (!validActions.includes(JSON.stringify(msg))) {
 		return json({ err: 'situation has changed, cannot', thing: msg }, { status: 401 });
 	}
 	if (isTravel(msg)) {
 		console.log(`${hero} wants to go to ${msg.go}`);
-		// player.stateWhenLastTravelled = structuredClone(player.playerState)
-		player.in = msg.go;
+		player.currentScene = msg.go;
 		player.extraTexts = [];
 
 		const scene = locations[msg.go];
@@ -42,7 +40,7 @@ export const POST = (async (r) => {
 		const item = items[msg.use];
 		if ('onUse' in item) {
 			console.log('use item ' + JSON.stringify(msg));
-			item.onUse(player, players.get(msg.targetHero));
+			item.onUse(player, users.get(msg.targetHero));
 		}
 	}
 

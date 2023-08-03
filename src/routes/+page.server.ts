@@ -1,4 +1,4 @@
-import { players } from '$lib/server/gameState';
+import { users } from '$lib/server/gameState';
 import type { PageServerLoad } from './$types';
 
 // This runs on the server once when the page is first requested
@@ -12,7 +12,7 @@ export const load = (async (r) => {
 			loggedIn: false
 		};
 	}
-	if (!players.has(heroName)) {
+	if (!users.has(heroName)) {
 		console.log('cookie hero not present in player list');
 		r.cookies.delete('hero', { path: '/' });
 		return {

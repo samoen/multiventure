@@ -1,6 +1,6 @@
 import {
 	encode,
-	players,
+	users,
 	sendEveryoneWorld,
 	type ServerSentEventController
 } from '$lib/server/gameState';
@@ -12,11 +12,11 @@ export const GET: RequestHandler = async (event) => {
 	const ip = event.getClientAddress();
 	const from = event.cookies.get('hero');
 	console.log(`stream requested by: ${ip} ${from}`);
-	if (!from || !players.has(from)) {
+	if (!from || !users.has(from)) {
 		// console.log('hey')
 		return json({ error: 'need hero cookie to start a stream' }, { status: 401 });
 	}
-	const player = players.get(from);
+	const player = users.get(from);
 	if (player.connectionState != null) {
 		if (player.connectionState.con != null) {
 			console.log(`${from} subscribing but already subscribed. sending close message`);

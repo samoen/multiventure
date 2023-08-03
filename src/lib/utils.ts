@@ -1,11 +1,14 @@
 // This file is for stuff available to both the server and browser
 
-import type { SceneKey, User, items, locations } from './server/gameState';
+import type { HeroName, SceneKey, User, items, locations } from './server/gameState';
 
 export type MsgFromServer = {
-	triggeredBy: string;
-	yourName: string;
-	players: OtherPlayerInfo[];
+	triggeredBy: HeroName;
+	yourName: HeroName;
+	yourScene: SceneKey;
+	yourHp:number;
+	yourInventory:ItemKey[];
+	otherPlayers: OtherPlayerInfo[];
 	sceneTexts: string[];
 	actions: GameActionWithDescription[];
 };
@@ -14,19 +17,14 @@ export function isMsgFromServer(msg: object): msg is MsgFromServer {
 	return 'yourName' in msg;
 }
 
+// Information a player receives about other players
 export type OtherPlayerInfo = {
-	heroName: string;
-	in: string;
+	heroName: HeroName;
+	currentScene: SceneKey;
 	inventory: ItemKey[];
 	health: number;
 };
 
-// type MsgFromClient = JoinGame | ChooseOption
-
-// export type LocationKey = keyof typeof locations;
-// export type Scene = (typeof locations)[LocationKey];
-// type ExtractGives<T> = T extends { gives: infer S } ? S : never;
-// export type Item = ExtractGives<Scene>;
 export type ItemKey = keyof typeof items;
 export type Item = {
 	onUse?: (user: User, target: User) => void;
@@ -53,28 +51,20 @@ export function isTravel(msg: object): msg is Travel {
 }
 export type UseItem = {
 	use: ItemKey;
-	targetHero: string;
+	targetHero: HeroName;
 };
 export function isUseItem(msg: object): msg is UseItem {
 	return 'use' in msg;
 }
-// export type Attack = {
-// 	who: string;
-// };
+
 export function isGameAction(msg: object): msg is GameAction {
 	return isTravel(msg) || isUseItem(msg);
 }
 
 export type JoinGame = {
-	join: string;
+	join: HeroName;
 };
 
 export function isJoin(msg: object): msg is JoinGame {
-	// return msg.hasOwnProperty('join')
 	return 'join' in msg;
 }
-
-// export type ChooseOption = {
-// name:string,
-// option:number
-// }

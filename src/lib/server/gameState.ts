@@ -10,14 +10,17 @@ import type {
 } from '$lib/utils';
 
 export const FAKE_LATENCY = 300;
-export const players = new Map<string, User>();
+export const users = new Map<UserId, User>();
 export const recentHappenings: string[] = [];
 
-export async function sendEveryoneWorld(triggeredBy: string) {
+export type UserId = string;
+export type HeroName = string;
+
+export async function sendEveryoneWorld(triggeredBy: HeroName) {
 	await new Promise((r) => {
 		setTimeout(r, FAKE_LATENCY);
 	});
-	for (const user of players.values()) {
+	for (const user of users.values()) {
 		if (user.connectionState && user.connectionState.con) {
 			const toSend = buildNextMsg(user, triggeredBy);
 			user.connectionState.con.enqueue(encode(`world`, toSend));
@@ -25,22 +28,24 @@ export async function sendEveryoneWorld(triggeredBy: string) {
 	}
 }
 
-export function buildNextMsg(user: User, triggeredBy: string): MsgFromServer {
-	const scene = locations[user.in];
+export function buildNextMsg(user: User, triggeredBy: HeroName): MsgFromServer {
+	const scene = locations[user.currentScene];
 	const sceneTexts: string[] = [scene.text];
 	sceneTexts.push(...user.extraTexts);
 
-	let nextMsg: MsgFromServer = {
+	const nextMsg: MsgFromServer = {
 		triggeredBy: triggeredBy,
 		yourName: user.heroName,
-		players: Array.from(players.values()).map((u) => {
+		yourHp: user.health,
+		yourInventory: user.inventory,
+		yourScene:user.currentScene,
+		otherPlayers: Array.from(users.values()).filter(u=>u.heroName != user.heroName).map((u) => {
 			return {
 				heroName: u.heroName,
 				inventory: u.inventory,
 				health: u.health,
-				in: u.in
+				currentScene: u.currentScene
 			} satisfies OtherPlayerInfo;
-			// return u.playerState;
 		}),
 		sceneTexts: sceneTexts,
 		actions: getAvailableActionsForPlayer(user)
@@ -55,14 +60,12 @@ export function encode(event: string, data: object, noretry: boolean = false) {
 		toEncode = toEncode + `retry: -1\n`;
 	}
 	toEncode = toEncode + `\n`;
-
-	// return textEncoder.encode(`event:${event}\ndata: ${JSON.stringify(data)}\n\n`);
 	return textEncoder.encode(toEncode);
 }
 
 export function getAvailableActionsForPlayer(p: User): GameActionWithDescription[] {
-	let res: GameActionWithDescription[] = [];
-	const removedNeedsUnmet = locations[p.in].options.filter((o) => {
+	const res: GameActionWithDescription[] = [];
+	const removedNeedsUnmet = locations[p.currentScene].options.filter((o) => {
 		if ('needs' in o) {
 			if (!p.inventory.includes(o.needs)) {
 				return false;
@@ -72,8 +75,8 @@ export function getAvailableActionsForPlayer(p: User): GameActionWithDescription
 	});
 	res.push(...removedNeedsUnmet);
 
-	const playersInRoom = Array.from(players.entries())
-		.filter(([id, usr]) => usr.in == p.in)
+	const playersInRoom = Array.from(users.entries())
+		.filter(([id, usr]) => usr.currentScene == p.currentScene)
 		.map(([id, usr]) => id);
 
 	const usableItems = p.inventory.filter((ik) => {
@@ -113,9 +116,8 @@ export type User = {
 		con: ServerSentEventController;
 		stream: ReadableStream;
 	};
-	// playerState: PlayerState;
-	heroName: string;
-	in: string;
+	heroName: HeroName;
+	currentScene: SceneKey;
 	inventory: ItemKey[];
 	health: number;
 	extraTexts: string[];

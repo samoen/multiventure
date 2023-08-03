@@ -1,10 +1,12 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { isJoin, type MsgFromServer } from '$lib/utils';
-import { buildNextMsg, FAKE_LATENCY, players, type User } from '$lib/server/gameState';
+import { buildNextMsg, FAKE_LATENCY, users, type User } from '$lib/server/gameState';
 
 export const POST: RequestHandler = async (r) => {
+	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
 	let msg = await r.request.json();
+	
 	if (!isJoin(msg)) {
 		return json('malformed login', { status: 400 });
 	}
@@ -12,14 +14,13 @@ export const POST: RequestHandler = async (r) => {
 	//     return json('hero already connected', {status:401})
 	// }
 	console.log('logging in ' + msg.join);
-	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
 
 	// new user
-	if (!players.has(msg.join)) {
-		players.set(msg.join, {
+	if (!users.has(msg.join)) {
+		users.set(msg.join, {
 			connectionState: null,
 			heroName: msg.join,
-			in: 'forest',
+			currentScene: 'forest',
 			inventory: [],
 			health: 100,
 			extraTexts: []
