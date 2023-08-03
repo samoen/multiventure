@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { isMsgFromServer, type GameAction, type MsgFromServer, type GameActionWithDescription } from '$lib/utils';
+	import {
+		isMsgFromServer,
+		type GameAction,
+		type MsgFromServer,
+		type GameActionWithDescription
+	} from '$lib/utils';
 	import { onMount } from 'svelte';
 
 	export let data;
@@ -37,7 +42,7 @@
 				return;
 			}
 			lastMsgFromServer = sMsg;
-			if(loading && sMsg.triggeredBy == sMsg.yourName){
+			if (loading && sMsg.triggeredBy == sMsg.yourName) {
 				status = 'playing';
 				loading = false;
 			}
@@ -144,15 +149,14 @@
 	<h3>players:</h3>
 	{#each lastMsgFromServer.players as p}
 		<p>
-			{p.heroName} is in {p.in} with {p.health}hp 
+			{p.heroName} is in {p.in} with {p.health}hp
 			{p.inventory.length > 0 ? `carrying ${p.inventory}` : ''}
 		</p>
 		<p />
 	{/each}
 	<h3>scene:</h3>
 	{#each lastMsgFromServer.sceneTexts as t}
-	<p>{t}</p>
-		
+		<p>{t}</p>
 	{/each}
 	{#each lastMsgFromServer.actions as op, i}
 		<button on:click={() => choose(op.action)}>{op.desc}</button>

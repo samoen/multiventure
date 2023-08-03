@@ -1,6 +1,12 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { isGameAction, isTravel, isUseItem, type MsgFromServer, type PlayerState } from '$lib/utils';
+import {
+	isGameAction,
+	isTravel,
+	isUseItem,
+	type MsgFromServer,
+	type PlayerState
+} from '$lib/utils';
 import {
 	buildNextMsg,
 	FAKE_LATENCY,
@@ -32,21 +38,19 @@ export const POST = (async (r) => {
 	}
 	if (isTravel(msg)) {
 		console.log(`${hero} wants to go to ${msg.go}`);
-		player.stateWhenLastTravelled = structuredClone(player.playerState)
+		// player.stateWhenLastTravelled = structuredClone(player.playerState)
 		player.playerState.in = msg.go;
-		const scene = locations[player.playerState.in];
-		if ('gives' in scene) {
-			if(!player.playerState.inventory.includes(scene.gives.item)){
-				player.playerState.inventory.push(scene.gives.item);
-			}
-		}
-		// player.nextMsg = buildNextMsg(player.playerState)
+		player.extraTexts = [];
 
-	}else if(isUseItem(msg)){
-		const item = items[msg.use]
-		if("onUse" in item){
-			console.log('use item '+JSON.stringify(msg))
-			item.onUse(player.playerState, players.get(msg.targetHero).playerState)
+		const scene = locations[msg.go];
+		if ('onEnter' in scene) {
+			scene.onEnter(player);
+		}
+	} else if (isUseItem(msg)) {
+		const item = items[msg.use];
+		if ('onUse' in item) {
+			console.log('use item ' + JSON.stringify(msg));
+			item.onUse(player.playerState, players.get(msg.targetHero).playerState);
 		}
 	}
 

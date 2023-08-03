@@ -16,17 +16,17 @@ export const POST: RequestHandler = async (r) => {
 
 	// new user
 	if (!players.has(msg.join)) {
-		const startPlayerState : PlayerState= { 
+		const startPlayerState: PlayerState = {
 			heroName: msg.join,
 			in: 'forest',
 			inventory: [],
-			health:100, 
-		}
+			health: 100
+		};
 		players.set(msg.join, {
 			connectionState: null,
-			playerState:  startPlayerState,
-			// nextMsg:buildNextMsg(startPlayerState,startPlayerState),
-			stateWhenLastTravelled:startPlayerState,
+			playerState: startPlayerState,
+			extraTexts: []
+			// stateWhenLastTravelled:startPlayerState,
 		} satisfies User);
 	}
 	r.cookies.set('hero', msg.join, { path: '/' });
