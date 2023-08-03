@@ -25,12 +25,12 @@ export const POST = (async (r) => {
 
 	const oldSceneKey = player.currentScene
 
-	let actionFromId = getAvailableActionsForPlayer(player).find(g => g.gameAction.id == msg.id)
+	let actionFromId = getAvailableActionsForPlayer(player).find(g => g.id == msg.id)
 	if (!actionFromId) {
 		console.log(`rejected action ${JSON.stringify(msg)}`)
 		return json(`action id ${msg.id} not available`, { status: 400 });
 	}
-	actionFromId.gameAction.onAct(actionFromId.actor, actionFromId.target)
+	actionFromId.onAct()
 
 	if (player.currentScene != oldSceneKey) {
 		const scene = locations[player.currentScene]

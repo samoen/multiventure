@@ -26,28 +26,32 @@ export type OtherPlayerInfo = {
 };
 
 export type ItemKey = keyof typeof items;
-export type Item = {
-	onUse?: (user: User, target: User) => void;
-};
+
 export type Scene = {
 	text: string;
 	onEnter?: (user: User) => void;
-	options: GameAction[];
+	options: PreAction[];
 };
 
-export type GameActionReady = {
-	gameAction : GameAction,
-	itemKey?:ItemKey,
-	actor:User,
-	target:User
+export type PreActionTargetsOnlySelf = {
+	targetKind: 'onlyself'
+	generate:(actor:User)=>GameAction
 }
+
+export type PreActionTargetsUsers ={
+	targetKind: 'usersInRoom'
+	generate:(actor:User,target:User)=>GameAction
+}
+export type PreAction = PreActionTargetsOnlySelf | PreActionTargetsUsers
 
 export type GameAction = {
 	id:string,
-	onAct:((actor:User,target:User)=>void),
+	onAct:(()=>void),
 	buttonText:string,
-	includeIf?:(user:User)=>boolean,
+	includeIf:()=>boolean,
 };
+
+// export type ActionTarget = 'selfOnly'
 
 export type GameActionSelected = {
 	id:string

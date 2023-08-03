@@ -151,7 +151,7 @@
 		</p>
 		<p />
 	{/each}
-	<h3>{lastMsgFromServer.yourName}:</h3>
+	<h3>Me:</h3>
 	<p>Health: {lastMsgFromServer.yourHp}</p>
 	<p>Inventory: {lastMsgFromServer.yourInventory}</p>
 	<p>Current Scene: {lastMsgFromServer.yourScene}</p>
