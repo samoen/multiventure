@@ -5,7 +5,7 @@ import type { SceneKey, User, items, locations } from './server/gameState';
 export type MsgFromServer = {
 	triggeredBy: string;
 	yourName: string;
-	players: PlayerState[];
+	players: OtherPlayerInfo[];
 	sceneTexts: string[];
 	actions: GameActionWithDescription[];
 };
@@ -14,7 +14,7 @@ export function isMsgFromServer(msg: object): msg is MsgFromServer {
 	return 'yourName' in msg;
 }
 
-export type PlayerState = {
+export type OtherPlayerInfo = {
 	heroName: string;
 	in: string;
 	inventory: ItemKey[];
@@ -29,24 +29,13 @@ export type PlayerState = {
 // export type Item = ExtractGives<Scene>;
 export type ItemKey = keyof typeof items;
 export type Item = {
-	onUse?: (user: PlayerState, target: PlayerState) => void;
+	onUse?: (user: User, target: User) => void;
 };
-// export type UseableItem = {
-// 	onUse : (on:PlayerState)=>{
-
-// 	}
-// }
-// export type ItemAquisition = {
-// 	item:ItemKey,
-// 	how:string
-// }
 export type Scene = {
 	text: string;
 	onEnter?: (user: User) => void;
 	options: GameActionWithDescription[];
 };
-
-// export type Item
 
 export type GameActionWithDescription = {
 	desc: string;

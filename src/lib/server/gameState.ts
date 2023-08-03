@@ -3,16 +3,20 @@
 import type {
 	GameActionWithDescription,
 	Item,
+	ItemKey,
 	MsgFromServer,
-	PlayerState,
+	OtherPlayerInfo,
 	Scene
 } from '$lib/utils';
 
-export const FAKE_LATENCY = 500;
+export const FAKE_LATENCY = 300;
 export const players = new Map<string, User>();
 export const recentHappenings: string[] = [];
 
-export function sendEveryoneWorld(triggeredBy: string) {
+export async function sendEveryoneWorld(triggeredBy: string) {
+	await new Promise((r) => {
+		setTimeout(r, FAKE_LATENCY);
+	});
 	for (const user of players.values()) {
 		if (user.connectionState && user.connectionState.con) {
 			const toSend = buildNextMsg(user, triggeredBy);
@@ -22,18 +26,24 @@ export function sendEveryoneWorld(triggeredBy: string) {
 }
 
 export function buildNextMsg(user: User, triggeredBy: string): MsgFromServer {
-	const scene = locations[user.playerState.in];
+	const scene = locations[user.in];
 	const sceneTexts: string[] = [scene.text];
 	sceneTexts.push(...user.extraTexts);
 
 	let nextMsg: MsgFromServer = {
 		triggeredBy: triggeredBy,
-		yourName: user.playerState.heroName,
+		yourName: user.heroName,
 		players: Array.from(players.values()).map((u) => {
-			return u.playerState;
+			return {
+				heroName: u.heroName,
+				inventory: u.inventory,
+				health: u.health,
+				in: u.in
+			} satisfies OtherPlayerInfo;
+			// return u.playerState;
 		}),
 		sceneTexts: sceneTexts,
-		actions: getAvailableActionsForPlayer(user.playerState)
+		actions: getAvailableActionsForPlayer(user)
 	};
 	return nextMsg;
 }
@@ -50,7 +60,7 @@ export function encode(event: string, data: object, noretry: boolean = false) {
 	return textEncoder.encode(toEncode);
 }
 
-export function getAvailableActionsForPlayer(p: PlayerState): GameActionWithDescription[] {
+export function getAvailableActionsForPlayer(p: User): GameActionWithDescription[] {
 	let res: GameActionWithDescription[] = [];
 	const removedNeedsUnmet = locations[p.in].options.filter((o) => {
 		if ('needs' in o) {
@@ -63,7 +73,7 @@ export function getAvailableActionsForPlayer(p: PlayerState): GameActionWithDesc
 	res.push(...removedNeedsUnmet);
 
 	const playersInRoom = Array.from(players.entries())
-		.filter(([id, usr]) => usr.playerState.in == p.in)
+		.filter(([id, usr]) => usr.in == p.in)
 		.map(([id, usr]) => id);
 
 	const usableItems = p.inventory.filter((ik) => {
@@ -103,10 +113,12 @@ export type User = {
 		con: ServerSentEventController;
 		stream: ReadableStream;
 	};
-	playerState: PlayerState;
+	// playerState: PlayerState;
+	heroName: string;
+	in: string;
+	inventory: ItemKey[];
+	health: number;
 	extraTexts: string[];
-	// nextMsg : MsgFromServer;
-	// stateWhenLastTravelled : PlayerState;
 };
 
 export type ServerSentEventController = ReadableStreamController<unknown>;
@@ -139,8 +151,8 @@ export const locations: Scenes = {
 	castle: {
 		text: 'You arrive at the castle',
 		onEnter: (user: User) => {
-			if (!user.playerState.inventory.includes('bandage')) {
-				user.playerState.inventory.push('bandage');
+			if (!user.inventory.includes('bandage')) {
+				user.inventory.push('bandage');
 				user.extraTexts.push('A passing soldier gives you a bandage');
 			}
 		},
@@ -161,9 +173,9 @@ export const locations: Scenes = {
 	},
 	throne: {
 		text: 'You enter the throne room',
-		onEnter(user) {
-			if (!user.playerState.inventory.includes('greenGem')) {
-				user.playerState.inventory.push('greenGem');
+		onEnter: (user) => {
+			if (!user.inventory.includes('greenGem')) {
+				user.inventory.push('greenGem');
 				user.extraTexts.push('You receive a green gem useful for finding forest passages');
 			}
 		},
@@ -192,7 +204,7 @@ export const locations: Scenes = {
 export const items = {
 	greenGem: {},
 	bandage: {
-		onUse: (user: PlayerState, target: PlayerState) => {
+		onUse: (user: User, target: User) => {
 			target.health += 10;
 			user.inventory = user.inventory.filter((i) => i != 'bandage');
 		}

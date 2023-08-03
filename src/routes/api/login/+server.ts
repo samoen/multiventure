@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { isJoin, type MsgFromServer, type PlayerState } from '$lib/utils';
+import { isJoin, type MsgFromServer } from '$lib/utils';
 import { buildNextMsg, FAKE_LATENCY, players, type User } from '$lib/server/gameState';
 
 export const POST: RequestHandler = async (r) => {
@@ -16,17 +16,13 @@ export const POST: RequestHandler = async (r) => {
 
 	// new user
 	if (!players.has(msg.join)) {
-		const startPlayerState: PlayerState = {
+		players.set(msg.join, {
+			connectionState: null,
 			heroName: msg.join,
 			in: 'forest',
 			inventory: [],
-			health: 100
-		};
-		players.set(msg.join, {
-			connectionState: null,
-			playerState: startPlayerState,
+			health: 100,
 			extraTexts: []
-			// stateWhenLastTravelled:startPlayerState,
 		} satisfies User);
 	}
 	r.cookies.set('hero', msg.join, { path: '/' });
