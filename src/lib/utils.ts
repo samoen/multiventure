@@ -10,7 +10,7 @@ export type MsgFromServer = {
 	yourInventory:ItemKey[];
 	otherPlayers: OtherPlayerInfo[];
 	sceneTexts: string[];
-	actions: GameActionWithDescription[];
+	actions: GameActionSentToClient[];
 };
 
 export function isMsgFromServer(msg: object): msg is MsgFromServer {
@@ -32,33 +32,33 @@ export type Item = {
 export type Scene = {
 	text: string;
 	onEnter?: (user: User) => void;
-	options: GameActionWithDescription[];
+	options: GameAction[];
 };
 
-export type GameActionWithDescription = {
-	desc: string;
-	needs?: ItemKey;
-	action: GameAction;
-};
-
-export type GameAction = Travel | UseItem;
-export type Travel = {
-	go: SceneKey;
-};
-
-export function isTravel(msg: object): msg is Travel {
-	return 'go' in msg;
-}
-export type UseItem = {
-	use: ItemKey;
-	targetHero: HeroName;
-};
-export function isUseItem(msg: object): msg is UseItem {
-	return 'use' in msg;
+export type GameActionReady = {
+	gameAction : GameAction,
+	itemKey?:ItemKey,
+	actor:User,
+	target:User
 }
 
-export function isGameAction(msg: object): msg is GameAction {
-	return isTravel(msg) || isUseItem(msg);
+export type GameAction = {
+	id:string,
+	onAct:((actor:User,target:User)=>void),
+	buttonText:string,
+	includeIf?:(user:User)=>boolean,
+};
+
+export type GameActionSelected = {
+	id:string
+}
+export function isGameActionSelected(msg: object): msg is GameActionSelected {
+	return 'id' in msg;
+}
+
+export type GameActionSentToClient = {
+	id:string,
+	buttonText:string,
 }
 
 export type JoinGame = {

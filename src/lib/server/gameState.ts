@@ -1,12 +1,13 @@
 // Put things in here that should only be available to the server
 
 import type {
-	GameActionWithDescription,
 	Item,
 	ItemKey,
 	MsgFromServer,
 	OtherPlayerInfo,
-	Scene
+	Scene,
+	GameAction,
+	GameActionReady
 } from '$lib/utils';
 
 export const FAKE_LATENCY = 300;
@@ -48,7 +49,12 @@ export function buildNextMsg(user: User, triggeredBy: HeroName): MsgFromServer {
 			} satisfies OtherPlayerInfo;
 		}),
 		sceneTexts: sceneTexts,
-		actions: getAvailableActionsForPlayer(user)
+		actions: getAvailableActionsForPlayer(user).map((readyAction)=>{
+			return {
+				id:readyAction.gameAction.id,
+				buttonText:readyAction.gameAction.buttonText
+			}
+		})
 	};
 	return nextMsg;
 }
@@ -63,49 +69,61 @@ export function encode(event: string, data: object, noretry: boolean = false) {
 	return textEncoder.encode(toEncode);
 }
 
-export function getAvailableActionsForPlayer(p: User): GameActionWithDescription[] {
-	const res: GameActionWithDescription[] = [];
-	const removedNeedsUnmet = locations[p.currentScene].options.filter((o) => {
-		if ('needs' in o) {
-			if (!p.inventory.includes(o.needs)) {
-				return false;
-			}
+export function getAvailableActionsForPlayer(p: User): GameActionReady[] {
+	const res: GameActionReady[] = [];
+	const actionsFromScene : GameAction[] = locations[p.currentScene].options.filter((o) => {
+		if (o.includeIf(p)) {
+			return true;
 		}
-		return true;
+		return false;
+	})
+	const readyActionsFromScene : GameActionReady[] = 
+	actionsFromScene
+	.map((action)=>{
+		return {
+			gameAction:action,
+			actor:p,
+			target:p
+		}
 	});
-	res.push(...removedNeedsUnmet);
+	res.push(...readyActionsFromScene);
 
-	const playersInRoom = Array.from(users.entries())
+	const usableItemsReadyActions: GameActionReady[] = [];
+
+	const usersInRoom : User[] = Array.from(users.entries())
 		.filter(([id, usr]) => usr.currentScene == p.currentScene)
-		.map(([id, usr]) => id);
+		.map(([id, usr]) => usr);
 
-	const usableItems = p.inventory.filter((ik) => {
+
+	const usableItemsInInventory = p.inventory.filter((ik) => {
 		if ('onUse' in items[ik]) {
 			return true;
 		}
 		return false;
 	});
-	const usableItemsActions: GameActionWithDescription[] = [];
 
-	usableItems.forEach((ik) => {
-		// const i = items[ik]
-		// if("onUse" in i){
-		playersInRoom.forEach((pk) => {
-			let descTarget = pk;
-			if (pk == p.heroName) {
-				descTarget = 'self';
-			}
-			usableItemsActions.push({
-				desc: `use ${ik} on ${descTarget}`,
-				action: {
-					use: ik,
-					targetHero: pk
-				}
-			} satisfies GameActionWithDescription);
+	usableItemsInInventory.forEach((ik) => {
+		usersInRoom.forEach((userInRoom) => {
+			usableItemsReadyActions.push({
+					gameAction:{
+						id:`use${ik}on${userInRoom.heroName}`,
+						buttonText: `use ${ik} on ${userInRoom.heroName == p.heroName ? 'self' : userInRoom.heroName}`,
+						onAct(actor, target) {
+							const item = items[ik]
+							if("onUse" in item){
+								item.onUse(actor,target)
+							}
+						},
+					},
+					itemKey: ik,
+					actor:p,
+					target: userInRoom,
+			} satisfies GameActionReady);
 		});
 		// }
 	});
-	res.push(...usableItemsActions);
+
+	res.push(...usableItemsReadyActions);
 
 	return res;
 }
@@ -130,24 +148,22 @@ export type SceneKey = 'forest' | 'castle' | 'throne' | 'forestPassage';
 export type Scenes = {
 	[key in SceneKey]: Scene;
 };
-
+export function makeTravelAction(to:SceneKey, buttonText:string, includeIf:(user:User)=>boolean = (user)=>true):GameAction{
+	return {
+		id:`travelTo${to}`,
+		onAct:(actor:User,target:User)=>{
+			actor.currentScene = to
+		},
+		includeIf:includeIf,
+		buttonText:buttonText,
+	}
+}
 export const locations: Scenes = {
 	forest: {
 		text: 'You find yourself in the forest',
 		options: [
-			{
-				desc: 'hike to the castle',
-				action: {
-					go: 'castle'
-				}
-			},
-			{
-				desc: 'use green gem to find hidden passage',
-				needs: 'greenGem',
-				action: {
-					go: 'forestPassage'
-				}
-			}
+			makeTravelAction("castle","hike to castle"),
+			makeTravelAction("forestPassage","go to hidden passage",(user)=>user.inventory.includes("greenGem")),
 		]
 	},
 	castle: {
@@ -159,18 +175,8 @@ export const locations: Scenes = {
 			}
 		},
 		options: [
-			{
-				desc: 'screw this go back to forest',
-				action: {
-					go: 'forest'
-				}
-			},
-			{
-				desc: 'yeye approach the throne',
-				action: {
-					go: 'throne'
-				}
-			}
+			makeTravelAction("forest","shimmy back to forest"),
+			makeTravelAction("throne","approach the throne!"),
 		]
 	},
 	throne: {
@@ -182,23 +188,13 @@ export const locations: Scenes = {
 			}
 		},
 		options: [
-			{
-				desc: 'head back to the castle',
-				action: {
-					go: 'castle'
-				}
-			}
+			makeTravelAction('castle',"head back to castle")
 		]
 	},
 	forestPassage: {
 		text: 'You enter a dark passage, guided by the green gem you got from the king. good for you.',
 		options: [
-			{
-				desc: 'get out of this dank passage it stinks',
-				action: {
-					go: 'forest'
-				}
-			}
+				makeTravelAction("forest","get out of this dank passage it stinks")
 		]
 	}
 };

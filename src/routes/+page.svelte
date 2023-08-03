@@ -3,7 +3,8 @@
 		isMsgFromServer,
 		type GameAction,
 		type MsgFromServer,
-		type GameActionWithDescription
+		type GameActionSentToClient,
+
 	} from '$lib/utils';
 	import { onMount } from 'svelte';
 
@@ -15,12 +16,12 @@
 	let waitingForMyEvent = true;
 	let status = 'starting up';
 
-	async function choose(act: GameAction) {
+	async function choose(chosen: GameActionSentToClient) {
 		waitingForMyEvent = true;
 		status = 'submitting action';
-		let f = await fetch('/api/move', {
+		let f = await fetch('/api/action', {
 			method: 'POST',
-			body: JSON.stringify(act)
+			body: JSON.stringify({id:chosen.id})
 		});
 		if (!f.ok) {
 			// let res = await f.json();
@@ -160,10 +161,10 @@
 	{/each}
 	{#each lastMsgFromServer.actions as op, i}
 		<button 
-			on:click={() => choose(op.action)}
+			on:click={() => choose(op)}
 			disabled={waitingForMyEvent}
 			>
-			{op.desc}
+			{op.buttonText}
 		</button>
 	{/each}
 {/if}
