@@ -39,7 +39,7 @@ export function buildNextMsg(user: User, triggeredBy: HeroName): MsgFromServer {
 		yourHp: user.health,
 		yourInventory: user.inventory,
 		yourScene:user.currentScene,
-		otherPlayers: Array.from(users.values()).filter(u=>u.heroName != user.heroName).map((u) => {
+		otherPlayers: Array.from(users.values()).filter(u=>u.heroName != user.heroName && u.connectionState != null).map((u) => {
 			return {
 				heroName: u.heroName,
 				inventory: u.inventory,

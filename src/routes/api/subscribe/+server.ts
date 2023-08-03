@@ -54,6 +54,10 @@ export const GET: RequestHandler = async (event) => {
 			//     console.log(`stream cancel handler failed to close controller for ${ip} ${from} because ${e}`);
 			// }
 			player.connectionState = null;
+
+            setTimeout(()=>{
+                sendEveryoneWorld(from)
+            },1)
 		}
 	});
 	player.connectionState.stream = rs;
