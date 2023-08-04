@@ -1,11 +1,7 @@
-import {
-	encode,
-	users,
-	sendEveryoneWorld,
-	type ServerSentEventController
-} from '$lib/server/gameState';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { users } from '$lib/server/users';
+import { encode, sendEveryoneWorld } from '$lib/server/messaging';
 
 export const GET: RequestHandler = async (event) => {
 	await new Promise((resolve) => setTimeout(resolve, 500));
@@ -13,11 +9,13 @@ export const GET: RequestHandler = async (event) => {
 	const from = event.cookies.get('hero');
 	console.log(`stream requested by: ${ip} ${from}`);
 	if (!from || !users.has(from)) {
-		// console.log('hey')
 		return json({ error: 'need hero cookie to start a stream' }, { status: 401 });
 	}
 	const player = users.get(from);
-	if (player.connectionState != null) {
+	if(!player){
+		return json({ error: 'hero not found' }, { status: 401 });
+	}
+	if (player?.connectionState != null) {
 		if (player.connectionState.con != null) {
 			console.log(`${from} subscribing but already subscribed. sending close message`);
 			player.connectionState.con.enqueue(encode('closing', {}));
@@ -36,6 +34,7 @@ export const GET: RequestHandler = async (event) => {
 	// let controller: ServerSentEventController;
 	let rs = new ReadableStream({
 		start: async (c) => {
+			if(!player || !player.connectionState)return
 			console.log(`stream started with: ${ip}, hero ${from}`);
 			// controller = c;
 			player.connectionState.ip = ip;
@@ -55,9 +54,9 @@ export const GET: RequestHandler = async (event) => {
 			// }
 			player.connectionState = null;
 
-            setTimeout(()=>{
-                sendEveryoneWorld(from)
-            },1)
+			setTimeout(() => {
+				sendEveryoneWorld(from);
+			}, 1);
 		}
 	});
 	player.connectionState.stream = rs;

@@ -1,4 +1,4 @@
-import { users } from '$lib/server/gameState';
+import { users } from '$lib/server/users';
 import type { PageServerLoad } from './$types';
 
 // This runs on the server once when the page is first requested

@@ -1,17 +1,11 @@
 <script lang="ts">
-import {
-		isMsgFromServer,
-		type GameAction,
-		type MsgFromServer,
-		type GameActionSentToClient,
-
-	} from '$lib/utils';
+	import { isMsgFromServer, type MsgFromServer, type GameActionSentToClient } from '$lib/utils';
 	import { onMount } from 'svelte';
 
 	export let data;
 	let loginInput: string;
-	let source: EventSource;
-	let lastMsgFromServer: MsgFromServer;
+	let source: EventSource | null;
+	let lastMsgFromServer: MsgFromServer | null;
 	let loading = true;
 	let waitingForMyEvent = true;
 	let status = 'starting up';
@@ -21,11 +15,12 @@ import {
 		status = 'submitting action';
 		let f = await fetch('/api/action', {
 			method: 'POST',
-			body: JSON.stringify({id:chosen.id})
+			body: JSON.stringify({ id: chosen.id })
 		});
-		if (!f.ok) {
+
+		if (f.status > 399) {
 			// let res = await f.json();
-			// console.log(res);
+			console.log('action submit failed');
 			waitingForMyEvent = false;
 			status = 'playing';
 			return;
@@ -37,12 +32,11 @@ import {
 	}
 
 	function subscribeEvents() {
-		status = 'subscribing to events'
-		waitingForMyEvent = true
+		status = 'subscribing to events';
+		waitingForMyEvent = true;
 		source = new EventSource('/api/subscribe');
 
 		source.addEventListener('world', (e) => {
-
 			let sMsg = JSON.parse(e.data);
 			if (!isMsgFromServer(sMsg)) {
 				console.log('malformed event from server');
@@ -51,13 +45,13 @@ import {
 			lastMsgFromServer = sMsg;
 			if (waitingForMyEvent && sMsg.triggeredBy == sMsg.yourName) {
 				status = 'playing';
-				waitingForMyEvent = false
-				loading = false
+				waitingForMyEvent = false;
+				loading = false;
 			}
 		});
 		source.addEventListener('closing', (e) => {
 			console.log('got closing msg');
-			source.close();
+			source?.close();
 			status = 'you logged in elsewhere, connection closed';
 			lastMsgFromServer = null;
 		});
@@ -89,16 +83,15 @@ import {
 		status = 'submitting logout';
 		let f = await fetch('/api/logout', { method: 'POST' });
 		// let r = await f.json()
-		status = 'unsubscribing from events'
-		if (source.readyState != source.CLOSED) {
+		status = 'unsubscribing from events';
+		if (source?.readyState != source?.CLOSED) {
 			console.log('closing con from browser');
-			source.close();
+			source?.close();
 		}
 		source = null;
 		status = 'need manual login';
 		loading = false;
 	}
-
 </script>
 
 <h3>Status: {status}</h3>
@@ -160,10 +153,7 @@ import {
 		<p>{t}</p>
 	{/each}
 	{#each lastMsgFromServer.actions as op, i}
-		<button 
-			on:click={() => choose(op)}
-			disabled={waitingForMyEvent}
-			>
+		<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
 			{op.buttonText}
 		</button>
 	{/each}

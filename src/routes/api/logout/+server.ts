@@ -1,6 +1,7 @@
-import { FAKE_LATENCY, users } from '$lib/server/gameState';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { users } from '$lib/server/users';
+import { FAKE_LATENCY } from '$lib/server/messaging';
 
 export const POST: RequestHandler = async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));

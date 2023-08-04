@@ -1,12 +1,13 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { isJoin, type MsgFromServer } from '$lib/utils';
-import { buildNextMsg, FAKE_LATENCY, users, type User } from '$lib/server/gameState';
+import { FAKE_LATENCY } from '$lib/server/messaging';
+import { users, type User } from '$lib/server/users';
 
 export const POST: RequestHandler = async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
 	let msg = await r.request.json();
-	
+
 	if (!isJoin(msg)) {
 		return json('malformed login', { status: 400 });
 	}
@@ -23,7 +24,8 @@ export const POST: RequestHandler = async (r) => {
 			currentScene: 'forest',
 			inventory: [],
 			health: 100,
-			extraTexts: []
+			extraTexts: [],
+			flags: new Set()
 		} satisfies User);
 	}
 	r.cookies.set('hero', msg.join, { path: '/' });
