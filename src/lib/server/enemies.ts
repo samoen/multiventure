@@ -5,7 +5,7 @@ export const activeEnemies : ActiveEnemy[] = []
 
 export type ActiveEnemy = {
 	name:string,
-	currentLocation:SceneKey;
+	currentScene:SceneKey;
 	currentHealth:number;
 	template:EnemyTemplate;
 }
@@ -27,3 +27,15 @@ export const enemyTemplates: Record<string, EnemyTemplate> = {
 		attackDamage: 5
 	}
 };
+
+export function damageEnemy(enemy:ActiveEnemy, damage:number):{killed:boolean}{
+	enemy.currentHealth -= damage
+	if(enemy.currentHealth < 1){
+		const i = activeEnemies.findIndex(e=>e.name == enemy.name)
+		if(i>=0){
+			activeEnemies.splice(i,1)
+		}
+		return {killed:true}
+	}
+	return {killed:false}
+}

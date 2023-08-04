@@ -1,9 +1,10 @@
 import type { MsgFromServer, OtherPlayerInfo } from '$lib/utils';
 import { getAvailableActionsForPlayer } from './actions';
+import { activeEnemies } from './enemies';
 import { scenes } from './scenes';
 import { type HeroName, users, type User } from './users';
 
-export const FAKE_LATENCY = 300;
+export const FAKE_LATENCY = 100;
 
 export const recentHappenings: string[] = [];
 
@@ -53,7 +54,13 @@ export function buildNextMsg(user: User, triggeredBy: HeroName): MsgFromServer {
 				buttonText: gameAction.buttonText
 			};
 		}),
-		happenings: recentHappenings
+		happenings: recentHappenings,
+		enemiesInScene: activeEnemies.filter(e => e.currentScene == user.currentScene).map((e) => {
+			return {
+				health: e.currentHealth,
+				name: e.name,
+			}
+		}),
 	};
 	return nextMsg;
 }

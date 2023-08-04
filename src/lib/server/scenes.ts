@@ -1,7 +1,8 @@
 import type { ActionGenerator, SelfActionGenerator } from './actions';
+import { activeEnemies, enemyTemplates } from './enemies';
 import type { User } from './users';
 
-export type SceneKey = 'forest' | 'castle' | 'throne' | 'forestPassage';
+export type SceneKey = 'forest' | 'castle' | 'throne' | 'forestPassage' | 'goblinCamp';
 export type Scene = {
 	text: string;
 	onEnter?: (user: User) => void;
@@ -51,7 +52,7 @@ export const scenes : Record<SceneKey,Scene> = {
 		options: [simpleTravel('castle', 'Leave the throne room')]
 	},
 	forestPassage: {
-		text: 'You find a hidden forest passage. It leads to an ancient temple or something',
+		text: `You discover a hidden passage. Now this place is super dank`,
 		onEnter(user){
 			if (!user.flags.has('gotFreeStarterWeapon')) {
 				user.extraTexts.push('A forest spirit appears! It speaks a question: "would you like a sword or a bow?"');
@@ -78,15 +79,50 @@ export const scenes : Record<SceneKey,Scene> = {
 				generate(actor: User){
 					if (actor.flags.has('gotFreeStarterWeapon')) return null;
 					return {
-						buttonText: 'I am mighty, I will take of the sword!',
-						onAct: () => {
+						buttonText: 'I am mighty, I will take the sword!',
+						onAct(){
 							actor.inventory.push('shortSword');
 							actor.flags.add('gotFreeStarterWeapon');
 							actor.extraTexts = ["A shiny sword materializes in your hand!"];
 						}
 					};
 				}
+			},
+			{
+				targeting:'noTarget',
+				generate(actor) {
+					if(!actor.flags.has('gotFreeStarterWeapon')) return null;
+					return {
+						buttonText:'Push through to the end of the passage',
+						onAct() {
+							actor.currentScene = 'goblinCamp'
+						},
+					}
+				},
 			}
+		]
+	},
+	goblinCamp:{
+		text:"On no! you have stumbled into a goblin camp",
+		onEnter(user) {
+			if(!(activeEnemies.some(e=>e.name=='Gorlak') || activeEnemies.some(e=>e.name=='Murk'))){
+				user.extraTexts.push(`A pair of goblins rush out of a tent.. "Hey Gorlak, looks like lunch!" "Right you are Murk lets eat!"`)
+				activeEnemies.push({
+					name:'Gorlak',
+					currentScene: 'goblinCamp',
+					currentHealth:20,
+					template:enemyTemplates.goblin,
+				})
+				activeEnemies.push({
+					name:'Murk',
+					currentScene: 'goblinCamp',
+					currentHealth:20,
+					template:enemyTemplates.goblin,
+				})
+			}
+		},
+		options:[
+			simpleTravel("forestPassage","Escape back through the hidden passage")
 		]
 	}
 };

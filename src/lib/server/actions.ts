@@ -1,4 +1,4 @@
-import type { ActiveEnemy } from './enemies';
+import { activeEnemies, type ActiveEnemy } from './enemies';
 import { items } from './items';
 import { scenes } from './scenes';
 import { users, type User } from './users';
@@ -29,6 +29,7 @@ export function getAvailableActionsForPlayer(p: User): GameAction[] {
 	const availableActions: GameAction[] = [];
 
 	const friendlyActionGenerators: NearbyFriendlyActionGenerator[] = [];
+	const aggressiveActionGenerators: NearbyEnemyActionGenerator[] = [];
 
 	for (const pa of scenes[p.currentScene].options) {
 		if (pa.targeting == 'noTarget') {
@@ -46,6 +47,8 @@ export function getAvailableActionsForPlayer(p: User): GameAction[] {
 			if (gameAction) availableActions.push(gameAction);
 		} else if (actionGenerator.targeting == 'usersInScene') {
 			friendlyActionGenerators.push(actionGenerator);
+		}else if (actionGenerator.targeting == "enemiesInScene") {
+			aggressiveActionGenerators.push(actionGenerator);
 		}
 	}
 
@@ -57,6 +60,17 @@ export function getAvailableActionsForPlayer(p: User): GameAction[] {
 	for (const friendlyActionGenerator of friendlyActionGenerators) {
 		for (const user of usersInRoom) {
 			const gameAction = friendlyActionGenerator.generate(p, user);
+			if (gameAction) {
+				availableActions.push(gameAction);
+			}
+
+		}
+	}
+
+	const enemiesInScene: ActiveEnemy[] = activeEnemies.filter(e=>e.currentScene == p.currentScene)
+	for (const aggressiveActionGenerator of aggressiveActionGenerators) {
+		for (const enemy of enemiesInScene) {
+			const gameAction = aggressiveActionGenerator.generate(p, enemy);
 			if (gameAction) {
 				availableActions.push(gameAction);
 			}

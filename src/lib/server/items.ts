@@ -1,10 +1,11 @@
 import type { ActionGenerator } from './actions';
 import type { User } from './users';
 import { pushHappening } from './messaging';
+import { damageEnemy } from './enemies';
 
-export type ItemKey = keyof typeof items;
+export type ItemKey = 'bandage' | 'shortBow' | 'shortSword';
 
-export const items : Record<string, ActionGenerator>= {
+export const items : Record<ItemKey, ActionGenerator>= {
 	bandage: {
 		targeting: 'usersInScene',
 		generate: (actor: User, target: User) => {
@@ -28,8 +29,11 @@ export const items : Record<string, ActionGenerator>= {
 			return {
 				buttonText:`fire an arrow at ${target.name}`,
 				onAct(){
-					target.currentHealth -= 10
-					actor.extraTexts = ["Direct hit!"]
+					const dmgResult = damageEnemy(target,5)
+					actor.extraTexts = [`Your arrow hit ${target.name}!`]
+					if(dmgResult.killed){
+						actor.extraTexts.push(`${target.name} dies from the arrow`)
+					}
 				}
 			}
 		}
@@ -40,9 +44,12 @@ export const items : Record<string, ActionGenerator>= {
 			return {
 				buttonText:`slash ${target.name} with your short sword`,
 				onAct(){
-					target.currentHealth -= 10
+					const dmgResult = damageEnemy(target,10)
 					actor.health -= target.template.attackDamage
-					actor.extraTexts = ["You slashed the enemy and took a hit retaliation"]
+					actor.extraTexts = [`You slashed ${target.name} but took a hit in retaliation`]
+					if(dmgResult.killed){
+						actor.extraTexts.push(`${target.name} was slain by your sword`)
+					}
 				}
 			}
 		}

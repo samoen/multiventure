@@ -144,6 +144,13 @@
 		</p>
 		<p />
 	{/each}
+	<h3>Nearby Enemies:</h3>
+	{#each lastMsgFromServer.enemiesInScene as e}
+		<p>
+			{e.name} has {e.health}hp
+		</p>
+		<p />
+	{/each}
 	<h3>Me:</h3>
 	<p>Health: {lastMsgFromServer.yourHp}</p>
 	<p>Inventory: {lastMsgFromServer.yourInventory}</p>
