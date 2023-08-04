@@ -2,7 +2,7 @@ import {
 	FAKE_LATENCY,
 	getAvailableActionsForPlayer,
 	items,
-	locations,
+	scenes,
 	users,
 	sendEveryoneWorld
 } from '$lib/server/gameState';
@@ -33,7 +33,7 @@ export const POST = (async (r) => {
 	actionFromId.onAct()
 
 	if (player.currentScene != oldSceneKey) {
-		const scene = locations[player.currentScene]
+		const scene = scenes[player.currentScene]
 		player.extraTexts = [];
 		if ('onEnter' in scene) {
 			scene.onEnter(player)

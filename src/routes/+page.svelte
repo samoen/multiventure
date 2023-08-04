@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {
+import {
 		isMsgFromServer,
 		type GameAction,
 		type MsgFromServer,
@@ -101,7 +101,7 @@
 
 </script>
 
-<h3>status: {status}</h3>
+<h3>Status: {status}</h3>
 {#if loading}
 	<p>loading...</p>
 {/if}
@@ -140,7 +140,7 @@
 
 {#if lastMsgFromServer && source && source.readyState == source.OPEN}
 	<p>
-		I am {lastMsgFromServer.yourName}
+		Logged in as {lastMsgFromServer.yourName}
 		<button on:click={logOut}>log out</button>
 	</p>
 	<h3>Other Players:</h3>
@@ -166,5 +166,9 @@
 			>
 			{op.buttonText}
 		</button>
+	{/each}
+	<h3>Recent happenings:</h3>
+	{#each lastMsgFromServer.happenings as h}
+		<p>{h}</p>
 	{/each}
 {/if}

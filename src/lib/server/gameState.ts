@@ -4,11 +4,10 @@ import type {
 	ItemKey,
 	MsgFromServer,
 	OtherPlayerInfo,
-	Scene,
 	GameAction,
-	PreAction,
-	PreActionTargetsUsers,
-	PreActionTargetsOnlySelf
+	ActionGenerator,
+	NearbyFriendlyActionGenerator,
+	SelfActionGenerator
 } from '$lib/utils';
 
 export const FAKE_LATENCY = 300;
@@ -31,7 +30,7 @@ export async function sendEveryoneWorld(triggeredBy: HeroName) {
 }
 
 export function buildNextMsg(user: User, triggeredBy: HeroName): MsgFromServer {
-	const scene = locations[user.currentScene];
+	const scene = scenes[user.currentScene];
 	const sceneTexts: string[] = [scene.text];
 	sceneTexts.push(...user.extraTexts);
 
@@ -55,7 +54,8 @@ export function buildNextMsg(user: User, triggeredBy: HeroName): MsgFromServer {
 				id: gameAction.id,
 				buttonText: gameAction.buttonText
 			}
-		})
+		}),
+		happenings:recentHappenings,
 	};
 	return nextMsg;
 }
@@ -73,11 +73,11 @@ export function encode(event: string, data: object, noretry: boolean = false) {
 export function getAvailableActionsForPlayer(p: User): GameAction[] {
 	const res: GameAction[] = [];
 
-	const onlySelfPreActions: PreActionTargetsOnlySelf[] = []
-	const userTargetingPreActions: PreActionTargetsUsers[] = []
+	const onlySelfPreActions: SelfActionGenerator[] = []
+	const userTargetingPreActions: NearbyFriendlyActionGenerator[] = []
 
-	locations[p.currentScene].options.forEach((pa) => {
-		if (pa.targetKind == 'onlyself') {
+	scenes[p.currentScene].options.forEach((pa) => {
+		if (pa.targetKind == 'onlySelf') {
 			onlySelfPreActions.push(pa)
 		} else if (pa.targetKind == 'usersInRoom') {
 			userTargetingPreActions.push(pa)
@@ -87,19 +87,15 @@ export function getAvailableActionsForPlayer(p: User): GameAction[] {
 		const preAction = items[ik]
 		if (preAction.targetKind == 'usersInRoom') {
 			userTargetingPreActions.push(preAction)
-		} else if (preAction.targetKind == 'onlyself') {
+		} else if (preAction.targetKind == 'onlySelf') {
 			onlySelfPreActions.push(preAction)
 		}
 	})
 
 	const onlySelfActions = onlySelfPreActions
 		.map((pe) => pe.generate(p))
-		.filter((ga) => {
-			if (ga.includeIf()) {
-				return true;
-			}
-			return false;
-		})
+		.filter((ga) => ga)
+
 	res.push(...onlySelfActions);
 
 	const userTargetingActions: GameAction[] = [];
@@ -110,7 +106,7 @@ export function getAvailableActionsForPlayer(p: User): GameAction[] {
 	userTargetingPreActions.forEach((prea) => {
 		usersInRoom.forEach((userInRoom) => {
 			const gameAction = prea.generate(p, userInRoom)
-			if (gameAction.includeIf()) {
+			if (gameAction) {
 				userTargetingActions.push(gameAction);
 			}
 		});
@@ -136,33 +132,33 @@ export type User = {
 
 export type ServerSentEventController = ReadableStreamController<unknown>;
 
-export type SceneKey = 'forest' | 'castle' | 'throne' | 'forestPassage';
-
-export type Scenes = {
-	[key in SceneKey]: Scene;
-};
-export function makeTravelAction(to: SceneKey, buttonText: string, includeIf: (user) => boolean = (user) => true): PreActionTargetsOnlySelf {
+export function basicTravelAction(to: SceneKey, buttonText: string): SelfActionGenerator {
 	return {
-		targetKind: 'onlyself',
+		targetKind: 'onlySelf',
 		generate: (actor: User) => {
 			return {
 				id: `travelTo${to}`,
 				onAct: () => {
 					actor.currentScene = to
 				},
-				includeIf: () => {
-					return includeIf(actor)
-				},
 				buttonText: buttonText,
 			}
 		}
 	}
 }
-export const locations: Scenes = {
+
+
+export type SceneKey = 'forest' | 'castle' | 'throne' | 'forestPassage';
+export type Scene = {
+	text: string;
+	onEnter?: (user: User) => void;
+	options: ActionGenerator[];
+};
+export const scenes:Record<SceneKey,Scene> = {
 	forest: {
 		text: 'You find yourself in the forest',
 		options: [
-			makeTravelAction("castle", "hike to castle"),
+			basicTravelAction("castle", "hike to castle"),
 		]
 	},
 	castle: {
@@ -174,8 +170,8 @@ export const locations: Scenes = {
 			}
 		},
 		options: [
-			makeTravelAction("forest", "shimmy back to forest"),
-			makeTravelAction("throne", "approach the throne!"),
+			basicTravelAction("forest", "Delve back into forest"),
+			basicTravelAction("throne", "Approach the throne!"),
 		]
 	},
 	throne: {
@@ -187,23 +183,68 @@ export const locations: Scenes = {
 			}
 		},
 		options: [
-			makeTravelAction('castle', "head back to castle")
+			basicTravelAction('castle', "Leave the throne room")
 		]
 	},
 	forestPassage: {
-		text: 'You enter a dark passage, guided by the green gem you got from the king. good for you.',
+		text: 'Guided by the green gem, you enter a hidden forest passage',
+		onEnter:(user) =>{
+			if(!hasGotFreeWeapon.has(user.heroName)){
+				user.extraTexts.push('A forest spirit asks you - would you like a sword or a bow?')
+			}
+		},
 		options: [
-			makeTravelAction("forest", "get out of this dank passage it stinks")
+			basicTravelAction("forest", "get out of this dank passage it stinks"),
+			{
+				targetKind:'onlySelf',
+				generate:(actor)=>{
+					if(hasGotFreeWeapon.has(actor.heroName)) return null
+					return {
+						id:'chooseBow',
+						buttonText:'I am skillful, I choose the bow',
+						onAct:()=>{
+							actor.inventory.push('shortBow')
+							hasGotFreeWeapon.add(actor.heroName)
+							actor.extraTexts = []
+						},
+					}
+				}
+			},
+			{
+				targetKind:'onlySelf',
+				generate:(actor)=>{
+					if(hasGotFreeWeapon.has(actor.heroName)) return null
+					return {
+						id:'chooseSword',
+						buttonText:'I am mighty, I will take of the sword!',
+						onAct:()=>{
+							actor.inventory.push('shortSword')
+							hasGotFreeWeapon.add(actor.heroName)
+							actor.extraTexts = []
+						},
+					}
+				}
+			},
 		]
 	}
 };
 
-export const items: Record<string, PreAction> = {
-	greenGem: makeTravelAction(
-		"forestPassage",
-		"use green gem",
-		(user) => user.currentScene == 'forest'
-	),
+export const hasGotFreeWeapon : Set<HeroName> = new Set()
+
+export const items = {
+	greenGem: {
+		targetKind: 'onlySelf',
+		generate: (actor: User) => {
+			if(actor.currentScene != 'forest') return null;
+			return {
+				id: `goForestPassage`,
+				onAct: () => {
+					actor.currentScene = 'forestPassage'
+				},
+				buttonText: `use green gem`,
+			}
+		}
+	},
 	bandage: {
 		targetKind: 'usersInRoom',
 		generate: (actor: User, target: User) => {
@@ -212,12 +253,30 @@ export const items: Record<string, PreAction> = {
 				onAct: () => {
 					target.health += 10;
 					actor.inventory = actor.inventory.filter((i) => i != 'bandage');
+					pushHappening(`${actor.heroName} healed ${target.heroName == actor.heroName ? 'themself' : target.heroName} for 10hp`)
 				},
 				buttonText: `bandage up ${target.heroName == actor.heroName ? 'self' : target.heroName}`,
-				includeIf: () => {
-					return true
-				},
 			}
 		}
+	},
+	shortBow:{
+		targetKind:'usersInRoom',
+		generate(actor, target) {
+			return null
+		},
+	},
+	shortSword:{
+		targetKind:'usersInRoom',
+		generate(actor, target) {
+			return null
+		},
+	},
+
+} as const satisfies Record<string, ActionGenerator>;
+
+export function pushHappening(toPush:string){
+	recentHappenings.push(toPush)
+	if(recentHappenings.length > 10){
+		recentHappenings.shift()
 	}
-} as const satisfies Record<string, PreAction>;
+}

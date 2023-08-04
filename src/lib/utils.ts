@@ -1,6 +1,6 @@
 // This file is for stuff available to both the server and browser
 
-import type { HeroName, SceneKey, User, items, locations } from './server/gameState';
+import type { HeroName, SceneKey, User, items, scenes } from './server/gameState';
 
 export type MsgFromServer = {
 	triggeredBy: HeroName;
@@ -11,6 +11,7 @@ export type MsgFromServer = {
 	otherPlayers: OtherPlayerInfo[];
 	sceneTexts: string[];
 	actions: GameActionSentToClient[];
+	happenings:string[];
 };
 
 export function isMsgFromServer(msg: object): msg is MsgFromServer {
@@ -27,31 +28,32 @@ export type OtherPlayerInfo = {
 
 export type ItemKey = keyof typeof items;
 
-export type Scene = {
-	text: string;
-	onEnter?: (user: User) => void;
-	options: PreAction[];
-};
-
-export type PreActionTargetsOnlySelf = {
-	targetKind: 'onlyself'
+export type SelfActionGenerator = {
+	targetKind: 'onlySelf'
 	generate:(actor:User)=>GameAction
 }
 
-export type PreActionTargetsUsers ={
+export type NearbyFriendlyActionGenerator ={
 	targetKind: 'usersInRoom'
-	generate:(actor:User,target:User)=>GameAction
+	generate:(actor:User,target:User)=>GameAction | null
 }
-export type PreAction = PreActionTargetsOnlySelf | PreActionTargetsUsers
+
+export type NearbyEnemyActionGenerator ={
+	targetKind: 'enemiesInRoom'
+	generate:(actor:User,target:Enemy)=>GameAction | null
+}
+
+export type Enemy = {
+	health:number;
+}
+
+export type ActionGenerator = SelfActionGenerator | NearbyFriendlyActionGenerator
 
 export type GameAction = {
 	id:string,
 	onAct:(()=>void),
 	buttonText:string,
-	includeIf:()=>boolean,
 };
-
-// export type ActionTarget = 'selfOnly'
 
 export type GameActionSelected = {
 	id:string
