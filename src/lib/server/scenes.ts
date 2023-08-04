@@ -19,7 +19,7 @@ export const scenes : Record<SceneKey,Scene> = {
 				generate: (actor: User) => {
 					if (!actor.flags.has('heardAboutHiddenPassage')) return null;
 					return {
-						buttonText: `search deep into dense forest`,
+						buttonText: `Search deep into dense forest`,
 						onAct: () => {
 							actor.currentScene = 'forestPassage';
 						}
@@ -52,14 +52,14 @@ export const scenes : Record<SceneKey,Scene> = {
 		options: [simpleTravel('castle', 'Leave the throne room')]
 	},
 	forestPassage: {
-		text: `You discover a hidden passage. Now this place is super dank`,
+		text: `You are in a hidden passage.`,
 		onEnter(user){
 			if (!user.flags.has('gotFreeStarterWeapon')) {
 				user.extraTexts.push('A forest spirit appears! It speaks a question: "would you like a sword or a bow?"');
 			}
 		},
 		options: [
-			simpleTravel('forest', 'get out of this dank passage it stinks'),
+			simpleTravel('forest', 'Get out of this dank passage it stinks'),
 			{
 				targeting: 'noTarget',
 				generate(actor : User){

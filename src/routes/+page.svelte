@@ -30,6 +30,7 @@
 		// invalidateAll();
 		// lastMsgFromServer = res;
 	}
+	let happenings:HTMLElement;
 
 	function subscribeEvents() {
 		status = 'subscribing to events';
@@ -47,6 +48,7 @@
 				status = 'playing';
 				waitingForMyEvent = false;
 				loading = false;
+				happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
 			}
 		});
 		source.addEventListener('closing', (e) => {
@@ -165,7 +167,26 @@
 		</button>
 	{/each}
 	<h3>Recent happenings:</h3>
-	{#each lastMsgFromServer.happenings as h}
-		<p>{h}</p>
-	{/each}
+	<div class='happenings' bind:this={happenings}>
+		{#each lastMsgFromServer.happenings as h}
+			<p>{h}</p>
+		{/each}
+	</div>
 {/if}
+
+<style>
+	:global(body) {
+        background-color: aliceblue;
+    }
+	.happenings{
+		display: inline-block;
+		background-color: lightblue;
+		height:90px;
+		padding-right:10px;
+		border: 1px solid black;
+		overflow-y: auto;
+	}
+	.happenings > p {
+		margin: 2px;
+	}
+</style>

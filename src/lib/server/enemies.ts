@@ -1,4 +1,6 @@
+import { pushHappening } from "./messaging";
 import type { SceneKey } from "./scenes";
+import type { User } from "./users";
 
 
 export const activeEnemies : ActiveEnemy[] = []
@@ -28,13 +30,15 @@ export const enemyTemplates: Record<string, EnemyTemplate> = {
 	}
 };
 
-export function damageEnemy(enemy:ActiveEnemy, damage:number):{killed:boolean}{
+export function damageEnemy(actor:User, enemy:ActiveEnemy, damage:number):{killed:boolean}{
 	enemy.currentHealth -= damage
+	pushHappening(`${actor.heroName} hit ${enemy.name} for ${damage} damage`)
 	if(enemy.currentHealth < 1){
 		const i = activeEnemies.findIndex(e=>e.name == enemy.name)
 		if(i>=0){
 			activeEnemies.splice(i,1)
 		}
+		pushHappening(`${actor.heroName} killed ${enemy.name}`)
 		return {killed:true}
 	}
 	return {killed:false}
