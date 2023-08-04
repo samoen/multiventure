@@ -15,7 +15,7 @@
 		status = 'submitting action';
 		let f = await fetch('/api/action', {
 			method: 'POST',
-			body: JSON.stringify({ id: chosen.id })
+			body: JSON.stringify({ buttonText: chosen.buttonText })
 		});
 
 		if (f.status > 399) {

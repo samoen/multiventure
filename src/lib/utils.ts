@@ -29,14 +29,13 @@ export type OtherPlayerInfo = {
 };
 
 export type GameActionSelected = {
-	id: string;
+	buttonText: string;
 };
 export function isGameActionSelected(msg: object): msg is GameActionSelected {
-	return 'id' in msg;
+	return 'buttonText' in msg;
 }
 
 export type GameActionSentToClient = {
-	id: string;
 	buttonText: string;
 };
 

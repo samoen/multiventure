@@ -9,7 +9,6 @@ export const items : Record<string, ActionGenerator>= {
 		targeting: 'usersInScene',
 		generate: (actor: User, target: User) => {
 			return {
-				id: `${actor.heroName}bandage${target.heroName}`,
 				onAct: () => {
 					target.health += 10;
 					actor.inventory = actor.inventory.filter((i) => i != 'bandage');
@@ -26,17 +25,26 @@ export const items : Record<string, ActionGenerator>= {
 	shortBow: {
 		targeting: 'enemiesInScene',
 		generate(actor, target) {
-			// return {
-			// 	id:``
-			// }
-			// target.currentHealth -= 10
-			return null
+			return {
+				buttonText:`fire an arrow at ${target.name}`,
+				onAct(){
+					target.currentHealth -= 10
+					actor.extraTexts = ["Direct hit!"]
+				}
+			}
 		}
 	},
 	shortSword: {
 		targeting: 'enemiesInScene',
 		generate(actor, target) {
-			return null;
+			return {
+				buttonText:`slash ${target.name} with your short sword`,
+				onAct(){
+					target.currentHealth -= 10
+					actor.health -= target.template.attackDamage
+					actor.extraTexts = ["You slashed the enemy and took a hit retaliation"]
+				}
+			}
 		}
 	}
 };

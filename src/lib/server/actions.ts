@@ -21,7 +21,6 @@ export type NearbyEnemyActionGenerator = {
 export type ActionGenerator = SelfActionGenerator | NearbyFriendlyActionGenerator | NearbyEnemyActionGenerator;
 
 export type GameAction = {
-	id: string;
 	onAct: () => void;
 	buttonText: string;
 };

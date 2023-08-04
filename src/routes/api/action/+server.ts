@@ -25,10 +25,10 @@ export const POST = (async (r) => {
 
 	const oldSceneKey = player.currentScene;
 
-	let actionFromId = getAvailableActionsForPlayer(player).find((g) => g.id == msg.id);
+	let actionFromId = getAvailableActionsForPlayer(player).find((g) => g.buttonText == msg.buttonText);
 	if (!actionFromId) {
-		console.log(`rejected action ${JSON.stringify(msg)} because not avail`);
-		return json(`action id ${msg.id} not available`, { status: 400 });
+		console.log(`rejected action ${JSON.stringify(msg)} because not available`);
+		return json(`action ${msg.buttonText} not available`, { status: 400 });
 	}
 	actionFromId.onAct();
 

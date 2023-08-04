@@ -50,7 +50,6 @@ export function buildNextMsg(user: User, triggeredBy: HeroName): MsgFromServer {
 		sceneTexts: sceneTexts,
 		actions: getAvailableActionsForPlayer(user).map((gameAction) => {
 			return {
-				id: gameAction.id,
 				buttonText: gameAction.buttonText
 			};
 		}),

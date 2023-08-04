@@ -18,7 +18,6 @@ export const scenes : Record<SceneKey,Scene> = {
 				generate: (actor: User) => {
 					if (!actor.flags.has('heardAboutHiddenPassage')) return null;
 					return {
-						id: `goForestPassage`,
 						buttonText: `search deep into dense forest`,
 						onAct: () => {
 							actor.currentScene = 'forestPassage';
@@ -65,7 +64,6 @@ export const scenes : Record<SceneKey,Scene> = {
 				generate(actor : User){
 					if (actor.flags.has('gotFreeStarterWeapon')) return null;
 					return {
-						id: 'chooseBow',
 						buttonText: 'I am skillful, I choose the bow',
 						onAct: () => {
 							actor.inventory.push('shortBow');
@@ -80,7 +78,6 @@ export const scenes : Record<SceneKey,Scene> = {
 				generate(actor: User){
 					if (actor.flags.has('gotFreeStarterWeapon')) return null;
 					return {
-						id: 'chooseSword',
 						buttonText: 'I am mighty, I will take of the sword!',
 						onAct: () => {
 							actor.inventory.push('shortSword');
@@ -99,7 +96,6 @@ export function simpleTravel(to: SceneKey, buttonText: string): SelfActionGenera
 		targeting: 'noTarget',
 		generate(actor) {
 			return {
-				id: `travelTo${to}`,
 				onAct(){
 					actor.currentScene = to;
 				},
