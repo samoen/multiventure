@@ -1,9 +1,29 @@
-export type Enemy = {
-	health: number;
+import type { SceneKey } from "./scenes";
+
+
+export const activeEnemies : ActiveEnemy[] = []
+
+export type ActiveEnemy = {
+	currentLocation:SceneKey;
+	currentHealth:number;
+	template:EnemyTemplate;
+}
+
+export type EnemyTemplate = {
+	maxHealth: number;
 	attackDamage: number;
 };
 
-export const goblin: Enemy = {
-	health: 50,
-	attackDamage: 15
+export type EnemyKey = keyof typeof enemyTemplates;
+
+export const enemyTemplates: Record<string, EnemyTemplate> = {
+	goblin: {
+		maxHealth: 50,
+		attackDamage: 15,
+
+	},
+	wolf: {
+		maxHealth: 30,
+		attackDamage: 5
+	}
 };

@@ -1,11 +1,9 @@
-// Put things in here that should only be available to the server
-
 import type { ItemKey } from './items';
 import type { SceneKey } from './scenes';
 
 export type UserId = string;
 export type HeroName = string;
-export type Flag = 'gotFreeForestWeapon';
+export type Flag = 'gotFreeStarterWeapon' | 'heardAboutHiddenPassage';
 export type User = {
 	connectionState: {
 		ip: string | null; 

@@ -1,24 +1,24 @@
-import type { Enemy } from './enemies';
-import { users, type User } from './users';
+import type { ActiveEnemy } from './enemies';
 import { items } from './items';
-import { scenes, type SceneKey } from './scenes';
+import { scenes } from './scenes';
+import { users, type User } from './users';
 
 export type SelfActionGenerator = {
-	targetKind: 'onlySelf';
+	targeting: 'noTarget';
 	generate: (actor: User) => GameAction | null;
 };
 
 export type NearbyFriendlyActionGenerator = {
-	targetKind: 'usersInRoom';
+	targeting: 'usersInScene';
 	generate: (actor: User, target: User) => GameAction | null;
 };
 
 export type NearbyEnemyActionGenerator = {
-	targetKind: 'enemiesInRoom';
-	generate: (actor: User, target: Enemy) => GameAction | null;
+	targeting: 'enemiesInScene';
+	generate: (actor: User, target: ActiveEnemy) => GameAction | null;
 };
 
-export type ActionGenerator = SelfActionGenerator | NearbyFriendlyActionGenerator;
+export type ActionGenerator = SelfActionGenerator | NearbyFriendlyActionGenerator | NearbyEnemyActionGenerator;
 
 export type GameAction = {
 	id: string;
@@ -27,52 +27,43 @@ export type GameAction = {
 };
 
 export function getAvailableActionsForPlayer(p: User): GameAction[] {
-	const res: GameAction[] = [];
+	const availableActions: GameAction[] = [];
 
-	const onlySelfPreActions: SelfActionGenerator[] = [];
-	const userTargetingPreActions: NearbyFriendlyActionGenerator[] = [];
+	const friendlyActionGenerators: NearbyFriendlyActionGenerator[] = [];
 
-	scenes[p.currentScene].options.forEach((pa)=>{
-		if (pa.targetKind == 'onlySelf') {
-			onlySelfPreActions.push(pa);
-		} else if (pa.targetKind == 'usersInRoom') {
-			userTargetingPreActions.push(pa);
+	for (const pa of scenes[p.currentScene].options) {
+		if (pa.targeting == 'noTarget') {
+			const ga = pa.generate(p)
+			if (ga) availableActions.push(ga)
+		} else if (pa.targeting == 'usersInScene') {
+			friendlyActionGenerators.push(pa);
 		}
-	});
-	p.inventory.forEach((ik) => {
-		const preAction = items[ik];
-		if (preAction.targetKind == 'usersInRoom') {
-			userTargetingPreActions.push(preAction);
-		} else if (preAction.targetKind == 'onlySelf') {
-			onlySelfPreActions.push(preAction);
+	}
+
+	for (const itemKey of p.inventory) {
+		const actionGenerator = items[itemKey];
+		if (actionGenerator.targeting == 'noTarget') {
+			const gameAction = actionGenerator.generate(p)
+			if (gameAction) availableActions.push(gameAction);
+		} else if (actionGenerator.targeting == 'usersInScene') {
+			friendlyActionGenerators.push(actionGenerator);
 		}
-	});
+	}
 
-	onlySelfPreActions
-			.map((pe) => pe.generate(p))
-			.forEach((ga) => {
-				if (ga) {
-					res.push(ga)
-				}
-			});
-
-	// res.push(...onlySelfActions);
-
-	const userTargetingActions: GameAction[] = [];
 	const usersInRoom: User[] = Array.from(users.entries())
 		.filter(([id, usr]) => usr.connectionState != null && usr.currentScene == p.currentScene)
 		.map(([id, usr]) => usr);
 
-	userTargetingPreActions.forEach((prea) => {
-		usersInRoom.forEach((userInRoom) => {
-			const gameAction = prea.generate(p, userInRoom);
+
+	for (const friendlyActionGenerator of friendlyActionGenerators) {
+		for (const user of usersInRoom) {
+			const gameAction = friendlyActionGenerator.generate(p, user);
 			if (gameAction) {
-				userTargetingActions.push(gameAction);
+				availableActions.push(gameAction);
 			}
-		});
-	});
 
-	res.push(...userTargetingActions);
+		}
+	}
 
-	return res;
+	return availableActions;
 }

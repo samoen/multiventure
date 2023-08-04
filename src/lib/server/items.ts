@@ -4,22 +4,9 @@ import { pushHappening } from './messaging';
 
 export type ItemKey = keyof typeof items;
 
-export const items = {
-	greenGem: {
-		targetKind: 'onlySelf',
-		generate: (actor: User) => {
-			if (actor.currentScene != 'forest') return null;
-			return {
-				id: `goForestPassage`,
-				buttonText: `use green gem`,
-				onAct: () => {
-					actor.currentScene = 'forestPassage';
-				}
-			};
-		}
-	},
+export const items : Record<string, ActionGenerator>= {
 	bandage: {
-		targetKind: 'usersInRoom',
+		targeting: 'usersInScene',
 		generate: (actor: User, target: User) => {
 			return {
 				id: `${actor.heroName}bandage${target.heroName}`,
@@ -37,15 +24,19 @@ export const items = {
 		}
 	},
 	shortBow: {
-		targetKind: 'usersInRoom',
+		targeting: 'enemiesInScene',
 		generate(actor, target) {
-			return null;
+			// return {
+			// 	id:``
+			// }
+			// target.currentHealth -= 10
+			return null
 		}
 	},
 	shortSword: {
-		targetKind: 'usersInRoom',
+		targeting: 'enemiesInScene',
 		generate(actor, target) {
 			return null;
 		}
 	}
-} as const satisfies Record<string, ActionGenerator>;
+};

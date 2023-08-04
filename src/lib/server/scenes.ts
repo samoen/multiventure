@@ -8,9 +8,95 @@ export type Scene = {
 	options: ActionGenerator[];
 };
 
-export function basicTravelAction(to: SceneKey, buttonText: string): SelfActionGenerator {
+export const scenes : Record<SceneKey,Scene> = {
+	forest: {
+		text: `You are in a forest. It's wet and dank. You see a castle in the distance`,
+		options: [
+			simpleTravel('castle', 'Hike towards that castle'),
+			{
+				targeting: 'noTarget',
+				generate: (actor: User) => {
+					if (!actor.flags.has('heardAboutHiddenPassage')) return null;
+					return {
+						id: `goForestPassage`,
+						buttonText: `search deep into dense forest`,
+						onAct: () => {
+							actor.currentScene = 'forestPassage';
+						}
+					};
+				}
+			},
+	]
+	},
+	castle: {
+		text: 'You are in a cool castle',
+		onEnter(user){
+			if (!user.inventory.includes('bandage')) {
+				user.inventory.push('bandage');
+				user.extraTexts.push('A passing soldier gives you a bandage');
+			}
+		},
+		options: [
+			simpleTravel('forest', 'Delve back into forest'),
+			simpleTravel('throne', 'Approach the throne room')
+		]
+	},
+	throne: {
+		text: 'You enter the throne room',
+		onEnter(user){
+			if (!user.flags.has('heardAboutHiddenPassage')) {
+				user.flags.add('heardAboutHiddenPassage')
+				user.extraTexts.push('The king tells you about a secret passage in the forest');
+			}
+		},
+		options: [simpleTravel('castle', 'Leave the throne room')]
+	},
+	forestPassage: {
+		text: 'You find a hidden forest passage. It leads to an ancient temple or something',
+		onEnter(user){
+			if (!user.flags.has('gotFreeStarterWeapon')) {
+				user.extraTexts.push('A forest spirit appears! It speaks a question: "would you like a sword or a bow?"');
+			}
+		},
+		options: [
+			simpleTravel('forest', 'get out of this dank passage it stinks'),
+			{
+				targeting: 'noTarget',
+				generate(actor : User){
+					if (actor.flags.has('gotFreeStarterWeapon')) return null;
+					return {
+						id: 'chooseBow',
+						buttonText: 'I am skillful, I choose the bow',
+						onAct: () => {
+							actor.inventory.push('shortBow');
+							actor.flags.add('gotFreeStarterWeapon');
+							actor.extraTexts = ["A bow appears before you. You take it"];
+						}
+					};
+				}
+			},
+			{
+				targeting: 'noTarget',
+				generate(actor: User){
+					if (actor.flags.has('gotFreeStarterWeapon')) return null;
+					return {
+						id: 'chooseSword',
+						buttonText: 'I am mighty, I will take of the sword!',
+						onAct: () => {
+							actor.inventory.push('shortSword');
+							actor.flags.add('gotFreeStarterWeapon');
+							actor.extraTexts = ["A shiny sword materializes in your hand!"];
+						}
+					};
+				}
+			}
+		]
+	}
+};
+
+export function simpleTravel(to: SceneKey, buttonText: string): SelfActionGenerator {
 	return {
-		targetKind: 'onlySelf',
+		targeting: 'noTarget',
 		generate(actor) {
 			return {
 				id: `travelTo${to}`,
@@ -22,74 +108,3 @@ export function basicTravelAction(to: SceneKey, buttonText: string): SelfActionG
 		}
 	};
 }
-
-export const scenes : Record<SceneKey,Scene> = {
-	forest: {
-		text: 'You find yourself in the forest',
-		options: [basicTravelAction('castle', 'hike to castle')]
-	},
-	castle: {
-		text: 'You are in a cool castle',
-		onEnter(user){
-			if (!user.inventory.includes('bandage')) {
-				user.inventory.push('bandage');
-				user.extraTexts.push('A passing soldier gives you a bandage');
-			}
-		},
-		options: [
-			basicTravelAction('forest', 'Delve back into forest'),
-			basicTravelAction('throne', 'Approach the throne!')
-		]
-	},
-	throne: {
-		text: 'You enter the throne room',
-		onEnter(user){
-			if (!user.inventory.includes('greenGem')) {
-				user.inventory.push('greenGem');
-				user.extraTexts.push('You receive a green gem useful for finding forest passages');
-			}
-		},
-		options: [basicTravelAction('castle', 'Leave the throne room')]
-	},
-	forestPassage: {
-		text: 'Guided by the green gem, you enter a hidden forest passage',
-		onEnter(user){
-			if (!user.flags.has('gotFreeForestWeapon')) {
-				user.extraTexts.push('A forest spirit asks you - would you like a sword or a bow?');
-			}
-		},
-		options: [
-			basicTravelAction('forest', 'get out of this dank passage it stinks'),
-			{
-				targetKind: 'onlySelf',
-				generate(actor : User){
-					if (actor.flags.has('gotFreeForestWeapon')) return null;
-					return {
-						id: 'chooseBow',
-						buttonText: 'I am skillful, I choose the bow',
-						onAct: () => {
-							actor.inventory.push('shortBow');
-							actor.flags.add('gotFreeForestWeapon');
-							actor.extraTexts = [];
-						}
-					};
-				}
-			},
-			{
-				targetKind: 'onlySelf',
-				generate(actor: User){
-					if (actor.flags.has('gotFreeForestWeapon')) return null;
-					return {
-						id: 'chooseSword',
-						buttonText: 'I am mighty, I will take of the sword!',
-						onAct: () => {
-							actor.inventory.push('shortSword');
-							actor.flags.add('gotFreeForestWeapon');
-							actor.extraTexts = [];
-						}
-					};
-				}
-			}
-		]
-	}
-};

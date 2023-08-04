@@ -19,9 +19,11 @@ export const GET: RequestHandler = async (event) => {
 		if (player.connectionState.con != null) {
 			console.log(`${from} subscribing but already subscribed. sending close message`);
 			player.connectionState.con.enqueue(encode('closing', {}));
+			
+			// wait for old subscriber to cancel. Improve this
 			await new Promise((r) => {
 				setTimeout(r, 1000);
-			}); // wait for old subscriber to cancel
+			}); 
 		}
 
 		player.connectionState = null;
@@ -31,14 +33,12 @@ export const GET: RequestHandler = async (event) => {
 		con: null,
 		stream: null
 	};
-	// let controller: ServerSentEventController;
+
 	let rs = new ReadableStream({
 		start: async (c) => {
 			if(!player || !player.connectionState)return
 			console.log(`stream started with: ${ip}, hero ${from}`);
-			// controller = c;
 			player.connectionState.ip = ip;
-			// player.connectionState.con = controller;
 			player.connectionState.con = c;
 			setTimeout(() => {
 				sendEveryoneWorld(from);
@@ -46,14 +46,12 @@ export const GET: RequestHandler = async (event) => {
 		},
 		cancel: () => {
 			console.log(`stream cancel handle for ${ip} ${from}`);
-
 			// try {
 			//     controller.close();
 			// } catch (e) {
 			//     console.log(`stream cancel handler failed to close controller for ${ip} ${from} because ${e}`);
 			// }
 			player.connectionState = null;
-
 			setTimeout(() => {
 				sendEveryoneWorld(from);
 			}, 1);

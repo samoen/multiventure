@@ -14,7 +14,7 @@ export const POST = (async (r) => {
 		return json('malformed action', { status: 400 });
 	}
 	let hero = r.cookies.get('hero');
-	if (!hero || !users.has(hero)) {
+	if (!hero) {
 		console.log(`rejected action ${JSON.stringify(msg)} hero not found`);
 		return json('hero not found', { status: 401 });
 	}
