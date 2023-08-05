@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { isMsgFromServer, type MsgFromServer, type GameActionSentToClient } from '$lib/utils';
+	import { isMsgFromServer, type MessageFromServer, type GameActionSentToClient } from '$lib/utils';
 	import { onMount } from 'svelte';
 
 	export let data;
 	let loginInput: string;
 	let source: EventSource | null;
-	let lastMsgFromServer: MsgFromServer | null;
+	let lastMsgFromServer: MessageFromServer | null;
 	let loading = true;
 	let waitingForMyEvent = true;
 	let status = 'starting up';
@@ -153,11 +153,11 @@
 		</p>
 		<p />
 	{/each}
-	<h3>Me:</h3>
+	<h3>My Hero:</h3>
 	<p>Health: {lastMsgFromServer.yourHp}</p>
 	<p>Inventory: {lastMsgFromServer.yourInventory}</p>
 	<p>Current Scene: {lastMsgFromServer.yourScene}</p>
-	<h3>Scene:</h3>
+	<h3>Scene Texts:</h3>
 	{#each lastMsgFromServer.sceneTexts as t}
 		<p>{t}</p>
 	{/each}
@@ -178,6 +178,10 @@
 	:global(body) {
         background-color: aliceblue;
     }
+	h3 {
+		margin-top: 15px;
+		margin-bottom: 1px;
+	}
 	.happenings{
 		display: inline-block;
 		background-color: lightblue;
@@ -185,6 +189,12 @@
 		padding-right:10px;
 		border: 1px solid black;
 		overflow-y: auto;
+	}
+	button{
+		margin:5px;
+	}
+	p{
+		margin:5px;
 	}
 	.happenings > p {
 		margin: 2px;

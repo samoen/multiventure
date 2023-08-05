@@ -32,13 +32,13 @@ export const POST = (async (r) => {
 	}
 
 	// player.transitionText = ''
-	actionFromId.onAct();
+	actionFromId.performAction();
 
 	if (player.currentScene != oldSceneKey) {
 		const scene = scenes[player.currentScene];
-		player.extraTexts = '';
-		if (scene && scene.onEnter) {
-			scene.onEnter(player);
+		player.duringSceneText = '';
+		if (scene && scene.onEnterScene) {
+			scene.onEnterScene(player);
 		}
 	}
 

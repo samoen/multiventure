@@ -1,41 +1,41 @@
 import { activeEnemies, type ActiveEnemy } from './enemies';
 import { items } from './items';
 import { scenes } from './scenes';
-import { users, type User } from './users';
+import { users, type Player } from './users';
 
 export type SelfActionGenerator = {
 	targeting: 'noTarget';
-	generate: (actor: User) => GameAction | null;
+	generate: (actor: Player) => GameAction | null;
 };
 
-export type NearbyFriendlyActionGenerator = {
-	targeting: 'usersInScene';
-	generate: (actor: User, target: User) => GameAction | null;
+export type FriendlyActionGenerator = {
+	targeting: 'friendlies';
+	generate: (actor: Player, target: Player) => GameAction | null;
 };
 
-export type NearbyEnemyActionGenerator = {
-	targeting: 'enemiesInScene';
-	generate: (actor: User, target: ActiveEnemy) => GameAction | null;
+export type AggressiveActionGenerator = {
+	targeting: 'enemies';
+	generate: (actor: Player, target: ActiveEnemy) => GameAction | null;
 };
 
-export type ActionGenerator = SelfActionGenerator | NearbyFriendlyActionGenerator | NearbyEnemyActionGenerator;
+export type ActionGenerator = SelfActionGenerator | FriendlyActionGenerator | AggressiveActionGenerator;
 
 export type GameAction = {
-	onAct: () => void;
+	performAction: () => void;
 	buttonText: string;
 };
 
-export function getAvailableActionsForPlayer(p: User): GameAction[] {
+export function getAvailableActionsForPlayer(p: Player): GameAction[] {
 	const availableActions: GameAction[] = [];
 
-	const friendlyActionGenerators: NearbyFriendlyActionGenerator[] = [];
-	const aggressiveActionGenerators: NearbyEnemyActionGenerator[] = [];
+	const friendlyActionGenerators: FriendlyActionGenerator[] = [];
+	const aggressiveActionGenerators: AggressiveActionGenerator[] = [];
 
-	for (const pa of scenes[p.currentScene].options) {
+	for (const pa of scenes[p.currentScene].sceneActions) {
 		if (pa.targeting == 'noTarget') {
 			const ga = pa.generate(p)
 			if (ga) availableActions.push(ga)
-		} else if (pa.targeting == 'usersInScene') {
+		} else if (pa.targeting == 'friendlies') {
 			friendlyActionGenerators.push(pa);
 		}
 	}
@@ -45,21 +45,21 @@ export function getAvailableActionsForPlayer(p: User): GameAction[] {
 		if (actionGenerator.targeting == 'noTarget') {
 			const gameAction = actionGenerator.generate(p)
 			if (gameAction) availableActions.push(gameAction);
-		} else if (actionGenerator.targeting == 'usersInScene') {
+		} else if (actionGenerator.targeting == 'friendlies') {
 			friendlyActionGenerators.push(actionGenerator);
-		}else if (actionGenerator.targeting == "enemiesInScene") {
+		}else if (actionGenerator.targeting == "enemies") {
 			aggressiveActionGenerators.push(actionGenerator);
 		}
 	}
 
-	const usersInRoom: User[] = Array.from(users.entries())
+	const friendliesInRoom: Player[] = Array.from(users.entries())
 		.filter(([id, usr]) => usr.connectionState != null && usr.currentScene == p.currentScene)
 		.map(([id, usr]) => usr);
 
 
 	for (const friendlyActionGenerator of friendlyActionGenerators) {
-		for (const user of usersInRoom) {
-			const gameAction = friendlyActionGenerator.generate(p, user);
+		for (const friendly of friendliesInRoom) {
+			const gameAction = friendlyActionGenerator.generate(p, friendly);
 			if (gameAction) {
 				availableActions.push(gameAction);
 			}

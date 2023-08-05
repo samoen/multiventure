@@ -5,7 +5,7 @@ import type { ItemKey } from './server/items';
 import type { SceneKey } from './server/scenes';
 import type { EnemyKey } from './server/enemies';
 
-export type MsgFromServer = {
+export type MessageFromServer = {
 	triggeredBy: HeroName;
 	yourName: HeroName;
 	yourScene: SceneKey;
@@ -23,7 +23,7 @@ export type EnemyInClient = {
 	health:number,
 }
 
-export function isMsgFromServer(msg: object): msg is MsgFromServer {
+export function isMsgFromServer(msg: object): msg is MessageFromServer {
 	return 'yourName' in msg;
 }
 

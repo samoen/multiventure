@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { isJoin, type MsgFromServer } from '$lib/utils';
+import { isJoin, type MessageFromServer } from '$lib/utils';
 import { FAKE_LATENCY } from '$lib/server/messaging';
-import { users, type User } from '$lib/server/users';
+import { users, type Player } from '$lib/server/users';
 
 export const POST: RequestHandler = async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
@@ -24,10 +24,10 @@ export const POST: RequestHandler = async (r) => {
 			currentScene: 'forest',
 			inventory: [],
 			health: 100,
-			transitionText: 'You awake in a cold sweat, with no memory of anything',
-			extraTexts: 'You should probably get out of this place',
+			transitionSceneText: 'You awake in a cold sweat, with no memory of anything',
+			duringSceneText: 'You should probably get out of this place',
 			flags: new Set()
-		} satisfies User);
+		} satisfies Player);
 	}
 	r.cookies.set('hero', msg.join, { path: '/',secure:false});
 

@@ -1,5 +1,5 @@
 import type { ActionGenerator } from './actions';
-import type { User } from './users';
+import type { Player } from './users';
 import { pushHappening, recentHappenings } from './messaging';
 import { damageEnemy } from './enemies';
 
@@ -7,10 +7,10 @@ export type ItemKey = 'bandage' | 'shortBow' | 'shortSword';
 
 export const items : Record<ItemKey, ActionGenerator>= {
 	bandage: {
-		targeting: 'usersInScene',
-		generate: (actor: User, target: User) => {
+		targeting: 'friendlies',
+		generate: (actor: Player, target: Player) => {
 			return {
-				onAct: () => {
+				performAction: () => {
 					target.health += 10;
 					actor.inventory = actor.inventory.filter((i) => i != 'bandage');
 					pushHappening(
@@ -24,22 +24,22 @@ export const items : Record<ItemKey, ActionGenerator>= {
 		}
 	},
 	shortBow: {
-		targeting: 'enemiesInScene',
+		targeting: 'enemies',
 		generate(actor, target) {
 			return {
 				buttonText:`Fire an arrow at ${target.name}`,
-				onAct(){
+				performAction(){
 					damageEnemy(actor,target,5)
 				}
 			}
 		}
 	},
 	shortSword: {
-		targeting: 'enemiesInScene',
+		targeting: 'enemies',
 		generate(actor, target) {
 			return {
 				buttonText:`Slash ${target.name} with my short sword`,
-				onAct(){
+				performAction(){
 					const dmgResult = damageEnemy(actor,target,10)
 					if(!dmgResult.killed){
 						actor.health -= target.template.attackDamage
