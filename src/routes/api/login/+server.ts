@@ -28,7 +28,7 @@ export const POST: RequestHandler = async (r) => {
 			flags: new Set()
 		} satisfies User);
 	}
-	r.cookies.set('hero', msg.join, { path: '/' });
+	r.cookies.set('hero', msg.join, { path: '/',secure:false});
 
 	return json({ yes: 'good' });
 };

@@ -8,7 +8,7 @@ export const GET: RequestHandler = async (event) => {
 	const ip = event.getClientAddress();
 	const from = event.cookies.get('hero');
 	console.log(`stream requested by: ${ip} ${from}`);
-	if (!from || !users.has(from)) {
+	if (!from) {
 		return json({ error: 'need hero cookie to start a stream' }, { status: 401 });
 	}
 	const player = users.get(from);
