@@ -29,8 +29,10 @@ export async function sendEveryoneWorld(triggeredBy: HeroName) {
 
 export function buildNextMsg(user: User, triggeredBy: HeroName): MsgFromServer {
 	const scene = scenes[user.currentScene];
-	const sceneTexts: string[] = [scene.text];
-	sceneTexts.push(...user.extraTexts);
+	const sceneTexts: string[] = [];
+	if(user.transitionText) sceneTexts.push(user.transitionText)
+	sceneTexts.push(scene.text)
+	if(user.extraTexts)sceneTexts.push(user.extraTexts);
 
 	const nextMsg: MsgFromServer = {
 		triggeredBy: triggeredBy,

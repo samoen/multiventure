@@ -24,7 +24,8 @@ export const POST: RequestHandler = async (r) => {
 			currentScene: 'forest',
 			inventory: [],
 			health: 100,
-			extraTexts: [],
+			transitionText: 'You awake in a cold sweat, with no memory of anything',
+			extraTexts: 'You should probably get out of this place',
 			flags: new Set()
 		} satisfies User);
 	}

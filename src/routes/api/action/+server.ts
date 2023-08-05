@@ -30,11 +30,13 @@ export const POST = (async (r) => {
 		console.log(`rejected action ${JSON.stringify(msg)} because not available`);
 		return json(`action ${msg.buttonText} not available`, { status: 400 });
 	}
+
+	// player.transitionText = ''
 	actionFromId.onAct();
 
 	if (player.currentScene != oldSceneKey) {
 		const scene = scenes[player.currentScene];
-		player.extraTexts = [];
+		player.extraTexts = '';
 		if (scene && scene.onEnter) {
 			scene.onEnter(player);
 		}

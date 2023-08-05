@@ -14,7 +14,8 @@ export type User = {
 	currentScene: SceneKey;
 	inventory: ItemKey[];
 	health: number;
-	extraTexts: string[];
+	transitionText:string;
+	extraTexts: string;
 	flags: Set<Flag>;
 };
 

@@ -181,7 +181,7 @@
 	.happenings{
 		display: inline-block;
 		background-color: lightblue;
-		height:90px;
+		max-height:90px;
 		padding-right:10px;
 		border: 1px solid black;
 		overflow-y: auto;

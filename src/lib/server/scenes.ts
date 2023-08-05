@@ -13,7 +13,18 @@ export const scenes : Record<SceneKey,Scene> = {
 	forest: {
 		text: `You are in a forest. It's wet and dank. You see a castle in the distance`,
 		options: [
-			simpleTravel('castle', 'Hike towards that castle'),
+			{
+				targeting: 'noTarget',
+				generate(actor) {
+					return {
+						buttonText: 'Hike towards that castle',
+						onAct(){
+							actor.transitionText = 'Trudging through the overgrowth you finally arrive at the castle'
+							actor.currentScene = 'castle';
+						},
+					}
+				}
+			},
 			{
 				targeting: 'noTarget',
 				generate: (actor: User) => {
@@ -21,6 +32,7 @@ export const scenes : Record<SceneKey,Scene> = {
 					return {
 						buttonText: `Search deep into dense forest`,
 						onAct: () => {
+							actor.transitionText='you discover a hidden passage'
 							actor.currentScene = 'forestPassage';
 						}
 					};
@@ -33,33 +45,79 @@ export const scenes : Record<SceneKey,Scene> = {
 		onEnter(user){
 			if (!user.inventory.includes('bandage')) {
 				user.inventory.push('bandage');
-				user.extraTexts.push('A passing soldier gives you a bandage');
+				user.extraTexts = 'A passing soldier gives you a bandage';
 			}
 		},
 		options: [
-			simpleTravel('forest', 'Delve back into forest'),
-			simpleTravel('throne', 'Approach the throne room')
+			{
+				targeting: 'noTarget',
+				generate(actor) {
+					return {
+						buttonText: 'Delve into the forest',
+						onAct(){
+							actor.transitionText = 'You leave the safety of the castle and delve back into the forest'
+							actor.currentScene = 'forest';
+						},
+					}
+				}
+			},
+			{
+				targeting: 'noTarget',
+				generate(actor) {
+					return {
+						buttonText: 'Head towards the throne room',
+						onAct(){
+							actor.transitionText = 'You climb a huge staircase upwards, finally reaching the top'
+							actor.currentScene = 'throne';
+						},
+					}
+				}
+			},
 		]
 	},
 	throne: {
-		text: 'You enter the throne room',
+		text: 'You are in a throne room',
 		onEnter(user){
 			if (!user.flags.has('heardAboutHiddenPassage')) {
 				user.flags.add('heardAboutHiddenPassage')
-				user.extraTexts.push('The king tells you about a secret passage in the forest');
+				user.extraTexts = 'The king tells you about a secret passage in the forest';
 			}
 		},
-		options: [simpleTravel('castle', 'Leave the throne room')]
+		options: [
+			{
+				targeting: 'noTarget',
+				generate(actor) {
+					return {
+						buttonText: 'Take your leave',
+						onAct(){
+							actor.transitionText = 'You climb back down those darn steps. So many steps.'
+							actor.currentScene = 'castle';
+						},
+					}
+				}
+			},
+		]
 	},
 	forestPassage: {
 		text: `You are in a hidden passage.`,
 		onEnter(user){
 			if (!user.flags.has('gotFreeStarterWeapon')) {
-				user.extraTexts.push('A forest spirit appears! It speaks a question: "would you like a sword or a bow?"');
+				user.extraTexts ='A forest spirit appears! It speaks a question: "would you like a sword or a bow?"';
 			}
 		},
 		options: [
-			simpleTravel('forest', 'Get out of this dank passage it stinks'),
+			{
+				targeting: 'noTarget',
+				generate(actor) {
+					return {
+						buttonText: 'Get out of this stinky passage',
+						onAct(){
+							actor.transitionText = 'You get out the passage, and stumble into the surrounding overgrowth'
+							actor.currentScene = 'forest';
+						},
+					}
+				}
+			},
 			{
 				targeting: 'noTarget',
 				generate(actor : User){
@@ -69,7 +127,7 @@ export const scenes : Record<SceneKey,Scene> = {
 						onAct: () => {
 							actor.inventory.push('shortBow');
 							actor.flags.add('gotFreeStarterWeapon');
-							actor.extraTexts = ["A bow appears before you. You take it"];
+							actor.extraTexts = "A bow appears before you. You take it";
 						}
 					};
 				}
@@ -83,7 +141,7 @@ export const scenes : Record<SceneKey,Scene> = {
 						onAct(){
 							actor.inventory.push('shortSword');
 							actor.flags.add('gotFreeStarterWeapon');
-							actor.extraTexts = ["A shiny sword materializes in your hand!"];
+							actor.extraTexts = "A shiny sword materializes in your hand!";
 						}
 					};
 				}
@@ -95,6 +153,7 @@ export const scenes : Record<SceneKey,Scene> = {
 					return {
 						buttonText:'Push through to the end of the passage',
 						onAct() {
+							actor.transitionText = 'You push through the passage. Oh no! You stumble into a goblin camp'
 							actor.currentScene = 'goblinCamp'
 						},
 					}
@@ -103,10 +162,10 @@ export const scenes : Record<SceneKey,Scene> = {
 		]
 	},
 	goblinCamp:{
-		text:"On no! you have stumbled into a goblin camp",
+		text:"You are in a goblin camp. It's not cool",
 		onEnter(user) {
 			if(!(activeEnemies.some(e=>e.name=='Gorlak') || activeEnemies.some(e=>e.name=='Murk'))){
-				user.extraTexts.push(`A pair of goblins rush out of a tent.. "Hey Gorlak, looks like lunch!" "Right you are Murk lets eat!"`)
+				user.extraTexts = `A pair of goblins rush out of a tent.. "Hey Gorlak, looks like lunch!" "Right you are Murk lets eat!"`
 				activeEnemies.push({
 					name:'Gorlak',
 					currentScene: 'goblinCamp',
@@ -122,21 +181,33 @@ export const scenes : Record<SceneKey,Scene> = {
 			}
 		},
 		options:[
-			simpleTravel("forestPassage","Escape back through the hidden passage")
+			{
+				targeting: 'noTarget',
+				generate(actor) {
+					return {
+						buttonText: 'Escape back through the passage',
+						onAct(){
+							actor.transitionText = 'You leave the camp and squeeze back into the dank passage'
+							actor.currentScene = 'forestPassage';
+						},
+					}
+				}
+			}
 		]
 	}
 };
 
-export function simpleTravel(to: SceneKey, buttonText: string): SelfActionGenerator {
-	return {
-		targeting: 'noTarget',
-		generate(actor) {
-			return {
-				onAct(){
-					actor.currentScene = to;
-				},
-				buttonText: buttonText
-			}
-		}
-	};
-}
+// export function simpleTravel(to: SceneKey, buttonText: string, transitionText:string=''): SelfActionGenerator {
+// 	return {
+// 		targeting: 'noTarget',
+// 		generate(actor) {
+// 			return {
+// 				onAct(){
+// 					actor.transitionText = transitionText
+// 					actor.currentScene = to;
+// 				},
+// 				buttonText: buttonText
+// 			}
+// 		}
+// 	};
+// }
