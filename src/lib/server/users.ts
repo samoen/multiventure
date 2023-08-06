@@ -3,7 +3,9 @@ import type { SceneKey } from './scenes';
 
 export type UserId = string;
 export type HeroName = string;
-export type Flag = 'gotFreeStarterWeapon' | 'heardAboutHiddenPassage' | 'killedGoblins' | 'smashedMedallion' | 'placedMedallion';
+export type Flag = 'gotFreeStarterWeapon' | 'heardAboutHiddenPassage' | 'killedGoblins';
+export type GlobalFlag = 'smashedMedallion' | 'placedMedallion';
+
 export type Player = {
 	connectionState: {
 		ip: string | null; 
@@ -20,3 +22,4 @@ export type Player = {
 };
 
 export const users = new Map<UserId, Player>();
+export const globalFlags = new Set<GlobalFlag>();

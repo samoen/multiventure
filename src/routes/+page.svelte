@@ -157,6 +157,8 @@
 	<p>Health: {lastMsgFromServer.yourHp}</p>
 	<p>Inventory: {lastMsgFromServer.yourInventory}</p>
 	<p>Current Scene: {lastMsgFromServer.yourScene}</p>
+	<p>Player flags: {lastMsgFromServer.playerFlags}</p>
+	<p>Global flags: {lastMsgFromServer.globalFlags}</p>
 	
 	<h3>Scene Texts:</h3>
 	{#each lastMsgFromServer.sceneTexts as t}

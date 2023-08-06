@@ -4,6 +4,7 @@ import { isJoin, type MessageFromServer } from '$lib/utils';
 import { FAKE_LATENCY } from '$lib/server/messaging';
 import { users, type Player, type Flag } from '$lib/server/users';
 import type { ItemKey } from '$lib/server/items';
+import { scenes } from '$lib/server/scenes';
 
 export const POST: RequestHandler = async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
@@ -17,27 +18,27 @@ export const POST: RequestHandler = async (r) => {
 	// }
 	console.log('logging in ' + msg.join);
 
-	// new user
-	const startflags : Set<Flag>= new Set()
-	// startflags.add('heardAboutHiddenPassage')
-	// startflags.add('gotFreeStarterWeapon')
-	// startflags.add('killedGoblins')
-	const startitems : ItemKey[] = []
-	// startitems.push('shortSword')
-
 	if (!users.has(msg.join)) {
-		users.set(msg.join, {
+		// new user
+		const startflags : Set<Flag>= new Set()
+		// startflags.add('heardAboutHiddenPassage')
+		// startflags.add('gotFreeStarterWeapon')
+		// startflags.add('killedGoblins')
+		const startitems : ItemKey[] = []
+		// startitems.push('shortSword')
+
+		const player = {
 			connectionState: null,
 			heroName: msg.join,
-			currentScene: 'dead',
+			currentScene: 'forest',
 			previousScene: 'dead',
-			// currentScene:'throne',
 			inventory: startitems,
 			health: 100,
-			duringSceneTexts: ['welcome to the game'],
+			duringSceneTexts: [],
 			flags: startflags,
-		} satisfies Player);
-
+		} satisfies Player
+		scenes[player.currentScene].onEnterScene(player,player.previousScene)
+		users.set(msg.join, player);
 	}
 	r.cookies.set('hero', msg.join, { path: '/',secure:false});
 

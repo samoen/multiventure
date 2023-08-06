@@ -1,10 +1,11 @@
 import type { ActionGenerator, SelfActionGenerator } from './actions';
 import { activeEnemies, enemyTemplates } from './enemies';
-import { users, type Player } from './users';
+import { users, type Player, globalFlags } from './users';
 
 export type SceneKey = 'dead' | 'forest' | 'castle' | 'throne' | 'forestPassage' | 'goblinCamp' | 'tunnelChamber';
 export type Scene = {
 	onEnterScene: SceneEntry;
+	onActed?:()=>void;
 	sceneActions: ActionGenerator[];
 };
 
@@ -12,14 +13,14 @@ export type SceneEntry = (user: Player, from:SceneKey) => void;
 
 const dead :Scene ={
 	onEnterScene(user, from) {
-		user.duringSceneTexts.push("You died")
+		user.duringSceneTexts.push("You died. Don't worry you just get teleported back to the forest it's fine")
 	},
 	sceneActions:[
 		{
 			targeting:'noTarget',
 			generate(actor) {
 				return {
-					buttonText:'respawn',
+					buttonText:'OK',
 					performAction() {
 						actor.currentScene = 'forest'
 					},
@@ -30,7 +31,7 @@ const dead :Scene ={
 }
 
 const forest :Scene =  {
-	onEnterScene(user, from) {
+	onEnterScene(user,from){
 		if(from == 'dead'){
 			user.duringSceneTexts.push("You awaken in a cold sweat with no memory of anything. The world around you seems dark and permeated by an unholy madness. There's a strange sickly smell that seems familiar. The smell of corruption. The smell of death.")
 		}
@@ -45,7 +46,7 @@ const forest :Scene =  {
 	sceneActions: [
 		{
 			targeting: 'noTarget',
-			generate(actor) {
+			generate(actor : Player) {
 				return {
 					buttonText: 'Hike towards that castle',
 					performAction(){
@@ -115,24 +116,21 @@ const castle : Scene = {
 
 const throne : Scene = {
 	onEnterScene(user,from){
-		if(user.flags.has('placedMedallion')){
-			user.duringSceneTexts.push( "the throne looks weird because you placed the medallion and fought the stranger")
-		}
-		if(user.flags.has('smashedMedallion')){
-			user.duringSceneTexts.push("the throne is wild and king is powerful because you smashed the medallion")
-		}
 		if(from == 'castle'){
 			user.duringSceneTexts.push('At the end of the entrace hall to this eldritch structure, you notice a great door. It seems to stretch up into infinity, and you see no handle. As you approach, it seems to crack a part, revealing a dazzling light. You step inside.')
 		}
 		user.duringSceneTexts.push("Before you is a great throne. Sitting aside it are two giant sculptures carved from marple. The one of the left depicts an angel, its wings spread to a might span. It wields a sword from which a great fire burns. To the left of the throne is a garoyle, its lips pulled back in a monstrous snarl revealing rows of serrated teeth. One of its arms are raised and it appears to hold a ball of pure electricity which crackles in the dim light. Atop the throne sits an emaciated figure.")
+		
 		if (!user.flags.has('heardAboutHiddenPassage')) {
 			user.flags.add('heardAboutHiddenPassage')
 			user.duringSceneTexts.push("The figure atop the throne opens its mouth and from it emerges something akin to speech, but with the qualities of a dying whisper. 'I am... or was.. the king of this wretched place.' The figure starts, haltingly. 'I... the forest.... there is a passage. Find it and return to me.' The figure falls silent and returns to its corpselike revery.");
-		}
-		else if (!user.flags.has('killedGoblins')) {
+		}else if (!user.flags.has('killedGoblins')) {
 			user.duringSceneTexts.push("You hear a voice inside your head that sounds more like the screams of a dying calf than words. It tells you to leave here and not to return until you have discovered the passage in the depths of the forest.")
-		}
-		else {
+		}else if(globalFlags.has('placedMedallion')){
+			user.duringSceneTexts.push( "the throne looks different because someone placed the medallion and fought the stranger")
+		} else if(globalFlags.has('smashedMedallion')){
+			user.duringSceneTexts.push("the throne looks different because you smashed the medallion and befriended the stranger")
+		}else {
 			user.duringSceneTexts.push("You once again approach the throne, but something feels wrong. As you pass between the two mighty sculptures of the warring demon and angel, a powerful energy fills the air. The flame from the angel's sword and the electrical charge from the demon's hand begin to grow in size and reach out towards each other. The rotting body of the king suddenly leaps from it's throne. He screams from from the centre of the skeletal form 'You have proven your worth traveller, but there is a greater threat at hand! The forces of good and evil are no longer in balance! You must take this medallion and complete the ritual before it's too late!' The throne appears to cave in on itself, and a path that leads to the depths of castle appears. You feel you have no choice but to enter.")
 		}
 					
@@ -141,26 +139,30 @@ const throne : Scene = {
 		{
 			targeting: 'noTarget',
 			generate(actor) {
-				if(actor.flags.has('killedGoblins')) return null
-				return {
-					buttonText: 'Take your leave',
-					performAction(){
-						actor.currentScene = 'castle';
-					},
+				if(!actor.flags.has('killedGoblins')){
+					return {
+						buttonText: 'Take your leave',
+						performAction(){
+							actor.currentScene = 'castle';
+						},
+					}
 				}
+				return null;
 			}
 		},
 		{
 			targeting:'noTarget',
 			generate(actor){
-				if(!actor.flags.has('killedGoblins')) return null
-				return{
-					buttonText:'Follow the path leading to the depths',
-					performAction() {
-						actor.currentScene = 'tunnelChamber'
-					},
-					
+				if(actor.flags.has('killedGoblins')){
+					return{
+						buttonText:'Follow the path leading to the depths',
+						performAction() {
+							actor.currentScene = 'tunnelChamber'
+						},
+						
+					}
 				}
+				return null
 			},
 		},
 	]
@@ -260,6 +262,15 @@ const goblinCamp :Scene = {
 			})
 		}
 	},
+	onActed() {
+		if(!activeEnemies.some(e=>e.currentScene == 'goblinCamp')){
+			[...users.values()].forEach(user => {
+				if(user.currentScene == 'goblinCamp'){
+					user.flags.add('killedGoblins')
+				}
+			});
+		}
+	},
 	sceneActions:[
 		{
 			targeting: 'noTarget',
@@ -267,13 +278,6 @@ const goblinCamp :Scene = {
 				return {
 					buttonText: 'Escape back through the passage',
 					performAction(){
-						if(!activeEnemies.find(e=>e.name == 'Gorlak') && !activeEnemies.find(e=>e.name == 'Murk')){
-							[...users.values()].forEach(user => {
-								if(user.currentScene == 'goblinCamp'){
-									user.flags.add('killedGoblins')
-								}
-							});
-						}
 						actor.currentScene = 'forestPassage';
 					},
 				}
@@ -287,19 +291,20 @@ const tunnelChamber : Scene = {
 		if(from == 'throne'){
 			user.duringSceneTexts.push("You wend your way down a neverending series of corridors and pathways that seem to go on for an enternity. It becomes narrower and narrower, and the heat becomes almost unbearable. The path suddenly opens into a great chamber.")
 		}
-		user.duringSceneTexts.push("The walls are adorned with arcane symbols that are beyond your comprehension. In the centre of the room is a great altar. You approach it and notice that upon it is an recess that appears to be in the shape of the medallian that was given to you by the king. Suddenly, a great booming voice echoes throughout the chamber. 'STOP TRAVELLER! Stay your hand!'. You stop in your tracks and look over your shoulder. It's the stranger from the castle. 'Do not heed the call of the mad king! He knows not what he does and acts in accord with a dark force! If you place the medallion upon the altar, you will be bound to the very same forces of evil for all time. Or maybe you'll just die...' He trailed off. You can see the face of the rotting monarch in your minds eye. His face is twisted into a bitter smile that coaxes you to do his bidding. You have a choice.")
-		
+		if(!globalFlags.has('placedMedallion') && !globalFlags.has('smashedMedallion')){
+			user.duringSceneTexts.push("The walls are adorned with arcane symbols that are beyond your comprehension. In the centre of the room is a great altar. You approach it and notice that upon it is an recess that appears to be in the shape of the medallian that was given to you by the king. Suddenly, a great booming voice echoes throughout the chamber. 'STOP TRAVELLER! Stay your hand!'. You stop in your tracks and look over your shoulder. It's the stranger from the castle. 'Do not heed the call of the mad king! He knows not what he does and acts in accord with a dark force! If you place the medallion upon the altar, you will be bound to the very same forces of evil for all time. Or maybe you'll just die...' He trailed off. You can see the face of the rotting monarch in your minds eye. His face is twisted into a bitter smile that coaxes you to do his bidding. You have a choice.")
+		}
 	},
 	sceneActions:[
 		{
 			targeting:'noTarget',
 			generate(actor) {
-				if(actor.flags.has('smashedMedallion') || actor.flags.has('placedMedallion'))return null
+				if(globalFlags.has('smashedMedallion') || globalFlags.has('placedMedallion'))return null
 				return {
 					buttonText:"Place the medallion upon the altar",
 					performAction() {
-						actor.flags.add('placedMedallion')
-						actor.duringSceneTexts.push('you chose to place it!! fight the stranger')
+						globalFlags.add('placedMedallion')
+						actor.duringSceneTexts.push('you chose to place it!! The stranger turns upon you in a rage')
 						activeEnemies.push({
 							name:'stranger',
 							currentHealth:40,
@@ -313,7 +318,22 @@ const tunnelChamber : Scene = {
 		{
 			targeting:'noTarget',
 			generate(actor) {
-				if(!(!activeEnemies.some(e=>e.name == 'stranger') && actor.flags.has('placedMedallion'))) return null
+				if(globalFlags.has('smashedMedallion') || globalFlags.has('placedMedallion'))return null
+				return {
+					buttonText:"Smash the medallion",
+					performAction() {
+						globalFlags.add('smashedMedallion')
+						actor.duringSceneTexts.push('You smash the medallion. The stranger is happy')
+					},
+				}
+			},
+		},
+		{
+			targeting:'noTarget',
+			generate(actor) {
+				const placedMedallionAndKilledStranger = !activeEnemies.some(e=>e.name == 'stranger') && globalFlags.has('placedMedallion')
+				const canLeave = placedMedallionAndKilledStranger || globalFlags.has('smashedMedallion')
+				if(!canLeave) return null
 				return {
 					buttonText:"Return to throne",
 					performAction() {
@@ -322,18 +342,6 @@ const tunnelChamber : Scene = {
 				}
 			},
 		},
-		{
-			targeting:'noTarget',
-			generate(actor) {
-				if(actor.flags.has('smashedMedallion') || actor.flags.has('placedMedallion'))return null
-				return {
-					buttonText:"Smash the medallion",
-					performAction() {
-						actor.flags.add('smashedMedallion')						
-					},
-				}
-			},
-		}
 	]
 }
 

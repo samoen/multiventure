@@ -2,7 +2,7 @@ import type { MessageFromServer, OtherPlayerInfo } from '$lib/utils';
 import { getAvailableActionsForPlayer } from './actions';
 import { activeEnemies } from './enemies';
 import { scenes } from './scenes';
-import { type HeroName, users, type Player } from './users';
+import { type HeroName, users, type Player, globalFlags } from './users';
 
 export const FAKE_LATENCY = 100;
 
@@ -28,7 +28,7 @@ export async function sendEveryoneWorld(triggeredBy: HeroName) {
 }
 
 export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): MessageFromServer {
-	const scene = scenes[forPlayer.currentScene];
+	// const scene = scenes[forPlayer.currentScene];
 	const sceneTexts: string[] = [];
 	// sceneTexts.push(scene.mainSceneText(forPlayer,forPlayer.previousScene))
 	sceneTexts.push(...forPlayer.duringSceneTexts);
@@ -62,6 +62,8 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				name: e.name,
 			}
 		}),
+		playerFlags:Array.from(forPlayer.flags),
+		globalFlags:Array.from(globalFlags),
 	};
 	return nextMsg;
 }

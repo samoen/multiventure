@@ -1,6 +1,6 @@
 // This file is for stuff available to both the server and browser
 
-import type { HeroName } from './server/users';
+import type { Flag, GlobalFlag, HeroName } from './server/users';
 import type { ItemKey } from './server/items';
 import type { SceneKey } from './server/scenes';
 import type { EnemyKey } from './server/enemies';
@@ -16,6 +16,8 @@ export type MessageFromServer = {
 	actions: GameActionSentToClient[];
 	happenings: string[];
 	enemiesInScene:EnemyInClient[];
+	playerFlags:Flag[];
+	globalFlags:GlobalFlag[];
 };
 
 export type EnemyInClient = {

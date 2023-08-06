@@ -34,12 +34,16 @@ export const POST = (async (r) => {
 	player.previousScene = player.currentScene;
 
 	actionFromId.performAction();
-
+	const scene = scenes[player.currentScene];
+	
 	if (player.currentScene != oldSceneKey) {
-		const scene = scenes[player.currentScene];
 		player.duringSceneTexts = [];
 		if (scene && scene.onEnterScene) {
 			scene.onEnterScene(player,oldSceneKey);
+		}
+	}else{
+		if(scene.onActed){
+			scene.onActed()
 		}
 	}
 
