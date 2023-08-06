@@ -48,7 +48,7 @@
 				status = 'playing';
 				waitingForMyEvent = false;
 				loading = false;
-				happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
+				if(happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
 			}
 		});
 		source.addEventListener('closing', (e) => {
@@ -157,9 +157,11 @@
 	<p>Health: {lastMsgFromServer.yourHp}</p>
 	<p>Inventory: {lastMsgFromServer.yourInventory}</p>
 	<p>Current Scene: {lastMsgFromServer.yourScene}</p>
+	
 	<h3>Scene Texts:</h3>
 	{#each lastMsgFromServer.sceneTexts as t}
 		<p>{t}</p>
+		<!-- hellloo im a big <br> dummy -->
 	{/each}
 	{#each lastMsgFromServer.actions as op, i}
 		<button on:click={() => choose(op)} disabled={waitingForMyEvent}>

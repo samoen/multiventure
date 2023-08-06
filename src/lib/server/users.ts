@@ -3,7 +3,7 @@ import type { SceneKey } from './scenes';
 
 export type UserId = string;
 export type HeroName = string;
-export type Flag = 'gotFreeStarterWeapon' | 'heardAboutHiddenPassage';
+export type Flag = 'gotFreeStarterWeapon' | 'heardAboutHiddenPassage' | 'killedGoblins' | 'smashedMedallion' | 'placedMedallion';
 export type Player = {
 	connectionState: {
 		ip: string | null; 

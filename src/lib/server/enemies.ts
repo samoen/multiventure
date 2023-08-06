@@ -17,9 +17,9 @@ export type EnemyTemplate = {
 	attackDamage: number;
 };
 
-export type EnemyKey = keyof typeof enemyTemplates;
+export type EnemyKey = 'goblin' | 'wolf';
 
-export const enemyTemplates: Record<string, EnemyTemplate> = {
+export const enemyTemplates: Record<EnemyKey, EnemyTemplate> = {
 	goblin: {
 		maxHealth: 50,
 		attackDamage: 15,
