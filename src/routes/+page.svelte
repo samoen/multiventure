@@ -48,7 +48,9 @@
 				status = 'playing';
 				waitingForMyEvent = false;
 				loading = false;
-				if(happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
+				setTimeout(()=>{
+					if(happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
+				},100)
 			}
 		});
 		source.addEventListener('closing', (e) => {

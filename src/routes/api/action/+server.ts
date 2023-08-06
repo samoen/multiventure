@@ -22,29 +22,31 @@ export const POST = (async (r) => {
 	if(!player){
 		return json('hero not found', { status: 401 });
 	}
-
-	
-	let actionFromId = getAvailableActionsForPlayer(player).find((g) => g.buttonText == msg.buttonText);
+	let actionFromId = player.actions.find((g) => g.buttonText == msg.buttonText);
 	if (!actionFromId) {
 		console.log(`rejected action ${JSON.stringify(msg)} because not available`);
 		return json(`action ${msg.buttonText} not available`, { status: 400 });
 	}
 	
+	
 	const oldSceneKey = player.currentScene;
-	player.previousScene = player.currentScene;
-
+	// player.previousScene = player.currentScene;
+	const preActionScene = scenes[player.currentScene];
 	actionFromId.performAction();
-	const scene = scenes[player.currentScene];
+	if(preActionScene.onActed){
+		preActionScene.onActed()
+	}
+	const postActionScene = scenes[player.currentScene];
 	
 	if (player.currentScene != oldSceneKey) {
 		player.duringSceneTexts = [];
-		if (scene && scene.onEnterScene) {
-			scene.onEnterScene(player,oldSceneKey);
+		if (postActionScene && postActionScene.onEnterScene) {
+			postActionScene.onEnterScene(player,oldSceneKey);
 		}
-	}else{
-		if(scene.onActed){
-			scene.onActed()
-		}
+	}
+	for (const allPlayer of users.values()) {
+		allPlayer.actions = []
+		getAvailableActionsForPlayer(allPlayer)
 	}
 
 	// tiny timeout so endpoint returns before the event messages get sent

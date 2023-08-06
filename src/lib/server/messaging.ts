@@ -21,6 +21,7 @@ export async function sendEveryoneWorld(triggeredBy: HeroName) {
 	});
 	for (const user of users.values()) {
 		if (user.connectionState && user.connectionState.con) {
+			// getAvailableActionsForPlayer(user)
 			const toSend = buildNextMessage(user, triggeredBy);
 			user.connectionState.con.enqueue(encode(`world`, toSend));
 		}
@@ -50,7 +51,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				} satisfies OtherPlayerInfo;
 			}),
 		sceneTexts: sceneTexts,
-		actions: getAvailableActionsForPlayer(forPlayer).map((gameAction) => {
+		actions: forPlayer.actions.map((gameAction) => {
 			return {
 				buttonText: gameAction.buttonText
 			};
