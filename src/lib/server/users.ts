@@ -14,8 +14,8 @@ export type Player = {
 	inventory: ItemKey[];
 	health: number;
 	currentScene: SceneKey;
-	transitionSceneText:string;
-	duringSceneText: string;
+	previousScene:SceneKey;
+	duringSceneTexts: string[];
 	flags: Set<Flag>;
 };
 

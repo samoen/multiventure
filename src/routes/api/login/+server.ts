@@ -29,12 +29,12 @@ export const POST: RequestHandler = async (r) => {
 		users.set(msg.join, {
 			connectionState: null,
 			heroName: msg.join,
-			currentScene: 'forest',
+			currentScene: 'dead',
+			previousScene: 'dead',
 			// currentScene:'throne',
 			inventory: startitems,
 			health: 100,
-			transitionSceneText: "You awaken in a cold sweat with no memory of anything. The world around you seems dark and permeated by an unholy madness. There's a strange sickly smell that seems familiar. The smell of corruption. The smell of death.",
-			duringSceneText: 'You feel an urgent need to escape your wretched surrounds',
+			duringSceneTexts: ['welcome to the game'],
 			flags: startflags,
 		} satisfies Player);
 

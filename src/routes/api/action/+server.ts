@@ -23,22 +23,23 @@ export const POST = (async (r) => {
 		return json('hero not found', { status: 401 });
 	}
 
-	const oldSceneKey = player.currentScene;
-
+	
 	let actionFromId = getAvailableActionsForPlayer(player).find((g) => g.buttonText == msg.buttonText);
 	if (!actionFromId) {
 		console.log(`rejected action ${JSON.stringify(msg)} because not available`);
 		return json(`action ${msg.buttonText} not available`, { status: 400 });
 	}
+	
+	const oldSceneKey = player.currentScene;
+	player.previousScene = player.currentScene;
 
-	// player.transitionText = ''
 	actionFromId.performAction();
 
 	if (player.currentScene != oldSceneKey) {
 		const scene = scenes[player.currentScene];
-		player.duringSceneText = '';
+		player.duringSceneTexts = [];
 		if (scene && scene.onEnterScene) {
-			scene.onEnterScene(player);
+			scene.onEnterScene(player,oldSceneKey);
 		}
 	}
 

@@ -30,9 +30,8 @@ export async function sendEveryoneWorld(triggeredBy: HeroName) {
 export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): MessageFromServer {
 	const scene = scenes[forPlayer.currentScene];
 	const sceneTexts: string[] = [];
-	if(forPlayer.transitionSceneText) sceneTexts.push(forPlayer.transitionSceneText)
-	sceneTexts.push(scene.mainSceneText)
-	if(forPlayer.duringSceneText)sceneTexts.push(forPlayer.duringSceneText);
+	// sceneTexts.push(scene.mainSceneText(forPlayer,forPlayer.previousScene))
+	sceneTexts.push(...forPlayer.duringSceneTexts);
 
 	const nextMsg: MessageFromServer = {
 		triggeredBy: triggeredBy,
