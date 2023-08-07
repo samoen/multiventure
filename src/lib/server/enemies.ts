@@ -34,6 +34,16 @@ export const enemyTemplates: Record<EnemyKey, EnemyTemplate> = {
 	}
 };
 
+export function spawnEnemy(name:string,template:EnemyKey,where:SceneKey){
+	activeEnemies.push({
+		name: name,
+		currentScene: where,
+		currentHealth: enemyTemplates[template].maxHealth,
+		aggros:new Map(),
+		template: enemyTemplates[template],
+	})
+}
+
 export function addAggro(actor: Player, provoke: number) {
 	for (const respondingEnemy of activeEnemies.filter(e => e.currentScene == actor.currentScene)) {
 		const aggroGain = provoke + respondingEnemy.template.aggroGain

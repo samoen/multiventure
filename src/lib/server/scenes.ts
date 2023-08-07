@@ -1,5 +1,5 @@
 import { activePlayersInScene } from './actions';
-import { activeEnemies, enemyTemplates } from './enemies';
+import { activeEnemies, spawnEnemy } from './enemies';
 import { globalFlags, type Player } from './users';
 
 export type SceneKey = 'dead' | 'forest' | 'castle' | 'throne' | 'forestPassage' | 'goblinCamp' | 'tunnelChamber';
@@ -230,27 +230,9 @@ const goblinCamp: Scene = {
 			for (const playerInScene of activePlayersInScene('goblinCamp')) {
 				playerInScene.sceneTexts.push(`Suddendly, A pair of goblins rush out of a tent.. "Hey Gorlak, looks like lunch!" "Right you are Murk. Let's eat!"`)
 			}
-			activeEnemies.push({
-				name: 'Gorlak',
-				currentScene: 'goblinCamp',
-				currentHealth: enemyTemplates.goblin.maxHealth,
-				aggros:new Map(),
-				template: enemyTemplates.goblin,
-			})
-			activeEnemies.push({
-				name: 'Murk',
-				currentScene: 'goblinCamp',
-				currentHealth: enemyTemplates.goblin.maxHealth,
-				aggros:new Map(),
-				template: enemyTemplates.goblin,
-			})
-			activeEnemies.push({
-				name: 'Spot',
-				currentScene: 'goblinCamp',
-				currentHealth: enemyTemplates.wolf.maxHealth,
-				aggros:new Map(),
-				template: enemyTemplates.wolf,
-			})
+			spawnEnemy('Gorlak','goblin','goblinCamp')
+			spawnEnemy('Murk','goblin','goblinCamp')
+			spawnEnemy('Spot','wolf','goblinCamp')
 		}
 	},
 	onVictory() {
@@ -289,18 +271,12 @@ const tunnelChamber: Scene = {
 					performAction() {
 						globalFlags.add('placedMedallion')
 						for (const allPlayer of activePlayersInScene('tunnelChamber')) {
-							allPlayer.sceneTexts.push('The medallion is placed into the altar. The hooded figure turns upon you in a rage')
+							allPlayer.sceneTexts.push("The medallion is placed into the altar. The hooded figure turns upon you in a rage")
 						}
 						for (const allPlayer of activePlayersInScene('throne')) {
-							allPlayer.sceneTexts.push('You hear a rumbling from below. The king looks pleased')
+							allPlayer.sceneTexts.push("You hear a rumbling from below. The king says 'yay someone placed the medallion. If I just told you to do that, never mind..'  that explains why your actions just changed mid scene. Stragglers can still get their ealier quests from here still. hopefully it makes sense.")
 						}
-						activeEnemies.push({
-							name: 'Hooded Figure',
-							currentHealth: 40,
-							currentScene: 'tunnelChamber',
-							aggros:new Map(),
-							template: enemyTemplates.wolf
-						})
+						spawnEnemy('Hooded Figure','goblin','tunnelChamber')
 					},
 				}
 

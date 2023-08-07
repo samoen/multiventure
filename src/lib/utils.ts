@@ -3,7 +3,6 @@
 import type { Flag, GlobalFlag, HeroName } from './server/users';
 import type { ItemKey } from './server/items';
 import type { SceneKey } from './server/scenes';
-import type { EnemyKey } from './server/enemies';
 
 export type MessageFromServer = {
 	triggeredBy: HeroName;

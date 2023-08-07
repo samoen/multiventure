@@ -48,7 +48,7 @@ export const POST = (async (r) => {
 		}
 	}
 
-	console.log(activeEnemies)
+	// console.log(activeEnemies)
 
 	
 	if (preActionScene.onVictory && (preActionHadEnemies && !postActionHadEnemies)) {

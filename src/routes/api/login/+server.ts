@@ -27,10 +27,10 @@ export const POST: RequestHandler = async (r) => {
 		// startflags.add('killedGoblins')
 		const startitems : ItemKey[] = []
 		// startitems.push('shortSword')
-		startitems.push('bandage')
+		// startitems.push('bandage')
 
 		let startScene : SceneKey = 'forest'
-		startScene = 'forestPassage' 
+		// startScene = 'forestPassage' 
 
 		const player = {
 			connectionState: null,
