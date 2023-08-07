@@ -82,7 +82,8 @@ const castle: Scene = {
 			}
 			player.sceneTexts.push("As quickly as he arrived, the mysterious warrior disappears back into the walls. You feel that this will not be the last your see of this odd spirit.");
 		}
-		if (player.flags.has('killedGoblins')) {
+		if (player.flags.has('killedGoblins') && !player.flags.has('sawArthurAfterBattle')) {
+			player.flags.add('sawArthurAfterBattle')
 			player.health += 50
 			player.sceneTexts.push("The soldier you passed earlier watches you approach and a smile grows on his face. 'I can smell battle on ye traveller! So you've had your first taste of blood in this foul land? Well I've learnt a trick or two in my time roaming this insane world. Hold still a minute...'. The soldiers face becomes blank for a moment, and in an instant you feel a burning heat passing through your body. As it subsides, you feel energised and repaired. 'That'll set you straight for a bit traveller!' Bellows the soldier as he trundles on his way'.")
 		}
@@ -232,14 +233,23 @@ const goblinCamp: Scene = {
 			activeEnemies.push({
 				name: 'Gorlak',
 				currentScene: 'goblinCamp',
-				currentHealth: 20,
+				currentHealth: enemyTemplates.goblin.maxHealth,
+				aggros:new Map(),
 				template: enemyTemplates.goblin,
 			})
 			activeEnemies.push({
 				name: 'Murk',
 				currentScene: 'goblinCamp',
-				currentHealth: 20,
+				currentHealth: enemyTemplates.goblin.maxHealth,
+				aggros:new Map(),
 				template: enemyTemplates.goblin,
+			})
+			activeEnemies.push({
+				name: 'Spot',
+				currentScene: 'goblinCamp',
+				currentHealth: enemyTemplates.wolf.maxHealth,
+				aggros:new Map(),
+				template: enemyTemplates.wolf,
 			})
 		}
 	},
@@ -288,6 +298,7 @@ const tunnelChamber: Scene = {
 							name: 'Hooded Figure',
 							currentHealth: 40,
 							currentScene: 'tunnelChamber',
+							aggros:new Map(),
 							template: enemyTemplates.wolf
 						})
 					},

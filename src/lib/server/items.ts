@@ -1,9 +1,7 @@
-import { activePlayersInScene, type ActionGenerator } from './actions';
-// import { users, type Player } from './users';
-import { pushHappening, recentHappenings } from './messaging';
-import { activeEnemies, damageEnemy, type ActiveEnemy } from './enemies';
+import { activePlayersInScene } from './actions';
+import { activeEnemies, addAggro, damageEnemy } from './enemies';
+import { pushHappening } from './messaging';
 import type { Player } from './users';
-// import { damageEnemy, type ActiveEnemy } from './enemies';
 
 export type ItemKey = 'bandage' | 'shortBow' | 'shortSword';
 
@@ -17,6 +15,7 @@ export const items: Record<ItemKey, Item> = {
 					buttonText: `Heal ${friend.heroName == actor.heroName ? 'myself' : friend.heroName} with bandage`,
 					performAction: () => {
 						friend.health += 10;
+						addAggro(actor, 1)
 						actor.inventory = actor.inventory.filter((i) => i != 'bandage');
 						pushHappening(
 							`${actor.heroName} healed ${friend.heroName == actor.heroName ? 'themself' : friend.heroName
@@ -33,9 +32,9 @@ export const items: Record<ItemKey, Item> = {
 				{
 					buttonText: `Fire an arrow at ${enemy.name}`,
 					performAction() {
+						addAggro(actor, 10)
 						damageEnemy(actor, enemy, 5)
 					}
-
 				}
 			)
 		}
@@ -46,13 +45,9 @@ export const items: Record<ItemKey, Item> = {
 				{
 					buttonText: `Slash ${enemy.name} with my short sword`,
 					performAction() {
-						const dmgResult = damageEnemy(actor, enemy, 10)
-						if (!dmgResult.killed) {
-							actor.health -= enemy.template.attackDamage
-							pushHappening(`${enemy.name} hit ${actor.heroName} for ${enemy.template.attackDamage} damage`)
-						}
+						damageEnemy(actor, enemy, 10)
+						addAggro(actor, 90)
 					}
-
 				}
 			)
 		}

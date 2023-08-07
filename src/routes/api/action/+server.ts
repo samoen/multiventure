@@ -5,7 +5,7 @@ import { isGameActionSelected } from '$lib/utils';
 import { scenes } from '$lib/server/scenes';
 import { users } from '$lib/server/users';
 import { items } from '$lib/server/items';
-import { activeEnemies } from '$lib/server/enemies';
+import { activeEnemies, damagePlayer } from '$lib/server/enemies';
 
 export const POST = (async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
@@ -37,6 +37,19 @@ export const POST = (async (r) => {
 	actionFromId.performAction();
 	const postActionScene = scenes[player.currentScene];
 	const postActionHadEnemies = activeEnemies.some(e=>e.currentScene==player?.currentScene)
+
+	for(const enemyInScene of activeEnemies.filter(e=>e.currentScene == player?.currentScene)){
+		let aggroForActor = enemyInScene.aggros.get(player.heroName)
+		if(aggroForActor){
+			if((Math.random() + (aggroForActor/100)) > 1){
+				damagePlayer(enemyInScene,player)
+				enemyInScene.aggros = new Map()
+			}
+		}
+	}
+
+	console.log(activeEnemies)
+
 	
 	if (preActionScene.onVictory && (preActionHadEnemies && !postActionHadEnemies)) {
 		preActionScene.onVictory()

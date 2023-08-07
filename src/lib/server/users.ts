@@ -9,6 +9,7 @@ export type Flag =
 	| 'heardAboutHiddenPassage'
 	| 'gotFreeStarterWeapon'
 	| 'killedGoblins'
+	| 'sawArthurAfterBattle'
 
 export type GlobalFlag =
 	'smashedMedallion'
@@ -28,9 +29,8 @@ export type Player = {
 	actions: GameAction[];
 	sceneTexts: string[];
 	flags: Set<Flag>;
-	// myLastActionFlags: Set<Flag>;
-	// myLastActionInventory: ItemKey[];
 };
 
 export const users = new Map<UserId, Player>();
 export const globalFlags = new Set<GlobalFlag>();
+
