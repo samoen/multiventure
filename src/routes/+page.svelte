@@ -32,11 +32,23 @@
 	}
 	let happenings:HTMLElement;
 
-	function subscribeEvents() {
+	function subscribeEventsIfNotAlready() {
+		if(source != null && (source.readyState != EventSource.CLOSED)){
+			console.log('no need to subscribe')
+			return
+		}
 		status = 'subscribing to events';
 		waitingForMyEvent = true;
 		source = new EventSource('/api/subscribe');
-
+		source.onerror = function(ev){
+			console.error(`event source error ${JSON.stringify(ev)}`,ev);
+			status = 'Event source errored, need manual action';
+			this.close();
+			lastMsgFromServer = null;
+			loading = false	
+		}
+		
+		
 		source.addEventListener('world', (e) => {
 			let sMsg = JSON.parse(e.data);
 			if (!isMsgFromServer(sMsg)) {
@@ -59,17 +71,15 @@
 			status = 'you logged in elsewhere, connection closed';
 			lastMsgFromServer = null;
 		});
-		source.addEventListener('error', (e) => {
-			console.log('source error');
-			status = 'recovering from source error hopefully..';
-			// source.close();
-		});
 	}
 	onMount(() => {
 		console.log('mounted with ' + JSON.stringify(data));
-		if (data.loggedIn && !source) {
-			status = 'auto logging in';
-			subscribeEvents();
+		if (data.loggedIn) {
+			console.log('cookie is valid')
+			// if(source == null){
+				status = 'auto subscribing';
+				subscribeEventsIfNotAlready();
+			// }
 		} else {
 			status = 'need manual login';
 			loading = false;
@@ -123,7 +133,7 @@
 			loginInput = '';
 			if (joincall.ok) {
 				status = 'waiting for first event';
-				subscribeEvents();
+				subscribeEventsIfNotAlready();
 			} else {
 				console.log('joincall not ok');
 			}

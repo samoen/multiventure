@@ -24,9 +24,12 @@ export type Player = {
 	inventory: ItemKey[];
 	health: number;
 	currentScene: SceneKey;
+	previousScene: SceneKey;
 	actions: GameAction[];
-	duringSceneTexts: string[];
+	sceneTexts: string[];
 	flags: Set<Flag>;
+	// myLastActionFlags: Set<Flag>;
+	// myLastActionInventory: ItemKey[];
 };
 
 export const users = new Map<UserId, Player>();

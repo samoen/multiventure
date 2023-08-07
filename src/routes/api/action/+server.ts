@@ -1,10 +1,10 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getAvailableActionsForPlayer } from '$lib/server/actions';
-import { FAKE_LATENCY, sendEveryoneWorld } from '$lib/server/messaging';
+import { FAKE_LATENCY, sendEveryoneWorld, updateAllPlayerActions, updatePlayerActions } from '$lib/server/messaging';
 import { isGameActionSelected } from '$lib/utils';
 import { scenes } from '$lib/server/scenes';
 import { users } from '$lib/server/users';
+import { items } from '$lib/server/items';
 
 export const POST = (async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
@@ -19,39 +19,38 @@ export const POST = (async (r) => {
 		return json('hero not found', { status: 401 });
 	}
 	let player = users.get(hero);
-	if(!player){
+	if (!player) {
 		return json('hero not found', { status: 401 });
 	}
+	updatePlayerActions(player)
 	let actionFromId = player.actions.find((g) => g.buttonText == msg.buttonText);
 	if (!actionFromId) {
 		console.log(`rejected action ${JSON.stringify(msg)} because not available`);
 		return json(`action ${msg.buttonText} not available`, { status: 400 });
 	}
-	
-	
+
+
 	const oldSceneKey = player.currentScene;
-	// player.previousScene = player.currentScene;
 	const preActionScene = scenes[player.currentScene];
 	actionFromId.performAction();
-	if(preActionScene.onActed){
+	if (preActionScene.onActed) {
 		preActionScene.onActed()
 	}
 	const postActionScene = scenes[player.currentScene];
-	
+
 	if (player.currentScene != oldSceneKey) {
-		player.duringSceneTexts = [];
+		player.sceneTexts = [];
+		player.previousScene = oldSceneKey
 		if (postActionScene && postActionScene.onEnterScene) {
-			postActionScene.onEnterScene(player,oldSceneKey);
+			postActionScene.onEnterScene(player);
 		}
 	}
-	for (const allPlayer of users.values()) {
-		allPlayer.actions = []
-		getAvailableActionsForPlayer(allPlayer)
-	}
+	updateAllPlayerActions()
+	
 
 	// tiny timeout so endpoint returns before the event messages get sent
 	setTimeout(() => {
-		if(hero) sendEveryoneWorld(hero);
+		if (hero) sendEveryoneWorld(hero);
 	}, 1);
 
 	return json({ sucess: 'yessir' });

@@ -10,7 +10,7 @@ export const POST: RequestHandler = async (r) => {
 		return json('must be logged in to log out', { status: 401 });
 	}
 
-	console.log(`logging out ${hero}`);
+	console.log(`log out ${hero}`);
 	r.cookies.delete('hero', { path: '/' });
 	// setTimeout(() => {
 	// let player = players.get(hero);

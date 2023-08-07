@@ -1,7 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { users } from '$lib/server/users';
-import { encode, sendEveryoneWorld } from '$lib/server/messaging';
+import { encode, pushHappening, sendEveryoneWorld, updateAllPlayerActions } from '$lib/server/messaging';
+import { scenes } from '$lib/server/scenes';
 
 export const GET: RequestHandler = async (event) => {
 	await new Promise((resolve) => setTimeout(resolve, 500));
@@ -15,18 +16,19 @@ export const GET: RequestHandler = async (event) => {
 	if(!player){
 		return json({ error: 'hero not found' }, { status: 401 });
 	}
-	if (player?.connectionState != null) {
-		if (player.connectionState.con != null) {
-			console.log(`${from} subscribing but already subscribed. sending close message`);
-			player.connectionState.con.enqueue(encode('closing', {}));
+	if (player.connectionState != null && player.connectionState.stream != null) {
+		// return json({ error: 'user already connected' }, { status: 401 });
+		// if (player.connectionState.con != null) {
+			// console.log(`${player.heroName} subscribing but already subscribed. sending close message`);
+			// player.connectionState.con.enqueue(encode('closing', {}));
 			
-			// wait for old subscriber to cancel. Improve this
-			await new Promise((r) => {
-				setTimeout(r, 1000);
-			}); 
-		}
+			// // wait for old subscriber to cancel. Improve this
+			// await new Promise((r) => {
+			// 	setTimeout(r, 1000);
+			// }); 
+		// }
 
-		player.connectionState = null;
+		// player.connectionState = null;
 	}
 	player.connectionState = {
 		ip: null,
@@ -37,15 +39,19 @@ export const GET: RequestHandler = async (event) => {
 	let rs = new ReadableStream({
 		start: async (c) => {
 			if(!player || !player.connectionState)return
-			console.log(`stream started with: ${ip}, hero ${from}`);
+			console.log(`stream started with: ${ip}, hero ${player.heroName}`);
 			player.connectionState.ip = ip;
 			player.connectionState.con = c;
+			pushHappening(`${player.heroName} joined the game`)
+			player.sceneTexts = []
+			scenes[player.currentScene].onEnterScene(player)
+			updateAllPlayerActions()
 			setTimeout(() => {
 				sendEveryoneWorld(from);
 			}, 1);
 		},
 		cancel: () => {
-			console.log(`stream cancel handle for ${ip} ${from}`);
+			console.log(`stream cancel handle for ${ip} ${player.heroName}`);
 			// try {
 			//     controller.close();
 			// } catch (e) {

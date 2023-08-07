@@ -5,7 +5,6 @@ import { FAKE_LATENCY } from '$lib/server/messaging';
 import { users, type Player, type Flag } from '$lib/server/users';
 import type { ItemKey } from '$lib/server/items';
 import { scenes } from '$lib/server/scenes';
-import { getAvailableActionsForPlayer } from '$lib/server/actions';
 
 export const POST: RequestHandler = async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
@@ -21,7 +20,7 @@ export const POST: RequestHandler = async (r) => {
 
 	if (!users.has(msg.join)) {
 		// new user
-		
+
 		const startflags : Set<Flag>= new Set()
 		// startflags.add('heardAboutHiddenPassage')
 		// startflags.add('gotFreeStarterWeapon')
@@ -32,15 +31,17 @@ export const POST: RequestHandler = async (r) => {
 		const player = {
 			connectionState: null,
 			heroName: msg.join,
+			previousScene: 'dead',
 			currentScene: 'forest',
 			inventory: startitems,
 			health: 100,
 			actions:[],
-			duringSceneTexts: [],
+			sceneTexts: [],
 			flags: startflags,
+			// lastTravelflags: new Set(),
 		} satisfies Player
-		getAvailableActionsForPlayer(player)
-		scenes[player.currentScene].onEnterScene(player,'dead')
+		// getAvailableActionsForPlayer(player)
+		// scenes[player.currentScene].onEnterScene(player,'dead')
 		users.set(msg.join, player);
 	}
 	r.cookies.set('hero', msg.join, { path: '/',secure:false});

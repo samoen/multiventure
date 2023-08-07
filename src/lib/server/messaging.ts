@@ -1,6 +1,6 @@
 import type { MessageFromServer, OtherPlayerInfo } from '$lib/utils';
-import { getAvailableActionsForPlayer } from './actions';
 import { activeEnemies } from './enemies';
+import { items } from './items';
 import { scenes } from './scenes';
 import { type HeroName, users, type Player, globalFlags } from './users';
 
@@ -13,6 +13,22 @@ export function pushHappening(toPush: string) {
 	if (recentHappenings.length > 10) {
 		recentHappenings.shift();
 	}
+}
+
+export function updateAllPlayerActions(){
+	for (const allPlayer of users.values()) {
+		updatePlayerActions(allPlayer)
+	}
+}
+
+export function updatePlayerActions(player:Player){
+	player.actions = []
+	scenes[player.currentScene].sceneActions(player)
+	for (const itemKey of player.inventory) {
+		const item = items[itemKey];
+		item(player)
+	}
+
 }
 
 export async function sendEveryoneWorld(triggeredBy: HeroName) {
@@ -32,7 +48,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 	// const scene = scenes[forPlayer.currentScene];
 	const sceneTexts: string[] = [];
 	// sceneTexts.push(scene.mainSceneText(forPlayer,forPlayer.previousScene))
-	sceneTexts.push(...forPlayer.duringSceneTexts);
+	sceneTexts.push(...forPlayer.sceneTexts);
 
 	const nextMsg: MessageFromServer = {
 		triggeredBy: triggeredBy,
