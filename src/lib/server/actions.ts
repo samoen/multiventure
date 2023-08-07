@@ -31,3 +31,7 @@ export function activePlayersInScene(scene:SceneKey) : Player[]{
 	return Array.from(users.values())
 		.filter((usr) => usr.connectionState != null && usr.currentScene == scene)
 }
+export function activePlayers() : Player[]{
+	return Array.from(users.values())
+		.filter((usr) => usr.connectionState != null)
+}

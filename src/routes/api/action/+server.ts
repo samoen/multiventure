@@ -5,6 +5,7 @@ import { isGameActionSelected } from '$lib/utils';
 import { scenes } from '$lib/server/scenes';
 import { users } from '$lib/server/users';
 import { items } from '$lib/server/items';
+import { activeEnemies } from '$lib/server/enemies';
 
 export const POST = (async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
@@ -32,11 +33,14 @@ export const POST = (async (r) => {
 
 	const oldSceneKey = player.currentScene;
 	const preActionScene = scenes[player.currentScene];
+	const preActionHadEnemies = activeEnemies.some(e=>e.currentScene==player?.currentScene)
 	actionFromId.performAction();
-	if (preActionScene.onActed) {
-		preActionScene.onActed()
-	}
 	const postActionScene = scenes[player.currentScene];
+	const postActionHadEnemies = activeEnemies.some(e=>e.currentScene==player?.currentScene)
+	
+	if (preActionScene.onVictory && (preActionHadEnemies && !postActionHadEnemies)) {
+		preActionScene.onVictory()
+	}
 
 	if (player.currentScene != oldSceneKey) {
 		player.sceneTexts = [];

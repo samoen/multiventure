@@ -6,7 +6,12 @@ import { scenes } from '$lib/server/scenes';
 
 export const GET: RequestHandler = async (event) => {
 	await new Promise((resolve) => setTimeout(resolve, 500));
-	const ip = event.getClientAddress();
+	let ip :string;
+	try{
+		ip = event.getClientAddress();
+	}catch(e){
+		return json({error:'no ip'}, {status:401})
+	}
 	const from = event.cookies.get('hero');
 	console.log(`stream requested by: ${ip} ${from}`);
 	if (!from) {
@@ -43,8 +48,8 @@ export const GET: RequestHandler = async (event) => {
 			player.connectionState.ip = ip;
 			player.connectionState.con = c;
 			pushHappening(`${player.heroName} joined the game`)
-			player.sceneTexts = []
-			scenes[player.currentScene].onEnterScene(player)
+			// player.sceneTexts = []
+			// scenes[player.currentScene].onEnterScene(player)
 			updateAllPlayerActions()
 			setTimeout(() => {
 				sendEveryoneWorld(from);

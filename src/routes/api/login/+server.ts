@@ -40,6 +40,8 @@ export const POST: RequestHandler = async (r) => {
 			flags: startflags,
 			// lastTravelflags: new Set(),
 		} satisfies Player
+		// player.sceneTexts = []
+		scenes[player.currentScene].onEnterScene(player)
 		// getAvailableActionsForPlayer(player)
 		// scenes[player.currentScene].onEnterScene(player,'dead')
 		users.set(msg.join, player);

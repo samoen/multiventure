@@ -19,8 +19,7 @@ npm run dev
 ```
 
 Or start the server, open the app in a new browser tab and host it on your local network:
+```bash
 npm run dev -- --open --host
-
 ```
 
-```
