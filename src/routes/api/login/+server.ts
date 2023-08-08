@@ -4,6 +4,7 @@ import { isJoin, type MessageFromServer } from '$lib/utils';
 import { FAKE_LATENCY } from '$lib/server/messaging';
 import { users, type Player, type Flag } from '$lib/server/users';
 import { scenes, type SceneKey } from '$lib/server/scenes';
+import type { Inventory } from '$lib/server/items';
 
 export const POST: RequestHandler = async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
@@ -29,18 +30,27 @@ export const POST: RequestHandler = async (r) => {
 		startScene = 'forestPassage' 
 		// startScene = 'throne' 
 
+		let startItems :Inventory= {
+			weapon:{
+				itemKey:'fist',
+				cooldown:0,
+			},
+			utility:{
+				itemKey:'nothing',
+				cooldown:0,
+			},
+			body:{
+				itemKey:'rags',
+				cooldown:0,
+			}
+		}
+
 		const player = {
 			connectionState: null,
 			heroName: msg.join,
 			previousScene: 'dead',
 			currentScene: startScene,
-			// inventory: startitems,
-			weapon:'fist',
-			weaponCooldown:0,
-			utility:'bandage',
-			utilityCooldown:0,
-			body:'rags',
-			bodyCooldown:0,
+			inventory: startItems,
 			health: 100,
 			actions:[],
 			sceneTexts: [],

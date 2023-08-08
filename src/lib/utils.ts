@@ -1,17 +1,17 @@
 // This file is for stuff available to both the server and browser
 
-import type { Flag, GlobalFlag, HeroName } from './server/users';
-import type { BodyItemKey, UtilityItemKey, WeaponItemKey } from './server/items';
+import type { ItemKeyWithCooldown } from './server/items';
 import type { SceneKey } from './server/scenes';
+import type { Flag, GlobalFlag, HeroName } from './server/users';
 
 export type MessageFromServer = {
 	triggeredBy: HeroName;
 	yourName: HeroName;
 	yourScene: SceneKey;
 	yourHp: number;
-	yourWeapon: WeaponItemKey;
-	yourUtility: UtilityItemKey;
-	yourBody: BodyItemKey;
+	yourWeapon: ItemKeyWithCooldown;
+	yourUtility: ItemKeyWithCooldown;
+	yourBody: ItemKeyWithCooldown;
 	otherPlayers: OtherPlayerInfo[];
 	sceneTexts: string[];
 	actions: GameActionSentToClient[];

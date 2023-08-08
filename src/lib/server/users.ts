@@ -1,5 +1,5 @@
 import type { GameAction } from './actions';
-import { utilityItems, type BodyItemKey, type Item, type UtilityItemKey, type WeaponItemKey, bodyItems, weapons } from './items';
+import { utilityItems, type BodyItemKey, type Item, type UtilityItemKey, type WeaponItemKey, bodyItems, weapons, type ItemKey, items, type ItemKeyWithCooldown, type Inventory } from './items';
 import type { SceneKey } from './scenes';
 
 export type UserId = string;
@@ -15,12 +15,6 @@ export type GlobalFlag =
 	'smashedMedallion'
 	| 'placedMedallion';
 
-// export type EquipmentSlot =
-// |'weapon'
-// | 'utility'
-// | 'body'
-
-// export type Inventory = Map<EquipmentSlot,ItemKey>
 
 export type Player = {
 	connectionState: {
@@ -29,14 +23,8 @@ export type Player = {
 		stream: ReadableStream | null;
 	} | null;
 	heroName: HeroName;
-	// inventory: Inventory;
 	health: number;
-	weapon:WeaponItemKey;
-	weaponCooldown:number;
-	utility:UtilityItemKey;
-	utilityCooldown:number;
-	body:BodyItemKey;
-	bodyCooldown:number;
+	inventory:Inventory;
 	currentScene: SceneKey;
 	previousScene: SceneKey;
 	actions: GameAction[];
@@ -48,6 +36,17 @@ export const users = new Map<UserId, Player>();
 export const globalFlags = new Set<GlobalFlag>();
 
 export function playerEquipped(player:Player) : Item[]{
-	return [weapons[player.weapon],utilityItems[player.utility],bodyItems[player.body]]
+	return [
+		items[player.inventory.weapon.itemKey],
+		items[player.inventory.body.itemKey],
+		items[player.inventory.utility.itemKey]]
+}
+
+export function playerCooldowns(player:Player) : ItemKeyWithCooldown[]{
+	return [
+		player.inventory.weapon,
+		player.inventory.body,
+		player.inventory.utility
+	]
 }
 

@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { FAKE_LATENCY, sendEveryoneWorld, updateAllPlayerActions, updatePlayerActions } from '$lib/server/messaging';
 import { isGameActionSelected } from '$lib/utils';
 import { scenes } from '$lib/server/scenes';
-import { users } from '$lib/server/users';
+import { playerCooldowns, users } from '$lib/server/users';
 import { activeEnemies, damagePlayer } from '$lib/server/enemies';
 
 export const POST = (async (r) => {
@@ -38,9 +38,9 @@ export const POST = (async (r) => {
 	const postActionHadEnemies = activeEnemies.some(e=>e.currentScene==player?.currentScene)
 
 	if(preActionHadEnemies){
-		if(player.bodyCooldown > 0) player.bodyCooldown--
-		if(player.weaponCooldown > 0) player.weaponCooldown--
-		if(player.utilityCooldown > 0) player.utilityCooldown--
+		for (const cd of playerCooldowns(player)){
+			if(cd.cooldown > 0) cd.cooldown--
+		}
 	}
 
 	for(const enemyInScene of activeEnemies.filter(e=>e.currentScene == player?.currentScene)){

@@ -17,6 +17,28 @@ export type BodyItemKey =
 	| 'leatherArmor'
 	| 'plateMail'
 
+export type EquipmentSlot =
+	| 'weapon'
+	| 'utility'
+	| 'body'
+
+export type ItemKey = WeaponItemKey | UtilityItemKey | BodyItemKey
+
+export type ItemKeyWithCooldown = Inventory[keyof Inventory]
+export type Inventory = {
+	weapon: {
+		itemKey: WeaponItemKey;
+		cooldown: number;
+	}
+	utility: {
+		itemKey: UtilityItemKey;
+		cooldown: number;
+	}
+	body: {
+		itemKey: BodyItemKey;
+		cooldown: number;
+	}
+}
 
 export type Item = {
 	actions?: (actor: Player) => void
@@ -32,7 +54,7 @@ const bandage: Item = {
 					performAction: () => {
 						friend.health += 10;
 						addAggro(actor, 1)
-						actor.utility = 'nothing'
+						actor.inventory.utility.itemKey = 'nothing'
 						pushHappening(
 							`${actor.heroName} healed ${friend.heroName == actor.heroName ? 'themself' : friend.heroName
 							} for 10hp`
@@ -69,7 +91,7 @@ const shortBow: Item = {
 					performAction() {
 						addAggro(actor, 10)
 						damageEnemy(actor, enemy, 5)
-						actor.weaponCooldown = 2
+						actor.inventory.weapon.cooldown = 2
 					}
 				}
 			)
@@ -93,21 +115,21 @@ const shortSword: Item = {
 	}
 }
 
-const plateMail : Item = {
+const plateMail: Item = {
 	onTakeDamage(incoming) {
-		if(incoming > 20){
+		if (incoming > 20) {
 			return 20
 		}
-		return incoming	
+		return incoming
 	},
 }
 
-const leatherArmor : Item = {
+const leatherArmor: Item = {
 	onTakeDamage(incoming) {
-		if(incoming < 6){
+		if (incoming < 6) {
 			return 1
 		}
-		return incoming	- 5
+		return incoming - 5
 	},
 }
 
@@ -124,8 +146,14 @@ export const utilityItems: Record<UtilityItemKey, Item> = {
 
 export const bodyItems: Record<BodyItemKey, Item> = {
 	rags: {},
-	plateMail:plateMail,
-	leatherArmor:leatherArmor,
+	plateMail: plateMail,
+	leatherArmor: leatherArmor,
 }
+
+export const items = {
+	...weapons,
+	...utilityItems,
+	...bodyItems
+} satisfies Record<ItemKey, Item>
 
 

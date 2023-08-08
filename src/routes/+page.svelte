@@ -166,7 +166,7 @@
 	{/each}
 	<h3>My Hero:</h3>
 	<p>Health: {lastMsgFromServer.yourHp}</p>
-	<p>Inventory: {lastMsgFromServer.yourWeapon} {lastMsgFromServer.yourUtility} {lastMsgFromServer.yourBody}</p>
+	<p>Inventory: {lastMsgFromServer.yourWeapon.itemKey} {lastMsgFromServer.yourUtility.itemKey} {lastMsgFromServer.yourBody.itemKey}</p>
 	<p>Current Scene: {lastMsgFromServer.yourScene}</p>
 	<p>Player flags: {lastMsgFromServer.playerFlags}</p>
 	<p>Global flags: {lastMsgFromServer.globalFlags}</p>

@@ -1,8 +1,8 @@
 import type { MessageFromServer, OtherPlayerInfo } from '$lib/utils';
-import { activeEnemies } from './enemies';
-import { bodyItems, utilityItems, weapons } from './items';
+import { activeEnemies, addAggro } from './enemies';
+import { items } from './items';
 import { scenes } from './scenes';
-import { type HeroName, users, type Player, globalFlags, playerEquipped } from './users';
+import { globalFlags, playerCooldowns, users, type HeroName, type Player } from './users';
 
 export const FAKE_LATENCY = 100;
 
@@ -24,22 +24,13 @@ export function updateAllPlayerActions() {
 export function updatePlayerActions(player: Player) {
 	player.actions = []
 	scenes[player.currentScene].sceneActions(player)
-	const wep = weapons[player.weapon]
-	if (wep.actions) {
-		if (player.weaponCooldown < 1) {
-			wep.actions(player)
-		}
-	}
-	const util = utilityItems[player.utility]
-	if (util.actions) {
-		if (player.utilityCooldown < 1) {
-			util.actions(player)
-		}
-	}
-	const body = bodyItems[player.body]
-	if (body.actions) {
-		if (player.bodyCooldown < 1) {
-			body.actions(player)
+	for (const cd of playerCooldowns(player)){
+		
+		const i = items[cd.itemKey]
+		if (i.actions) {
+			if (cd.cooldown < 1) {
+				i.actions(player)
+			}
 		}
 	}
 
@@ -48,6 +39,7 @@ export function updatePlayerActions(player: Player) {
 			{
 				buttonText: 'wait',
 				performAction() {
+					addAggro(player,1)
 				},
 			}
 		)
@@ -72,9 +64,9 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 		triggeredBy: triggeredBy,
 		yourName: forPlayer.heroName,
 		yourHp: forPlayer.health,
-		yourWeapon: forPlayer.weapon,
-		yourUtility: forPlayer.utility,
-		yourBody: forPlayer.body,
+		yourWeapon: forPlayer.inventory.weapon,
+		yourUtility: forPlayer.inventory.utility,
+		yourBody: forPlayer.inventory.body,
 		yourScene: forPlayer.currentScene,
 		otherPlayers: Array.from(users.values())
 			.filter((u) => u.heroName != forPlayer.heroName && u.connectionState != null)
