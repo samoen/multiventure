@@ -1,6 +1,6 @@
 import type { MessageFromServer, OtherPlayerInfo } from '$lib/utils';
 import { activeEnemies } from './enemies';
-import { items } from './items';
+import { bodyItems, utilityItems, weapons } from './items';
 import { scenes } from './scenes';
 import { type HeroName, users, type Player, globalFlags } from './users';
 
@@ -24,11 +24,18 @@ export function updateAllPlayerActions(){
 export function updatePlayerActions(player:Player){
 	player.actions = []
 	scenes[player.currentScene].sceneActions(player)
-	for (const itemKey of player.inventory) {
-		const item = items[itemKey];
-		item(player)
+	const wep = weapons[player.weapon]
+	if(wep.actions){
+		wep.actions(player)
 	}
-
+	const util = utilityItems[player.utility]
+	if(util.actions){
+		util.actions(player)
+	}
+	const body = bodyItems[player.body]
+	if(body.actions){
+		body.actions(player)
+	}
 }
 
 export async function sendEveryoneWorld(triggeredBy: HeroName) {
@@ -37,7 +44,6 @@ export async function sendEveryoneWorld(triggeredBy: HeroName) {
 	});
 	for (const user of users.values()) {
 		if (user.connectionState && user.connectionState.con) {
-			// getAvailableActionsForPlayer(user)
 			const toSend = buildNextMessage(user, triggeredBy);
 			user.connectionState.con.enqueue(encode(`world`, toSend));
 		}
@@ -45,28 +51,25 @@ export async function sendEveryoneWorld(triggeredBy: HeroName) {
 }
 
 export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): MessageFromServer {
-	// const scene = scenes[forPlayer.currentScene];
-	const sceneTexts: string[] = [];
-	// sceneTexts.push(scene.mainSceneText(forPlayer,forPlayer.previousScene))
-	sceneTexts.push(...forPlayer.sceneTexts);
 
 	const nextMsg: MessageFromServer = {
 		triggeredBy: triggeredBy,
 		yourName: forPlayer.heroName,
 		yourHp: forPlayer.health,
-		yourInventory: forPlayer.inventory,
+		yourWeapon: forPlayer.weapon,
+		yourUtility: forPlayer.utility,
+		yourBody: forPlayer.body,
 		yourScene: forPlayer.currentScene,
 		otherPlayers: Array.from(users.values())
 			.filter((u) => u.heroName != forPlayer.heroName && u.connectionState != null)
 			.map((u) => {
 				return {
 					heroName: u.heroName,
-					inventory: u.inventory,
 					health: u.health,
 					currentScene: u.currentScene
 				} satisfies OtherPlayerInfo;
 			}),
-		sceneTexts: sceneTexts,
+		sceneTexts: forPlayer.sceneTexts,
 		actions: forPlayer.actions.map((gameAction) => {
 			return {
 				buttonText: gameAction.buttonText

@@ -1,7 +1,7 @@
 // This file is for stuff available to both the server and browser
 
 import type { Flag, GlobalFlag, HeroName } from './server/users';
-import type { ItemKey } from './server/items';
+import type { BodyItemKey, UtilityItemKey, WeaponItemKey } from './server/items';
 import type { SceneKey } from './server/scenes';
 
 export type MessageFromServer = {
@@ -9,7 +9,9 @@ export type MessageFromServer = {
 	yourName: HeroName;
 	yourScene: SceneKey;
 	yourHp: number;
-	yourInventory: ItemKey[];
+	yourWeapon: WeaponItemKey;
+	yourUtility: UtilityItemKey;
+	yourBody: BodyItemKey;
 	otherPlayers: OtherPlayerInfo[];
 	sceneTexts: string[];
 	actions: GameActionSentToClient[];
@@ -32,7 +34,6 @@ export function isMsgFromServer(msg: object): msg is MessageFromServer {
 export type OtherPlayerInfo = {
 	heroName: HeroName;
 	currentScene: SceneKey;
-	inventory: ItemKey[];
 	health: number;
 };
 

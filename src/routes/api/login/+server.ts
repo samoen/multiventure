@@ -3,7 +3,6 @@ import type { RequestHandler } from './$types';
 import { isJoin, type MessageFromServer } from '$lib/utils';
 import { FAKE_LATENCY } from '$lib/server/messaging';
 import { users, type Player, type Flag } from '$lib/server/users';
-import type { ItemKey } from '$lib/server/items';
 import { scenes, type SceneKey } from '$lib/server/scenes';
 
 export const POST: RequestHandler = async (r) => {
@@ -22,22 +21,23 @@ export const POST: RequestHandler = async (r) => {
 		// new user
 
 		const startflags : Set<Flag>= new Set()
-		// startflags.add('heardAboutHiddenPassage')
+		startflags.add('heardAboutHiddenPassage')
 		// startflags.add('gotFreeStarterWeapon')
 		// startflags.add('killedGoblins')
-		const startitems : ItemKey[] = []
-		// startitems.push('shortSword')
-		// startitems.push('bandage')
 
 		let startScene : SceneKey = 'forest'
-		// startScene = 'forestPassage' 
+		startScene = 'forestPassage' 
+		// startScene = 'throne' 
 
 		const player = {
 			connectionState: null,
 			heroName: msg.join,
 			previousScene: 'dead',
 			currentScene: startScene,
-			inventory: startitems,
+			// inventory: startitems,
+			weapon:'fist',
+			utility:'nothing',
+			body:'rags',
 			health: 100,
 			actions:[],
 			sceneTexts: [],

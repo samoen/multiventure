@@ -154,7 +154,6 @@
 	{#each lastMsgFromServer.otherPlayers as p}
 		<p>
 			{p.heroName} is in {p.currentScene} with {p.health}hp
-			{p.inventory.length > 0 ? `carrying ${p.inventory}` : ''}
 		</p>
 		<p />
 	{/each}
@@ -167,7 +166,7 @@
 	{/each}
 	<h3>My Hero:</h3>
 	<p>Health: {lastMsgFromServer.yourHp}</p>
-	<p>Inventory: {lastMsgFromServer.yourInventory}</p>
+	<p>Inventory: {lastMsgFromServer.yourWeapon} {lastMsgFromServer.yourUtility} {lastMsgFromServer.yourBody}</p>
 	<p>Current Scene: {lastMsgFromServer.yourScene}</p>
 	<p>Player flags: {lastMsgFromServer.playerFlags}</p>
 	<p>Global flags: {lastMsgFromServer.globalFlags}</p>

@@ -4,7 +4,6 @@ import { FAKE_LATENCY, sendEveryoneWorld, updateAllPlayerActions, updatePlayerAc
 import { isGameActionSelected } from '$lib/utils';
 import { scenes } from '$lib/server/scenes';
 import { users } from '$lib/server/users';
-import { items } from '$lib/server/items';
 import { activeEnemies, damagePlayer } from '$lib/server/enemies';
 
 export const POST = (async (r) => {

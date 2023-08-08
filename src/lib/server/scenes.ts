@@ -2,7 +2,15 @@ import { activePlayersInScene } from './actions';
 import { activeEnemies, spawnEnemy } from './enemies';
 import { globalFlags, type Player } from './users';
 
-export type SceneKey = 'dead' | 'forest' | 'castle' | 'throne' | 'forestPassage' | 'goblinCamp' | 'tunnelChamber';
+export type SceneKey = 
+| 'forest' 
+| 'castle' 
+| 'throne' 
+| 'forestPassage' 
+| 'goblinCamp' 
+| 'tunnelChamber'
+| 'armory'
+|'dead' ;
 export type Scene = {
 	onEnterScene: (player: Player) => void;
 	onVictory?: () => void;
@@ -76,9 +84,9 @@ const castle: Scene = {
 			player.flags.add('metArthur')
 			player.sceneTexts.push("This castle contains the memory of great beauty, but it feels long gone. In its place is an emptiness. A confusion. Wherevery ou turn, it feels as though there is an entity just at the periphery of your visual. The sense of something obscene inhabits this place. What should be a structure of strength and security, has become something maddening to the senses.")
 			player.sceneTexts.push("From an unknown place appears a voice. 'Hail!' It cries. You reach for a weapon that you suddenly remember you don't posess. While you see know doors, before you materialises a soldier. There is something about his eyes that tell you he is not afflicted by the same condition that seems to have twisted this land. 'I see you have found your way into this once hallowed hall. I would introduce myself, but whatever name I once had no longer has any meaning.'");
-			if (!player.inventory.includes('bandage')) {
+			if (player.utility == 'nothing') {
 				player.sceneTexts.push("From his cloak he produces a small object. A bandage. 'You may need this traveller. This land is unkind to strangers.")
-				player.inventory.push('bandage');
+				player.utility = 'bandage';
 			}
 			player.sceneTexts.push("As quickly as he arrived, the mysterious warrior disappears back into the walls. You feel that this will not be the last your see of this odd spirit.");
 		}
@@ -126,7 +134,10 @@ const throne: Scene = {
 		}
 	},
 	sceneActions(player: Player) {
-		if (!player.flags.has('killedGoblins')) {
+		const hasDoneMedallion = globalFlags.has('smashedMedallion') || globalFlags.has('placedMedallion')
+		const mustGoThroughTunnel = player.flags.has('killedGoblins') && !hasDoneMedallion
+
+		if (!mustGoThroughTunnel) {
 			player.actions.push(
 				{
 					buttonText: 'Take your leave',
@@ -135,10 +146,10 @@ const throne: Scene = {
 					},
 				})
 		}
-		if (player.flags.has('killedGoblins')) {
+		if (mustGoThroughTunnel) {
 			player.actions.push(
 				{
-					buttonText: 'Follow the path leading to the depths',
+					buttonText: 'Go through the tunnel leading to the depths',
 					performAction() {
 						player.currentScene = 'tunnelChamber'
 					},
@@ -147,11 +158,11 @@ const throne: Scene = {
 
 			)
 		}
-		if (globalFlags.has('smashedMedallion')) {
+		if (hasDoneMedallion) {
 			player.actions.push({
-				buttonText: 'do something because we betrayed the king',
+				buttonText: 'Go to armory',
 				performAction() {
-
+					player.currentScene = 'armory'
 				},
 			})
 		}
@@ -184,7 +195,7 @@ const forestPassage: Scene = {
 				{
 					buttonText: 'I am skillful, I choose the bow',
 					performAction: () => {
-						player.inventory.push('shortBow');
+						player.weapon = 'shortBow';
 						player.flags.add('gotFreeStarterWeapon');
 						player.sceneTexts.push("A bow appears before you. You take it");
 					}
@@ -196,7 +207,7 @@ const forestPassage: Scene = {
 				{
 					buttonText: 'I am mighty, I will take the sword!',
 					performAction() {
-						player.inventory.push('shortSword');
+						player.weapon = 'shortSword';
 						player.flags.add('gotFreeStarterWeapon');
 						player.sceneTexts.push("A shiny sword materializes in your hand!");
 					}
@@ -315,6 +326,20 @@ const tunnelChamber: Scene = {
 	},
 }
 
+const armory:Scene = {
+	onEnterScene(player) {
+		
+	},
+	sceneActions(player) {
+		player.actions.push({
+			buttonText: 'take bow',
+			performAction() {
+				player.weapon = 'shortBow'
+			},
+		})
+	},
+}
+
 export const scenes: Record<SceneKey, Scene> = {
 	dead: dead,
 	forest: forest,
@@ -323,4 +348,5 @@ export const scenes: Record<SceneKey, Scene> = {
 	forestPassage: forestPassage,
 	goblinCamp: goblinCamp,
 	tunnelChamber: tunnelChamber,
+	armory: armory
 };

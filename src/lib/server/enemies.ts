@@ -1,6 +1,6 @@
 import { pushHappening } from "./messaging";
 import type { SceneKey } from "./scenes";
-import type { HeroName, Player } from "./users";
+import { playerEquipped, type HeroName, type Player } from "./users";
 
 
 export const activeEnemies : ActiveEnemy[] = []
@@ -58,10 +58,14 @@ export function addAggro(actor: Player, provoke: number) {
 }
 
 export function damagePlayer(enemy:ActiveEnemy, player:Player){
-	player.health -= enemy.template.attackDamage
-	// enemy.retaliate = 0
+	let dmg = enemy.template.attackDamage
+	for(const item of playerEquipped(player)){
+		if(item.onTakeDamage){
+			dmg = item.onTakeDamage(dmg)
+		}
+	}
+	player.health -= dmg
 	pushHappening(`${enemy.name} hit ${player.heroName} for ${enemy.template.attackDamage} damage`)
-
 }
 
 export function damageEnemy(actor:Player, enemy:ActiveEnemy, damage:number):{killed:boolean}{

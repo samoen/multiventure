@@ -1,5 +1,5 @@
 import type { GameAction } from './actions';
-import type { ItemKey } from './items';
+import { utilityItems, type BodyItemKey, type Item, type UtilityItemKey, type WeaponItemKey, bodyItems, weapons } from './items';
 import type { SceneKey } from './scenes';
 
 export type UserId = string;
@@ -15,6 +15,13 @@ export type GlobalFlag =
 	'smashedMedallion'
 	| 'placedMedallion';
 
+// export type EquipmentSlot =
+// |'weapon'
+// | 'utility'
+// | 'body'
+
+// export type Inventory = Map<EquipmentSlot,ItemKey>
+
 export type Player = {
 	connectionState: {
 		ip: string | null;
@@ -22,8 +29,11 @@ export type Player = {
 		stream: ReadableStream | null;
 	} | null;
 	heroName: HeroName;
-	inventory: ItemKey[];
+	// inventory: Inventory;
 	health: number;
+	weapon:WeaponItemKey;
+	utility:UtilityItemKey;
+	body:BodyItemKey;
 	currentScene: SceneKey;
 	previousScene: SceneKey;
 	actions: GameAction[];
@@ -33,4 +43,8 @@ export type Player = {
 
 export const users = new Map<UserId, Player>();
 export const globalFlags = new Set<GlobalFlag>();
+
+export function playerEquipped(player:Player) : Item[]{
+	return [weapons[player.weapon],utilityItems[player.utility],bodyItems[player.body]]
+}
 
