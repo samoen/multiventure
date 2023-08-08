@@ -68,6 +68,9 @@ export const POST = (async (r) => {
 	if (player.currentScene != oldSceneKey) {
 		player.sceneTexts = [];
 		player.previousScene = oldSceneKey
+		for (const itemState of playerItemStates(player)){
+			itemState.cooldown = 0
+		}
 		if (postActionScene && postActionScene.onEnterScene) {
 			postActionScene.onEnterScene(player);
 		}

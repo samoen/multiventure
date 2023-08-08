@@ -1,4 +1,4 @@
-import { activeEnemies, spawnEnemy } from './enemies';
+import { activeEnemies, enemyTemplates, spawnEnemy, type EnemyTemplateId } from './enemies';
 import { bodyItems, utilityItems, weapons, type ItemIdForSlot } from './items';
 import { activePlayersInScene, globalFlags, healPlayer, type Player } from './users';
 
@@ -356,13 +356,14 @@ const armory:Scene = {
 				},
 			})
 		}
-		player.actions.push({
-			buttonText:'Teleport to goblin camp',
-			performAction() {
-				player.flags.delete('killedGoblins')
-				player.currentScene = 'goblinCamp'
-			},
-		})
+		for(const id in enemyTemplates){
+			player.actions.push({
+				buttonText:`spawn ${id}`,
+				performAction() {
+					spawnEnemy(`${id}${Math.round(Math.random()*100)}`,id as EnemyTemplateId,'armory')
+				},
+			})
+		}
 	},
 }
 

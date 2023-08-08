@@ -162,7 +162,7 @@
 	{/each}
 	<h3>My Hero:</h3>
 	<p>Health: {lastMsgFromServer.yourHp}</p>
-	<p>Inventory: {lastMsgFromServer.yourWeapon.itemId} {lastMsgFromServer.yourUtility.itemId} {lastMsgFromServer.yourBody.itemId}</p>
+	<p>Inventory: {lastMsgFromServer.yourWeapon.itemId} {lastMsgFromServer.yourWeapon.cooldown || ''} {lastMsgFromServer.yourUtility.itemId} {lastMsgFromServer.yourUtility.cooldown || ''} {lastMsgFromServer.yourBody.itemId} {lastMsgFromServer.yourBody.cooldown || ''}</p>
 	<p>Current Scene: {lastMsgFromServer.yourScene}</p>
 	<p>Player flags: {lastMsgFromServer.playerFlags}</p>
 	<p>Global flags: {lastMsgFromServer.globalFlags}</p>
@@ -196,7 +196,7 @@
 	.happenings{
 		display: inline-block;
 		background-color: lightblue;
-		max-height:90px;
+		max-height:150px;
 		padding-right:10px;
 		border: 1px solid black;
 		overflow-y: auto;

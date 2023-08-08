@@ -14,6 +14,7 @@ export type ItemIdForSlot<T extends EquipmentSlot> =
 		: T extends 'utility' ?
 		| 'empty'
 		| 'bandage'
+		| 'bomb'
 		: T extends 'body' ?
 		| 'rags'
 		| 'leatherArmor'
@@ -38,24 +39,6 @@ export type Item = {
 	onTakeDamage?: (incoming: number) => number
 }
 
-const bandage: Item = {
-	actions(player) {
-		for (const friend of activePlayersInScene(player.currentScene)) {
-			if(friend.health < friend.maxHealth){
-				player.actions.push(
-					{
-						buttonText: `Heal ${friend.heroName == player.heroName ? 'myself' : friend.heroName} with bandage`,
-						performAction: () => {
-							healPlayer(friend, 40)
-							addAggro(player, 1)
-							player.inventory.utility.itemId = 'empty'
-						},
-					}
-				)
-			}
-		}
-	}
-}
 
 const shortBow: Item = {
 	actions(player) {
@@ -90,6 +73,42 @@ const shortSword: Item = {
 	}
 }
 
+const bandage: Item = {
+	actions(player) {
+		for (const friend of activePlayersInScene(player.currentScene)) {
+			if(friend.health < friend.maxHealth){
+				player.actions.push(
+					{
+						buttonText: `Heal ${friend.heroName == player.heroName ? 'myself' : friend.heroName} with bandage`,
+						performAction: () => {
+							healPlayer(friend, 40)
+							addAggro(player, 1)
+							player.inventory.utility.itemId = 'empty'
+						},
+					}
+				)
+			}
+		}
+	}
+}
+
+const bomb : Item = {
+	actions(player) {
+		if(enemiesInScene(player.currentScene).length){
+			player.actions.push({
+				buttonText:'Throw bomb',
+				performAction() {
+					for (const enemy of enemiesInScene(player.currentScene)) {
+						damageEnemy(player, enemy, 15)
+					}
+					addAggro(player, 1)
+					player.inventory.utility.itemId = 'empty'
+				},
+			})
+		}
+	},
+}
+
 const plateMail: Item = {
 	onTakeDamage(incoming) {
 		if (incoming > 20) {
@@ -117,6 +136,7 @@ export const weapons: Record<ItemIdForSlot<'weapon'>, Item> = {
 export const utilityItems: Record<ItemIdForSlot<'utility'>, Item> = {
 	empty: {},
 	bandage: bandage,
+	bomb: bomb,
 }
 
 export const bodyItems: Record<ItemIdForSlot<'body'>, Item> = {

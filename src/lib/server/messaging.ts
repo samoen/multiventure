@@ -2,7 +2,7 @@ import type { MessageFromServer, OtherPlayerInfo } from '$lib/utils';
 import { activeEnemies, addAggro, enemiesInScene } from './enemies';
 import { items } from './items';
 import { scenes } from './scenes';
-import { globalFlags, playerItemStates, users, type HeroName, type Player } from './users';
+import { activePlayers, globalFlags, playerItemStates, users, type HeroName, type Player } from './users';
 
 export const FAKE_LATENCY = 100;
 
@@ -24,8 +24,8 @@ export function updateAllPlayerActions() {
 export function updatePlayerActions(player: Player) {
 	player.actions = []
 	scenes[player.currentScene].actions(player)
-	for (const cd of playerItemStates(player)){
-		
+	for (const cd of playerItemStates(player)) {
+
 		const i = items[cd.itemId]
 		if (i.actions) {
 			if (cd.cooldown < 1) {
@@ -39,7 +39,7 @@ export function updatePlayerActions(player: Player) {
 			{
 				buttonText: 'wait',
 				performAction() {
-					addAggro(player,1)
+					addAggro(player, 1)
 				},
 			}
 		)
@@ -68,8 +68,8 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 		yourUtility: forPlayer.inventory.utility,
 		yourBody: forPlayer.inventory.body,
 		yourScene: forPlayer.currentScene,
-		otherPlayers: Array.from(users.values())
-			.filter((u) => u.heroName != forPlayer.heroName && u.connectionState != null)
+		otherPlayers: activePlayers()
+			.filter((u) => u.heroName != forPlayer.heroName)
 			.map((u) => {
 				return {
 					heroName: u.heroName,

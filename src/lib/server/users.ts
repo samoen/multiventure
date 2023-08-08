@@ -66,12 +66,12 @@ export function healPlayer(player:Player, amount:number){
 	pushHappening(`${player.heroName} was healed for ${toHeal}hp`);
 }
 
+export function activePlayers(): Player[]{
+	return Array.from(users.values())
+		.filter((usr) => usr.connectionState != null && usr.connectionState.stream && usr.connectionState.stream.locked)
+}
 
 export function activePlayersInScene(scene:SceneId) : Player[]{
-	return Array.from(users.values())
-		.filter((usr) => usr.connectionState != null && usr.currentScene == scene)
-}
-export function activePlayers() : Player[]{
-	return Array.from(users.values())
-		.filter((usr) => usr.connectionState != null)
+	return activePlayers()
+		.filter((usr) => usr.currentScene == scene)
 }

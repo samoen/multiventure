@@ -19,9 +19,9 @@ export type EnemyTemplate = {
 	aggroGain:number;
 };
 
-export type EnemyKey = 'goblin' | 'wolf' | 'troll';
+export type EnemyTemplateId = 'goblin' | 'wolf' | 'troll';
 
-export const enemyTemplates: Record<EnemyKey, EnemyTemplate> = {
+export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 	goblin: {
 		maxHealth: 100,
 		attackDamage: 10,
@@ -39,7 +39,7 @@ export const enemyTemplates: Record<EnemyKey, EnemyTemplate> = {
 	}
 };
 
-export function spawnEnemy(name:string,template:EnemyKey,where:SceneId){
+export function spawnEnemy(name:string,template:EnemyTemplateId,where:SceneId){
 	activeEnemies.push({
 		name: name,
 		currentScene: where,

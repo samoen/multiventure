@@ -21,7 +21,7 @@ export const POST: RequestHandler = async (r) => {
 	if (!users.has(msg.join)) {
 		// new user
 
-		// globalFlags.add('smashedMedallion')
+		globalFlags.add('smashedMedallion')
 
 		const startflags : Set<Flag>= new Set()
 		// startflags.add('heardAboutHiddenPassage')
@@ -29,9 +29,9 @@ export const POST: RequestHandler = async (r) => {
 		// startflags.add('killedGoblins')
 
 		let startScene : SceneId = 'forest'
-		// startScene = 'throne'
 		// startScene = 'forestPassage' 
-		// startScene = 'throne' 
+		// startScene = 'throne'
+		// startScene = 'armory'
 
 		let startInventory :Inventory= {
 			weapon:{
@@ -39,7 +39,7 @@ export const POST: RequestHandler = async (r) => {
 				cooldown:0,
 			},
 			utility:{
-				itemId:'empty',
+				itemId:'bomb',
 				cooldown:0,
 			},
 			body:{
