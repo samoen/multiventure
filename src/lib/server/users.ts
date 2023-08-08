@@ -32,8 +32,11 @@ export type Player = {
 	// inventory: Inventory;
 	health: number;
 	weapon:WeaponItemKey;
+	weaponCooldown:number;
 	utility:UtilityItemKey;
+	utilityCooldown:number;
 	body:BodyItemKey;
+	bodyCooldown:number;
 	currentScene: SceneKey;
 	previousScene: SceneKey;
 	actions: GameAction[];

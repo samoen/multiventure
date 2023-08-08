@@ -69,6 +69,7 @@ const shortBow: Item = {
 					performAction() {
 						addAggro(actor, 10)
 						damageEnemy(actor, enemy, 5)
+						actor.weaponCooldown = 2
 					}
 				}
 			)

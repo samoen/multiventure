@@ -37,6 +37,12 @@ export const POST = (async (r) => {
 	const postActionScene = scenes[player.currentScene];
 	const postActionHadEnemies = activeEnemies.some(e=>e.currentScene==player?.currentScene)
 
+	if(preActionHadEnemies){
+		if(player.bodyCooldown > 0) player.bodyCooldown--
+		if(player.weaponCooldown > 0) player.weaponCooldown--
+		if(player.utilityCooldown > 0) player.utilityCooldown--
+	}
+
 	for(const enemyInScene of activeEnemies.filter(e=>e.currentScene == player?.currentScene)){
 		let aggroForActor = enemyInScene.aggros.get(player.heroName)
 		if(aggroForActor){

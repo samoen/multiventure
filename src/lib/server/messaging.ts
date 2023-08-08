@@ -2,7 +2,7 @@ import type { MessageFromServer, OtherPlayerInfo } from '$lib/utils';
 import { activeEnemies } from './enemies';
 import { bodyItems, utilityItems, weapons } from './items';
 import { scenes } from './scenes';
-import { type HeroName, users, type Player, globalFlags } from './users';
+import { type HeroName, users, type Player, globalFlags, playerEquipped } from './users';
 
 export const FAKE_LATENCY = 100;
 
@@ -15,26 +15,42 @@ export function pushHappening(toPush: string) {
 	}
 }
 
-export function updateAllPlayerActions(){
+export function updateAllPlayerActions() {
 	for (const allPlayer of users.values()) {
 		updatePlayerActions(allPlayer)
 	}
 }
 
-export function updatePlayerActions(player:Player){
+export function updatePlayerActions(player: Player) {
 	player.actions = []
 	scenes[player.currentScene].sceneActions(player)
 	const wep = weapons[player.weapon]
-	if(wep.actions){
-		wep.actions(player)
+	if (wep.actions) {
+		if (player.weaponCooldown < 1) {
+			wep.actions(player)
+		}
 	}
 	const util = utilityItems[player.utility]
-	if(util.actions){
-		util.actions(player)
+	if (util.actions) {
+		if (player.utilityCooldown < 1) {
+			util.actions(player)
+		}
 	}
 	const body = bodyItems[player.body]
-	if(body.actions){
-		body.actions(player)
+	if (body.actions) {
+		if (player.bodyCooldown < 1) {
+			body.actions(player)
+		}
+	}
+
+	if (activeEnemies.some(e => e.currentScene == player.currentScene)) {
+		player.actions.push(
+			{
+				buttonText: 'wait',
+				performAction() {
+				},
+			}
+		)
 	}
 }
 
@@ -82,8 +98,8 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				name: e.name,
 			}
 		}),
-		playerFlags:Array.from(forPlayer.flags),
-		globalFlags:Array.from(globalFlags),
+		playerFlags: Array.from(forPlayer.flags),
+		globalFlags: Array.from(globalFlags),
 	};
 	return nextMsg;
 }
