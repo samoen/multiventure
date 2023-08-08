@@ -8,7 +8,7 @@ export type EquipmentSlot =
 	| 'utility'
 	| 'body'
 
-type ItemIdForSlot<T extends EquipmentSlot> =
+export type ItemIdForSlot<T extends EquipmentSlot> =
 	T extends 'weapon' ? 
 		| 'fist'
 		| 'shortBow'

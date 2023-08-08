@@ -1,5 +1,6 @@
 import { activePlayersInScene } from './actions';
 import { activeEnemies, spawnEnemy } from './enemies';
+import { bodyItems, utilityItems, weapons, type ItemIdForSlot } from './items';
 import { globalFlags, type Player } from './users';
 
 export type SceneKey = 
@@ -328,13 +329,38 @@ const tunnelChamber: Scene = {
 
 const armory:Scene = {
 	onEnterScene(player) {
-		
+		player.sceneTexts.push("Grab some equipment!")
 	},
 	sceneActions(player) {
+		for( const id in weapons){
+			player.actions.push({
+				buttonText: `Equip Weapon ${id}`,
+				performAction() {
+					player.inventory.weapon.itemId = id as ItemIdForSlot<'weapon'>
+				},
+			})
+		}
+		for( const id in utilityItems){
+			player.actions.push({
+				buttonText: `Equip Utility ${id}`,
+				performAction() {
+					player.inventory.utility.itemId = id as ItemIdForSlot<'utility'>
+				},
+			})
+		}
+		for( const id in bodyItems){
+			player.actions.push({
+				buttonText: `Equip Body ${id}`,
+				performAction() {
+					player.inventory.body.itemId = id as ItemIdForSlot<'body'>
+				},
+			})
+		}
 		player.actions.push({
-			buttonText: 'equip plate mail',
+			buttonText:'Teleport to goblin camp',
 			performAction() {
-				player.inventory.body.itemId = 'plateMail'
+				player.flags.delete('killedGoblins')
+				player.currentScene = 'goblinCamp'
 			},
 		})
 	},

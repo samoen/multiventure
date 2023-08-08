@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { isJoin, type MessageFromServer } from '$lib/utils';
 import { FAKE_LATENCY } from '$lib/server/messaging';
-import { users, type Player, type Flag } from '$lib/server/users';
+import { users, type Player, type Flag, globalFlags } from '$lib/server/users';
 import { scenes, type SceneKey } from '$lib/server/scenes';
 import type { Inventory } from '$lib/server/items';
 
@@ -21,13 +21,16 @@ export const POST: RequestHandler = async (r) => {
 	if (!users.has(msg.join)) {
 		// new user
 
+		// globalFlags.add('smashedMedallion')
+
 		const startflags : Set<Flag>= new Set()
-		startflags.add('heardAboutHiddenPassage')
+		// startflags.add('heardAboutHiddenPassage')
 		// startflags.add('gotFreeStarterWeapon')
 		// startflags.add('killedGoblins')
 
 		let startScene : SceneKey = 'forest'
-		startScene = 'forestPassage' 
+		// startScene = 'throne'
+		// startScene = 'forestPassage' 
 		// startScene = 'throne' 
 
 		let startItems :Inventory= {
