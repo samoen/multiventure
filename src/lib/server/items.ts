@@ -1,7 +1,5 @@
-import { activePlayersInScene } from './actions';
-import { activeEnemies, addAggro, damageEnemy } from './enemies';
-import { pushHappening } from './messaging';
-import type { Player } from './users';
+import { addAggro, damageEnemy, enemiesInScene } from './enemies';
+import { activePlayersInScene, healPlayer, type Player } from './users';
 
 export type EquipmentSlot =
 	| 'weapon'
@@ -9,84 +7,66 @@ export type EquipmentSlot =
 	| 'body'
 
 export type ItemIdForSlot<T extends EquipmentSlot> =
-	T extends 'weapon' ? 
-		| 'fist'
+	 T extends 'weapon' ?
+	 	| 'unarmed'
 		| 'shortBow'
 		| 'shortSword'
-	: T extends 'utility' ? 
-		| 'nothing' 
-		| 'bandage' 
-	: T extends 'body' ? 	
-		| 'rags' 
-		| 'leatherArmor' 
-		| 'plateMail' 
-	: never
+		: T extends 'utility' ?
+		| 'empty'
+		| 'bandage'
+		: T extends 'body' ?
+		| 'rags'
+		| 'leatherArmor'
+		| 'plateMail'
+		: never
 
 export type ItemId = ItemIdForSlot<EquipmentSlot>
 
 export type ItemStateForSlot<T extends EquipmentSlot> = {
-	itemId:ItemIdForSlot<T>;
-	cooldown:number;
+	itemId: ItemIdForSlot<T>;
+	cooldown: number;
 }
 
 export type ItemState = ItemStateForSlot<EquipmentSlot>
 
 export type Inventory = {
-	[T in EquipmentSlot] : ItemStateForSlot<T>
+	[T in EquipmentSlot]: ItemStateForSlot<T>
 }
 
-export type ItemTemplate = {
-	actions?: (actor: Player) => void
+export type Item = {
+	actions?: (player: Player) => void
 	onTakeDamage?: (incoming: number) => number
 }
 
-const bandage: ItemTemplate = {
-	actions(actor) {
-		for (const friend of activePlayersInScene(actor.currentScene)) {
-			actor.actions.push(
-				{
-					buttonText: `Heal ${friend.heroName == actor.heroName ? 'myself' : friend.heroName} with bandage`,
-					performAction: () => {
-						friend.health += 10;
-						addAggro(actor, 1)
-						actor.inventory.utility.itemId = 'nothing'
-						pushHappening(
-							`${actor.heroName} healed ${friend.heroName == actor.heroName ? 'themself' : friend.heroName
-							} for 10hp`
-						);
-					},
-				}
-			)
-		}
-	}
-}
-
-const fist: ItemTemplate = {
-	actions(actor: Player) {
-		for (const enemy of activeEnemies.filter(e => e.currentScene == actor.currentScene)) {
-			actor.actions.push(
-				{
-					buttonText: `punch ${enemy.name}`,
-					performAction() {
-						damageEnemy(actor, enemy, 2)
-						addAggro(actor, 2)
+const bandage: Item = {
+	actions(player) {
+		for (const friend of activePlayersInScene(player.currentScene)) {
+			if(friend.health < friend.maxHealth){
+				player.actions.push(
+					{
+						buttonText: `Heal ${friend.heroName == player.heroName ? 'myself' : friend.heroName} with bandage`,
+						performAction: () => {
+							healPlayer(friend, 40)
+							addAggro(player, 1)
+							player.inventory.utility.itemId = 'empty'
+						},
 					}
-				}
-			)
+				)
+			}
 		}
 	}
 }
 
-const shortBow: ItemTemplate = {
-	actions(actor: Player) {
-		for (const enemy of activeEnemies.filter(e => e.currentScene == actor.currentScene)) {
-			actor.actions.push(
+const shortBow: Item = {
+	actions(player) {
+		for (const enemy of enemiesInScene(player.currentScene)) {
+			player.actions.push(
 				{
 					buttonText: `Fire an arrow at ${enemy.name}`,
 					performAction() {
-						damageEnemy(actor, enemy, 5)
-						addAggro(actor, 10)
-						actor.inventory.weapon.cooldown = 2
+						damageEnemy(player, enemy, 10)
+						addAggro(player, 5)
+						player.inventory.weapon.cooldown = 2
 					}
 				}
 			)
@@ -94,15 +74,15 @@ const shortBow: ItemTemplate = {
 	}
 }
 
-const shortSword: ItemTemplate = {
-	actions(actor: Player) {
-		for (const enemy of activeEnemies.filter(e => e.currentScene == actor.currentScene)) {
-			actor.actions.push(
+const shortSword: Item = {
+	actions(player) {
+		for (const enemy of enemiesInScene(player.currentScene)) {
+			player.actions.push(
 				{
 					buttonText: `Slash ${enemy.name} with my short sword`,
 					performAction() {
-						damageEnemy(actor, enemy, 10)
-						addAggro(actor, 90)
+						damageEnemy(player, enemy, 30)
+						addAggro(player, 50)
 					}
 				}
 			)
@@ -110,7 +90,7 @@ const shortSword: ItemTemplate = {
 	}
 }
 
-const plateMail: ItemTemplate = {
+const plateMail: Item = {
 	onTakeDamage(incoming) {
 		if (incoming > 20) {
 			return 20
@@ -119,7 +99,7 @@ const plateMail: ItemTemplate = {
 	},
 }
 
-const leatherArmor: ItemTemplate = {
+const leatherArmor: Item = {
 	onTakeDamage(incoming) {
 		if (incoming < 6) {
 			return 1
@@ -128,27 +108,27 @@ const leatherArmor: ItemTemplate = {
 	},
 }
 
-export const weapons: Record<ItemIdForSlot<'weapon'>, ItemTemplate> = {
-	fist: fist,
+export const weapons: Record<ItemIdForSlot<'weapon'>, Item> = {
+	unarmed: {},
 	shortBow: shortBow,
 	shortSword: shortSword,
 };
 
-export const utilityItems: Record<ItemIdForSlot<'utility'>, ItemTemplate> = {
+export const utilityItems: Record<ItemIdForSlot<'utility'>, Item> = {
+	empty: {},
 	bandage: bandage,
-	nothing: {},
 }
 
-export const bodyItems: Record<ItemIdForSlot<'body'>, ItemTemplate> = {
+export const bodyItems: Record<ItemIdForSlot<'body'>, Item> = {
 	rags: {},
 	plateMail: plateMail,
 	leatherArmor: leatherArmor,
 }
 
-export const items : Record<ItemId, ItemTemplate> = {
+export const items: Record<ItemId, Item> = {
 	...weapons,
 	...utilityItems,
 	...bodyItems
-} satisfies Record<ItemId, ItemTemplate>
+} satisfies Record<ItemId, Item>
 
 

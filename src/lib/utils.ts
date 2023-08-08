@@ -1,13 +1,13 @@
 // This file is for stuff available to both the server and browser
 
 import type { ItemState } from './server/items';
-import type { SceneKey } from './server/scenes';
+import type { SceneId } from './server/scenes';
 import type { Flag, GlobalFlag, HeroName } from './server/users';
 
 export type MessageFromServer = {
 	triggeredBy: HeroName;
 	yourName: HeroName;
-	yourScene: SceneKey;
+	yourScene: SceneId;
 	yourHp: number;
 	yourWeapon: ItemState;
 	yourUtility: ItemState;
@@ -24,6 +24,7 @@ export type MessageFromServer = {
 export type EnemyInClient = {
 	name:string,
 	health:number,
+	myAggro:number,
 }
 
 export function isMsgFromServer(msg: object): msg is MessageFromServer {
@@ -33,7 +34,7 @@ export function isMsgFromServer(msg: object): msg is MessageFromServer {
 // Information a player receives about other players
 export type OtherPlayerInfo = {
 	heroName: HeroName;
-	currentScene: SceneKey;
+	currentScene: SceneId;
 	health: number;
 };
 

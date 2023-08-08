@@ -1,10 +1,10 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { FAKE_LATENCY, sendEveryoneWorld, updateAllPlayerActions, updatePlayerActions } from '$lib/server/messaging';
+import { FAKE_LATENCY, recentHappenings, sendEveryoneWorld, updateAllPlayerActions, updatePlayerActions } from '$lib/server/messaging';
 import { isGameActionSelected } from '$lib/utils';
 import { scenes } from '$lib/server/scenes';
-import { playerCooldowns, users } from '$lib/server/users';
-import { activeEnemies, damagePlayer } from '$lib/server/enemies';
+import { playerItemStates, users } from '$lib/server/users';
+import { activeEnemies, damagePlayer, enemiesInScene } from '$lib/server/enemies';
 
 export const POST = (async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
@@ -38,19 +38,24 @@ export const POST = (async (r) => {
 	const postActionHadEnemies = activeEnemies.some(e=>e.currentScene==player?.currentScene)
 
 	if(preActionHadEnemies){
-		for (const cd of playerCooldowns(player)){
+		for (const cd of playerItemStates(player)){
 			if(cd.cooldown > 0) cd.cooldown--
 		}
 	}
 
-	for(const enemyInScene of activeEnemies.filter(e=>e.currentScene == player?.currentScene)){
-		let aggroForActor = enemyInScene.aggros.get(player.heroName)
-		if(aggroForActor){
-			if((Math.random() + (aggroForActor/100)) > 1){
-				damagePlayer(enemyInScene,player)
-				enemyInScene.aggros = new Map()
+	const enemies = enemiesInScene(player.currentScene)
+	if(enemies.length){
+		for(const enemyInScene of enemies){
+			let aggroForActor = enemyInScene.aggros.get(player.heroName)
+			if(aggroForActor){
+				if((Math.random() + (aggroForActor/100)) > 1){
+					damagePlayer(enemyInScene,player)
+					enemyInScene.aggros = new Map()
+				}
 			}
 		}
+		recentHappenings.push('----');
+
 	}
 
 	// console.log(activeEnemies)

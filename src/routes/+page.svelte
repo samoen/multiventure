@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { isMsgFromServer, type MessageFromServer, type GameActionSentToClient } from '$lib/utils';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 
 	export let data;
 	let loginInput: string;
@@ -49,7 +49,7 @@
 		}
 		
 		
-		source.addEventListener('world', (e) => {
+		source.addEventListener('world', async(e) => {
 			let sMsg = JSON.parse(e.data);
 			if (!isMsgFromServer(sMsg)) {
 				console.log('malformed event from server');
@@ -60,10 +60,10 @@
 				status = 'playing';
 				waitingForMyEvent = false;
 				loading = false;
-				setTimeout(()=>{
-					if(happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
-				},100)
 			}
+			await tick();
+			if(happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
+
 		});
 		source.addEventListener('closing', (e) => {
 			console.log('got closing msg');
@@ -85,10 +85,6 @@
 			loading = false;
 		}
 	});
-
-	// onDestroy(() => {
-	//     console.log('destroying page')
-	// });
 
 	async function logOut() {
 		// document.cook .cookies.remove('hero')
@@ -160,7 +156,7 @@
 	<h3>Nearby Enemies:</h3>
 	{#each lastMsgFromServer.enemiesInScene as e}
 		<p>
-			{e.name} has {e.health}hp
+			<strong>{e.name}</strong> Health: {e.health}, Aggro: {e.myAggro}
 		</p>
 		<p />
 	{/each}

@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { isJoin, type MessageFromServer } from '$lib/utils';
 import { FAKE_LATENCY } from '$lib/server/messaging';
 import { users, type Player, type Flag, globalFlags } from '$lib/server/users';
-import { scenes, type SceneKey } from '$lib/server/scenes';
+import { scenes, type SceneId } from '$lib/server/scenes';
 import type { Inventory } from '$lib/server/items';
 
 export const POST: RequestHandler = async (r) => {
@@ -28,18 +28,18 @@ export const POST: RequestHandler = async (r) => {
 		// startflags.add('gotFreeStarterWeapon')
 		// startflags.add('killedGoblins')
 
-		let startScene : SceneKey = 'forest'
+		let startScene : SceneId = 'forest'
 		// startScene = 'throne'
 		// startScene = 'forestPassage' 
 		// startScene = 'throne' 
 
-		let startItems :Inventory= {
+		let startInventory :Inventory= {
 			weapon:{
-				itemId:'fist',
+				itemId:'unarmed',
 				cooldown:0,
 			},
 			utility:{
-				itemId:'nothing',
+				itemId:'empty',
 				cooldown:0,
 			},
 			body:{
@@ -53,8 +53,9 @@ export const POST: RequestHandler = async (r) => {
 			heroName: msg.join,
 			previousScene: 'dead',
 			currentScene: startScene,
-			inventory: startItems,
+			inventory: startInventory,
 			health: 100,
+			maxHealth: 100,
 			actions:[],
 			sceneTexts: [],
 			flags: startflags,

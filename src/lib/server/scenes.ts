@@ -1,9 +1,8 @@
-import { activePlayersInScene } from './actions';
 import { activeEnemies, spawnEnemy } from './enemies';
 import { bodyItems, utilityItems, weapons, type ItemIdForSlot } from './items';
-import { globalFlags, type Player } from './users';
+import { activePlayersInScene, globalFlags, healPlayer, type Player } from './users';
 
-export type SceneKey = 
+export type SceneId = 
 | 'forest' 
 | 'castle' 
 | 'throne' 
@@ -12,17 +11,18 @@ export type SceneKey =
 | 'tunnelChamber'
 | 'armory'
 |'dead' ;
+
 export type Scene = {
 	onEnterScene: (player: Player) => void;
 	onVictory?: () => void;
-	sceneActions: (player: Player) => void;
+	actions: (player: Player) => void;
 };
 
 const dead: Scene = {
 	onEnterScene(player) {
 		player.sceneTexts.push("You died.")
 	},
-	sceneActions(player) {
+	actions(player) {
 		return [
 			{
 				buttonText: 'OK',
@@ -49,7 +49,7 @@ const forest: Scene = {
 			player.sceneTexts.push(`You are surrounded by dense undergrowth. With every slight movement you feel sharp foliage digging into your flesh. The forest is green and verdent. It teems with life. The sound of insects buzzing fills the air like the distant screams of the innocent. Unseen creatures shuffle just out of sight, their eyes fixed firmly upon you: the unwanted visitor. There is something distinctly unwell about this place. In the distance you see a castle. You feel you might have seen it before. Perhaps in a dream. Or was it a nightmare?`)
 		}
 	},
-	sceneActions(player: Player) {
+	actions(player: Player) {
 		player.actions.push(
 			{
 				buttonText: 'Hike towards that castle',
@@ -85,7 +85,7 @@ const castle: Scene = {
 			player.flags.add('metArthur')
 			player.sceneTexts.push("This castle contains the memory of great beauty, but it feels long gone. In its place is an emptiness. A confusion. Wherevery ou turn, it feels as though there is an entity just at the periphery of your visual. The sense of something obscene inhabits this place. What should be a structure of strength and security, has become something maddening to the senses.")
 			player.sceneTexts.push("From an unknown place appears a voice. 'Hail!' It cries. You reach for a weapon that you suddenly remember you don't posess. While you see know doors, before you materialises a soldier. There is something about his eyes that tell you he is not afflicted by the same condition that seems to have twisted this land. 'I see you have found your way into this once hallowed hall. I would introduce myself, but whatever name I once had no longer has any meaning.'");
-			if (player.inventory.utility.itemId == 'nothing') {
+			if (player.inventory.utility.itemId == 'empty') {
 				player.sceneTexts.push("From his cloak he produces a small object. A bandage. 'You may need this traveller. This land is unkind to strangers.")
 				player.inventory.utility.itemId = 'bandage';
 			}
@@ -93,11 +93,11 @@ const castle: Scene = {
 		}
 		if (player.flags.has('killedGoblins') && !player.flags.has('sawArthurAfterBattle')) {
 			player.flags.add('sawArthurAfterBattle')
-			player.health += 50
+			healPlayer(player, 50)
 			player.sceneTexts.push("The soldier you passed earlier watches you approach and a smile grows on his face. 'I can smell battle on ye traveller! So you've had your first taste of blood in this foul land? Well I've learnt a trick or two in my time roaming this insane world. Hold still a minute...'. The soldiers face becomes blank for a moment, and in an instant you feel a burning heat passing through your body. As it subsides, you feel energised and repaired. 'That'll set you straight for a bit traveller!' Bellows the soldier as he trundles on his way'.")
 		}
 	},
-	sceneActions(player: Player) {
+	actions(player: Player) {
 		player.actions.push(
 			{
 				buttonText: 'Delve into the forest',
@@ -134,7 +134,7 @@ const throne: Scene = {
 			player.sceneTexts.push("You once again approach the throne, but something feels wrong. As you pass between the two mighty sculptures of the warring demon and angel, a powerful energy fills the air. The flame from the angel's sword and the electrical charge from the demon's hand begin to grow in size and reach out towards each other. The rotting body of the king suddenly leaps from it's throne. He screams from from the centre of the skeletal form 'You have proven your worth traveller, but there is a greater threat at hand! The forces of good and evil are no longer in balance! You must take this medallion and complete the ritual before it's too late!' The throne appears to cave in on itself, and a path that leads to the depths of castle appears. You feel you have no choice but to enter.")
 		}
 	},
-	sceneActions(player: Player) {
+	actions(player: Player) {
 		const hasDoneMedallion = globalFlags.has('smashedMedallion') || globalFlags.has('placedMedallion')
 		const mustGoThroughTunnel = player.flags.has('killedGoblins') && !hasDoneMedallion
 
@@ -181,7 +181,7 @@ const forestPassage: Scene = {
 			player.sceneTexts.push('You leave the camp and squeeze back into the dank passage')
 		}
 	},
-	sceneActions(player: Player) {
+	actions(player: Player) {
 		player.actions.push(
 			{
 				buttonText: 'Leave this stinky passage towards the forest',
@@ -253,7 +253,7 @@ const goblinCamp: Scene = {
 			u.flags.add('killedGoblins')
 		}
 	},
-	sceneActions(player: Player) {
+	actions(player: Player) {
 		player.actions.push(
 			{
 				buttonText: 'Escape back through the passage',
@@ -275,7 +275,7 @@ const tunnelChamber: Scene = {
 			player.sceneTexts.push("The walls are adorned with arcane symbols that are beyond your comprehension. In the centre of the room is a great altar. You approach it and notice that upon it is an recess that appears to be in the shape of the medallian that was given to you by the king. Suddenly, a great booming voice echoes throughout the chamber. 'STOP TRAVELLER! Stay your hand!'. You stop in your tracks and look over your shoulder. It is a hooded figure. 'Do not heed the call of the mad king! He knows not what he does and acts in accord with a dark force! If you place the medallion upon the altar, you will be bound to the very same forces of evil for all time. Or maybe you'll just die...' He trailed off. You can see the face of the rotting monarch in your minds eye. His face is twisted into a bitter smile that coaxes you to do his bidding. You have a choice.")
 		}
 	},
-	sceneActions(player: Player) {
+	actions(player: Player) {
 		if (!globalFlags.has('smashedMedallion') && !globalFlags.has('placedMedallion')) {
 			player.actions.push(
 				{
@@ -331,7 +331,7 @@ const armory:Scene = {
 	onEnterScene(player) {
 		player.sceneTexts.push("Grab some equipment!")
 	},
-	sceneActions(player) {
+	actions(player) {
 		for( const id in weapons){
 			player.actions.push({
 				buttonText: `Equip Weapon ${id}`,
@@ -366,7 +366,7 @@ const armory:Scene = {
 	},
 }
 
-export const scenes: Record<SceneKey, Scene> = {
+export const scenes: Record<SceneId, Scene> = {
 	dead: dead,
 	forest: forest,
 	castle: castle,

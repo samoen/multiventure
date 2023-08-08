@@ -1,13 +1,13 @@
 import { pushHappening } from "./messaging";
-import type { SceneKey } from "./scenes";
-import { playerEquipped, type HeroName, type Player } from "./users";
+import type { SceneId } from "./scenes";
+import { playerEquipped, type HeroName, type Player, activePlayers } from "./users";
 
 
 export const activeEnemies : ActiveEnemy[] = []
 
 export type ActiveEnemy = {
 	name:string,
-	currentScene:SceneKey;
+	currentScene:SceneId;
 	currentHealth:number;
 	aggros:Map<HeroName,number>,
 	template:EnemyTemplate;
@@ -19,33 +19,38 @@ export type EnemyTemplate = {
 	aggroGain:number;
 };
 
-export type EnemyKey = 'goblin' | 'wolf';
+export type EnemyKey = 'goblin' | 'wolf' | 'troll';
 
 export const enemyTemplates: Record<EnemyKey, EnemyTemplate> = {
 	goblin: {
-		maxHealth: 50,
-		attackDamage: 15,
+		maxHealth: 100,
+		attackDamage: 10,
 		aggroGain:10,
 	},
 	wolf: {
-		maxHealth: 30,
+		maxHealth: 50,
 		attackDamage: 5,
-		aggroGain:100,
+		aggroGain:90,
+	},
+	troll:{
+		maxHealth:150,
+		attackDamage:40,
+		aggroGain:1
 	}
 };
 
-export function spawnEnemy(name:string,template:EnemyKey,where:SceneKey){
+export function spawnEnemy(name:string,template:EnemyKey,where:SceneId){
 	activeEnemies.push({
 		name: name,
 		currentScene: where,
-		currentHealth: enemyTemplates[template].maxHealth,
+		currentHealth: enemyTemplates[template].maxHealth * activePlayers().length,
 		aggros:new Map(),
 		template: enemyTemplates[template],
 	})
 }
 
 export function addAggro(actor: Player, provoke: number) {
-	for (const respondingEnemy of activeEnemies.filter(e => e.currentScene == actor.currentScene)) {
+	for (const respondingEnemy of enemiesInScene(actor.currentScene)) {
 		const aggroGain = provoke + respondingEnemy.template.aggroGain
 		let existingAggro = respondingEnemy.aggros.get(actor.heroName)
 		if (existingAggro) {
@@ -55,6 +60,10 @@ export function addAggro(actor: Player, provoke: number) {
 		}
 	}
 
+}
+
+export function enemiesInScene(sceneKey:SceneId):ActiveEnemy[]{
+	return activeEnemies.filter(e=>e.currentScene == sceneKey)
 }
 
 export function damagePlayer(enemy:ActiveEnemy, player:Player){

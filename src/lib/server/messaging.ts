@@ -1,8 +1,8 @@
 import type { MessageFromServer, OtherPlayerInfo } from '$lib/utils';
-import { activeEnemies, addAggro } from './enemies';
+import { activeEnemies, addAggro, enemiesInScene } from './enemies';
 import { items } from './items';
 import { scenes } from './scenes';
-import { globalFlags, playerCooldowns, users, type HeroName, type Player } from './users';
+import { globalFlags, playerItemStates, users, type HeroName, type Player } from './users';
 
 export const FAKE_LATENCY = 100;
 
@@ -23,8 +23,8 @@ export function updateAllPlayerActions() {
 
 export function updatePlayerActions(player: Player) {
 	player.actions = []
-	scenes[player.currentScene].sceneActions(player)
-	for (const cd of playerCooldowns(player)){
+	scenes[player.currentScene].actions(player)
+	for (const cd of playerItemStates(player)){
 		
 		const i = items[cd.itemId]
 		if (i.actions) {
@@ -84,10 +84,11 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 			};
 		}),
 		happenings: recentHappenings,
-		enemiesInScene: activeEnemies.filter(e => e.currentScene == forPlayer.currentScene).map((e) => {
+		enemiesInScene: enemiesInScene(forPlayer.currentScene).map((e) => {
 			return {
 				health: e.currentHealth,
 				name: e.name,
+				myAggro: e.aggros.get(forPlayer.heroName) ?? 0
 			}
 		}),
 		playerFlags: Array.from(forPlayer.flags),
