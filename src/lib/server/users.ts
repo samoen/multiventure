@@ -1,5 +1,5 @@
 import type { GameAction } from './actions';
-import { utilityItems, type BodyItemKey, type Item, type UtilityItemKey, type WeaponItemKey, bodyItems, weapons, type ItemKey, items, type ItemKeyWithCooldown, type Inventory } from './items';
+import { utilityItems, type ItemTemplate, bodyItems, weapons, type ItemId, items, type Inventory, type ItemStateForSlot, type EquipmentSlot, type ItemState } from './items';
 import type { SceneKey } from './scenes';
 
 export type UserId = string;
@@ -35,14 +35,14 @@ export type Player = {
 export const users = new Map<UserId, Player>();
 export const globalFlags = new Set<GlobalFlag>();
 
-export function playerEquipped(player:Player) : Item[]{
+export function playerEquipped(player:Player) : ItemTemplate[]{
 	return [
-		items[player.inventory.weapon.itemKey],
-		items[player.inventory.body.itemKey],
-		items[player.inventory.utility.itemKey]]
+		items[player.inventory.weapon.itemId],
+		items[player.inventory.body.itemId],
+		items[player.inventory.utility.itemId]]
 }
 
-export function playerCooldowns(player:Player) : ItemKeyWithCooldown[]{
+export function playerCooldowns(player:Player) : ItemState[]{
 	return [
 		player.inventory.weapon,
 		player.inventory.body,

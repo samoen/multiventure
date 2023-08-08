@@ -27,19 +27,18 @@ battle position:
 backline, melee, infiltrated
 
 player stats:
-action points - how much stuff you can do before enemies get a turn
 health
+modify damage/warmup/cooldown/provoke/stock
+
 speed - move position ap cost. compare to overwatch rating
-skill - attack ap cost
-weapon damage
 
 enemy stats:
 hp
-warmup (ap heros spent per action) / cooldown
-overwatch rating
 damage
+warmup / cooldown
 range
 greed (power increases over time)
+overwatch rating
 
 extra slot:
 light armor - reduce dmg
@@ -48,31 +47,34 @@ bomb sack - stock dmg
 protection gem - stock protect
 
 weapon traits:
-overwatch
-incurs overwatch
 damage
-hits / amount action adds to battle time
+provoke
 splash
 per battle uses
 cooldown
 warmup
+overwatch
+incurs overwatch
 
 axe: range 1, position splash, dmg up
 sword: range 1, speed up, skill up
 spear: range 2, dmg up
 staff: range 2, position splash
 bow: range 3
+xbow: cooldown/warmup
 
-counters:
+enemy counters:
 swarm - splash
+high aggro - high provoke
 heavy hitter - heavyarmor (cap)
 many hitter - light armor (dmg down)
 greedy turtle - stock
 high hp - bonus dmg %hp
 high cooldown nuke - stock protect
 
-ideas:
-harm
-cull
+team players:
+provoker - tanky high provoke to absord hits
+
+
 
 

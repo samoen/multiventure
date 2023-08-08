@@ -32,15 +32,15 @@ export const POST: RequestHandler = async (r) => {
 
 		let startItems :Inventory= {
 			weapon:{
-				itemKey:'fist',
+				itemId:'fist',
 				cooldown:0,
 			},
 			utility:{
-				itemKey:'nothing',
+				itemId:'nothing',
 				cooldown:0,
 			},
 			body:{
-				itemKey:'rags',
+				itemId:'rags',
 				cooldown:0,
 			}
 		}

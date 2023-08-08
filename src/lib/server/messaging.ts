@@ -26,7 +26,7 @@ export function updatePlayerActions(player: Player) {
 	scenes[player.currentScene].sceneActions(player)
 	for (const cd of playerCooldowns(player)){
 		
-		const i = items[cd.itemKey]
+		const i = items[cd.itemId]
 		if (i.actions) {
 			if (cd.cooldown < 1) {
 				i.actions(player)
