@@ -2,15 +2,15 @@ import { activeEnemies, enemyTemplates, spawnEnemy, type EnemyTemplateId } from 
 import { bodyItems, utilityItems, weapons, type ItemIdForSlot } from './items';
 import { activePlayersInScene, globalFlags, healPlayer, type Player } from './users';
 
-export type SceneId = 
-| 'forest' 
-| 'castle' 
-| 'throne' 
-| 'forestPassage' 
-| 'goblinCamp' 
-| 'tunnelChamber'
-| 'armory'
-|'dead' ;
+export type SceneId =
+	| 'forest'
+	| 'castle'
+	| 'throne'
+	| 'forestPassage'
+	| 'goblinCamp'
+	| 'tunnelChamber'
+	| 'armory'
+	| 'dead';
 
 export type Scene = {
 	onEnterScene: (player: Player) => void;
@@ -23,21 +23,20 @@ const dead: Scene = {
 		player.sceneTexts.push("You died.")
 	},
 	actions(player) {
-		return [
-			{
-				buttonText: 'OK',
-				performAction() {
-					player.currentScene = 'forest'
-				},
-			}
-		]
+		player.actions.push({
+			buttonText: 'OK',
+			performAction() {
+				player.currentScene = 'forest'
+				player.health = player.maxHealth
+			},
+		})
 	}
 }
 
 const forest: Scene = {
 	onEnterScene(player) {
 		if (player.previousScene == 'dead') {
-			player.sceneTexts.push("You awaken in a cold sweat with no memory of anything. The world around you seems dark and permeated by an unholy madness. There's a strange sickly smell that seems familiar. The smell of corruption. The smell of death.")
+			player.sceneTexts.push("You\n awaken\n in\n a cold sweat with no memory of anything. The world around you seems dark and permeated by an unholy madness. There's a strange sickly smell that seems familiar. The smell of corruption. The smell of death.")
 		}
 		if (player.previousScene == 'castle') {
 			player.sceneTexts.push('Despite your rising panic at the mere thought of entering that hellish maze of rotting plant matter and creatures beyond imagination, you push your way back into the depths.')
@@ -231,9 +230,9 @@ const forestPassage: Scene = {
 
 const goblinCamp: Scene = {
 	onEnterScene(player) {
-		if(!player.flags.has('killedGoblins')){
+		if (!player.flags.has('killedGoblins')) {
 			player.sceneTexts.push("Urged on by by your own fear and by some unknown inspiration, you fumble your way through the darkness towards the light. You are blinded as you step through and are greeted with the sight of a ramshackle encampment")
-		}else{
+		} else {
 			player.sceneTexts.push("You arrive at a familiar camp.")
 		}
 
@@ -242,9 +241,8 @@ const goblinCamp: Scene = {
 			for (const playerInScene of activePlayersInScene('goblinCamp')) {
 				playerInScene.sceneTexts.push(`Suddendly, A pair of goblins rush out of a tent.. "Hey Gorlak, looks like lunch!" "Right you are Murk. Let's eat!"`)
 			}
-			spawnEnemy('Gorlak','goblin','goblinCamp')
-			spawnEnemy('Murk','goblin','goblinCamp')
-			spawnEnemy('Spot','wolf','goblinCamp')
+			spawnEnemy('Gorlak', 'goblin', 'goblinCamp')
+			spawnEnemy('Murk', 'goblin', 'goblinCamp')
 		}
 	},
 	onVictory() {
@@ -288,7 +286,7 @@ const tunnelChamber: Scene = {
 						for (const allPlayer of activePlayersInScene('throne')) {
 							allPlayer.sceneTexts.push("You hear a rumbling from below. The king says 'yay someone placed the medallion. If I just told you to do that, never mind..'  that explains why your actions just changed mid scene. Stragglers can still get their ealier quests from here still. hopefully it makes sense.")
 						}
-						spawnEnemy('Hooded Figure','goblin','tunnelChamber')
+						spawnEnemy('Hooded Figure', 'goblin', 'tunnelChamber')
 					},
 				}
 
@@ -327,12 +325,12 @@ const tunnelChamber: Scene = {
 	},
 }
 
-const armory:Scene = {
+const armory: Scene = {
 	onEnterScene(player) {
 		player.sceneTexts.push("Grab some equipment!")
 	},
 	actions(player) {
-		for( const id in weapons){
+		for (const id in weapons) {
 			player.actions.push({
 				buttonText: `Equip Weapon ${id}`,
 				performAction() {
@@ -340,7 +338,7 @@ const armory:Scene = {
 				},
 			})
 		}
-		for( const id in utilityItems){
+		for (const id in utilityItems) {
 			player.actions.push({
 				buttonText: `Equip Utility ${id}`,
 				performAction() {
@@ -348,7 +346,7 @@ const armory:Scene = {
 				},
 			})
 		}
-		for( const id in bodyItems){
+		for (const id in bodyItems) {
 			player.actions.push({
 				buttonText: `Equip Body ${id}`,
 				performAction() {
@@ -356,11 +354,11 @@ const armory:Scene = {
 				},
 			})
 		}
-		for(const id in enemyTemplates){
+		for (const id in enemyTemplates) {
 			player.actions.push({
-				buttonText:`spawn ${id}`,
+				buttonText: `spawn ${id}`,
 				performAction() {
-					spawnEnemy(`${id}${Math.round(Math.random()*100)}`,id as EnemyTemplateId,'armory')
+					spawnEnemy(`${id}${Math.round(Math.random() * 100)}`, id as EnemyTemplateId, 'armory')
 				},
 			})
 		}

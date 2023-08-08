@@ -169,7 +169,7 @@
 	
 	<h3>Scene Texts:</h3>
 	{#each lastMsgFromServer.sceneTexts as t}
-		<p>{t}</p>
+		<p class="sceneText">{t}</p>
 		<!-- hellloo im a big <br> dummy -->
 	{/each}
 	{#each lastMsgFromServer.actions as op, i}
@@ -209,5 +209,8 @@
 	}
 	.happenings > p {
 		margin: 2px;
+	}
+	.sceneText{
+		white-space: pre-wrap;
 	}
 </style>

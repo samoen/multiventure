@@ -39,7 +39,7 @@ export const POST: RequestHandler = async (r) => {
 				cooldown:0,
 			},
 			utility:{
-				itemId:'bomb',
+				itemId:'empty',
 				cooldown:0,
 			},
 			body:{

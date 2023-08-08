@@ -29,54 +29,59 @@ export const POST = (async (r) => {
 		return json(`action ${msg.buttonText} not available`, { status: 400 });
 	}
 
-
-	const oldSceneKey = player.currentScene;
-	const preActionScene = scenes[player.currentScene];
-	const preActionHadEnemies = activeEnemies.some(e=>e.currentScene==player?.currentScene)
-	actionFromId.performAction();
-	const postActionScene = scenes[player.currentScene];
-	const postActionHadEnemies = activeEnemies.some(e=>e.currentScene==player?.currentScene)
-
-	if(preActionHadEnemies){
-		for (const cd of playerItemStates(player)){
-			if(cd.cooldown > 0) cd.cooldown--
-		}
+	for (const cd of playerItemStates(player)) {
+		if (cd.cooldown > 0) cd.cooldown--
 	}
 
-	const enemies = enemiesInScene(player.currentScene)
-	if(enemies.length){
-		for(const enemyInScene of enemies){
-			let aggroForActor = enemyInScene.aggros.get(player.heroName)
-			if(aggroForActor){
-				if((Math.random() + (aggroForActor/100)) > 1){
-					damagePlayer(enemyInScene,player)
-					enemyInScene.aggros = new Map()
+	const preActionSceneKey = player.currentScene;
+	const preActionScene = scenes[player.currentScene];
+	const preActionHadEnemies = enemiesInScene(player.currentScene).length > 0
+	actionFromId.performAction();
+	let actionMovedScene = false
+	if (player.currentScene != preActionSceneKey) {
+		actionMovedScene = true
+	}
+	if (!actionMovedScene) {
+		const postActionEnemies = enemiesInScene(player.currentScene)
+		const postActionHasEnemies = postActionEnemies.length > 0
+		if (postActionHasEnemies) {
+			for (const enemyInScene of postActionEnemies) {
+				let aggroForActor = enemyInScene.aggros.get(player.heroName)
+				if (aggroForActor) {
+					if ((Math.random() + (aggroForActor / 100)) > 1) {
+						damagePlayer(enemyInScene, player)
+						enemyInScene.aggros = new Map()
+					}
 				}
 			}
+			recentHappenings.push('----');
 		}
-		recentHappenings.push('----');
-
 	}
+	let actionOrReactionMovedScene = player.currentScene != preActionSceneKey
 
-	// console.log(activeEnemies)
+	const postReactionEnemies = enemiesInScene(player.currentScene)
 
-	
-	if (preActionScene.onVictory && (preActionHadEnemies && !postActionHadEnemies)) {
+	if (
+		!actionOrReactionMovedScene
+		&& (preActionHadEnemies && !postReactionEnemies.length)
+		&& preActionScene.onVictory
+	) {
 		preActionScene.onVictory()
 	}
 
-	if (player.currentScene != oldSceneKey) {
+	if (actionOrReactionMovedScene) {
 		player.sceneTexts = [];
-		player.previousScene = oldSceneKey
-		for (const itemState of playerItemStates(player)){
+		player.previousScene = preActionSceneKey
+		for (const itemState of playerItemStates(player)) {
 			itemState.cooldown = 0
 		}
+		const postActionScene = scenes[player.currentScene];
 		if (postActionScene && postActionScene.onEnterScene) {
 			postActionScene.onEnterScene(player);
 		}
 	}
 	updateAllPlayerActions()
-	
+
 
 	// tiny timeout so endpoint returns before the event messages get sent
 	setTimeout(() => {

@@ -39,6 +39,21 @@ export type Item = {
 	onTakeDamage?: (incoming: number) => number
 }
 
+const shortSword: Item = {
+	actions(player) {
+		for (const enemy of enemiesInScene(player.currentScene)) {
+			player.actions.push(
+				{
+					buttonText: `Slash ${enemy.name} with my short sword`,
+					performAction() {
+						damageEnemy(player, enemy, 30)
+						addAggro(player, 50)
+					}
+				}
+			)
+		}
+	}
+}
 
 const shortBow: Item = {
 	actions(player) {
@@ -49,23 +64,7 @@ const shortBow: Item = {
 					performAction() {
 						damageEnemy(player, enemy, 10)
 						addAggro(player, 5)
-						player.inventory.weapon.cooldown = 2
-					}
-				}
-			)
-		}
-	}
-}
-
-const shortSword: Item = {
-	actions(player) {
-		for (const enemy of enemiesInScene(player.currentScene)) {
-			player.actions.push(
-				{
-					buttonText: `Slash ${enemy.name} with my short sword`,
-					performAction() {
-						damageEnemy(player, enemy, 30)
-						addAggro(player, 50)
+						player.inventory.weapon.cooldown = 1
 					}
 				}
 			)
