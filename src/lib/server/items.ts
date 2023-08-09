@@ -81,7 +81,7 @@ const bandage: Item = {
 						buttonText: `Heal ${friend.heroName == player.heroName ? 'myself' : friend.heroName} with bandage`,
 						performAction: () => {
 							healPlayer(friend, 40)
-							addAggro(player, 1)
+							player.immune = true
 							player.inventory.utility.itemId = 'empty'
 						},
 					}
@@ -98,9 +98,10 @@ const bomb : Item = {
 				buttonText:'Throw bomb',
 				performAction() {
 					for (const enemy of enemiesInScene(player.currentScene)) {
+						enemy.aggros.clear()
 						damageEnemy(player, enemy, 15)
+						addAggro(player,5)
 					}
-					addAggro(player, 1)
 					player.inventory.utility.itemId = 'empty'
 				},
 			})
@@ -118,6 +119,17 @@ const plateMail: Item = {
 }
 
 const leatherArmor: Item = {
+	actions(player) {
+		player.actions.push({
+			buttonText:'Hide in shadows',
+			performAction() {
+				for (const enemy of enemiesInScene(player.currentScene)) {
+					enemy.aggros.delete(player.heroName)
+				}
+				player.inventory.body.cooldown = 3
+			},
+		})
+	},
 	onTakeDamage(incoming) {
 		if (incoming < 6) {
 			return 1

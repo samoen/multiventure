@@ -29,6 +29,7 @@ export type Player = {
 	health: number;
 	maxHealth: number;
 	inventory:Inventory;
+	immune:boolean;
 	currentScene: SceneId;
 	previousScene: SceneId;
 	actions: GameAction[];

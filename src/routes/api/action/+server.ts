@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { FAKE_LATENCY, recentHappenings, sendEveryoneWorld, updateAllPlayerActions, updatePlayerActions } from '$lib/server/messaging';
+import { FAKE_LATENCY, pushHappening, recentHappenings, sendEveryoneWorld, updateAllPlayerActions, updatePlayerActions } from '$lib/server/messaging';
 import { isGameActionSelected } from '$lib/utils';
 import { scenes } from '$lib/server/scenes';
 import { playerItemStates, users } from '$lib/server/users';
@@ -28,20 +28,24 @@ export const POST = (async (r) => {
 		console.log(`rejected action ${JSON.stringify(msg)} because not available`);
 		return json(`action ${msg.buttonText} not available`, { status: 400 });
 	}
-
+	
 	for (const cd of playerItemStates(player)) {
 		if (cd.cooldown > 0) cd.cooldown--
 	}
-
+	player.immune = false
+	
 	const preActionSceneKey = player.currentScene;
 	const preActionScene = scenes[player.currentScene];
 	const preActionHadEnemies = enemiesInScene(player.currentScene).length > 0
+	
+	if(preActionHadEnemies) pushHappening('----');
+	
 	actionFromId.performAction();
 	let actionMovedScene = false
 	if (player.currentScene != preActionSceneKey) {
 		actionMovedScene = true
 	}
-	if (!actionMovedScene) {
+	if (!actionMovedScene && !player.immune) {
 		const postActionEnemies = enemiesInScene(player.currentScene)
 		const postActionHasEnemies = postActionEnemies.length > 0
 		if (postActionHasEnemies) {
@@ -50,23 +54,23 @@ export const POST = (async (r) => {
 				if (aggroForActor) {
 					if ((Math.random() + (aggroForActor / 100)) > 1) {
 						damagePlayer(enemyInScene, player)
-						enemyInScene.aggros = new Map()
+						enemyInScene.aggros.clear()
 					}
 				}
 			}
-			recentHappenings.push('----');
 		}
 	}
+
 	let actionOrReactionMovedScene = player.currentScene != preActionSceneKey
-
+	
 	const postReactionEnemies = enemiesInScene(player.currentScene)
-
+	
 	if (
 		!actionOrReactionMovedScene
 		&& (preActionHadEnemies && !postReactionEnemies.length)
 		&& preActionScene.onVictory
-	) {
-		preActionScene.onVictory()
+		) {
+			preActionScene.onVictory()
 	}
 
 	if (actionOrReactionMovedScene) {
@@ -80,6 +84,8 @@ export const POST = (async (r) => {
 			postActionScene.onEnterScene(player);
 		}
 	}
+	
+
 	updateAllPlayerActions()
 
 

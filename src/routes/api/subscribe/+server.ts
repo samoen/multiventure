@@ -46,6 +46,7 @@ export const GET: RequestHandler = async (event) => {
 			console.log(`stream started with: ${ip}, hero ${player.heroName}`);
 			player.connectionState.ip = ip;
 			player.connectionState.con = c;
+			pushHappening('----');
 			pushHappening(`${player.heroName} joined the game`)
 			updateAllPlayerActions()
 			setTimeout(() => {

@@ -21,7 +21,7 @@ export const POST: RequestHandler = async (r) => {
 	if (!users.has(msg.join)) {
 		// new user
 
-		globalFlags.add('smashedMedallion')
+		// globalFlags.add('smashedMedallion')
 
 		const startflags : Set<Flag>= new Set()
 		// startflags.add('heardAboutHiddenPassage')
@@ -56,6 +56,7 @@ export const POST: RequestHandler = async (r) => {
 			inventory: startInventory,
 			health: 100,
 			maxHealth: 100,
+			immune:false,
 			actions:[],
 			sceneTexts: [],
 			flags: startflags,

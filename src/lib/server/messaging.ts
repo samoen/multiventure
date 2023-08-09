@@ -8,10 +8,13 @@ export const FAKE_LATENCY = 100;
 
 export const recentHappenings: string[] = [];
 
-export function pushHappening(toPush: string) {
+export function pushHappening(toPush: string, endSection : boolean = false) {
 	recentHappenings.push(toPush);
 	if (recentHappenings.length > 10) {
 		recentHappenings.shift();
+	}
+	if(endSection){
+		recentHappenings.push('----');
 	}
 }
 
