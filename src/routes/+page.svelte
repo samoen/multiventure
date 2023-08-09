@@ -82,8 +82,9 @@
 		console.log('mounted with ssr data ' + JSON.stringify(data));
 		// console.log('source ' + h)
 		// h = 'blah'
-		if (runTimeData.loggedIn) {
+		if (data.hadCookie) {
 			console.log(`ssr data says cookie ${runTimeData.loggedInAs} is good. auto-subscribing..`);
+			loginOrJoin(data.cookie)
 			// if(source == null){
 			status = 'auto subscribing';
 			subscribeEventsIfNotAlready();
@@ -109,6 +110,33 @@
 		status = 'need manual login';
 		loading = false;
 	}
+	async function loginOrJoin(usrName:string){
+		let joincall = await fetch('/api/login', {
+			method: 'POST',
+			body: JSON.stringify({ join: usrName }),
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+		let res = await joincall.json();
+		if(
+			"alreadyConnected" in res 
+			&& typeof res.alreadyConnected == 'boolean'
+			&& res.alreadyConnected
+			){
+				console.log('login response says already connected')
+				// location.reload()
+		}
+	
+		if (joincall.ok) {
+			runTimeData = {loggedIn:true, loggedInAs:usrName}
+			status = 'waiting for first event';
+			subscribeEventsIfNotAlready();
+		} else {
+			console.log('joincall not ok');
+		}
+
+	}
 	async function logIn(){
 		if (!loginInput) return;
 			loading = true;
@@ -116,30 +144,8 @@
 			let usrName = loginInput
 			loginInput = '';
 			
-			let joincall = await fetch('/api/login', {
-				method: 'POST',
-				body: JSON.stringify({ join: usrName }),
-				headers: {
-					'Content-Type': 'application/json'
-				}
-			});
-			let res = await joincall.json();
-			if(
-				"alreadyConnected" in res 
-				&& typeof res.alreadyConnected == 'boolean'
-				&& res.alreadyConnected
-				){
-					console.log('login response says already connected')
-					// location.reload()
-			}
+			loginOrJoin(usrName)
 
-			if (joincall.ok) {
-				runTimeData = {loggedIn:true, loggedInAs:usrName}
-				status = 'waiting for first event';
-				subscribeEventsIfNotAlready();
-			} else {
-				console.log('joincall not ok');
-			}
 	}
 </script>
 
@@ -166,6 +172,7 @@
 <div class="sceneTexts">
 	{#each lastMsgFromServer.sceneTexts as t}
 	<p class="sceneText">{t}</p>
+	<br>
 	{/each}
 </div>
 <div class='sceneButtons'>
@@ -261,6 +268,12 @@
 		overflow-y: auto;
 		border: 1px solid black;
 		background-color: lightblue;
+		padding:10px;
+	}
+	.sceneTexts > p {
+		margin-top:0px;
+		margin-bottom:0px;
+		/* line-height: 40px; */
 	}
 	.sceneButtons{
 		display: inline-block;

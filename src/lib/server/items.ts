@@ -117,13 +117,12 @@ const plateMail: Item = {
 	actions(player) {
 		if(enemiesInScene(player.currentScene).length){
 			player.actions.push({
-				provoke:15,
-				buttonText:'Defensive curl',
-				grantsImmunity:true,
+				provoke:100,
+				buttonText:'Taunt',
 				performAction() {
 					player.inventory.body.cooldown = 2
 					pushHappening(`----`)
-					pushHappening(`${player.heroName} is impenetrable, infuriating enemies!`)
+					pushHappening(`${player.heroName} infuriates enemies!`)
 				},
 			})
 		}

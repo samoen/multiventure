@@ -36,7 +36,7 @@ const dead: Scene = {
 const forest: Scene = {
 	onEnterScene(player) {
 		if (player.previousScene == 'dead') {
-			player.sceneTexts.push("You\n awake\n in\n a cold sweat with no memory of anything. The world around you seems dark and permeated by an unholy madness. There's a strange sickly smell that seems familiar. The smell of corruption. The smell of death.")
+			player.sceneTexts.push("You awake in a cold sweat with no memory of anything. \n\nThe world around you seems dark and permeated by an unholy madness. \n\nThere's a strange sickly smell that seems familiar. The smell of corruption. The smell of death.")
 		}
 		if (player.previousScene == 'castle') {
 			player.sceneTexts.push('Despite your rising panic at the mere thought of entering that hellish maze of rotting plant matter and creatures beyond imagination, you push your way back into the depths.')
