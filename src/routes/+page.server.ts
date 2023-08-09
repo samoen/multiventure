@@ -9,19 +9,21 @@ export const load = (async (r) => {
 	let heroName = r.cookies.get('hero');
 	if (!heroName) {
 		return {
-			loggedIn: false
+			loggedIn: false,
+			loggedInAs:'noone',
 		};
 	}
 	if (!users.has(heroName)) {
 		console.log('cookie hero not present in player list');
 		r.cookies.delete('hero', { path: '/' });
 		return {
-			loggedIn: false
+			loggedIn: false,
+			loggedInAs:'noone',
 		};
 	}
 
 	return {
 		loggedIn: true,
-		LoggedInAs: heroName
+		loggedInAs: heroName
 	};
 }) satisfies PageServerLoad;

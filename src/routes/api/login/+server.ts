@@ -17,8 +17,8 @@ export const POST: RequestHandler = async (r) => {
 	//     return json('hero already connected', {status:401})
 	// }
 	console.log('logging in ' + msg.join);
-
-	if (!users.has(msg.join)) {
+	let player = users.get(msg.join)
+	if (!player) {
 		// new user
 
 		// globalFlags.add('smashedMedallion')
@@ -64,7 +64,12 @@ export const POST: RequestHandler = async (r) => {
 		scenes[player.currentScene].onEnterScene(player)
 		users.set(msg.join, player);
 	}
+
 	r.cookies.set('hero', msg.join, { path: '/',secure:false});
 
-	return json({ yes: 'good' });
+	if(player && player.connectionState != null){
+		return json({ alreadyConnected: true });	
+	}
+
+	return json({ alreadyConnected: false });
 };

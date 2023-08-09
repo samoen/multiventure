@@ -44,10 +44,11 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 };
 
 export function spawnEnemy(name:string,template:EnemyTemplateId,where:SceneId){
+	// * activePlayers().length
 	activeEnemies.push({
 		name: name,
 		currentScene: where,
-		currentHealth: enemyTemplates[template].maxHealth * activePlayers().length,
+		currentHealth: enemyTemplates[template].maxHealth,
 		aggros:new Map(),
 		template: enemyTemplates[template],
 	})

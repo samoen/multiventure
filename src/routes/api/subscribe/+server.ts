@@ -1,5 +1,5 @@
 import { FAKE_LATENCY, pushHappening, sendEveryoneWorld, updateAllPlayerActions } from '$lib/server/messaging';
-import { users } from '$lib/server/users';
+import { activePlayers, users } from '$lib/server/users';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
@@ -21,10 +21,13 @@ export const GET: RequestHandler = async (event) => {
 		if (!player) {
 			return json({ error: 'hero not found' }, { status: 401 });
 		}
+		console.log(`returning readableString for ${player.heroName}, current connections ${JSON.stringify(activePlayers().map(p=>p.heroName))}`)
 		if (player.connectionState != null && player.connectionState.stream != null) {
 			// return json({ error: 'user already connected' }, { status: 401 });
 			// if (player.connectionState.con != null) {
-			// console.log(`${player.heroName} subscribing but already subscribed. sending close message`);
+			console.log(`${player.heroName} subscribing but already subscribed`);
+			player.connectionState.con?.close()
+			
 			// player.connectionState.con.enqueue(encode('closing', {}));
 
 			// // wait for old subscriber to cancel. Improve this
@@ -57,13 +60,16 @@ export const GET: RequestHandler = async (event) => {
 			cancel: (reason) => {
 				console.log(`stream cancel handle for ${ip} ${player.heroName}`);
 				if(reason) console.log(`reason: ${reason}`)
-				try {
-					if(player.connectionState && player.connectionState.con){
-						player.connectionState.con.close();
-					}
-				} catch (e) {
-				    console.log(`stream cancel handler failed to close controller for ${ip} ${from} because ${e}`);
-				}
+				// try {
+				// 	if(player.connectionState && player.connectionState.con){
+				// 		player.connectionState.con.close();
+				// 	}
+				//     console.log(`stream cancel handler successfully closed controller for ${ip} ${from}`);
+				// } catch (e) {
+				//     console.log(`stream cancel handler failed to close controller for ${ip} ${from} because ${e}`);
+				// }
+				pushHappening(`----`)
+				pushHappening(`${player.heroName} left the game`)
 				player.connectionState = null;
 				setTimeout(() => {
 					sendEveryoneWorld(from);
@@ -71,6 +77,14 @@ export const GET: RequestHandler = async (event) => {
 			}
 		});
 		player.connectionState.stream = rs;
+
+		// setTimeout(()=>{
+		// 	if(
+		// 		(player.connectionState != null && player.connectionState.stream != null && !player.connectionState?.stream?.locked)				
+		// 		){
+		// 			console.log(`${player.heroName} subscribed but afterwards the stream is not locked`)
+		// 		}
+		// },1000)
 		return new Response(rs, {
 			headers: {
 				connection: 'keep-alive',

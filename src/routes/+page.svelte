@@ -39,7 +39,13 @@
 		}
 		status = 'subscribing to events';
 		waitingForMyEvent = true;
-		source = new EventSource('/api/subscribe');
+		try{
+			source = new EventSource('/api/subscribe');
+		}catch(e){
+			console.log('failed to source')
+			console.error(e)
+			return
+		}
 		source.onerror = function (ev) {
 			console.error(`event source error ${JSON.stringify(ev)}`, ev);
 			status = 'Event source errored, need manual action';
@@ -70,10 +76,14 @@
 			lastMsgFromServer = null;
 		});
 	}
+	let runTimeData : {loggedIn:boolean,loggedInAs:string} | undefined;
 	onMount(() => {
-		console.log('mounted with ' + JSON.stringify(data));
-		if (data.loggedIn) {
-			console.log('cookie is valid');
+		runTimeData = structuredClone(data)
+		console.log('mounted with ssr data ' + JSON.stringify(data));
+		// console.log('source ' + h)
+		// h = 'blah'
+		if (runTimeData.loggedIn) {
+			console.log(`ssr data says cookie ${runTimeData.loggedInAs} is good. auto-subscribing..`);
 			// if(source == null){
 			status = 'auto subscribing';
 			subscribeEventsIfNotAlready();
@@ -85,7 +95,6 @@
 	});
 
 	async function logOut() {
-		// document.cook .cookies.remove('hero')
 		lastMsgFromServer = null;
 		loading = true;
 		status = 'submitting logout';
@@ -100,38 +109,51 @@
 		status = 'need manual login';
 		loading = false;
 	}
-</script>
-
-<!-- <h3>Status: {status}</h3>
-{#if loading}
-	<p>loading...</p>
-{/if} -->
-
-{#if !loading && lastMsgFromServer == null}
-	<p>Welcome! Please log in with your hero name:</p>
-	<input type="text" bind:value={loginInput} />
-	<button
-		disabled={!loginInput}
-		on:click={async () => {
-			if (!loginInput) return;
+	async function logIn(){
+		if (!loginInput) return;
 			loading = true;
 			status = 'submitting login';
+			let usrName = loginInput
+			loginInput = '';
+			
 			let joincall = await fetch('/api/login', {
 				method: 'POST',
-				body: JSON.stringify({ join: loginInput }),
+				body: JSON.stringify({ join: usrName }),
 				headers: {
 					'Content-Type': 'application/json'
 				}
 			});
-			// let res = await joincall.json();
-			loginInput = '';
+			let res = await joincall.json();
+			if(
+				"alreadyConnected" in res 
+				&& typeof res.alreadyConnected == 'boolean'
+				&& res.alreadyConnected
+				){
+					console.log('login response says already connected')
+					// location.reload()
+			}
+
 			if (joincall.ok) {
+				runTimeData = {loggedIn:true, loggedInAs:usrName}
 				status = 'waiting for first event';
 				subscribeEventsIfNotAlready();
 			} else {
 				console.log('joincall not ok');
 			}
-		}}>Log in</button
+	}
+</script>
+
+<h3>Status: {status}</h3>
+{#if loading}
+	<p>loading...</p>
+{/if}
+<br>
+{#if !loading && lastMsgFromServer == null}
+	<p>Welcome! Please log in with your hero name:</p>
+	<input type="text" bind:value={loginInput} />
+	<button
+		disabled={!loginInput}
+		on:click={logIn}>Log in</button
 	>
 {/if}
 
@@ -140,6 +162,34 @@
 {/if}
 
 {#if lastMsgFromServer && source && source.readyState == source.OPEN}
+<!-- <h3>Scene Texts:</h3> -->
+<div class="sceneTexts">
+	{#each lastMsgFromServer.sceneTexts as t}
+	<p class="sceneText">{t}</p>
+	{/each}
+</div>
+<div class='sceneButtons'>
+		{#each lastMsgFromServer.actions as op, i}
+		{#if op.section == 'scene'}
+		<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
+					{op.buttonText}
+				</button>
+			{/if}
+			{/each}
+		</div>
+	<br>
+	{#if lastMsgFromServer.actions.some(a=>a.section == 'item')}
+	<div class='actionButtons'>
+		{#each lastMsgFromServer.actions as op, i}
+			{#if op.section == 'item'}
+				<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
+					{op.buttonText}
+				</button>
+			{/if}
+			{/each}
+		</div>
+		
+	{/if}
 	<h3>My Hero:</h3>
 	<p>
 		Logged in as {lastMsgFromServer.yourName}
@@ -155,45 +205,17 @@
 		{lastMsgFromServer.yourBody.cooldown || ''}
 	</p>
 	<p>{lastMsgFromServer.playerFlags} {lastMsgFromServer.globalFlags}</p>
-	<!-- <h3>Scene Texts:</h3> -->
-	<div class="sceneTexts">
-		{#each lastMsgFromServer.sceneTexts as t}
-			<p class="sceneText">{t}</p>
-		{/each}
-	</div>
-	<div class='sceneButtons'>
-		{#each lastMsgFromServer.actions as op, i}
-			{#if op.section == 'scene'}
-				<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
-					{op.buttonText}
-				</button>
-			{/if}
-		{/each}
-	</div>
-	<br>
-	{#if lastMsgFromServer.actions.some(a=>a.section == 'item')}
-	<div class='actionButtons'>
-		{#each lastMsgFromServer.actions as op, i}
-			{#if op.section == 'item'}
-				<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
-					{op.buttonText}
-				</button>
-			{/if}
-		{/each}
-	</div>
-		
-	{/if}
 	<h3>Nearby Enemies:</h3>
 	{#each lastMsgFromServer.enemiesInScene as e}
 		<p>
 			<strong>{e.name}</strong> Health: {e.health}, Aggro: {e.myAggro}
 		</p>
 		<p />
-	{/each}
+		{/each}
 	<h3>Recent happenings:</h3>
 	<div class="happenings" bind:this={happenings}>
 		{#each lastMsgFromServer.happenings as h}
-			<p>{h}</p>
+		<p>{h}</p>
 		{/each}
 	</div>
 	<h3>Other Players:</h3>
