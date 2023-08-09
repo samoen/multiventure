@@ -17,6 +17,7 @@ export type EnemyTemplate = {
 	maxHealth: number;
 	attackDamage: number;
 	aggroGain:number;
+	speed:number;
 };
 
 export type EnemyTemplateId = 'goblin' | 'wolf' | 'troll';
@@ -26,16 +27,19 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		maxHealth: 100,
 		attackDamage: 10,
 		aggroGain:10,
+		speed:4,
 	},
 	wolf: {
 		maxHealth: 50,
 		attackDamage: 5,
 		aggroGain:90,
+		speed:10,
 	},
 	troll:{
 		maxHealth:150,
 		attackDamage:40,
-		aggroGain:1
+		aggroGain:1,
+		speed:1,
 	}
 };
 
@@ -74,7 +78,7 @@ export function damagePlayer(enemy:ActiveEnemy, player:Player){
 		}
 	}
 	player.health -= dmg
-	pushHappening(`${enemy.name} hit ${player.heroName} for ${enemy.template.attackDamage} damage`)
+	pushHappening(`${enemy.name} hit ${player.heroName} for ${dmg} damage`)
 	if(player.health < 1){
 		player.currentScene = 'dead'
 		pushHappening(`${enemy.name} killed ${player.heroName}`)

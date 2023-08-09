@@ -1,10 +1,10 @@
+import { addAggro, damagePlayer, enemiesInScene } from '$lib/server/enemies';
+import { FAKE_LATENCY, pushHappening, sendEveryoneWorld, updateAllPlayerActions, updatePlayerActions } from '$lib/server/messaging';
+import { scenes } from '$lib/server/scenes';
+import { playerItemStates, users, type GameAction, type Player } from '$lib/server/users';
+import { isGameActionSelected } from '$lib/utils';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { FAKE_LATENCY, pushHappening, recentHappenings, sendEveryoneWorld, updateAllPlayerActions, updatePlayerActions } from '$lib/server/messaging';
-import { isGameActionSelected } from '$lib/utils';
-import { scenes } from '$lib/server/scenes';
-import { playerItemStates, users } from '$lib/server/users';
-import { activeEnemies, damagePlayer, enemiesInScene } from '$lib/server/enemies';
 
 export const POST = (async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
@@ -28,54 +28,47 @@ export const POST = (async (r) => {
 		console.log(`rejected action ${JSON.stringify(msg)} because not available`);
 		return json(`action ${msg.buttonText} not available`, { status: 400 });
 	}
-	
+
 	for (const cd of playerItemStates(player)) {
 		if (cd.cooldown > 0) cd.cooldown--
 	}
-	player.immune = false
-	
-	const preActionSceneKey = player.currentScene;
-	const preActionScene = scenes[player.currentScene];
-	const preActionHadEnemies = enemiesInScene(player.currentScene).length > 0
-	
-	if(preActionHadEnemies) pushHappening('----');
-	
-	actionFromId.performAction();
+
+	const startedSceneKey = player.currentScene;
+	const startedScene = scenes[player.currentScene];
+	const startedEnemies = enemiesInScene(player.currentScene)
+
+	if (startedEnemies.length && !actionFromId.grantsImmunity) pushHappening('----');
+
+	if (actionFromId.provoke) {
+		addAggro(player, actionFromId.provoke)
+	}
+
+	handleRetaliations(player, false, actionFromId)
+
+	if (player.currentScene == startedSceneKey) {
+		actionFromId.performAction();
+	}
 	let actionMovedScene = false
-	if (player.currentScene != preActionSceneKey) {
+	if (player.currentScene != startedSceneKey) {
 		actionMovedScene = true
 	}
-	if (!actionMovedScene && !player.immune) {
-		const postActionEnemies = enemiesInScene(player.currentScene)
-		const postActionHasEnemies = postActionEnemies.length > 0
-		if (postActionHasEnemies) {
-			for (const enemyInScene of postActionEnemies) {
-				let aggroForActor = enemyInScene.aggros.get(player.heroName)
-				if (aggroForActor) {
-					if ((Math.random() + (aggroForActor / 100)) > 1) {
-						damagePlayer(enemyInScene, player)
-						enemyInScene.aggros.clear()
-					}
-				}
-			}
-		}
+	if (!actionMovedScene) {
+		handleRetaliations(player, true, actionFromId)
 	}
 
-	let actionOrReactionMovedScene = player.currentScene != preActionSceneKey
-	
 	const postReactionEnemies = enemiesInScene(player.currentScene)
-	
+
 	if (
-		!actionOrReactionMovedScene
-		&& (preActionHadEnemies && !postReactionEnemies.length)
-		&& preActionScene.onVictory
-		) {
-			preActionScene.onVictory()
+		player.currentScene == startedSceneKey
+		&& (startedEnemies.length && !postReactionEnemies.length)
+		&& startedScene.onVictory
+	) {
+		startedScene.onVictory()
 	}
 
-	if (actionOrReactionMovedScene) {
+	if (player.currentScene != startedSceneKey) {
 		player.sceneTexts = [];
-		player.previousScene = preActionSceneKey
+		player.previousScene = startedSceneKey
 		for (const itemState of playerItemStates(player)) {
 			itemState.cooldown = 0
 		}
@@ -84,7 +77,7 @@ export const POST = (async (r) => {
 			postActionScene.onEnterScene(player);
 		}
 	}
-	
+
 
 	updateAllPlayerActions()
 
@@ -96,3 +89,26 @@ export const POST = (async (r) => {
 
 	return json({ sucess: 'yessir' });
 }) satisfies RequestHandler;
+
+function handleRetaliations(player: Player, postAction: boolean, action: GameAction) {
+	if (action.grantsImmunity) return
+	let playerHitSpeed = player.speed
+	if (action.speed) {
+		playerHitSpeed += action.speed
+	}
+	for (const enemyInScene of enemiesInScene(player.currentScene)) {
+		if (
+			(postAction && (playerHitSpeed >= enemyInScene.template.speed))
+			|| (!postAction && (playerHitSpeed < enemyInScene.template.speed))
+		) {
+			let aggroForActor = enemyInScene.aggros.get(player.heroName)
+			if (aggroForActor) {
+				if ((Math.random() + (aggroForActor / 100)) > 1) {
+					damagePlayer(enemyInScene, player)
+					enemyInScene.aggros.clear()
+				}
+			}
+		}
+	}
+
+}

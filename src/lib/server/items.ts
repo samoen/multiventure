@@ -1,4 +1,5 @@
 import { addAggro, damageEnemy, enemiesInScene } from './enemies';
+import { pushHappening } from './messaging';
 import { activePlayersInScene, healPlayer, type Player } from './users';
 
 export type EquipmentSlot =
@@ -45,9 +46,10 @@ const shortSword: Item = {
 			player.actions.push(
 				{
 					buttonText: `Slash ${enemy.name} with my short sword`,
+					provoke:7,
+					speed:2,
 					performAction() {
 						damageEnemy(player, enemy, 30)
-						addAggro(player, 50)
 					}
 				}
 			)
@@ -61,9 +63,10 @@ const shortBow: Item = {
 			player.actions.push(
 				{
 					buttonText: `Fire an arrow at ${enemy.name}`,
+					provoke: 2,
+					speed:6,
 					performAction() {
 						damageEnemy(player, enemy, 10)
-						addAggro(player, 5)
 						player.inventory.weapon.cooldown = 1
 					}
 				}
@@ -79,9 +82,10 @@ const bandage: Item = {
 				player.actions.push(
 					{
 						buttonText: `Heal ${friend.heroName == player.heroName ? 'myself' : friend.heroName} with bandage`,
+						grantsImmunity:true,
+						provoke:1,
 						performAction: () => {
 							healPlayer(friend, 40)
-							player.immune = true
 							player.inventory.utility.itemId = 'empty'
 						},
 					}
@@ -96,11 +100,11 @@ const bomb : Item = {
 		if(enemiesInScene(player.currentScene).length){
 			player.actions.push({
 				buttonText:'Throw bomb',
+				speed:12,
 				performAction() {
 					for (const enemy of enemiesInScene(player.currentScene)) {
 						enemy.aggros.clear()
 						damageEnemy(player, enemy, 15)
-						addAggro(player,5)
 					}
 					player.inventory.utility.itemId = 'empty'
 				},
@@ -110,6 +114,20 @@ const bomb : Item = {
 }
 
 const plateMail: Item = {
+	actions(player) {
+		if(enemiesInScene(player.currentScene).length){
+			player.actions.push({
+				provoke:15,
+				buttonText:'Defensive curl',
+				grantsImmunity:true,
+				performAction() {
+					player.inventory.body.cooldown = 2
+					pushHappening(`----`)
+					pushHappening(`${player.heroName} is impenetrable, infuriating enemies!`)
+				},
+			})
+		}
+	},
 	onTakeDamage(incoming) {
 		if (incoming > 20) {
 			return 20
@@ -120,15 +138,20 @@ const plateMail: Item = {
 
 const leatherArmor: Item = {
 	actions(player) {
-		player.actions.push({
-			buttonText:'Hide in shadows',
-			performAction() {
-				for (const enemy of enemiesInScene(player.currentScene)) {
-					enemy.aggros.delete(player.heroName)
-				}
-				player.inventory.body.cooldown = 3
-			},
-		})
+		if(enemiesInScene(player.currentScene).length){
+			player.actions.push({
+				buttonText:'Hide in shadows',
+				grantsImmunity:true,
+				performAction() {
+					for (const enemy of enemiesInScene(player.currentScene)) {
+						enemy.aggros.delete(player.heroName)
+					}
+					player.inventory.body.cooldown = 3
+					pushHappening(`----`)
+					pushHappening(`${player.heroName} hid in shadows`)
+				},
+			})
+		}
 	},
 	onTakeDamage(incoming) {
 		if (incoming < 6) {

@@ -331,24 +331,30 @@ const armory: Scene = {
 	},
 	actions(player) {
 		for (const id in weapons) {
+			if(id == 'unarmed' || id == player.inventory.weapon.itemId) continue
 			player.actions.push({
 				buttonText: `Equip Weapon ${id}`,
+				grantsImmunity:true,
 				performAction() {
 					player.inventory.weapon.itemId = id as ItemIdForSlot<'weapon'>
 				},
 			})
 		}
 		for (const id in utilityItems) {
+			if(id == 'empty' || id == player.inventory.utility.itemId) continue
 			player.actions.push({
 				buttonText: `Equip Utility ${id}`,
+				grantsImmunity:true,
 				performAction() {
 					player.inventory.utility.itemId = id as ItemIdForSlot<'utility'>
 				},
 			})
 		}
 		for (const id in bodyItems) {
+			if(id == 'rags' || id == player.inventory.body.itemId) continue
 			player.actions.push({
 				buttonText: `Equip Body ${id}`,
+				grantsImmunity:true,
 				performAction() {
 					player.inventory.body.itemId = id as ItemIdForSlot<'body'>
 				},
@@ -356,7 +362,8 @@ const armory: Scene = {
 		}
 		for (const id in enemyTemplates) {
 			player.actions.push({
-				buttonText: `spawn ${id}`,
+				buttonText: `Spawn ${id}`,
+				grantsImmunity:true,
 				performAction() {
 					spawnEnemy(`${id}${Math.round(Math.random() * 100)}`, id as EnemyTemplateId, 'armory')
 				},

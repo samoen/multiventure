@@ -41,8 +41,8 @@ export function updatePlayerActions(player: Player) {
 		player.actions.push(
 			{
 				buttonText: 'wait',
+				provoke:1,
 				performAction() {
-					addAggro(player, 1)
 				},
 			}
 		)

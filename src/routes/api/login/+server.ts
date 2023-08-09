@@ -56,7 +56,7 @@ export const POST: RequestHandler = async (r) => {
 			inventory: startInventory,
 			health: 100,
 			maxHealth: 100,
-			immune:false,
+			speed:0,
 			actions:[],
 			sceneTexts: [],
 			flags: startflags,

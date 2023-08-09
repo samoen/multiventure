@@ -28,8 +28,8 @@ export type Player = {
 	heroName: HeroName;
 	health: number;
 	maxHealth: number;
+	speed:number;
 	inventory:Inventory;
-	immune:boolean;
 	currentScene: SceneId;
 	previousScene: SceneId;
 	actions: GameAction[];
@@ -40,6 +40,9 @@ export type Player = {
 export type GameAction = {
 	performAction: () => void;
 	buttonText: string;
+	speed?:number;
+	provoke?:number;
+	grantsImmunity?:boolean;
 };
 
 export function playerEquipped(player:Player) : Item[]{
