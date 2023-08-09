@@ -154,31 +154,35 @@
 		{lastMsgFromServer.yourBody.itemId}
 		{lastMsgFromServer.yourBody.cooldown || ''}
 	</p>
-	<p>Flags: {lastMsgFromServer.playerFlags} {lastMsgFromServer.globalFlags}</p>
-
+	<p>{lastMsgFromServer.playerFlags} {lastMsgFromServer.globalFlags}</p>
 	<!-- <h3>Scene Texts:</h3> -->
 	<div class="sceneTexts">
 		{#each lastMsgFromServer.sceneTexts as t}
 			<p class="sceneText">{t}</p>
 		{/each}
 	</div>
+	<div class='sceneButtons'>
+		{#each lastMsgFromServer.actions as op, i}
+			{#if op.section == 'scene'}
+				<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
+					{op.buttonText}
+				</button>
+			{/if}
+		{/each}
+	</div>
 	<br>
-	{#each lastMsgFromServer.actions as op, i}
-		{#if op.section == 'scene'}
-			<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
-				{op.buttonText}
-			</button>
-		{/if}
-	{/each}
-	<br />
-	<br />
-	{#each lastMsgFromServer.actions as op, i}
-		{#if op.section == 'item'}
-			<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
-				{op.buttonText}
-			</button>
-		{/if}
-	{/each}
+	{#if lastMsgFromServer.actions.some(a=>a.section == 'item')}
+	<div class='actionButtons'>
+		{#each lastMsgFromServer.actions as op, i}
+			{#if op.section == 'item'}
+				<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
+					{op.buttonText}
+				</button>
+			{/if}
+		{/each}
+	</div>
+		
+	{/if}
 	<h3>Nearby Enemies:</h3>
 	{#each lastMsgFromServer.enemiesInScene as e}
 		<p>
@@ -236,4 +240,17 @@
 		border: 1px solid black;
 		background-color: lightblue;
 	}
+	.sceneButtons{
+		display: inline-block;
+		margin-top:10px;
+		margin-bottom:10px;
+		background-color: cadetblue;
+		border: 1px solid black;
+	}
+	.actionButtons{
+		display: inline-block;
+		background-color: beige;
+		border: 1px solid black;
+	}
+
 </style>

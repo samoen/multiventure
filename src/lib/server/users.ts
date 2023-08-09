@@ -81,3 +81,11 @@ export function activePlayersInScene(scene:SceneId) : Player[]{
 	return activePlayers()
 		.filter((usr) => usr.currentScene == scene)
 }
+
+export function cleanConnections(){
+	for(const p of activePlayers()){
+		if(p.connectionState != null && !p.connectionState.stream?.locked){
+			p.connectionState.con?.close()	
+		}
+	}
+}
