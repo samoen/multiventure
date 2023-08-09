@@ -4,7 +4,7 @@ import { items } from './items';
 import { scenes } from './scenes';
 import { activePlayers, globalFlags, playerItemStates, users, type HeroName, type Player } from './users';
 
-export const FAKE_LATENCY = 100;
+export const FAKE_LATENCY = 1;
 
 export const recentHappenings: string[] = [];
 
@@ -27,6 +27,9 @@ export function updateAllPlayerActions() {
 export function updatePlayerActions(player: Player) {
 	player.actions = []
 	scenes[player.currentScene].actions(player)
+	player.actions.forEach(a=>{
+		a.section = 'scene'
+	})
 	for (const cd of playerItemStates(player)) {
 
 		const i = items[cd.itemId]
@@ -82,8 +85,11 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 			}),
 		sceneTexts: forPlayer.sceneTexts,
 		actions: forPlayer.actions.map((gameAction) => {
+			let sec : 'scene' | 'item' = 'item'
+			if(gameAction.section && gameAction.section == 'scene') sec = 'scene'
 			return {
-				buttonText: gameAction.buttonText
+				buttonText: gameAction.buttonText,
+				section: sec,
 			};
 		}),
 		happenings: recentHappenings,

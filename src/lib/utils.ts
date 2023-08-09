@@ -47,7 +47,10 @@ export function isGameActionSelected(msg: object): msg is GameActionSelected {
 
 export type GameActionSentToClient = {
 	buttonText: string;
+	section: ButtonSection
 };
+
+export type ButtonSection = 'item' | 'scene' 
 
 export type JoinGame = {
 	join: HeroName;

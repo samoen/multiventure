@@ -30,26 +30,25 @@
 		// invalidateAll();
 		// lastMsgFromServer = res;
 	}
-	let happenings:HTMLElement;
+	let happenings: HTMLElement;
 
 	function subscribeEventsIfNotAlready() {
-		if(source != null && (source.readyState != EventSource.CLOSED)){
-			console.log('no need to subscribe')
-			return
+		if (source != null && source.readyState != EventSource.CLOSED) {
+			console.log('no need to subscribe');
+			return;
 		}
 		status = 'subscribing to events';
 		waitingForMyEvent = true;
 		source = new EventSource('/api/subscribe');
-		source.onerror = function(ev){
-			console.error(`event source error ${JSON.stringify(ev)}`,ev);
+		source.onerror = function (ev) {
+			console.error(`event source error ${JSON.stringify(ev)}`, ev);
 			status = 'Event source errored, need manual action';
 			this.close();
 			lastMsgFromServer = null;
-			loading = false	
-		}
-		
-		
-		source.addEventListener('world', async(e) => {
+			loading = false;
+		};
+
+		source.addEventListener('world', async (e) => {
 			let sMsg = JSON.parse(e.data);
 			if (!isMsgFromServer(sMsg)) {
 				console.log('malformed event from server');
@@ -62,8 +61,7 @@
 				loading = false;
 			}
 			await tick();
-			if(happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
-
+			if (happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
 		});
 		source.addEventListener('closing', (e) => {
 			console.log('got closing msg');
@@ -75,10 +73,10 @@
 	onMount(() => {
 		console.log('mounted with ' + JSON.stringify(data));
 		if (data.loggedIn) {
-			console.log('cookie is valid')
+			console.log('cookie is valid');
 			// if(source == null){
-				status = 'auto subscribing';
-				subscribeEventsIfNotAlready();
+			status = 'auto subscribing';
+			subscribeEventsIfNotAlready();
 			// }
 		} else {
 			status = 'need manual login';
@@ -104,10 +102,10 @@
 	}
 </script>
 
-<h3>Status: {status}</h3>
+<!-- <h3>Status: {status}</h3>
 {#if loading}
 	<p>loading...</p>
-{/if}
+{/if} -->
 
 {#if !loading && lastMsgFromServer == null}
 	<p>Welcome! Please log in with your hero name:</p>
@@ -142,16 +140,44 @@
 {/if}
 
 {#if lastMsgFromServer && source && source.readyState == source.OPEN}
+	<h3>My Hero:</h3>
 	<p>
 		Logged in as {lastMsgFromServer.yourName}
 		<button on:click={logOut}>log out</button>
 	</p>
-	<h3>Other Players:</h3>
-	{#each lastMsgFromServer.otherPlayers as p}
-		<p>
-			{p.heroName} is in {p.currentScene} with {p.health}hp
-		</p>
-		<p />
+	<p>
+		{lastMsgFromServer.yourScene}, {lastMsgFromServer.yourHp}hp, {lastMsgFromServer
+			.yourWeapon.itemId}
+		{lastMsgFromServer.yourWeapon.cooldown || ''}
+		{lastMsgFromServer.yourUtility.itemId}
+		{lastMsgFromServer.yourUtility.cooldown || ''}
+		{lastMsgFromServer.yourBody.itemId}
+		{lastMsgFromServer.yourBody.cooldown || ''}
+	</p>
+	<p>Flags: {lastMsgFromServer.playerFlags} {lastMsgFromServer.globalFlags}</p>
+
+	<!-- <h3>Scene Texts:</h3> -->
+	<div class="sceneTexts">
+		{#each lastMsgFromServer.sceneTexts as t}
+			<p class="sceneText">{t}</p>
+		{/each}
+	</div>
+	<br>
+	{#each lastMsgFromServer.actions as op, i}
+		{#if op.section == 'scene'}
+			<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
+				{op.buttonText}
+			</button>
+		{/if}
+	{/each}
+	<br />
+	<br />
+	{#each lastMsgFromServer.actions as op, i}
+		{#if op.section == 'item'}
+			<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
+				{op.buttonText}
+			</button>
+		{/if}
 	{/each}
 	<h3>Nearby Enemies:</h3>
 	{#each lastMsgFromServer.enemiesInScene as e}
@@ -160,57 +186,54 @@
 		</p>
 		<p />
 	{/each}
-	<h3>My Hero:</h3>
-	<p>Health: {lastMsgFromServer.yourHp}</p>
-	<p>Inventory: {lastMsgFromServer.yourWeapon.itemId} {lastMsgFromServer.yourWeapon.cooldown || ''} {lastMsgFromServer.yourUtility.itemId} {lastMsgFromServer.yourUtility.cooldown || ''} {lastMsgFromServer.yourBody.itemId} {lastMsgFromServer.yourBody.cooldown || ''}</p>
-	<p>Current Scene: {lastMsgFromServer.yourScene}</p>
-	<p>Player flags: {lastMsgFromServer.playerFlags}</p>
-	<p>Global flags: {lastMsgFromServer.globalFlags}</p>
-	
-	<h3>Scene Texts:</h3>
-	{#each lastMsgFromServer.sceneTexts as t}
-		<p class="sceneText">{t}</p>
-		<!-- hellloo im a big <br> dummy -->
-	{/each}
-	{#each lastMsgFromServer.actions as op, i}
-		<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
-			{op.buttonText}
-		</button>
-	{/each}
 	<h3>Recent happenings:</h3>
-	<div class='happenings' bind:this={happenings}>
+	<div class="happenings" bind:this={happenings}>
 		{#each lastMsgFromServer.happenings as h}
 			<p>{h}</p>
 		{/each}
 	</div>
+	<h3>Other Players:</h3>
+	{#each lastMsgFromServer.otherPlayers as p}
+		<p>
+			{p.heroName} is in {p.currentScene} with {p.health}hp
+		</p>
+		<p />
+	{/each}
 {/if}
 
 <style>
 	:global(body) {
-        background-color: aliceblue;
-    }
+		background-color: aliceblue;
+	}
 	h3 {
 		margin-top: 15px;
 		margin-bottom: 1px;
 	}
-	.happenings{
+	.happenings {
 		display: inline-block;
 		background-color: lightblue;
-		max-height:150px;
-		padding-right:10px;
+		max-height: 150px;
+		padding-right: 10px;
 		border: 1px solid black;
 		overflow-y: auto;
+		min-width: 150px;
 	}
-	button{
-		margin:5px;
+	button {
+		margin: 5px;
 	}
-	p{
-		margin:5px;
+	p {
+		margin: 5px;
 	}
 	.happenings > p {
 		margin: 2px;
 	}
-	.sceneText{
+	.sceneText {
 		white-space: pre-wrap;
+	}
+	.sceneTexts {
+		height: calc(340px - 20vw);
+		overflow-y: auto;
+		border: 1px solid black;
+		background-color: lightblue;
 	}
 </style>
