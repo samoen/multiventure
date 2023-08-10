@@ -80,10 +80,6 @@ export function damagePlayer(enemy:ActiveEnemy, player:Player){
 	}
 	player.health -= dmg
 	pushHappening(`${enemy.name} hit ${player.heroName} for ${dmg} damage`)
-	if(player.health < 1){
-		player.currentScene = 'dead'
-		pushHappening(`${enemy.name} killed ${player.heroName}`)
-	}
 }
 
 export function damageEnemy(actor:Player, enemy:ActiveEnemy, damage:number):{killed:boolean}{

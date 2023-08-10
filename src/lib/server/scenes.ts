@@ -20,15 +20,17 @@ export type Scene = {
 
 const dead: Scene = {
 	onEnterScene(player) {
-		player.sceneTexts.push("You died.")
+		player.sceneTexts.push("You see a bright light and follow it. After a short eternity you decide wandering the halls of the dead is not for you.")
+		player.health = player.maxHealth
 	},
 	actions(player) {
 		player.actions.push({
-			buttonText: 'OK',
-			performAction() {
-				player.currentScene = 'forest'
-				player.health = player.maxHealth
-			},
+			buttonText: 'Reincarnate in forest',
+			goTo:'forest',
+		})
+		player.actions.push({
+			buttonText: 'Reincarnate in armory',
+			goTo:'armory',
 		})
 	}
 }
@@ -52,9 +54,7 @@ const forest: Scene = {
 		player.actions.push(
 			{
 				buttonText: 'Hike towards that castle',
-				performAction() {
-					player.currentScene = 'castle';
-				},
+				goTo:'castle',
 			}
 
 		)
@@ -62,9 +62,7 @@ const forest: Scene = {
 			player.actions.push(
 				{
 					buttonText: `Search deep into dense forest`,
-					performAction: () => {
-						player.currentScene = 'forestPassage';
-					}
+					goTo:'forestPassage',
 				}
 			)
 
@@ -100,17 +98,13 @@ const castle: Scene = {
 		player.actions.push(
 			{
 				buttonText: 'Delve into the forest',
-				performAction() {
-					player.currentScene = 'forest';
-				},
+				goTo:'forest',
 			}
 		)
 		player.actions.push(
 			{
 				buttonText: 'Head towards the throne room',
-				performAction() {
-					player.currentScene = 'throne';
-				},
+				goTo:'throne',
 			}
 		)
 	}
@@ -141,19 +135,14 @@ const throne: Scene = {
 			player.actions.push(
 				{
 					buttonText: 'Take your leave',
-					performAction() {
-						player.currentScene = 'castle';
-					},
+					goTo:'castle',
 				})
 		}
 		if (mustGoThroughTunnel) {
 			player.actions.push(
 				{
 					buttonText: 'Go through the tunnel leading to the depths',
-					performAction() {
-						player.currentScene = 'tunnelChamber'
-					},
-
+					goTo:'tunnelChamber',
 				}
 
 			)
@@ -161,9 +150,7 @@ const throne: Scene = {
 		if (hasDoneMedallion) {
 			player.actions.push({
 				buttonText: 'Go to armory',
-				performAction() {
-					player.currentScene = 'armory'
-				},
+				goTo:'armory',
 			})
 		}
 	}
@@ -184,9 +171,7 @@ const forestPassage: Scene = {
 		player.actions.push(
 			{
 				buttonText: 'Leave this stinky passage towards the forest',
-				performAction() {
-					player.currentScene = 'forest';
-				},
+				goTo:'forest',
 			}
 
 		)
@@ -218,9 +203,7 @@ const forestPassage: Scene = {
 			player.actions.push(
 				{
 					buttonText: 'Push through to the end of the passage',
-					performAction() {
-						player.currentScene = 'goblinCamp'
-					},
+					goTo:'goblinCamp',
 				}
 			)
 
@@ -255,9 +238,7 @@ const goblinCamp: Scene = {
 		player.actions.push(
 			{
 				buttonText: 'Escape back through the passage',
-				performAction() {
-					player.currentScene = 'forestPassage';
-				},
+				goTo:'forestPassage',
 			}
 
 		)
@@ -315,9 +296,7 @@ const tunnelChamber: Scene = {
 			player.actions.push(
 				{
 					buttonText: "Return to throne",
-					performAction() {
-						player.currentScene = 'throne'
-					},
+					goTo:'throne',
 				}
 			)
 		}

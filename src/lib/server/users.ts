@@ -39,7 +39,8 @@ export type Player = {
 };
 
 export type GameAction = {
-	performAction: () => void;
+	goTo?:SceneId;
+	performAction?: () => void;
 	buttonText: string;
 	speed?:number;
 	provoke?:number;

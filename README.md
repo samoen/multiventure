@@ -82,9 +82,9 @@ sandbag:
     stock heal
 
 want to hit first:
-    vampiric
-    cursed dagger - crit but takes extra damage
+    cursed dagger - crit but takes extra damage on turn of use
 want to hit last:
+    lifesteal (prevent underheal)
     berzerker - bonus dmg from dmg taken
 
 axe: range 1, position splash, dmg up

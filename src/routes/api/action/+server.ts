@@ -29,58 +29,14 @@ export const POST = (async (r) => {
 		return json(`action ${msg.buttonText} not available`, { status: 400 });
 	}
 
-	for (const cd of playerItemStates(player)) {
-		if (cd.cooldown > 0) cd.cooldown--
+	handleAction(player, actionFromId)
+	
+	if(player.health < 1){
+		player.sceneTexts.push('You were struck down')
+		pushHappening(`${player.heroName} is mortally wounded`)
 	}
-
-	const startedSceneKey = player.currentScene;
-	const startedScene = scenes[player.currentScene];
-	const startedEnemies = enemiesInScene(player.currentScene)
-
-	if (startedEnemies.length && !actionFromId.grantsImmunity) pushHappening('----');
-
-	if (actionFromId.provoke) {
-		addAggro(player, actionFromId.provoke)
-	}
-
-	handleRetaliations(player, false, actionFromId)
-
-	if (player.currentScene == startedSceneKey) {
-		actionFromId.performAction();
-	}
-	let actionMovedScene = false
-	if (player.currentScene != startedSceneKey) {
-		actionMovedScene = true
-	}
-	if (!actionMovedScene) {
-		handleRetaliations(player, true, actionFromId)
-	}
-
-	const postReactionEnemies = enemiesInScene(player.currentScene)
-
-	if (
-		player.currentScene == startedSceneKey
-		&& (startedEnemies.length && !postReactionEnemies.length)
-		&& startedScene.onVictory
-	) {
-		startedScene.onVictory()
-	}
-
-	if (player.currentScene != startedSceneKey) {
-		player.sceneTexts = [];
-		player.previousScene = startedSceneKey
-		for (const itemState of playerItemStates(player)) {
-			itemState.cooldown = 0
-		}
-		const postActionScene = scenes[player.currentScene];
-		if (postActionScene && postActionScene.onEnterScene) {
-			postActionScene.onEnterScene(player);
-		}
-	}
-
 
 	updateAllPlayerActions()
-
 
 	// tiny timeout so endpoint returns before the event messages get sent
 	setTimeout(() => {
@@ -90,13 +46,66 @@ export const POST = (async (r) => {
 	return json({ sucess: 'yessir' });
 }) satisfies RequestHandler;
 
+function handleAction(player: Player, actionFromId: GameAction) {
+	if (actionFromId.goTo) {
+		for (const itemState of playerItemStates(player)) {
+			itemState.cooldown = 0
+		}
+		player.previousScene = player.currentScene
+		player.currentScene = actionFromId.goTo
+		player.sceneTexts = [];
+		const postActionScene = scenes[player.currentScene];
+		if (postActionScene && postActionScene.onEnterScene) {
+			postActionScene.onEnterScene(player);
+		}
+		return
+	}
+
+	if(!enemiesInScene(player.currentScene).length){
+		if (actionFromId.performAction) {
+			actionFromId.performAction();
+		}
+		return
+	}
+
+	for (const cd of playerItemStates(player)) {
+		if (cd.cooldown > 0) cd.cooldown--
+	}
+
+	if (!actionFromId.grantsImmunity) pushHappening('----');
+	
+	if (actionFromId.provoke) {
+		addAggro(player, actionFromId.provoke)
+	}
+	
+	handleRetaliations(player, false, actionFromId)
+
+	if (player.health < 1) {
+		return
+	}
+	if (actionFromId.performAction) {
+		actionFromId.performAction();
+	}
+	
+	handleRetaliations(player, true, actionFromId)
+	
+	const startedScene = scenes[player.currentScene];
+	const postReactionEnemies = enemiesInScene(player.currentScene)
+	if (
+		(!postReactionEnemies.length)
+		&& startedScene.onVictory
+	) {
+		startedScene.onVictory()
+	}
+}
+
 function handleRetaliations(player: Player, postAction: boolean, action: GameAction) {
 	if (action.grantsImmunity) return
 	let playerHitSpeed = player.speed
 	if (action.speed) {
 		playerHitSpeed += action.speed
 	}
-	for (const enemyInScene of enemiesInScene(player.currentScene).sort((a,b)=>b.template.speed-a.template.speed)) {
+	for (const enemyInScene of enemiesInScene(player.currentScene).sort((a, b) => b.template.speed - a.template.speed)) {
 		if (
 			(postAction && (playerHitSpeed >= enemyInScene.template.speed))
 			|| (!postAction && (playerHitSpeed < enemyInScene.template.speed))

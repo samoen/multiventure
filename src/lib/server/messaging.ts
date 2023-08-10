@@ -8,12 +8,12 @@ export const FAKE_LATENCY = 1;
 
 export const recentHappenings: string[] = [];
 
-export function pushHappening(toPush: string, endSection : boolean = false) {
+export function pushHappening(toPush: string, endSection: boolean = false) {
 	recentHappenings.push(toPush);
 	if (recentHappenings.length > 10) {
 		recentHappenings.shift();
 	}
-	if(endSection){
+	if (endSection) {
 		recentHappenings.push('----');
 	}
 }
@@ -26,12 +26,20 @@ export function updateAllPlayerActions() {
 
 export function updatePlayerActions(player: Player) {
 	player.actions = []
+	
+	if (player.health < 1) {
+		player.actions.push({
+			buttonText: 'Succumb to your wounds',
+			goTo: 'dead',
+		})
+		return
+	}
+
 	scenes[player.currentScene].actions(player)
-	player.actions.forEach(a=>{
+	player.actions.forEach(a => {
 		a.section = 'scene'
 	})
 	for (const cd of playerItemStates(player)) {
-
 		const i = items[cd.itemId]
 		if (i.actions) {
 			if (cd.cooldown < 1) {
@@ -44,7 +52,7 @@ export function updatePlayerActions(player: Player) {
 		player.actions.push(
 			{
 				buttonText: 'wait',
-				provoke:1,
+				provoke: 1,
 				performAction() {
 				},
 			}
@@ -85,8 +93,8 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 			}),
 		sceneTexts: forPlayer.sceneTexts,
 		actions: forPlayer.actions.map((gameAction) => {
-			let sec : 'scene' | 'item' = 'item'
-			if(gameAction.section && gameAction.section == 'scene') sec = 'scene'
+			let sec: 'scene' | 'item' = 'item'
+			if (gameAction.section && gameAction.section == 'scene') sec = 'scene'
 			return {
 				buttonText: gameAction.buttonText,
 				section: sec,
