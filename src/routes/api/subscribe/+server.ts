@@ -2,6 +2,7 @@ import { FAKE_LATENCY, pushHappening, sendEveryoneWorld, updateAllPlayerActions 
 import { activePlayers, users } from '$lib/server/users';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { activeEnemies, modifiedEnemyHealth } from '$lib/server/enemies';
 
 export const GET: RequestHandler = async (event) => {
 	try {
@@ -52,6 +53,11 @@ export const GET: RequestHandler = async (event) => {
 				player.connectionState.con = c;
 				pushHappening('----');
 				pushHappening(`${player.heroName} joined the game`)
+				for(const enemy of activeEnemies){
+					let percentHealthBefore = enemy.currentHealth / enemy.maxHealth
+					enemy.maxHealth = modifiedEnemyHealth(enemy.template.baseHealth)
+					enemy.currentHealth = percentHealthBefore * enemy.maxHealth
+				}
 				updateAllPlayerActions()
 				setTimeout(() => {
 					sendEveryoneWorld(from);

@@ -1,7 +1,7 @@
-import { addAggro, damagePlayer, enemiesInScene } from '$lib/server/enemies';
+import { activeEnemies, addAggro, damagePlayer, enemiesInScene } from '$lib/server/enemies';
 import { FAKE_LATENCY, pushHappening, sendEveryoneWorld, updateAllPlayerActions, updatePlayerActions } from '$lib/server/messaging';
-import { scenes } from '$lib/server/scenes';
-import { playerItemStates, users, type GameAction, type Player } from '$lib/server/users';
+import { scenes, type SceneId } from '$lib/server/scenes';
+import { playerItemStates, users, type GameAction, type Player, activePlayersInScene } from '$lib/server/users';
 import { isGameActionSelected } from '$lib/utils';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
@@ -23,18 +23,25 @@ export const POST = (async (r) => {
 		return json('hero not found', { status: 401 });
 	}
 	updatePlayerActions(player)
-	let actionFromId = player.actions.find((g) => g.buttonText == msg.buttonText);
+	let actionFromId = [...player.sceneActions, ...player.itemActions].find((g) => g.buttonText == msg.buttonText);
 	if (!actionFromId) {
 		console.log(`rejected action ${JSON.stringify(msg)} because not available`);
 		return json(`action ${msg.buttonText} not available`, { status: 400 });
 	}
 
+	for (let i = activeEnemies.length - 1; i >= 0; i--) {
+		if (!activePlayersInScene(activeEnemies[i].currentScene).length) {
+		  activeEnemies.splice(i, 1);
+		}
+	}
+	
 	handleAction(player, actionFromId)
 	
 	if(player.health < 1){
 		player.sceneTexts.push('You were struck down')
 		pushHappening(`${player.heroName} is mortally wounded`)
 	}
+
 
 	updateAllPlayerActions()
 

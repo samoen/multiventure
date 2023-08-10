@@ -9,13 +9,15 @@ export type ActiveEnemy = {
 	name:string,
 	currentScene:SceneId;
 	currentHealth:number;
+	maxHealth:number;
+	damage:number;
 	aggros:Map<HeroName,number>,
 	template:EnemyTemplate;
 }
 
 export type EnemyTemplate = {
-	maxHealth: number;
-	attackDamage: number;
+	baseHealth: number;
+	baseDamage: number;
 	aggroGain:number;
 	speed:number;
 };
@@ -24,31 +26,40 @@ export type EnemyTemplateId = 'goblin' | 'wolf' | 'troll';
 
 export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 	goblin: {
-		maxHealth: 100,
-		attackDamage: 10,
+		baseHealth: 100,
+		baseDamage: 10,
 		aggroGain:10,
 		speed:4,
 	},
 	wolf: {
-		maxHealth: 50,
-		attackDamage: 5,
+		baseHealth: 50,
+		baseDamage: 5,
 		aggroGain:90,
 		speed:10,
 	},
 	troll:{
-		maxHealth:150,
-		attackDamage:40,
+		baseHealth:150,
+		baseDamage:40,
 		aggroGain:1,
 		speed:1,
 	}
 };
+export const PERCENT_OF_BASE_ADDED_PER_PLAYER = 0.5
+
+export function modifiedEnemyHealth(h:number):number{
+	if(activePlayers.length<1)return h
+	return h + ((activePlayers().length-1) * PERCENT_OF_BASE_ADDED_PER_PLAYER * h) 
+}
 
 export function spawnEnemy(name:string,template:EnemyTemplateId,where:SceneId){
-	// * activePlayers().length
+	const baseHealth = enemyTemplates[template].baseHealth
+	let modifiedBaseHealth = modifiedEnemyHealth(baseHealth)
 	activeEnemies.push({
 		name: name,
 		currentScene: where,
-		currentHealth: enemyTemplates[template].maxHealth,
+		currentHealth: modifiedBaseHealth,
+		maxHealth : modifiedBaseHealth, 
+		damage : enemyTemplates[template].baseDamage,
 		aggros:new Map(),
 		template: enemyTemplates[template],
 	})
@@ -72,7 +83,7 @@ export function enemiesInScene(sceneKey:SceneId):ActiveEnemy[]{
 }
 
 export function damagePlayer(enemy:ActiveEnemy, player:Player){
-	let dmg = enemy.template.attackDamage
+	let dmg = enemy.damage
 	for(const item of playerEquipped(player)){
 		if(item.onTakeDamage){
 			dmg = item.onTakeDamage(dmg)

@@ -1,4 +1,3 @@
-import type { ButtonSection } from '$lib/utils';
 import { items, type Inventory, type Item, type ItemState } from './items';
 import { pushHappening } from './messaging';
 import type { SceneId } from './scenes';
@@ -33,7 +32,8 @@ export type Player = {
 	inventory:Inventory;
 	currentScene: SceneId;
 	previousScene: SceneId;
-	actions: GameAction[];
+	itemActions: GameAction[];
+	sceneActions: GameAction[];
 	sceneTexts: string[];
 	flags: Set<Flag>;
 };
@@ -45,7 +45,6 @@ export type GameAction = {
 	speed?:number;
 	provoke?:number;
 	grantsImmunity?:boolean;
-	section?: ButtonSection
 };
 
 export function playerEquipped(player:Player) : Item[]{

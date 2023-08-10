@@ -25,20 +25,17 @@ export function updateAllPlayerActions() {
 }
 
 export function updatePlayerActions(player: Player) {
-	player.actions = []
-	
+	player.sceneActions = []
+	player.itemActions = []
+
 	if (player.health < 1) {
-		player.actions.push({
+		player.sceneActions.push({
 			buttonText: 'Succumb to your wounds',
 			goTo: 'dead',
 		})
 		return
 	}
 
-	scenes[player.currentScene].actions(player)
-	player.actions.forEach(a => {
-		a.section = 'scene'
-	})
 	for (const cd of playerItemStates(player)) {
 		const i = items[cd.itemId]
 		if (i.actions) {
@@ -48,8 +45,9 @@ export function updatePlayerActions(player: Player) {
 		}
 	}
 
-	if (activeEnemies.some(e => e.currentScene == player.currentScene)) {
-		player.actions.push(
+	// if (activeEnemies.some(e => e.currentScene == player.currentScene)) {
+	if (enemiesInScene(player.currentScene).length) {
+		player.itemActions.push(
 			{
 				buttonText: 'wait',
 				provoke: 1,
@@ -57,7 +55,10 @@ export function updatePlayerActions(player: Player) {
 				},
 			}
 		)
+		return
 	}
+
+	scenes[player.currentScene].actions(player)
 }
 
 export async function sendEveryoneWorld(triggeredBy: HeroName) {
@@ -92,12 +93,14 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				} satisfies OtherPlayerInfo;
 			}),
 		sceneTexts: forPlayer.sceneTexts,
-		actions: forPlayer.actions.map((gameAction) => {
-			let sec: 'scene' | 'item' = 'item'
-			if (gameAction.section && gameAction.section == 'scene') sec = 'scene'
+		sceneActions: forPlayer.sceneActions.map((gameAction) => {
 			return {
 				buttonText: gameAction.buttonText,
-				section: sec,
+			};
+		}),
+		itemActions: forPlayer.itemActions.map((gameAction) => {
+			return {
+				buttonText: gameAction.buttonText,
 			};
 		}),
 		happenings: recentHappenings,

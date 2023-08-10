@@ -57,7 +57,8 @@ export const POST: RequestHandler = async (r) => {
 			health: 100,
 			maxHealth: 100,
 			speed:0,
-			actions:[],
+			sceneActions:[],
+			itemActions:[],
 			sceneTexts: [],
 			flags: startflags,
 		} satisfies Player

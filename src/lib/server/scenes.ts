@@ -1,6 +1,6 @@
-import { activeEnemies, enemyTemplates, spawnEnemy, type EnemyTemplateId } from './enemies';
+import { activeEnemies, enemyTemplates, spawnEnemy, type EnemyTemplateId, enemiesInScene } from './enemies';
 import { bodyItems, utilityItems, weapons, type ItemIdForSlot } from './items';
-import { activePlayersInScene, globalFlags, healPlayer, type Player } from './users';
+import { activePlayers, activePlayersInScene, globalFlags, healPlayer, type Player } from './users';
 
 export type SceneId =
 	| 'forest'
@@ -24,11 +24,11 @@ const dead: Scene = {
 		player.health = player.maxHealth
 	},
 	actions(player) {
-		player.actions.push({
+		player.sceneActions.push({
 			buttonText: 'Reincarnate in forest',
 			goTo:'forest',
 		})
-		player.actions.push({
+		player.sceneActions.push({
 			buttonText: 'Reincarnate in armory',
 			goTo:'armory',
 		})
@@ -51,7 +51,7 @@ const forest: Scene = {
 		}
 	},
 	actions(player: Player) {
-		player.actions.push(
+		player.sceneActions.push(
 			{
 				buttonText: 'Hike towards that castle',
 				goTo:'castle',
@@ -59,7 +59,7 @@ const forest: Scene = {
 
 		)
 		if (player.flags.has('heardAboutHiddenPassage')) {
-			player.actions.push(
+			player.sceneActions.push(
 				{
 					buttonText: `Search deep into dense forest`,
 					goTo:'forestPassage',
@@ -95,13 +95,13 @@ const castle: Scene = {
 		}
 	},
 	actions(player: Player) {
-		player.actions.push(
+		player.sceneActions.push(
 			{
 				buttonText: 'Delve into the forest',
 				goTo:'forest',
 			}
 		)
-		player.actions.push(
+		player.sceneActions.push(
 			{
 				buttonText: 'Head towards the throne room',
 				goTo:'throne',
@@ -132,14 +132,14 @@ const throne: Scene = {
 		const mustGoThroughTunnel = player.flags.has('killedGoblins') && !hasDoneMedallion
 
 		if (!mustGoThroughTunnel) {
-			player.actions.push(
+			player.sceneActions.push(
 				{
 					buttonText: 'Take your leave',
 					goTo:'castle',
 				})
 		}
 		if (mustGoThroughTunnel) {
-			player.actions.push(
+			player.sceneActions.push(
 				{
 					buttonText: 'Go through the tunnel leading to the depths',
 					goTo:'tunnelChamber',
@@ -148,7 +148,7 @@ const throne: Scene = {
 			)
 		}
 		if (hasDoneMedallion) {
-			player.actions.push({
+			player.sceneActions.push({
 				buttonText: 'Go to armory',
 				goTo:'armory',
 			})
@@ -168,41 +168,41 @@ const forestPassage: Scene = {
 		}
 	},
 	actions(player: Player) {
-		player.actions.push(
+		player.sceneActions.push(
 			{
-				buttonText: 'Leave this stinky passage towards the forest',
+				buttonText: 'Go towards the forest',
 				goTo:'forest',
 			}
 
 		)
 		if (!player.flags.has('gotFreeStarterWeapon')) {
-			player.actions.push(
+			player.sceneActions.push(
 				{
 					buttonText: 'I am skillful, I choose the bow',
 					performAction: () => {
 						player.inventory.weapon.itemId = 'shortBow';
 						player.flags.add('gotFreeStarterWeapon');
-						player.sceneTexts.push("A bow appears before you. You take it");
+						player.sceneTexts.push("A bow appears before you, and you snatch it up. You sense danger ahead, a clearing at the end of the tunnel");
 					}
 				}
 			)
 		}
 		if (!player.flags.has('gotFreeStarterWeapon')) {
-			player.actions.push(
+			player.sceneActions.push(
 				{
 					buttonText: 'I am mighty, I will take the sword!',
 					performAction() {
 						player.inventory.weapon.itemId = 'shortSword';
 						player.flags.add('gotFreeStarterWeapon');
-						player.sceneTexts.push("A shiny sword materializes in your hand!");
+						player.sceneTexts.push("A shiny sword materializes in your hand! You sense danger ahead, a clearing at the end of the tunnel");
 					}
 				}
 			)
 		}
 		if (player.flags.has('gotFreeStarterWeapon')) {
-			player.actions.push(
+			player.sceneActions.push(
 				{
-					buttonText: 'Push through to the end of the passage',
+					buttonText: 'Push through towards the clearing',
 					goTo:'goblinCamp',
 				}
 			)
@@ -219,7 +219,12 @@ const goblinCamp: Scene = {
 			player.sceneTexts.push("You arrive at a familiar camp.")
 		}
 
-		if (!player.flags.has('killedGoblins') && !activeEnemies.some(e => e.currentScene == 'goblinCamp')) {
+		let existingEnemies = enemiesInScene('goblinCamp').length
+		if(existingEnemies){
+			spawnEnemy(player.heroName.split('').reverse().join(''),'wolf','goblinCamp')
+		}
+
+		if (!player.flags.has('killedGoblins') && !existingEnemies) {
 			player.sceneTexts.push("There is a foul stench in the air. Goblins. The telltale signs of the disgusting beasts are everywhere. Various animal carcasses litter the area, and their homes, barely more than logs with tattered cloth strung between, are placed without method around the clearing.")
 			for (const playerInScene of activePlayersInScene('goblinCamp')) {
 				playerInScene.sceneTexts.push(`Suddendly, A pair of goblins rush out of a tent.. "Hey Gorlak, looks like lunch!" "Right you are Murk. Let's eat!"`)
@@ -235,9 +240,9 @@ const goblinCamp: Scene = {
 		}
 	},
 	actions(player: Player) {
-		player.actions.push(
+		player.sceneActions.push(
 			{
-				buttonText: 'Escape back through the passage',
+				buttonText: 'Go back through the passage',
 				goTo:'forestPassage',
 			}
 
@@ -255,8 +260,9 @@ const tunnelChamber: Scene = {
 		}
 	},
 	actions(player: Player) {
-		if (!globalFlags.has('smashedMedallion') && !globalFlags.has('placedMedallion')) {
-			player.actions.push(
+		const medallionDone = globalFlags.has('smashedMedallion') || globalFlags.has('placedMedallion')
+		if (!medallionDone) {
+			player.sceneActions.push(
 				{
 					buttonText: "Place the medallion upon the altar",
 					performAction() {
@@ -270,11 +276,8 @@ const tunnelChamber: Scene = {
 						spawnEnemy('Hooded Figure', 'goblin', 'tunnelChamber')
 					},
 				}
-
 			)
-		}
-		if (!globalFlags.has('smashedMedallion') && !globalFlags.has('placedMedallion')) {
-			player.actions.push(
+			player.sceneActions.push(
 				{
 					buttonText: "Smash the medallion",
 					performAction() {
@@ -290,10 +293,8 @@ const tunnelChamber: Scene = {
 			)
 		}
 
-		const placedMedallionAndKilledStranger = !activeEnemies.some(e => e.currentScene == 'tunnelChamber') && globalFlags.has('placedMedallion')
-		const canLeave = placedMedallionAndKilledStranger || globalFlags.has('smashedMedallion')
-		if (canLeave) {
-			player.actions.push(
+		if (medallionDone) {
+			player.sceneActions.push(
 				{
 					buttonText: "Return to throne",
 					goTo:'throne',
@@ -311,7 +312,7 @@ const armory: Scene = {
 	actions(player) {
 		for (const id in weapons) {
 			if(id == 'unarmed' || id == player.inventory.weapon.itemId) continue
-			player.actions.push({
+			player.sceneActions.push({
 				buttonText: `Equip Weapon ${id}`,
 				grantsImmunity:true,
 				performAction() {
@@ -321,7 +322,7 @@ const armory: Scene = {
 		}
 		for (const id in utilityItems) {
 			if(id == 'empty' || id == player.inventory.utility.itemId) continue
-			player.actions.push({
+			player.sceneActions.push({
 				buttonText: `Equip Utility ${id}`,
 				grantsImmunity:true,
 				performAction() {
@@ -331,7 +332,7 @@ const armory: Scene = {
 		}
 		for (const id in bodyItems) {
 			if(id == 'rags' || id == player.inventory.body.itemId) continue
-			player.actions.push({
+			player.sceneActions.push({
 				buttonText: `Equip Body ${id}`,
 				grantsImmunity:true,
 				performAction() {
@@ -340,7 +341,7 @@ const armory: Scene = {
 			})
 		}
 		for (const id in enemyTemplates) {
-			player.actions.push({
+			player.sceneActions.push({
 				buttonText: `Spawn ${id}`,
 				grantsImmunity:true,
 				performAction() {

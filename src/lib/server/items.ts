@@ -43,7 +43,7 @@ export type Item = {
 const shortSword: Item = {
 	actions(player) {
 		for (const enemy of enemiesInScene(player.currentScene)) {
-			player.actions.push(
+			player.itemActions.push(
 				{
 					buttonText: `Slash ${enemy.name} with my short sword`,
 					provoke:7,
@@ -60,7 +60,7 @@ const shortSword: Item = {
 const shortBow: Item = {
 	actions(player) {
 		for (const enemy of enemiesInScene(player.currentScene)) {
-			player.actions.push(
+			player.itemActions.push(
 				{
 					buttonText: `Fire an arrow at ${enemy.name}`,
 					provoke: 2,
@@ -79,7 +79,7 @@ const bandage: Item = {
 	actions(player) {
 		for (const friend of activePlayersInScene(player.currentScene)) {
 			if(friend.health < friend.maxHealth){
-				player.actions.push(
+				player.itemActions.push(
 					{
 						buttonText: `Heal ${friend.heroName == player.heroName ? 'myself' : friend.heroName} with bandage`,
 						grantsImmunity:true,
@@ -98,7 +98,7 @@ const bandage: Item = {
 const bomb : Item = {
 	actions(player) {
 		if(enemiesInScene(player.currentScene).length){
-			player.actions.push({
+			player.itemActions.push({
 				buttonText:'Throw bomb',
 				speed:12,
 				performAction() {
@@ -116,7 +116,7 @@ const bomb : Item = {
 const plateMail: Item = {
 	actions(player) {
 		if(enemiesInScene(player.currentScene).length){
-			player.actions.push({
+			player.itemActions.push({
 				provoke:100,
 				buttonText:'Taunt',
 				performAction() {
@@ -138,7 +138,7 @@ const plateMail: Item = {
 const leatherArmor: Item = {
 	actions(player) {
 		if(enemiesInScene(player.currentScene).length){
-			player.actions.push({
+			player.itemActions.push({
 				buttonText:'Hide in shadows',
 				grantsImmunity:true,
 				performAction() {

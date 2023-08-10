@@ -39,12 +39,12 @@
 		}
 		status = 'subscribing to events';
 		waitingForMyEvent = true;
-		try{
+		try {
 			source = new EventSource('/api/subscribe');
-		}catch(e){
-			console.log('failed to source')
-			console.error(e)
-			return
+		} catch (e) {
+			console.log('failed to source');
+			console.error(e);
+			return;
 		}
 		source.onerror = function (ev) {
 			console.error(`event source error ${JSON.stringify(ev)}`, ev);
@@ -76,15 +76,15 @@
 			lastMsgFromServer = null;
 		});
 	}
-	let runTimeData : {loggedIn:boolean,loggedInAs:string} | undefined;
+	let runTimeData: { loggedIn: boolean; loggedInAs: string } | undefined;
 	onMount(() => {
-		runTimeData = structuredClone(data)
+		runTimeData = structuredClone(data);
 		console.log('mounted with ssr data ' + JSON.stringify(data));
 		// console.log('source ' + h)
 		// h = 'blah'
 		if (data.hadCookie) {
 			console.log(`ssr data says cookie ${runTimeData.loggedInAs} is good. auto-subscribing..`);
-			loginOrJoin(data.cookie)
+			loginOrJoin(data.cookie);
 			// if(source == null){
 			status = 'auto subscribing';
 			subscribeEventsIfNotAlready();
@@ -110,7 +110,7 @@
 		status = 'need manual login';
 		loading = false;
 	}
-	async function loginOrJoin(usrName:string){
+	async function loginOrJoin(usrName: string) {
 		let joincall = await fetch('/api/login', {
 			method: 'POST',
 			body: JSON.stringify({ join: usrName }),
@@ -119,33 +119,31 @@
 			}
 		});
 		let res = await joincall.json();
-		if(
-			"alreadyConnected" in res 
-			&& typeof res.alreadyConnected == 'boolean'
-			&& res.alreadyConnected
-			){
-				console.log('login response says already connected')
-				// location.reload()
+		if (
+			'alreadyConnected' in res &&
+			typeof res.alreadyConnected == 'boolean' &&
+			res.alreadyConnected
+		) {
+			console.log('login response says already connected');
+			// location.reload()
 		}
-	
+
 		if (joincall.ok) {
-			runTimeData = {loggedIn:true, loggedInAs:usrName}
+			runTimeData = { loggedIn: true, loggedInAs: usrName };
 			status = 'waiting for first event';
 			subscribeEventsIfNotAlready();
 		} else {
 			console.log('joincall not ok');
 		}
-
 	}
-	async function logIn(){
+	async function logIn() {
 		if (!loginInput) return;
-			loading = true;
-			status = 'submitting login';
-			let usrName = loginInput
-			loginInput = '';
-			
-			loginOrJoin(usrName)
+		loading = true;
+		status = 'submitting login';
+		let usrName = loginInput;
+		loginInput = '';
 
+		loginOrJoin(usrName);
 	}
 </script>
 
@@ -153,14 +151,11 @@
 {#if loading}
 	<p>loading...</p>
 {/if}
-<br>
+<br />
 {#if !loading && lastMsgFromServer == null}
 	<p>Welcome! Please log in with your hero name:</p>
 	<input type="text" bind:value={loginInput} />
-	<button
-		disabled={!loginInput}
-		on:click={logIn}>Log in</button
-	>
+	<button disabled={!loginInput} on:click={logIn}>Log in</button>
 {/if}
 
 {#if lastMsgFromServer && (!source || source.readyState != source.OPEN)}
@@ -168,34 +163,31 @@
 {/if}
 
 {#if lastMsgFromServer && source && source.readyState == source.OPEN}
-<!-- <h3>Scene Texts:</h3> -->
-<div class="sceneTexts">
-	{#each lastMsgFromServer.sceneTexts as t}
-	<p class="sceneText">{t}</p>
-	<br>
-	{/each}
-</div>
-<div class='sceneButtons'>
-		{#each lastMsgFromServer.actions as op, i}
-		{#if op.section == 'scene'}
-		<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
-					{op.buttonText}
-				</button>
-			{/if}
-			{/each}
-		</div>
-	<br>
-	{#if lastMsgFromServer.actions.some(a=>a.section == 'item')}
-	<div class='actionButtons'>
-		{#each lastMsgFromServer.actions as op, i}
-			{#if op.section == 'item'}
+	<!-- <h3>Scene Texts:</h3> -->
+	<div class="sceneTexts">
+		{#each lastMsgFromServer.sceneTexts as t}
+			<p class="sceneText">{t}</p>
+			<br />
+		{/each}
+	</div>
+	{#if lastMsgFromServer.sceneActions.length}
+		<div class="sceneButtons">
+			{#each lastMsgFromServer.sceneActions as op, i}
 				<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
 					{op.buttonText}
 				</button>
-			{/if}
 			{/each}
 		</div>
-		
+	{/if}
+	<br />
+	{#if lastMsgFromServer.itemActions.length}
+		<div class="actionButtons">
+			{#each lastMsgFromServer.itemActions as op, i}
+				<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
+					{op.buttonText}
+				</button>
+			{/each}
+		</div>
 	{/if}
 	<h3>My Hero:</h3>
 	<p>
@@ -203,8 +195,8 @@
 		<button on:click={logOut}>log out</button>
 	</p>
 	<p>
-		{lastMsgFromServer.yourScene}, {lastMsgFromServer.yourHp}hp, {lastMsgFromServer
-			.yourWeapon.itemId}
+		{lastMsgFromServer.yourScene}, {lastMsgFromServer.yourHp}hp, {lastMsgFromServer.yourWeapon
+			.itemId}
 		{lastMsgFromServer.yourWeapon.cooldown || ''}
 		{lastMsgFromServer.yourUtility.itemId}
 		{lastMsgFromServer.yourUtility.cooldown || ''}
@@ -218,11 +210,11 @@
 			<strong>{e.name}</strong> Health: {e.health}, Aggro: {e.myAggro}
 		</p>
 		<p />
-		{/each}
+	{/each}
 	<h3>Recent happenings:</h3>
 	<div class="happenings" bind:this={happenings}>
 		{#each lastMsgFromServer.happenings as h}
-		<p>{h}</p>
+			<p>{h}</p>
 		{/each}
 	</div>
 	<h3>Other Players:</h3>
@@ -268,24 +260,23 @@
 		overflow-y: auto;
 		border: 1px solid black;
 		background-color: lightblue;
-		padding:10px;
+		padding: 10px;
 	}
 	.sceneTexts > p {
-		margin-top:0px;
-		margin-bottom:0px;
+		margin-top: 0px;
+		margin-bottom: 0px;
 		/* line-height: 40px; */
 	}
-	.sceneButtons{
+	.sceneButtons {
 		display: inline-block;
-		margin-top:10px;
-		margin-bottom:10px;
+		margin-top: 10px;
+		margin-bottom: 10px;
 		background-color: cadetblue;
 		border: 1px solid black;
 	}
-	.actionButtons{
+	.actionButtons {
 		display: inline-block;
 		background-color: beige;
 		border: 1px solid black;
 	}
-
 </style>
