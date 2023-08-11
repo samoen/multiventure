@@ -21,11 +21,16 @@ export type MessageFromServer = {
 	playerFlags:Flag[];
 	globalFlags:GlobalFlag[];
 };
+export type EnemyStatusEffect = {
+	status:'poison';
+	counter:number;
+}
 
 export type EnemyInClient = {
-	name:string,
-	health:number,
-	myAggro:number,
+	name:string;
+	health:number;
+	myAggro:number;
+	statuses:EnemyStatusEffect[];
 }
 
 export function isMsgFromServer(msg: object): msg is MessageFromServer {

@@ -197,17 +197,20 @@
 	<p>
 		{lastMsgFromServer.yourScene}, {lastMsgFromServer.yourHp}hp, {lastMsgFromServer.yourWeapon
 			.itemId}
-		{lastMsgFromServer.yourWeapon.cooldown || ''}
+		cooldown{lastMsgFromServer.yourWeapon.cooldown}
+		warmup{lastMsgFromServer.yourWeapon.warmup},
 		{lastMsgFromServer.yourUtility.itemId}
-		{lastMsgFromServer.yourUtility.cooldown || ''}
+		cooldown{lastMsgFromServer.yourUtility.cooldown}
+		warmup{lastMsgFromServer.yourUtility.warmup},
 		{lastMsgFromServer.yourBody.itemId}
-		{lastMsgFromServer.yourBody.cooldown || ''}
+		cooldown{lastMsgFromServer.yourBody.cooldown}
+		warmup{lastMsgFromServer.yourBody.warmup}
 	</p>
 	<p>{lastMsgFromServer.playerFlags} {lastMsgFromServer.globalFlags}</p>
 	<h3>Nearby Enemies:</h3>
 	{#each lastMsgFromServer.enemiesInScene as e}
 		<p>
-			<strong>{e.name}</strong> Health: {e.health}, Aggro: {e.myAggro}
+			<strong>{e.name}</strong> Health: {e.health}, Aggro: {e.myAggro}, statuses: {JSON.stringify(e.statuses)}
 		</p>
 		<p />
 	{/each}

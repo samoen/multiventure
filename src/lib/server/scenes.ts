@@ -178,9 +178,9 @@ const forestPassage: Scene = {
 		if (!player.flags.has('gotFreeStarterWeapon')) {
 			player.sceneActions.push(
 				{
-					buttonText: 'I am skillful, I choose the bow',
+					buttonText: 'I choose the club',
 					performAction: () => {
-						player.inventory.weapon.itemId = 'shortBow';
+						player.inventory.weapon.itemId = 'club';
 						player.flags.add('gotFreeStarterWeapon');
 						player.sceneTexts.push("A bow appears before you, and you snatch it up. You sense danger ahead, a clearing at the end of the tunnel");
 					}
@@ -190,9 +190,9 @@ const forestPassage: Scene = {
 		if (!player.flags.has('gotFreeStarterWeapon')) {
 			player.sceneActions.push(
 				{
-					buttonText: 'I am mighty, I will take the sword!',
+					buttonText: 'I choose the dagger',
 					performAction() {
-						player.inventory.weapon.itemId = 'shortSword';
+						player.inventory.weapon.itemId = 'dagger';
 						player.flags.add('gotFreeStarterWeapon');
 						player.sceneTexts.push("A shiny sword materializes in your hand! You sense danger ahead, a clearing at the end of the tunnel");
 					}
@@ -221,7 +221,7 @@ const goblinCamp: Scene = {
 
 		let existingEnemies = enemiesInScene('goblinCamp').length
 		if(existingEnemies){
-			spawnEnemy(player.heroName.split('').reverse().join(''),'wolf','goblinCamp')
+			spawnEnemy(player.heroName.split('').reverse().join(''),'goblin','goblinCamp')
 		}
 
 		if (!player.flags.has('killedGoblins') && !existingEnemies) {

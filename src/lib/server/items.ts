@@ -1,4 +1,4 @@
-import { addAggro, damageEnemy, enemiesInScene } from './enemies';
+import { addAggro, damageEnemy, enemiesInScene, takePoisonDamage } from './enemies';
 import { pushHappening } from './messaging';
 import { activePlayersInScene, healPlayer, type Player } from './users';
 
@@ -8,25 +8,28 @@ export type EquipmentSlot =
 	| 'body'
 
 export type ItemIdForSlot<T extends EquipmentSlot> =
-	 T extends 'weapon' ?
-	 	| 'unarmed'
-		| 'shortBow'
-		| 'shortSword'
-		: T extends 'utility' ?
-		| 'empty'
-		| 'bandage'
-		| 'bomb'
-		: T extends 'body' ?
-		| 'rags'
-		| 'leatherArmor'
-		| 'plateMail'
-		: never
+	T extends 'weapon' ?
+	| 'unarmed'
+	| 'club'
+	| 'dagger'
+	| 'fireStaff'
+	: T extends 'utility' ?
+	| 'empty'
+	| 'bandage'
+	| 'bomb'
+	| 'poisonDart'
+	: T extends 'body' ?
+	| 'rags'
+	| 'leatherArmor'
+	| 'plateMail'
+	: never
 
 export type ItemId = ItemIdForSlot<EquipmentSlot>
 
 export type ItemStateForSlot<T extends EquipmentSlot> = {
 	itemId: ItemIdForSlot<T>;
 	cooldown: number;
+	warmup: number;
 }
 
 export type ItemState = ItemStateForSlot<EquipmentSlot>
@@ -38,18 +41,21 @@ export type Inventory = {
 export type Item = {
 	actions?: (player: Player) => void
 	onTakeDamage?: (incoming: number) => number
+	warmup?: number
 }
 
-const shortSword: Item = {
+const dagger: Item = {
 	actions(player) {
 		for (const enemy of enemiesInScene(player.currentScene)) {
 			player.itemActions.push(
 				{
-					buttonText: `Slash ${enemy.name} with my short sword`,
-					provoke:7,
-					speed:2,
+					buttonText: `Attack ${enemy.name} with my dagger`,
+					provoke: 7,
+					speed: 8,
 					performAction() {
-						damageEnemy(player, enemy, 30)
+						damageEnemy(player, enemy, 5)
+						damageEnemy(player, enemy, 5)
+						damageEnemy(player, enemy, 5)
 					}
 				}
 			)
@@ -57,17 +63,35 @@ const shortSword: Item = {
 	}
 }
 
-const shortBow: Item = {
+const club: Item = {
 	actions(player) {
 		for (const enemy of enemiesInScene(player.currentScene)) {
 			player.itemActions.push(
 				{
-					buttonText: `Fire an arrow at ${enemy.name}`,
-					provoke: 2,
-					speed:6,
+					buttonText: `Hit ${enemy.name} with my club`,
+					provoke: 40,
+					speed: 2,
 					performAction() {
-						damageEnemy(player, enemy, 10)
-						player.inventory.weapon.cooldown = 1
+						damageEnemy(player, enemy, 20)
+					}
+				}
+			)
+		}
+	}
+}
+
+const fireStaff: Item = {
+	warmup:2,
+	actions(player) {
+		for (const enemy of enemiesInScene(player.currentScene)) {
+			player.itemActions.push(
+				{
+					buttonText: `Blast ${enemy.name} with firebolt`,
+					provoke: 60,
+					speed: 10,
+					performAction() {
+						damageEnemy(player, enemy, 30)
+						player.inventory.weapon.cooldown = 2
 					}
 				}
 			)
@@ -78,12 +102,12 @@ const shortBow: Item = {
 const bandage: Item = {
 	actions(player) {
 		for (const friend of activePlayersInScene(player.currentScene)) {
-			if(friend.health < friend.maxHealth){
+			if (friend.health < friend.maxHealth) {
 				player.itemActions.push(
 					{
 						buttonText: `Heal ${friend.heroName == player.heroName ? 'myself' : friend.heroName} with bandage`,
-						grantsImmunity:true,
-						provoke:1,
+						grantsImmunity: true,
+						provoke: 1,
 						performAction: () => {
 							healPlayer(friend, 40)
 							player.inventory.utility.itemId = 'empty'
@@ -95,12 +119,12 @@ const bandage: Item = {
 	}
 }
 
-const bomb : Item = {
+const bomb: Item = {
 	actions(player) {
-		if(enemiesInScene(player.currentScene).length){
+		if (enemiesInScene(player.currentScene).length) {
 			player.itemActions.push({
-				buttonText:'Throw bomb',
-				speed:12,
+				buttonText: 'Throw bomb',
+				speed: 12,
 				performAction() {
 					for (const enemy of enemiesInScene(player.currentScene)) {
 						enemy.aggros.clear()
@@ -113,12 +137,35 @@ const bomb : Item = {
 	},
 }
 
+const poisonDart: Item = {
+	actions(player) {
+		for (const enemy of enemiesInScene(player.currentScene)) {
+			player.itemActions.push(
+				{
+					buttonText: `Throw poison dart at ${enemy.name}`,
+					provoke: 100,
+					performAction() {
+						let found = enemy.statuses.find(s => s.status == 'poison')
+						if (found != undefined) {
+							found.counter = 3
+						} else {
+							enemy.statuses.push({ status: 'poison', counter: 2 })
+						}
+						takePoisonDamage(enemy)
+						player.inventory.utility.itemId = 'empty'
+					},
+				}
+			)
+		}
+	},
+}
+
 const plateMail: Item = {
 	actions(player) {
-		if(enemiesInScene(player.currentScene).length){
+		if (enemiesInScene(player.currentScene).length) {
 			player.itemActions.push({
-				provoke:100,
-				buttonText:'Taunt',
+				provoke: 100,
+				buttonText: 'Taunt',
 				performAction() {
 					player.inventory.body.cooldown = 2
 					pushHappening(`----`)
@@ -137,10 +184,10 @@ const plateMail: Item = {
 
 const leatherArmor: Item = {
 	actions(player) {
-		if(enemiesInScene(player.currentScene).length){
+		if (enemiesInScene(player.currentScene).length) {
 			player.itemActions.push({
-				buttonText:'Hide in shadows',
-				grantsImmunity:true,
+				buttonText: 'Hide in shadows',
+				grantsImmunity: true,
 				performAction() {
 					for (const enemy of enemiesInScene(player.currentScene)) {
 						enemy.aggros.delete(player.heroName)
@@ -162,14 +209,16 @@ const leatherArmor: Item = {
 
 export const weapons: Record<ItemIdForSlot<'weapon'>, Item> = {
 	unarmed: {},
-	shortBow: shortBow,
-	shortSword: shortSword,
+	dagger: dagger,
+	club: club,
+	fireStaff: fireStaff,
 };
 
 export const utilityItems: Record<ItemIdForSlot<'utility'>, Item> = {
 	empty: {},
 	bandage: bandage,
 	bomb: bomb,
+	poisonDart: poisonDart,
 }
 
 export const bodyItems: Record<ItemIdForSlot<'body'>, Item> = {

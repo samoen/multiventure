@@ -24,12 +24,12 @@ export const POST: RequestHandler = async (r) => {
 		// globalFlags.add('smashedMedallion')
 
 		const startflags : Set<Flag>= new Set()
-		// startflags.add('heardAboutHiddenPassage')
+		startflags.add('heardAboutHiddenPassage')
 		// startflags.add('gotFreeStarterWeapon')
 		// startflags.add('killedGoblins')
 
 		let startScene : SceneId = 'forest'
-		// startScene = 'forestPassage' 
+		startScene = 'forestPassage' 
 		// startScene = 'throne'
 		// startScene = 'armory'
 
@@ -37,14 +37,17 @@ export const POST: RequestHandler = async (r) => {
 			weapon:{
 				itemId:'unarmed',
 				cooldown:0,
+				warmup:0,
 			},
 			utility:{
 				itemId:'empty',
 				cooldown:0,
+				warmup:0,
 			},
 			body:{
 				itemId:'rags',
 				cooldown:0,
+				warmup:0,
 			}
 		}
 

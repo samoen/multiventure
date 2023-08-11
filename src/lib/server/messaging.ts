@@ -39,7 +39,7 @@ export function updatePlayerActions(player: Player) {
 	for (const cd of playerItemStates(player)) {
 		const i = items[cd.itemId]
 		if (i.actions) {
-			if (cd.cooldown < 1) {
+			if (cd.cooldown < 1 && cd.warmup < 1) {
 				i.actions(player)
 			}
 		}
@@ -55,7 +55,9 @@ export function updatePlayerActions(player: Player) {
 				},
 			}
 		)
-		return
+		if(player.currentScene != 'armory'){
+			return
+		}
 	}
 
 	scenes[player.currentScene].actions(player)
@@ -108,7 +110,8 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 			return {
 				health: e.currentHealth,
 				name: e.name,
-				myAggro: e.aggros.get(forPlayer.heroName) ?? 0
+				myAggro: e.aggros.get(forPlayer.heroName) ?? 0,
+				statuses: e.statuses,
 			}
 		}),
 		playerFlags: Array.from(forPlayer.flags),
