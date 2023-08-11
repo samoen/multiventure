@@ -49,7 +49,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 	hobGoblin: {
 		baseHealth: 50,
 		baseDamage: 5,
-		aggroGain: 90,
+		aggroGain: 80,
 		speed: 10,
 		onTakeDamage(incoming){
 			if(incoming > 20)return 20

@@ -50,13 +50,13 @@ const dagger: Item = {
 		for (const enemy of enemiesInScene(player.currentScene)) {
 			player.itemActions.push(
 				{
-					buttonText: `Attack ${enemy.name} with dagger`,
+					buttonText: `Attack ${enemy.name} with Dagger`,
 					provoke: 7,
 					speed: 8,
 					performAction() {
-						damageEnemy(player, enemy, 5)
-						damageEnemy(player, enemy, 5)
-						damageEnemy(player, enemy, 5)
+						damageEnemy(player, enemy, 7)
+						damageEnemy(player, enemy, 7)
+						damageEnemy(player, enemy, 7)
 					}
 				}
 			)
@@ -69,7 +69,7 @@ const club: Item = {
 		for (const enemy of enemiesInScene(player.currentScene)) {
 			player.itemActions.push(
 				{
-					buttonText: `Hit ${enemy.name} with club`,
+					buttonText: `Hit ${enemy.name} with Club`,
 					provoke: 40,
 					speed: 2,
 					performAction() {
@@ -87,7 +87,7 @@ const fireStaff: Item = {
 		for (const enemy of enemiesInScene(player.currentScene)) {
 			player.itemActions.push(
 				{
-					buttonText: `Blast ${enemy.name} with firebolt`,
+					buttonText: `Blast ${enemy.name} with Firebolt`,
 					provoke: 60,
 					speed: 10,
 					performAction() {
@@ -124,7 +124,7 @@ const bomb: Item = {
 	actions(player) {
 		if (enemiesInScene(player.currentScene).length) {
 			player.itemActions.push({
-				buttonText: 'Throw bomb',
+				buttonText: 'Throw Powderbomb',
 				speed: 12,
 				performAction() {
 					for (const enemy of enemiesInScene(player.currentScene)) {

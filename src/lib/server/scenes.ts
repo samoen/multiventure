@@ -37,6 +37,10 @@ const dead: Scene = {
 			buttonText: 'Reincarnate in armory',
 			goTo: 'armory',
 		})
+		player.sceneActions.push({
+			buttonText: 'Reincarnate in tutorial',
+			goTo: `tutorial_${player.heroName}`,
+		})
 	}
 }
 export function addSoloScenes(name:string){
@@ -47,13 +51,18 @@ export function addSoloScenes(name:string){
 }
 const tutorial: Scene = {
 	onEnterScene(player) {
-		player.sceneTexts.push(`You are standing outside a castle barracks. Soliders mill around swinging swords.\n\nArthur, Captain of the Castle Guard: 'Look alive recruit! The first day of training can be the most dangerous of a guardsman's life. You must be ${player.heroName}, welcome aboard. Many great heroes have started their journey on the very ground you stand. In this barracks we wake up early, follow orders, and we NEVER skip the tutorial.'`)
+		player.flags.delete('tutorial1')
+		player.flags.delete('tutorial2')
+		player.flags.delete('tutorial3')
+		player.inventory.body.itemId = 'rags'
+		player.inventory.utility.itemId = 'empty'
+		player.inventory.weapon.itemId = 'unarmed'
+		player.sceneTexts.push(`You are standing at a castle barracks. Soliders mill around swinging swords and grunting in cool morning air. You see Arthur, the captain of the castle guard marching towards you.\n\nArthur: 'Look alive recruit! The first day of training can be the most dangerous of a guardsman's life. You must be ${player.heroName}, welcome aboard. In this barracks we wake up early, follow orders, and NEVER skip the tutorial. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.'`)
 	},
 	actions(player) {
 		const agreedToProceed = () => {
 			player.flags.delete('tutorial1')
 			player.flags.add('tutorial2')
-			player.sceneTexts.push("'Now grab some equipment, our training goblin is ready for you. Also there's a bit of a rat problem in the training room right now.'")
 		}
 
 		if (player.flags.has('tutorial1')) {
@@ -74,25 +83,30 @@ const tutorial: Scene = {
 					},
 				})
 			}
+			if(!player.flags.has('tutorial3')){
+				let wall = "'I would rather you didn't break the fourth wall, I'm into more serious RPGs.'"
+				player.sceneActions.push({
+					buttonText: wall,
+					performAction() {
+						player.flags.add('tutorial3')
+						player.sceneTexts.push(`${player.heroName}: ${wall}`)
+						player.sceneTexts.push("Arthur: 'Lighten up recruit. The storyline will get plenty dark and gritty soon enough. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.'")
+					},
+				})
+			}
+			let breeze = "'I tend to breeze through tutorials pretty easily so.. not worried. Get on with it.'"
 			player.sceneActions.push({
-				buttonText: "'I would rather you didn't break the fourth wall, I'm into more serious RPGs'",
+				buttonText: breeze,
 				performAction() {
-					player.flags.add('tutorial2')
-					player.sceneTexts.push("Arthur: 'Lighten up recruit, it's just for the tutorial. The storyline gets pretty dark and gritty if I do say so myself. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.'")
-					agreedToProceed()
-				},
-			})
-			player.sceneActions.push({
-				buttonText: "'I tend to breeze through tutorials pretty easily so.. not worried. Get on with it.'",
-				performAction() {
-					player.sceneTexts.push("'That's the spirit, recruit!'")
+					player.sceneTexts.push(`${player.heroName}: ${breeze}`)
+					player.sceneTexts.push(`Arthur: 'Can do ${player.heroName}! Our training goblin is ready for you. Also there's a bit of a rat problem in the training room right now.. so grab some equipment off the rack and let's go.'`)
 					agreedToProceed()
 				},
 			})
 		}
 		if (player.flags.has('tutorial2') && player.inventory.weapon.itemId != 'club') {
 			player.sceneActions.push({
-				buttonText: "Equip club",
+				buttonText: "Equip Club",
 				performAction() {
 					player.inventory.weapon.itemId = 'club'
 					player.sceneTexts.push("A club deals a hefty chunk of damage each hit. That makes it effective against unarmored foes like goblins.")
@@ -101,16 +115,16 @@ const tutorial: Scene = {
 		}
 		if (player.flags.has('tutorial2') && player.inventory.utility.itemId != 'bomb') {
 			player.sceneActions.push({
-				buttonText: "Equip powderbomb",
+				buttonText: "Equip Powderbomb",
 				performAction() {
 					player.inventory.utility.itemId = 'bomb'
-					player.sceneTexts.push("A powderbomb deals splash damage to all nearby enemies. It should clear out the rats nicely.")
+					player.sceneTexts.push("A powderbomb deals splash damage to all nearby enemies. It should clear out the rats take care of that first.")
 				},
 			})
 		}
 		if (player.inventory.utility.itemId == 'bomb' && player.inventory.weapon.itemId == 'club') {
 			player.sceneActions.push({
-				buttonText: "'Splash damage, focused attack. Got it.'",
+				buttonText: "'Boom then bash, got it.'",
 				goTo: `trainingRoom1_${player.heroName}`
 			})
 		}
@@ -135,13 +149,13 @@ const trainingRoom1: Scene = {
 
 		if (player.inventory.utility.itemId == 'bandage' && player.inventory.weapon.itemId == 'dagger') {
 			player.sceneActions.push({
-				buttonText: 'Use the right weapon, prioritize my targets. Easy stuff.',
+				buttonText: "'Sure, hobgoblins, heal, gremlin, just stab em up.'",
 				goTo: `trainingRoom2_${player.heroName}`,
 			})
 		}
 		if (player.inventory.weapon.itemId != 'dagger') {
 			player.sceneActions.push({
-				buttonText: 'Equip dagger',
+				buttonText: 'Equip Dagger',
 				performAction() {
 					player.inventory.weapon.itemId = 'dagger'
 					player.sceneTexts.push("Hobgoblins wear heavy armor, which limits the amount of damage they take each strike. A dagger strikes multiple times per attack, mitigating their defenses.")
@@ -150,10 +164,10 @@ const trainingRoom1: Scene = {
 		}
 		if (player.inventory.utility.itemId != 'bandage') {
 			player.sceneActions.push({
-				buttonText: 'Equip bandage',
+				buttonText: 'Equip Bandage',
 				performAction() {
 					player.inventory.utility.itemId = 'bandage'
-					player.sceneTexts.push("Use the bandage when you get low on health. Simple.")
+					player.sceneTexts.push("Use the bandage when you get low on health. Hobgoblins have high aggression, so kill them as soon as possible.")
 				},
 			})
 		}
@@ -169,7 +183,7 @@ const trainingRoom2: Scene = {
 	solo:true,
 	onEnterScene(player) {
 		player.sceneTexts.push("Morgus: 'Raaargh! What are you hob-doing in MY hob-training room?! How is Glornak by the way? We used to work in the same room but they split us up.'")
-		player.sceneTexts.push("Floggo: 'There you go again Morgus, talking about Glornak like I'm not standing right here. And it's OUR training room now remember? Oh Great, another recruit equipped with a dagger.. I would take off this heavy armor but I don't want Arthur to know we are just regular goblins underneath'")
+		player.sceneTexts.push("Porgus: 'There you go again Morgus, talking about Glornak like I'm not standing right here. And it's OUR training room now remember? Oh Great, another recruit equipped with a dagger.. I would take off this heavy armor but I don't want Arthur to know we are just regular goblins underneath'")
 		player.sceneTexts.push("Scortchy: 'Burn! I burn you! REEEE HEEE HEEE'")
 		player.sceneTexts.push("Florgus: 'Remember Scortchy, aim for the recruit! Not us!'")
 		spawnEnemy('Morgus', 'hobGoblin', `trainingRoom2_${player.heroName}`)
@@ -179,16 +193,16 @@ const trainingRoom2: Scene = {
 	actions(player) {
 		if (player.inventory.utility.itemId != 'poisonDart') {
 			player.sceneActions.push({
-				buttonText: 'Equip poison dart',
+				buttonText: 'Equip Poison Dart',
 				performAction() {
 					player.inventory.utility.itemId = 'poisonDart'
-					player.sceneTexts.push("Poison deals more damage the bigger the enemy. It deals it's damage over 3 turns, so you should have a plan to survive until then.")
+					player.sceneTexts.push("Poison deals more damage the bigger the enemy. It deals it's damage over 3 turns, so you need to be able to survive that long.")
 				},
 			})
 		}
 		if (player.inventory.body.itemId != 'theifCloak') {
 			player.sceneActions.push({
-				buttonText: "Equip theif's cloak",
+				buttonText: "Equip Theif's Cloak",
 				performAction() {
 					player.inventory.body.itemId = 'theifCloak'
 					player.sceneTexts.push("A theif's cloak lets you hide for a turn, preventing retaliation from enemies. It's a good way to wait for your weapon to warmup and cooldown. Poison your enemy first to get extra value!")
@@ -197,10 +211,10 @@ const trainingRoom2: Scene = {
 		}
 		if (player.inventory.weapon.itemId != 'fireStaff') {
 			player.sceneActions.push({
-				buttonText: 'Equip fire staff',
+				buttonText: 'Equip Fire Staff',
 				performAction() {
 					player.inventory.weapon.itemId = 'fireStaff'
-					player.sceneTexts.push("A fire staff takes 3 turns before you can use it. Trolls are slow, so land that finishing blow before it can retaliate!")
+					player.sceneTexts.push("A fire staff takes 3 turns before you can use it. Trolls are slow, so it won't get a chance to retaliate once you land that finishing blast!")
 				},
 			})
 		}
@@ -212,7 +226,7 @@ const trainingRoom2: Scene = {
 	},
 	onVictory(player) {
 		player.health = player.maxHealth
-		player.sceneTexts.push("Arthur: 'Brilliant work recruit! Alright, last one. We don't normally do this but I see something great in you. You are going to fight a cave troll. Trolls are extremely dangerous with high damage and health, so be careful in there'")
+		player.sceneTexts.push("Arthur: 'Brilliant work recruit! Alright, last one. We don't normally do this but I see something great in you. You are going to fight a cave troll. Trolls are extremely dangerous with high damage and health.'")
 	},
 }
 
@@ -234,8 +248,8 @@ const trainingRoom3: Scene = {
 
 	},
 	onVictory(player) {
-		player.sceneTexts.push('Arthur finally gets the door open')
-		player.sceneTexts.push(`Arthur: 'Well done ${player.heroName}! You've beaten the tutorial! Now give all your equipment back, I can't have you starting the game like that.'`)
+		player.sceneTexts.push('The mighty beast falls as Arthur finally gets the door open')
+		player.sceneTexts.push(`Arthur: 'Well done ${player.heroName}! You may be the chosen one after all! Now give all your equipment back, I can't have you starting the game like that.'`)
 		player.inventory.body.itemId = 'rags'
 		player.inventory.utility.itemId = 'empty'
 		player.inventory.weapon.itemId = 'unarmed'

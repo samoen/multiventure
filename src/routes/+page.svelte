@@ -149,7 +149,7 @@
 	}
 </script>
 
-<h3>Status: {status}</h3>
+<!-- <h3>Status: {status}</h3> -->
 {#if loading}
 	<p>loading...</p>
 {/if}
@@ -165,69 +165,79 @@
 {/if}
 
 {#if lastMsgFromServer && source && source.readyState == source.OPEN}
-	<!-- <h3>Scene Texts:</h3> -->
-	<div class="sceneTexts" bind:this={sceneTexts}>
-		{#each lastMsgFromServer.sceneTexts as t}
-			<p class="sceneText">{t}</p>
-			<br />
-		{/each}
-	</div>
-	{#if lastMsgFromServer.sceneActions.length}
-		<div class="sceneButtons">
-			{#each lastMsgFromServer.sceneActions as op, i}
-				<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
-					{op.buttonText}
-				</button>
-			{/each}
-		</div>
-	{/if}
+<!-- <h3>Scene Texts:</h3> -->
+<div class="sceneTexts" bind:this={sceneTexts}>
+	{#each lastMsgFromServer.sceneTexts as t}
+	<p class="sceneText">{t}</p>
 	<br />
-	{#if lastMsgFromServer.itemActions.length}
-		<div class="actionButtons">
-			{#each lastMsgFromServer.itemActions as op, i}
-				<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
-					{op.buttonText}
-				</button>
-			{/each}
+	{/each}
+</div>
+{#if lastMsgFromServer.sceneActions.length}
+<div class="sceneButtons">
+	{#each lastMsgFromServer.sceneActions as op, i}
+	<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
+		{op.buttonText}
+	</button>
+	{/each}
+</div>
+{/if}
+<br />
+{#if lastMsgFromServer.itemActions.length}
+<div class="actionButtons">
+	{#each lastMsgFromServer.itemActions as op, i}
+	<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
+		{op.buttonText}
+	</button>
+	{/each}
 		</div>
 	{/if}
 	<h3>My Hero:</h3>
 	<p>
-		Logged in as {lastMsgFromServer.yourName}
-		<button on:click={logOut}>log out</button>
+		Health: {lastMsgFromServer.yourHp}hp
+		
 	</p>
 	<p>
-		{lastMsgFromServer.yourScene}, {lastMsgFromServer.yourHp}hp, {lastMsgFromServer.yourWeapon
-			.itemId}
-		cooldown{lastMsgFromServer.yourWeapon.cooldown}
-		warmup{lastMsgFromServer.yourWeapon.warmup},
-		{lastMsgFromServer.yourUtility.itemId}
-		cooldown{lastMsgFromServer.yourUtility.cooldown}
-		warmup{lastMsgFromServer.yourUtility.warmup},
-		{lastMsgFromServer.yourBody.itemId}
-		cooldown{lastMsgFromServer.yourBody.cooldown}
-		warmup{lastMsgFromServer.yourBody.warmup}
+		Weapon:
+		{lastMsgFromServer.yourWeapon.itemId}
+		{lastMsgFromServer.yourWeapon.cooldown ? `cooldown: ${lastMsgFromServer.yourWeapon.cooldown}` : ''}
+		{lastMsgFromServer.yourWeapon.warmup ? `warmup:${lastMsgFromServer.yourWeapon.warmup}` : ''}
 	</p>
-	<p>{lastMsgFromServer.playerFlags} {lastMsgFromServer.globalFlags}</p>
+	<p>
+		Utility: {lastMsgFromServer.yourUtility.itemId}
+		
+	</p>
+	<p>
+		Armor:{lastMsgFromServer.yourBody.itemId}
+		{lastMsgFromServer.yourBody.cooldown ? `cooldown:${lastMsgFromServer.yourBody.cooldown}` : ''}
+		{lastMsgFromServer.yourBody.warmup ? `warmup:${lastMsgFromServer.yourBody.warmup}` : ''}
+	</p>
+	<p>
+		Location: {lastMsgFromServer.yourScene}
+	</p>
+	<!-- <p>{lastMsgFromServer.playerFlags} {lastMsgFromServer.globalFlags}</p> -->
 	<h3>Nearby Enemies:</h3>
 	{#each lastMsgFromServer.enemiesInScene as e}
-		<p>
-			<strong>{e.name}</strong> Health: {e.health}, Aggro: {e.myAggro}, statuses: {JSON.stringify(e.statuses)}
-		</p>
-		<p />
+	<p>
+		<strong>{e.name}</strong> Health: {e.health}, Aggro: {e.myAggro}, statuses: {JSON.stringify(e.statuses)}
+	</p>
+	<p />
 	{/each}
 	<h3>Recent happenings:</h3>
 	<div class="happenings" bind:this={happenings}>
 		{#each lastMsgFromServer.happenings as h}
-			<p>{h}</p>
+		<p>{h}</p>
 		{/each}
 	</div>
+	<p>
+		Logged in as {lastMsgFromServer.yourName}
+		<button on:click={logOut}>log out</button>
+	</p>
 	<h3>Other Players:</h3>
 	{#each lastMsgFromServer.otherPlayers as p}
-		<p>
-			{p.heroName} is in {p.currentScene} with {p.health}hp
-		</p>
-		<p />
+	<p>
+		{p.heroName} is in {p.currentScene} with {p.health}hp
+	</p>
+	<p />
 	{/each}
 {/if}
 
@@ -259,18 +269,16 @@
 	}
 	.sceneText {
 		white-space: pre-wrap;
+		margin-top: 0px;
+		margin-bottom: 0px;
 	}
 	.sceneTexts {
-		height: calc(340px - 20vw);
+		height: calc(450px - 20vw);
+		/* height: 5; */
 		overflow-y: auto;
 		border: 1px solid black;
 		background-color: lightblue;
 		padding: 10px;
-	}
-	.sceneTexts > p {
-		margin-top: 0px;
-		margin-bottom: 0px;
-		/* line-height: 40px; */
 	}
 	.sceneButtons {
 		display: inline-block;

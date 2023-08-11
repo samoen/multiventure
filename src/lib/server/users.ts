@@ -10,6 +10,7 @@ export type HeroName = string;
 export type Flag =
 	| 'tutorial1'
 	| 'tutorial2'
+	| 'tutorial3'
 	| 'metArthur'
 	| 'heardAboutHiddenPassage'
 	| 'gotFreeStarterWeapon'
