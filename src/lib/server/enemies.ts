@@ -1,6 +1,6 @@
 import type { EnemyStatusEffect } from "$lib/utils";
 import { pushHappening } from "./messaging";
-import type { SceneId } from "./scenes";
+import { scenes, type SceneId } from "./scenes";
 import { playerEquipped, type HeroName, type Player, activePlayers, activePlayersInScene } from "./users";
 
 
@@ -88,7 +88,7 @@ export function modifiedEnemyHealth(h: number): number {
 
 export function spawnEnemy(name: string, template: EnemyTemplateId, where: SceneId) {
 	const baseHealth = enemyTemplates[template].baseHealth
-	let modifiedBaseHealth = modifiedEnemyHealth(baseHealth)
+	let modifiedBaseHealth = scenes.get(where)?.solo ? baseHealth : modifiedEnemyHealth(baseHealth)
 	activeEnemies.push({
 		name: name,
 		currentScene: where,
@@ -162,7 +162,8 @@ export function takePoisonDamage(enemy : ActiveEnemy){
 
 export function checkEnemyDeath(target:ActiveEnemy): { killed: boolean } {
 	if (target.currentHealth < 1) {
-		const i = activeEnemies.findIndex(e => e.name == target.name)
+		const i = activeEnemies.findIndex(e => e === target)
+		// activeEnemies.findIndex
 		if (i >= 0) {
 			activeEnemies.splice(i, 1)
 		}

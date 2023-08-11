@@ -3,6 +3,7 @@ import { activePlayers, users } from '$lib/server/users';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { activeEnemies, modifiedEnemyHealth } from '$lib/server/enemies';
+import { scenes } from '$lib/server/scenes';
 
 export const GET: RequestHandler = async (event) => {
 	try {
@@ -54,9 +55,11 @@ export const GET: RequestHandler = async (event) => {
 				pushHappening('----');
 				pushHappening(`${player.heroName} joined the game`)
 				for(const enemy of activeEnemies){
-					let percentHealthBefore = enemy.currentHealth / enemy.maxHealth
-					enemy.maxHealth = modifiedEnemyHealth(enemy.template.baseHealth)
-					enemy.currentHealth = percentHealthBefore * enemy.maxHealth
+					if(!scenes.get(enemy.currentScene)?.solo){
+						let percentHealthBefore = enemy.currentHealth / enemy.maxHealth
+						enemy.maxHealth = modifiedEnemyHealth(enemy.template.baseHealth)
+						enemy.currentHealth = percentHealthBefore * enemy.maxHealth
+					}
 				}
 				updateAllPlayerActions()
 				setTimeout(() => {

@@ -70,7 +70,7 @@ function handleAction(player: Player, actionFromId: GameAction) {
 		player.previousScene = player.currentScene
 		player.currentScene = actionFromId.goTo
 		player.sceneTexts = [];
-		const postActionScene = scenes[player.currentScene];
+		const postActionScene = scenes.get(player.currentScene);
 		if (postActionScene && postActionScene.onEnterScene) {
 			postActionScene.onEnterScene(player);
 		}
@@ -118,9 +118,9 @@ function handleAction(player: Player, actionFromId: GameAction) {
 	}
 	
 	
-	const playerScene = scenes[player.currentScene];
+	const playerScene = scenes.get(player.currentScene);
 	const postReactionEnemies = enemiesInScene(player.currentScene)
-	if ( !postReactionEnemies.length && playerScene.onVictory) {
+	if ( !postReactionEnemies.length && playerScene?.onVictory) {
 		for (const playerInScene of activePlayersInScene(player.currentScene)){
 			playerScene.onVictory(playerInScene)
 		}

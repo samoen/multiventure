@@ -60,7 +60,7 @@ export function updatePlayerActions(player: Player) {
 		}
 	}
 
-	scenes[player.currentScene].actions(player)
+	scenes.get(player.currentScene)?.actions(player)
 }
 
 export async function sendEveryoneWorld(triggeredBy: HeroName) {

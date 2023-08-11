@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { isJoin, type MessageFromServer } from '$lib/utils';
 import { FAKE_LATENCY } from '$lib/server/messaging';
 import { users, type Player, type Flag, globalFlags } from '$lib/server/users';
-import { scenes, type SceneId } from '$lib/server/scenes';
+import { scenes, type SceneId, addSoloScenes } from '$lib/server/scenes';
 import type { Inventory } from '$lib/server/items';
 
 export const POST: RequestHandler = async (r) => {
@@ -29,7 +29,7 @@ export const POST: RequestHandler = async (r) => {
 		// startflags.add('killedGoblins')
 
 		let startScene : SceneId = 'forest'
-		startScene = 'tutorial' 
+		startScene = `tutorial_${msg.join}` 
 		// startScene = 'forestPassage' 
 		// startScene = 'throne'
 		// startScene = 'armory'
@@ -52,7 +52,7 @@ export const POST: RequestHandler = async (r) => {
 			}
 		}
 
-		const player = {
+		player = {
 			connectionState: null,
 			heroName: msg.join,
 			previousScene: 'dead',
@@ -66,7 +66,9 @@ export const POST: RequestHandler = async (r) => {
 			sceneTexts: [],
 			flags: startflags,
 		} satisfies Player
-		scenes[player.currentScene].onEnterScene(player)
+
+		addSoloScenes(msg.join)
+		scenes.get(player.currentScene)?.onEnterScene(player)
 		users.set(msg.join, player);
 	}
 
