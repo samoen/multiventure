@@ -5,31 +5,38 @@ import type { PageServerLoad } from './$types';
 export const load = (async (r) => {
 	console.log('running page server load');
 
-	// Check cookie to enable auto-login
-	let heroName = r.cookies.get('hero');
-	if (!heroName) {
+	// Check cookie to enable auto-subscribe
+	
+	let uid = r.cookies.get('uid')
+	let hero = r.cookies.get('hero')
+	if (!uid || !hero) {
 		return {
-			loggedIn: false,
-			loggedInAs:'noone',
-			hadCookie: false,
-			cookie: 'noone',
+			cookieMissing:true
 		};
 	}
-	if (!users.has(heroName)) {
-		console.log(`cookie hero ${heroName} not present in player list ${JSON.stringify(activePlayers().map(p=>p.heroName))}`);
-		// r.cookies.delete('hero', { path: '/' });
+
+	let player = users.get(uid)
+	if (!player) {
+		console.log(`cookie ${uid} not present in player list ${JSON.stringify(Array.from(users.keys()).map(k=>k))}`);
 		return {
-			loggedIn: false,
-			loggedInAs:'noone',
-			hadCookie: true,
-			cookie: heroName
+			noPlayer:true,
+			yourHeroCookie:hero,
 		};
+	}
+	if(player.heroName != hero){
+		return{
+			noMatch:true
+		}
+	}
+
+	return {
+		readyToSubscribe:true,
 	}
 	
-	return {
-		loggedIn: true,
-		loggedInAs: heroName,
-		hadCookie: true,
-		cookie: heroName
-	};
+	// return {
+	// 	loggedIn: true,
+	// 	loggedInAs: heroName,
+	// 	hadCookie: true,
+	// 	cookie: uid
+	// };
 }) satisfies PageServerLoad;

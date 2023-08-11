@@ -6,22 +6,29 @@ import { isGameActionSelected } from '$lib/utils';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { items } from '$lib/server/items';
+import { goto } from '$app/navigation';
 
 export const POST = (async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
+	let cookieHero = r.cookies.get('hero');
+	let uid = r.cookies.get('uid');
+	if (!uid) {
+		console.log(`rejected action no uid`);
+		return json('need uid cookie for action', { status: 401 });
+	}
+	let player = users.get(uid);
+	if (!player) {
+		return json(`player not found for uid ${uid}`, { status: 401 });
+	}
+	
+	if(player.heroName != cookieHero){
+		return json(`cookie hero not matching hero from uid ${uid}`, { status: 401 });
+	}
+
 	let msg = await r.request.json();
 	if (!isGameActionSelected(msg)) {
-		console.log(`rejected action ${msg} because no id`);
-		return json('malformed action', { status: 400 });
-	}
-	let hero = r.cookies.get('hero');
-	if (!hero) {
-		console.log(`rejected action ${JSON.stringify(msg)} hero not found`);
-		return json('hero not found', { status: 401 });
-	}
-	let player = users.get(hero);
-	if (!player) {
-		return json('hero not found', { status: 401 });
+		console.log(`rejected action ${msg} because body malformed`);
+		return json('malformed action body', { status: 400 });
 	}
 
 	// ensure action is still valid
@@ -32,13 +39,6 @@ export const POST = (async (r) => {
 		return json(`action ${msg.buttonText} not available`, { status: 400 });
 	}
 
-	// enemies despawn when there are no players in scene
-	for (let i = activeEnemies.length - 1; i >= 0; i--) {
-		if (!activePlayersInScene(activeEnemies[i].currentScene).length) {
-		  activeEnemies.splice(i, 1);
-		}
-	}
-
 	handleAction(player, actionFromId)
 	
 	if(player.health < 1){
@@ -46,12 +46,11 @@ export const POST = (async (r) => {
 		pushHappening(`${player.heroName} is mortally wounded`)
 	}
 
-
 	updateAllPlayerActions()
 
 	// tiny timeout so endpoint returns before the event messages get sent
 	setTimeout(() => {
-		if (hero) sendEveryoneWorld(hero);
+		if (player?.heroName) sendEveryoneWorld(player.heroName);
 	}, 1);
 
 	return json({ sucess: 'yessir' });
@@ -65,8 +64,18 @@ function handleAction(player: Player, actionFromId: GameAction) {
 			let wep = items[itemState.itemId]
 			if(wep != undefined && wep.warmup){
 				itemState.warmup = wep.warmup
+			}else{
+				itemState.warmup = 0
 			}
 		}
+		// If no players in there, remove all enemies
+		for (const e of enemiesInScene(actionFromId.goTo)){
+			let index = activeEnemies.indexOf(e)
+			if(index != -1){
+				activeEnemies.splice(index,1)
+			}
+		}
+
 		player.previousScene = player.currentScene
 		player.currentScene = actionFromId.goTo
 		player.sceneTexts = [];

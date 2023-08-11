@@ -1,14 +1,46 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
 	import { isMsgFromServer, type MessageFromServer, type GameActionSentToClient } from '$lib/utils';
 	import { onMount, tick } from 'svelte';
 
 	export let data;
-	let loginInput: string;
+	let signupInput: string;
 	let source: EventSource | null;
 	let lastMsgFromServer: MessageFromServer | null;
 	let loading = true;
 	let waitingForMyEvent = true;
 	let status = 'starting up';
+	let joinedAs : string | undefined;
+	let happenings: HTMLElement;
+	let sceneTexts: HTMLElement;
+	let autoSignup : boolean = true;
+
+	// let runTimeData: { loggedIn: boolean; loggedInAs: string } | undefined;
+	onMount(() => {
+		// runTimeData = structuredClone(data);
+		console.log('mounted with ssr data ' + JSON.stringify(data));
+		// console.log('source ' + h)
+		// h = 'blah'
+		// if (data.loggedIn) {
+
+			// problem, page can remount but not not invalidate
+
+		if (data.readyToSubscribe) {
+			console.log(`ssr data says cookies are good. auto-subscribing..`);
+			// loginOrJoin(data);
+			// if(source == null){
+				status = 'auto subscribing';
+				subscribeEventsIfNotAlready();
+				// }
+			}else if(data.noPlayer && data.yourHeroCookie && autoSignup){
+			console.log(`ssr data says my hero cookie not matching anyone, doing auto signup..`);
+			status = 'auto signup';
+			signUp(data.yourHeroCookie)
+		} else {
+			status = 'need manual login';
+			loading = false;
+		}
+	});
 
 	async function choose(chosen: GameActionSentToClient) {
 		waitingForMyEvent = true;
@@ -30,8 +62,6 @@
 		// invalidateAll();
 		// lastMsgFromServer = res;
 	}
-	let happenings: HTMLElement;
-	let sceneTexts: HTMLElement;
 
 	function subscribeEventsIfNotAlready() {
 		if (source != null && source.readyState != EventSource.CLOSED) {
@@ -77,31 +107,14 @@
 			status = 'you logged in elsewhere, connection closed';
 			lastMsgFromServer = null;
 		});
+		console.log('subscribed')
 	}
-	let runTimeData: { loggedIn: boolean; loggedInAs: string } | undefined;
-	onMount(() => {
-		runTimeData = structuredClone(data);
-		console.log('mounted with ssr data ' + JSON.stringify(data));
-		// console.log('source ' + h)
-		// h = 'blah'
-		if (data.hadCookie) {
-			console.log(`ssr data says cookie ${runTimeData.loggedInAs} is good. auto-subscribing..`);
-			loginOrJoin(data.cookie);
-			// if(source == null){
-			status = 'auto subscribing';
-			subscribeEventsIfNotAlready();
-			// }
-		} else {
-			status = 'need manual login';
-			loading = false;
-		}
-	});
 
-	async function logOut() {
+	async function deleteHero() {
 		lastMsgFromServer = null;
 		loading = true;
-		status = 'submitting logout';
-		let f = await fetch('/api/logout', { method: 'POST' });
+		status = 'submitting hero delete';
+		let f = await fetch('/api/delete', { method: 'POST' });
 		// let r = await f.json()
 		status = 'unsubscribing from events';
 		if (source?.readyState != source?.CLOSED) {
@@ -112,8 +125,8 @@
 		status = 'need manual login';
 		loading = false;
 	}
-	async function loginOrJoin(usrName: string) {
-		let joincall = await fetch('/api/login', {
+	async function signUp(usrName: string) {
+		let joincall = await fetch('/api/signup', {
 			method: 'POST',
 			body: JSON.stringify({ join: usrName }),
 			headers: {
@@ -122,6 +135,7 @@
 		});
 		let res = await joincall.json();
 		if (
+			typeof res == 'object' &&
 			'alreadyConnected' in res &&
 			typeof res.alreadyConnected == 'boolean' &&
 			res.alreadyConnected
@@ -131,33 +145,38 @@
 		}
 
 		if (joincall.ok) {
-			runTimeData = { loggedIn: true, loggedInAs: usrName };
+			// if we were to re-mount (hot-reload) after this point, page data would be misleading
+			invalidateAll()
+			// location.reload()
+			// joinedAs = usrName
 			status = 'waiting for first event';
 			subscribeEventsIfNotAlready();
 		} else {
 			console.log('joincall not ok');
+			status = 'signup failed, need manual'
+			loading = false
 		}
 	}
-	async function logIn() {
-		if (!loginInput) return;
+	async function signUpButtonClicked() {
+		if (!signupInput) return;
 		loading = true;
-		status = 'submitting login';
-		let usrName = loginInput;
-		loginInput = '';
+		status = 'submitting sign up';
+		let usrName = signupInput;
+		signupInput = '';
 
-		loginOrJoin(usrName);
+		signUp(usrName);
 	}
 </script>
 
-<!-- <h3>Status: {status}</h3> -->
+<h3>Status: {status}</h3>
 {#if loading}
 	<p>loading...</p>
 {/if}
 <br />
 {#if !loading && lastMsgFromServer == null}
 	<p>Welcome! Please log in with your hero name:</p>
-	<input type="text" bind:value={loginInput} />
-	<button disabled={!loginInput} on:click={logIn}>Log in</button>
+	<input type="text" bind:value={signupInput} />
+	<button disabled={!signupInput} on:click={signUpButtonClicked}>Sign Up</button>
 {/if}
 
 {#if lastMsgFromServer && (!source || source.readyState != source.OPEN)}
@@ -191,7 +210,7 @@
 	{/each}
 		</div>
 	{/if}
-	<h3>My Hero:</h3>
+	<h3>{lastMsgFromServer.yourName}:</h3>
 	<p>
 		Health: {lastMsgFromServer.yourHp}hp
 		
@@ -207,7 +226,7 @@
 		
 	</p>
 	<p>
-		Armor:{lastMsgFromServer.yourBody.itemId}
+		Armor: {lastMsgFromServer.yourBody.itemId}
 		{lastMsgFromServer.yourBody.cooldown ? `cooldown:${lastMsgFromServer.yourBody.cooldown}` : ''}
 		{lastMsgFromServer.yourBody.warmup ? `warmup:${lastMsgFromServer.yourBody.warmup}` : ''}
 	</p>
@@ -230,7 +249,7 @@
 	</div>
 	<p>
 		Logged in as {lastMsgFromServer.yourName}
-		<button on:click={logOut}>log out</button>
+		<button on:click={deleteHero}>Delete Hero</button>
 	</p>
 	<h3>Other Players:</h3>
 	{#each lastMsgFromServer.otherPlayers as p}

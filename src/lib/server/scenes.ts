@@ -1,6 +1,6 @@
-import { activeEnemies, enemyTemplates, spawnEnemy, type EnemyTemplateId, enemiesInScene } from './enemies';
+import { enemiesInScene, enemyTemplates, spawnEnemy, type EnemyTemplateId } from './enemies';
 import { bodyItems, utilityItems, weapons, type ItemIdForSlot } from './items';
-import { activePlayers, activePlayersInScene, globalFlags, healPlayer, type HeroName, type Player, type UserId } from './users';
+import { activePlayersInScene, globalFlags, healPlayer, type HeroName, type Player } from './users';
 
 export type SceneId =
 	| `tutorial_${HeroName}`
@@ -20,7 +20,7 @@ export type Scene = {
 	onEnterScene: (player: Player) => void;
 	onVictory?: (player: Player) => void;
 	actions: (player: Player) => void;
-	solo?:boolean
+	solo?: boolean
 };
 
 const dead: Scene = {
@@ -43,11 +43,11 @@ const dead: Scene = {
 		})
 	}
 }
-export function addSoloScenes(name:string){
-	scenes.set(`tutorial_${name}`,tutorial)
-	scenes.set(`trainingRoom1_${name}`,trainingRoom1)
-	scenes.set(`trainingRoom2_${name}`,trainingRoom2)
-	scenes.set(`trainingRoom3_${name}`,trainingRoom3)
+export function addSoloScenes(name: string) {
+	scenes.set(`tutorial_${name}`, tutorial)
+	scenes.set(`trainingRoom1_${name}`, trainingRoom1)
+	scenes.set(`trainingRoom2_${name}`, trainingRoom2)
+	scenes.set(`trainingRoom3_${name}`, trainingRoom3)
 }
 const tutorial: Scene = {
 	onEnterScene(player) {
@@ -83,7 +83,7 @@ const tutorial: Scene = {
 					},
 				})
 			}
-			if(!player.flags.has('tutorial3')){
+			if (!player.flags.has('tutorial3')) {
 				let wall = "'I would rather you didn't break the fourth wall, I'm into more serious RPGs.'"
 				player.sceneActions.push({
 					buttonText: wall,
@@ -132,7 +132,7 @@ const tutorial: Scene = {
 }
 
 const trainingRoom1: Scene = {
-	solo:true,
+	solo: true,
 	onEnterScene(player) {
 		player.sceneTexts.push("You enter the training room. It is well worn by many training sessions. The walls are covered in blast marks, dents and splinters.")
 		player.sceneTexts.push("Glornak: 'Hey you! I've never seen a more pitiful excuse for a guardsman in my life, and I've been working here since Arthur was a recruit! Go, my rats!'")
@@ -180,7 +180,7 @@ const trainingRoom1: Scene = {
 	},
 }
 const trainingRoom2: Scene = {
-	solo:true,
+	solo: true,
 	onEnterScene(player) {
 		player.sceneTexts.push("Morgus: 'Raaargh! What are you hob-doing in MY hob-training room?! How is Glornak by the way? We used to work in the same room but they split us up.'")
 		player.sceneTexts.push("Porgus: 'There you go again Morgus, talking about Glornak like I'm not standing right here. And it's OUR training room now remember? Oh Great, another recruit equipped with a dagger.. I would take off this heavy armor but I don't want Arthur to know we are just regular goblins underneath'")
@@ -231,7 +231,7 @@ const trainingRoom2: Scene = {
 }
 
 const trainingRoom3: Scene = {
-	solo:true,
+	solo: true,
 	onEnterScene(player) {
 		player.sceneTexts.push("You enter a dark, stinking place. Iron bars slam shut behind you. It looks more like a prison cell than a training room. The bones of previous recruits are strewn about the place. A giant figure emerges from the darkness.")
 		player.sceneTexts.push("Ragor: 'RRRAAAAAAUUUUUUGHHH!'")
@@ -253,6 +253,7 @@ const trainingRoom3: Scene = {
 		player.inventory.body.itemId = 'rags'
 		player.inventory.utility.itemId = 'empty'
 		player.inventory.weapon.itemId = 'unarmed'
+		player.health = player.maxHealth
 	},
 }
 
@@ -465,9 +466,9 @@ const goblinCamp: Scene = {
 				goTo: 'forestPassage',
 			}
 
-			)
-		}
+		)
 	}
+}
 
 const tunnelChamber: Scene = {
 	onEnterScene(player) {
@@ -571,29 +572,29 @@ const armory: Scene = {
 	},
 }
 
-export function getSoloScene(id: SceneId){
-	if(id.startsWith('tutorial')){
+export function getSoloScene(id: SceneId) {
+	if (id.startsWith('tutorial')) {
 		return tutorial
-	}else if(id.startsWith('trainingRoom1')){
+	} else if (id.startsWith('trainingRoom1')) {
 		return trainingRoom1
-	
-	}else if(id.startsWith('trainingRoom2')){
+
+	} else if (id.startsWith('trainingRoom2')) {
 		return trainingRoom2
-	
-	}else if(id.startsWith('trainingRoom3')){
+
+	} else if (id.startsWith('trainingRoom3')) {
 		return trainingRoom3
 	}
 }
 
-export const scenes : Map<SceneId,Scene> = new Map()
-scenes.set('dead',dead)
-scenes.set('forest',forest)
-scenes.set('castle',castle)
-scenes.set('throne',throne)
-scenes.set('forestPassage',forestPassage)
-scenes.set('goblinCamp',goblinCamp)
-scenes.set('tunnelChamber',tunnelChamber)
-scenes.set('armory',armory)
+export const scenes: Map<SceneId, Scene> = new Map()
+scenes.set('dead', dead)
+scenes.set('forest', forest)
+scenes.set('castle', castle)
+scenes.set('throne', throne)
+scenes.set('forestPassage', forestPassage)
+scenes.set('goblinCamp', goblinCamp)
+scenes.set('tunnelChamber', tunnelChamber)
+scenes.set('armory', armory)
 
 
 // export const scenes: Record<SceneId, Scene> = {

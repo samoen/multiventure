@@ -15,13 +15,20 @@ export const GET: RequestHandler = async (event) => {
 			return json({ error: 'no ip' }, { status: 401 })
 		}
 		const from = event.cookies.get('hero');
-		console.log(`stream requested by: ${ip} ${from}`);
+		const fromId = event.cookies.get('uid');
+		console.log(`stream requested by: ${from} ${fromId}`);
 		if (!from) {
 			return json({ error: 'need hero cookie to start a stream' }, { status: 401 });
 		}
-		const player = users.get(from);
+		if (!fromId) {
+			return json({ error: 'need uid cookie to start a stream' }, { status: 401 });
+		}
+		const player = users.get(fromId);
 		if (!player) {
 			return json({ error: 'hero not found' }, { status: 401 });
+		}
+		if(player.heroName != from){
+			return json({ error: 'cookie hero not matching hero from cookie id' }, { status: 401 });
 		}
 		console.log(`returning readableString for ${player.heroName}, current connections ${JSON.stringify(activePlayers().map(p=>p.heroName))}`)
 		if (player.connectionState != null && player.connectionState.stream != null) {
