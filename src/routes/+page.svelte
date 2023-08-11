@@ -31,6 +31,7 @@
 		// lastMsgFromServer = res;
 	}
 	let happenings: HTMLElement;
+	let sceneTexts: HTMLElement;
 
 	function subscribeEventsIfNotAlready() {
 		if (source != null && source.readyState != EventSource.CLOSED) {
@@ -68,6 +69,7 @@
 			}
 			await tick();
 			if (happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
+			if (sceneTexts) sceneTexts.scroll({ top: sceneTexts.scrollHeight, behavior: 'smooth' });
 		});
 		source.addEventListener('closing', (e) => {
 			console.log('got closing msg');
@@ -164,7 +166,7 @@
 
 {#if lastMsgFromServer && source && source.readyState == source.OPEN}
 	<!-- <h3>Scene Texts:</h3> -->
-	<div class="sceneTexts">
+	<div class="sceneTexts" bind:this={sceneTexts}>
 		{#each lastMsgFromServer.sceneTexts as t}
 			<p class="sceneText">{t}</p>
 			<br />

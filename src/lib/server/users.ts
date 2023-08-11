@@ -8,6 +8,8 @@ export const globalFlags = new Set<GlobalFlag>();
 export type UserId = string;
 export type HeroName = string;
 export type Flag =
+	| 'tutorial1'
+	| 'tutorial2'
 	| 'metArthur'
 	| 'heardAboutHiddenPassage'
 	| 'gotFreeStarterWeapon'

@@ -35,13 +35,13 @@ export type EnemyTemplateId =
 
 export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 	rat: {
-		baseHealth: 10,
+		baseHealth: 5,
 		baseDamage: 10,
 		aggroGain: 50,
 		speed: 3
 	},
 	goblin: {
-		baseHealth: 100,
+		baseHealth: 50,
 		baseDamage: 10,
 		aggroGain: 10,
 		speed: 4,
@@ -57,7 +57,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		}
 	},
 	fireGremlin: {
-		baseHealth: 50,
+		baseHealth: 10,
 		baseDamage: 5,
 		aggroGain: 90,
 		speed: 10,
@@ -151,7 +151,7 @@ export function infightDamage(actor:ActiveEnemy,target:ActiveEnemy){
 }
 
 export function takePoisonDamage(enemy : ActiveEnemy){
-	let dmg = enemy.maxHealth * 0.2
+	let dmg = Math.floor(enemy.maxHealth * 0.25)
 	enemy.currentHealth -= dmg
 	pushHappening(`${enemy.name} took ${dmg}damage from poison`)
 	let result = checkEnemyDeath(enemy)

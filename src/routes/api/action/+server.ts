@@ -107,22 +107,23 @@ function handleAction(player: Player, actionFromId: GameAction) {
 	
 	handleRetaliations(player, false, actionFromId)
 
-	if (player.health < 1) {
-		return
-	}
-	if (actionFromId.performAction) {
-		actionFromId.performAction();
+	if (player.health > 1) {
+		if (actionFromId.performAction) {
+			actionFromId.performAction();
+		}
 	}
 	
-	handleRetaliations(player, true, actionFromId)
+	if (player.health > 1) {
+		handleRetaliations(player, true, actionFromId)
+	}
 	
-	const startedScene = scenes[player.currentScene];
+	
+	const playerScene = scenes[player.currentScene];
 	const postReactionEnemies = enemiesInScene(player.currentScene)
-	if (
-		(!postReactionEnemies.length)
-		&& startedScene.onVictory
-	) {
-		startedScene.onVictory()
+	if ( !postReactionEnemies.length && playerScene.onVictory) {
+		for (const playerInScene of activePlayersInScene(player.currentScene)){
+			playerScene.onVictory(playerInScene)
+		}
 	}
 }
 

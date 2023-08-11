@@ -21,6 +21,7 @@ export type ItemIdForSlot<T extends EquipmentSlot> =
 	: T extends 'body' ?
 	| 'rags'
 	| 'leatherArmor'
+	| 'theifCloak'
 	| 'plateMail'
 	: never
 
@@ -49,7 +50,7 @@ const dagger: Item = {
 		for (const enemy of enemiesInScene(player.currentScene)) {
 			player.itemActions.push(
 				{
-					buttonText: `Attack ${enemy.name} with my dagger`,
+					buttonText: `Attack ${enemy.name} with dagger`,
 					provoke: 7,
 					speed: 8,
 					performAction() {
@@ -68,7 +69,7 @@ const club: Item = {
 		for (const enemy of enemiesInScene(player.currentScene)) {
 			player.itemActions.push(
 				{
-					buttonText: `Hit ${enemy.name} with my club`,
+					buttonText: `Hit ${enemy.name} with club`,
 					provoke: 40,
 					speed: 2,
 					performAction() {
@@ -90,7 +91,7 @@ const fireStaff: Item = {
 					provoke: 60,
 					speed: 10,
 					performAction() {
-						damageEnemy(player, enemy, 30)
+						damageEnemy(player, enemy, 40)
 						player.inventory.weapon.cooldown = 2
 					}
 				}
@@ -182,7 +183,7 @@ const plateMail: Item = {
 	},
 }
 
-const leatherArmor: Item = {
+const theifCloak: Item = {
 	actions(player) {
 		if (enemiesInScene(player.currentScene).length) {
 			player.itemActions.push({
@@ -199,6 +200,9 @@ const leatherArmor: Item = {
 			})
 		}
 	},
+}
+
+const leatherArmor: Item = {
 	onTakeDamage(incoming) {
 		if (incoming < 6) {
 			return 1
@@ -225,6 +229,7 @@ export const bodyItems: Record<ItemIdForSlot<'body'>, Item> = {
 	rags: {},
 	plateMail: plateMail,
 	leatherArmor: leatherArmor,
+	theifCloak:theifCloak,
 }
 
 export const items: Record<ItemId, Item> = {

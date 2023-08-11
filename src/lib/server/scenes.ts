@@ -3,6 +3,10 @@ import { bodyItems, utilityItems, weapons, type ItemIdForSlot } from './items';
 import { activePlayers, activePlayersInScene, globalFlags, healPlayer, type Player } from './users';
 
 export type SceneId =
+	| 'tutorial'
+	| 'trainingRoom1'
+	| 'trainingRoom2'
+	| 'trainingRoom3'
 	| 'forest'
 	| 'castle'
 	| 'throne'
@@ -14,7 +18,7 @@ export type SceneId =
 
 export type Scene = {
 	onEnterScene: (player: Player) => void;
-	onVictory?: () => void;
+	onVictory?: (player: Player) => void;
 	actions: (player: Player) => void;
 };
 
@@ -26,18 +30,213 @@ const dead: Scene = {
 	actions(player) {
 		player.sceneActions.push({
 			buttonText: 'Reincarnate in forest',
-			goTo:'forest',
+			goTo: 'forest',
 		})
 		player.sceneActions.push({
 			buttonText: 'Reincarnate in armory',
-			goTo:'armory',
+			goTo: 'armory',
 		})
 	}
 }
 
+const tutorial: Scene = {
+	onEnterScene(player) {
+		player.sceneTexts.push(`You are standing outside a castle barracks. Soliders mill around swinging swords.\n\nArthur, Captain of the Castle Guard: 'Look alive recruit! The first day of training can be the most dangerous of a guardsman's life. You must be ${player.heroName}, welcome aboard. Many great heroes have started their journey on the very ground you stand. In this barracks we wake up early, follow orders, and we NEVER skip the tutorial.'`)
+	},
+	actions(player) {
+		const agreedToProceed = () => {
+			player.flags.delete('tutorial1')
+			player.flags.add('tutorial2')
+			player.sceneTexts.push("'Now grab some equipment, our training goblin is ready for you. Also there's a bit of a rat problem in the training room right now.'")
+		}
+
+		if (player.flags.has('tutorial1')) {
+			player.sceneActions.push({
+				buttonText: 'Skip tutorial',
+				goTo: 'forest',
+			})
+		}
+		if (!player.flags.has('tutorial2')) {
+			if (!player.flags.has('tutorial1')) {
+				let t = "'Huh? Danger... Early mornings?? I didn't sign up for any of this!'"
+				player.sceneActions.push({
+					buttonText: t,
+					performAction() {
+						player.sceneTexts.push(`${player.heroName}: ${t}`)
+						player.sceneTexts.push("Arthur: 'If you think you can weasel your way through this game without enduring hardship.. then I wish you the best of luck.'")
+						player.flags.add('tutorial1')
+					},
+				})
+			}
+			player.sceneActions.push({
+				buttonText: "'I would rather you didn't break the fourth wall, I'm into more serious RPGs'",
+				performAction() {
+					player.flags.add('tutorial2')
+					player.sceneTexts.push("Arthur: 'Lighten up recruit, it's just for the tutorial. The storyline gets pretty dark and gritty if I do say so myself. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.'")
+					agreedToProceed()
+				},
+			})
+			player.sceneActions.push({
+				buttonText: "'I tend to breeze through tutorials pretty easily so.. not worried. Get on with it.'",
+				performAction() {
+					player.sceneTexts.push("'That's the spirit, recruit!'")
+					agreedToProceed()
+				},
+			})
+		}
+		if (player.flags.has('tutorial2') && player.inventory.weapon.itemId != 'club') {
+			player.sceneActions.push({
+				buttonText: "Equip club",
+				performAction() {
+					player.inventory.weapon.itemId = 'club'
+					player.sceneTexts.push("A club deals a hefty chunk of damage each hit. That makes it effective against unarmored foes like goblins.")
+				},
+			})
+		}
+		if (player.flags.has('tutorial2') && player.inventory.utility.itemId != 'bomb') {
+			player.sceneActions.push({
+				buttonText: "Equip powderbomb",
+				performAction() {
+					player.inventory.utility.itemId = 'bomb'
+					player.sceneTexts.push("A powderbomb deals splash damage to all nearby enemies. It should clear out the rats nicely.")
+				},
+			})
+		}
+		if (player.inventory.utility.itemId == 'bomb' && player.inventory.weapon.itemId == 'club') {
+			player.sceneActions.push({
+				buttonText: "'Splash damage, focused attack. Got it.'",
+				goTo: 'trainingRoom1'
+			})
+		}
+	},
+}
+
+const trainingRoom1: Scene = {
+	onEnterScene(player) {
+		player.sceneTexts.push("You enter the training room. It is well worn by many training sessions. The walls are covered in blast marks, dents and splinters.")
+		player.sceneTexts.push("Glornak: 'Hey you! I've never seen a more pitiful excuse for a guardsman in my life, and I've been working here since Arthur was a recruit! Go, my rats!'")
+		player.sceneTexts.push("Skitters: 'Squeak!'")
+		player.sceneTexts.push("Nibbles: 'Reeeeee!'")
+
+		spawnEnemy('Glornak', 'goblin', 'trainingRoom1')
+		spawnEnemy('Skitters', 'rat', 'trainingRoom1')
+		spawnEnemy('Squeaky', 'rat', 'trainingRoom1')
+		spawnEnemy('Scratchy', 'rat', 'trainingRoom1')
+		spawnEnemy('Nibbles', 'rat', 'trainingRoom1')
+	},
+	actions(player) {
+
+		if (player.inventory.utility.itemId == 'bandage' && player.inventory.weapon.itemId == 'dagger') {
+			player.sceneActions.push({
+				buttonText: 'Use the right weapon, prioritize my targets. Easy stuff.',
+				goTo: 'trainingRoom2',
+			})
+		}
+		if (player.inventory.weapon.itemId != 'dagger') {
+			player.sceneActions.push({
+				buttonText: 'Equip dagger',
+				performAction() {
+					player.inventory.weapon.itemId = 'dagger'
+					player.sceneTexts.push("Hobgoblins wear heavy armor, which limits the amount of damage they take each strike. A dagger strikes multiple times per attack, mitigating their defenses.")
+				},
+			})
+		}
+		if (player.inventory.utility.itemId != 'bandage') {
+			player.sceneActions.push({
+				buttonText: 'Equip bandage',
+				performAction() {
+					player.inventory.utility.itemId = 'bandage'
+					player.sceneTexts.push("Use the bandage when you get low on health. Simple.")
+				},
+			})
+		}
+	},
+	onVictory(player) {
+		player.health = player.maxHealth
+		player.sceneTexts.push("Glornak: 'Ohhhh nooooo. How could I underestimate this recruit. Surely they are the chosen one.'")
+		player.sceneTexts.push("Glornak falls down in a very convincing display.")
+		player.sceneTexts.push("Arthur: 'Great job! Let's switch up your equipment. Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you.'")
+	},
+}
+const trainingRoom2: Scene = {
+	onEnterScene(player) {
+		player.sceneTexts.push("Morgus: 'What are you hob-doing in my hob-training room, roooaaar! How is Glornak by the way? We use to work in the same room together'")
+		player.sceneTexts.push("Florgus: 'Oh it's just Glornak this and Glornak that with you Morgus. And it's OUR training room now remember? Great, another recruit equipped with a dagger. Why do we even wear this heavy armor all day..'")
+		player.sceneTexts.push("Scortchy: 'Burn! I burn you! REEEE HEEE HEEE'")
+		player.sceneTexts.push("Florgus: 'I hate this fire gremlin.. Remember Scortchy, aim for the recruit! not us!'")
+		spawnEnemy('Morgus', 'hobGoblin', 'trainingRoom2')
+		spawnEnemy('Florgus', 'hobGoblin', 'trainingRoom2')
+		spawnEnemy('Scorchy', 'fireGremlin', 'trainingRoom2')
+	},
+	actions(player) {
+		if (player.inventory.utility.itemId != 'poisonDart') {
+			player.sceneActions.push({
+				buttonText: 'Equip poison dart',
+				performAction() {
+					player.inventory.utility.itemId = 'poisonDart'
+					player.sceneTexts.push("Poison deals more damage the bigger the enemy. It deals it's damage over 3 turns, so you should have a plan to survive until then.")
+				},
+			})
+		}
+		if (player.inventory.body.itemId != 'theifCloak') {
+			player.sceneActions.push({
+				buttonText: "Equip theif's cloak",
+				performAction() {
+					player.inventory.body.itemId = 'theifCloak'
+					player.sceneTexts.push("A theif's cloak lets you hide for a turn, preventing retaliation from enemies. It's a good way to wait for your weapon to warmup and cooldown. Poison your enemy first to get extra value!")
+				},
+			})
+		}
+		if (player.inventory.weapon.itemId != 'fireStaff') {
+			player.sceneActions.push({
+				buttonText: 'Equip fire staff',
+				performAction() {
+					player.inventory.weapon.itemId = 'fireStaff'
+					player.sceneTexts.push("A fire staff takes 3 turns before you can use it. Trolls are slow, so land that finishing blow before it can retaliate!")
+				},
+			})
+		}
+		if (player.inventory.weapon.itemId == 'fireStaff' && player.inventory.body.itemId == 'theifCloak' && player.inventory.utility.itemId == 'poisonDart')
+			player.sceneActions.push({
+				buttonText: "'Ok, poison the big guy, hide in shadows, then blast him.'",
+				goTo: 'trainingRoom3',
+			})
+	},
+	onVictory(player) {
+		player.health = player.maxHealth
+		player.sceneTexts.push("Arthur: 'Brilliant work recruit! Alright, last one. We don't normally do this but I see something great in you. You are going to fight a cave troll. Trolls are extremely dangerous with high damage and health, so be careful in there'")
+	},
+}
+
+const trainingRoom3: Scene = {
+	onEnterScene(player) {
+
+		player.sceneTexts.push("You enter a dark, stinking place. Iron bars slam shut behind you. It looks more like a prison cell than a training room. The bones of previous recruits are strewn about the place. A giant figure emerges from the darkness.")
+		player.sceneTexts.push("Ragor: 'RRRAAAAAAUUUUUUGHHH!'")
+		player.sceneTexts.push("You hear Arthur's voice from behind the barred doors.")
+		player.sceneTexts.push(`Arthur: You know what, ${player.heroName}? Maybe I was a bit too hasty throwing you in there.. it's more of a day two kind of battle. If I can just find the door key I'll pull you out...'`)
+		player.sceneTexts.push(`You hear a set of keys clattering to the ground and Arthur fumbling around`)
+		spawnEnemy('Ragor', 'troll', 'trainingRoom3')
+	},
+	actions(player) {
+		player.sceneActions.push({
+			buttonText: 'Thanks for the tips, Arthur. Teleport me to the real game.',
+			goTo: 'forest',
+		})
+
+	},
+	onVictory(player) {
+		player.sceneTexts.push('Arthur finally gets the door open')
+		player.sceneTexts.push(`Arthur: 'Well done ${player.heroName}! You've beaten the tutorial! Now give all your equipment back, I can't have you starting the game like that.'`)
+		player.inventory.body.itemId = 'rags'
+		player.inventory.utility.itemId = 'empty'
+		player.inventory.weapon.itemId = 'unarmed'
+	},
+}
+
 const forest: Scene = {
 	onEnterScene(player) {
-		if (player.previousScene == 'dead') {
+		if (player.previousScene == 'dead' || player.previousScene == 'tutorial' || player.previousScene == 'trainingRoom3') {
 			player.sceneTexts.push("You awake in a cold sweat with no memory of anything. \n\nThe world around you seems dark and permeated by an unholy madness. \n\nThere's a strange sickly smell that seems familiar. The smell of corruption. The smell of death.")
 		}
 		if (player.previousScene == 'castle') {
@@ -54,7 +253,7 @@ const forest: Scene = {
 		player.sceneActions.push(
 			{
 				buttonText: 'Hike towards that castle',
-				goTo:'castle',
+				goTo: 'castle',
 			}
 
 		)
@@ -62,7 +261,7 @@ const forest: Scene = {
 			player.sceneActions.push(
 				{
 					buttonText: `Search deep into dense forest`,
-					goTo:'forestPassage',
+					goTo: 'forestPassage',
 				}
 			)
 
@@ -98,13 +297,13 @@ const castle: Scene = {
 		player.sceneActions.push(
 			{
 				buttonText: 'Delve into the forest',
-				goTo:'forest',
+				goTo: 'forest',
 			}
 		)
 		player.sceneActions.push(
 			{
 				buttonText: 'Head towards the throne room',
-				goTo:'throne',
+				goTo: 'throne',
 			}
 		)
 	}
@@ -135,14 +334,14 @@ const throne: Scene = {
 			player.sceneActions.push(
 				{
 					buttonText: 'Take your leave',
-					goTo:'castle',
+					goTo: 'castle',
 				})
 		}
 		if (mustGoThroughTunnel) {
 			player.sceneActions.push(
 				{
 					buttonText: 'Go through the tunnel leading to the depths',
-					goTo:'tunnelChamber',
+					goTo: 'tunnelChamber',
 				}
 
 			)
@@ -150,7 +349,7 @@ const throne: Scene = {
 		if (hasDoneMedallion) {
 			player.sceneActions.push({
 				buttonText: 'Go to armory',
-				goTo:'armory',
+				goTo: 'armory',
 			})
 		}
 	}
@@ -171,7 +370,7 @@ const forestPassage: Scene = {
 		player.sceneActions.push(
 			{
 				buttonText: 'Go towards the forest',
-				goTo:'forest',
+				goTo: 'forest',
 			}
 
 		)
@@ -203,7 +402,7 @@ const forestPassage: Scene = {
 			player.sceneActions.push(
 				{
 					buttonText: 'Push through towards the clearing',
-					goTo:'goblinCamp',
+					goTo: 'goblinCamp',
 				}
 			)
 
@@ -220,8 +419,8 @@ const goblinCamp: Scene = {
 		}
 
 		let existingEnemies = enemiesInScene('goblinCamp').length
-		if(existingEnemies){
-			spawnEnemy(player.heroName.split('').reverse().join(''),'goblin','goblinCamp')
+		if (existingEnemies) {
+			spawnEnemy(player.heroName.split('').reverse().join(''), 'goblin', 'goblinCamp')
 		}
 
 		if (!player.flags.has('killedGoblins') && !existingEnemies) {
@@ -233,17 +432,15 @@ const goblinCamp: Scene = {
 			spawnEnemy('Murk', 'goblin', 'goblinCamp')
 		}
 	},
-	onVictory() {
-		for (const u of activePlayersInScene('goblinCamp')) {
-			u.sceneTexts.push('The goblins were slain!')
-			u.flags.add('killedGoblins')
-		}
+	onVictory(player) {
+		player.sceneTexts.push('The goblins were slain!')
+		player.flags.add('killedGoblins')
 	},
 	actions(player: Player) {
 		player.sceneActions.push(
 			{
 				buttonText: 'Go back through the passage',
-				goTo:'forestPassage',
+				goTo: 'forestPassage',
 			}
 
 		)
@@ -297,7 +494,7 @@ const tunnelChamber: Scene = {
 			player.sceneActions.push(
 				{
 					buttonText: "Return to throne",
-					goTo:'throne',
+					goTo: 'throne',
 				}
 			)
 		}
@@ -311,30 +508,30 @@ const armory: Scene = {
 	},
 	actions(player) {
 		for (const id in weapons) {
-			if(id == 'unarmed' || id == player.inventory.weapon.itemId) continue
+			if (id == 'unarmed' || id == player.inventory.weapon.itemId) continue
 			player.sceneActions.push({
 				buttonText: `Equip Weapon ${id}`,
-				grantsImmunity:true,
+				grantsImmunity: true,
 				performAction() {
 					player.inventory.weapon.itemId = id as ItemIdForSlot<'weapon'>
 				},
 			})
 		}
 		for (const id in utilityItems) {
-			if(id == 'empty' || id == player.inventory.utility.itemId) continue
+			if (id == 'empty' || id == player.inventory.utility.itemId) continue
 			player.sceneActions.push({
 				buttonText: `Equip Utility ${id}`,
-				grantsImmunity:true,
+				grantsImmunity: true,
 				performAction() {
 					player.inventory.utility.itemId = id as ItemIdForSlot<'utility'>
 				},
 			})
 		}
 		for (const id in bodyItems) {
-			if(id == 'rags' || id == player.inventory.body.itemId) continue
+			if (id == 'rags' || id == player.inventory.body.itemId) continue
 			player.sceneActions.push({
 				buttonText: `Equip Body ${id}`,
-				grantsImmunity:true,
+				grantsImmunity: true,
 				performAction() {
 					player.inventory.body.itemId = id as ItemIdForSlot<'body'>
 				},
@@ -343,7 +540,7 @@ const armory: Scene = {
 		for (const id in enemyTemplates) {
 			player.sceneActions.push({
 				buttonText: `Spawn ${id}`,
-				grantsImmunity:true,
+				grantsImmunity: true,
 				performAction() {
 					spawnEnemy(`${id}${Math.round(Math.random() * 100)}`, id as EnemyTemplateId, 'armory')
 				},
@@ -354,6 +551,10 @@ const armory: Scene = {
 
 export const scenes: Record<SceneId, Scene> = {
 	dead: dead,
+	tutorial: tutorial,
+	trainingRoom1: trainingRoom1,
+	trainingRoom2: trainingRoom2,
+	trainingRoom3: trainingRoom3,
 	forest: forest,
 	castle: castle,
 	throne: throne,
