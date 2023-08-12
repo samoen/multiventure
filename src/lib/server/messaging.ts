@@ -1,8 +1,8 @@
 import type { MessageFromServer, OtherPlayerInfo } from '$lib/utils';
-import { activeEnemies, addAggro, enemiesInScene } from './enemies';
+import { activeEnemies, addAggro, damagePlayer, enemiesInScene, takePoisonDamage } from './enemies';
 import { items } from './items';
 import { scenes } from './scenes';
-import { activePlayers, globalFlags, playerItemStates, users, type HeroName, type Player } from './users';
+import { activePlayers, globalFlags, playerItemStates, users, type HeroName, type Player, type GameAction, activePlayersInScene } from './users';
 
 export const FAKE_LATENCY = 1;
 
@@ -128,4 +128,127 @@ export function encode(event: string, data: object, noretry: boolean = false) {
 	}
 	toEncode = toEncode + `\n`;
 	return textEncoder.encode(toEncode);
+}
+
+export function enterScene(player:Player){
+	// when moving to a new scene, state cooldowns to 0, warmups to the item warmup
+	for (const itemState of playerItemStates(player)) {
+		itemState.cooldown = 0
+		let wep = items[itemState.itemId]
+		if(wep != undefined && wep.warmup){
+			itemState.warmup = wep.warmup
+		}else{
+			itemState.warmup = 0
+		}
+	}
+	// If no players in there, remove all enemies
+	if(!activePlayersInScene(player.currentScene).length){
+		for (const e of enemiesInScene(player.currentScene)){
+			let index = activeEnemies.indexOf(e)
+			if(index != -1){
+				activeEnemies.splice(index,1)
+			}
+		}
+		scenes.get(player.currentScene)?.hasEntered?.clear()
+	}
+	
+	player.sceneTexts = [];
+	const enterIngScene = scenes.get(player.currentScene);
+	if (enterIngScene && enterIngScene.onEnterScene) {
+		
+		enterIngScene.onEnterScene(player);
+		if(!enterIngScene.hasEntered){
+			enterIngScene.hasEntered = new Set()
+		}
+		enterIngScene.hasEntered.add(player.heroName)
+	}
+
+}
+
+export function handleAction(player: Player, actionFromId: GameAction) {
+	if (actionFromId.goTo) {
+		player.previousScene = player.currentScene
+		player.currentScene = actionFromId.goTo
+		enterScene(player)
+		return
+	}
+
+	if(!enemiesInScene(player.currentScene).length){
+		if (actionFromId.performAction) {
+			actionFromId.performAction();
+		}
+		return
+	}
+
+	for (const cd of playerItemStates(player)) {
+		if (cd.cooldown > 0) cd.cooldown--
+		if (cd.warmup > 0) cd.warmup--
+	}
+
+	if (!actionFromId.grantsImmunity) pushHappening('----');
+	
+	if (actionFromId.provoke) {
+		addAggro(player, actionFromId.provoke)
+	}
+
+	for(const enemy of enemiesInScene(player.currentScene)){
+		for(const s of enemy.statuses){
+			if(s.status == 'poison'){
+				takePoisonDamage(enemy)
+				s.counter--
+			}
+		}
+		enemy.statuses = enemy.statuses.filter(s=>s.counter > 0)
+	}
+	
+	handleRetaliations(player, false, actionFromId)
+
+	if (player.health > 1) {
+		if (actionFromId.performAction) {
+			actionFromId.performAction();
+		}
+	}
+	
+	if (player.health > 1) {
+		handleRetaliations(player, true, actionFromId)
+	}
+	
+	
+	const playerScene = scenes.get(player.currentScene);
+	const postReactionEnemies = enemiesInScene(player.currentScene)
+	if ( !postReactionEnemies.length && playerScene?.onVictory) {
+		for (const playerInScene of activePlayersInScene(player.currentScene)){
+			playerScene.onVictory(playerInScene)
+			if(playerScene.hasEntered){
+				playerScene.hasEntered.clear()
+			}
+		}
+	}
+}
+
+export function handleRetaliations(player: Player, postAction: boolean, action: GameAction) {
+	if (action.grantsImmunity) return
+	let playerHitSpeed = player.speed
+	if (action.speed) {
+		playerHitSpeed += action.speed
+	}
+	for (const enemyInScene of enemiesInScene(player.currentScene).sort((a, b) => b.template.speed - a.template.speed)) {
+		if (
+			(postAction && (playerHitSpeed >= enemyInScene.template.speed))
+			|| (!postAction && (playerHitSpeed < enemyInScene.template.speed))
+		) {
+			let aggroForActor = enemyInScene.aggros.get(player.heroName)
+			if (aggroForActor) {
+				if ((Math.random() + (aggroForActor / 100)) > 1) {
+					if(enemyInScene.template.onAttack){
+						enemyInScene.template.onAttack(enemyInScene)
+					}else{
+						damagePlayer(enemyInScene, player)
+					}
+					enemyInScene.aggros.clear()
+				}
+			}
+		}
+	}
+
 }

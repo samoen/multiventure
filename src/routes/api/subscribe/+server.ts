@@ -1,4 +1,4 @@
-import { FAKE_LATENCY, pushHappening, sendEveryoneWorld, updateAllPlayerActions } from '$lib/server/messaging';
+import { FAKE_LATENCY, enterScene, pushHappening, sendEveryoneWorld, updateAllPlayerActions } from '$lib/server/messaging';
 import { activePlayers, users } from '$lib/server/users';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
@@ -61,15 +61,10 @@ export const GET: RequestHandler = async (event) => {
 				player.connectionState.con = c;
 				pushHappening('----');
 				pushHappening(`${player.heroName} joined the game`)
-				for(const enemy of activeEnemies){
-					if(!scenes.get(enemy.currentScene)?.solo){
-						let percentHealthBefore = enemy.currentHealth / enemy.maxHealth
-						enemy.maxHealth = modifiedEnemyHealth(enemy.template.baseHealth)
-						enemy.currentHealth = percentHealthBefore * enemy.maxHealth
-					}
-				}
-				updateAllPlayerActions()
 				setTimeout(() => {
+					modifyEnemies()
+					enterScene(player)
+					updateAllPlayerActions()
 					sendEveryoneWorld(from);
 				}, 1);
 			},
@@ -78,27 +73,29 @@ export const GET: RequestHandler = async (event) => {
 				if(reason) console.log(`reason: ${reason}`)
 				// try {
 				// 	if(player.connectionState && player.connectionState.con){
-				// 		player.connectionState.con.close();
-				// 	}
-				//     console.log(`stream cancel handler successfully closed controller for ${ip} ${from}`);
-				// } catch (e) {
-				//     console.log(`stream cancel handler failed to close controller for ${ip} ${from} because ${e}`);
+					// 		player.connectionState.con.close();
+					// 	}
+					//     console.log(`stream cancel handler successfully closed controller for ${ip} ${from}`);
+					// } catch (e) {
+						//     console.log(`stream cancel handler failed to close controller for ${ip} ${from} because ${e}`);
 				// }
 				pushHappening(`----`)
 				pushHappening(`${player.heroName} left the game`)
 				player.connectionState = null;
+
 				setTimeout(() => {
+					modifyEnemies()
 					sendEveryoneWorld(from);
 				}, 1);
 			}
 		});
 		player.connectionState.stream = rs;
-
+		
 		// setTimeout(()=>{
 		// 	if(
-		// 		(player.connectionState != null && player.connectionState.stream != null && !player.connectionState?.stream?.locked)				
-		// 		){
-		// 			console.log(`${player.heroName} subscribed but afterwards the stream is not locked`)
+			// 		(player.connectionState != null && player.connectionState.stream != null && !player.connectionState?.stream?.locked)				
+			// 		){
+				// 			console.log(`${player.heroName} subscribed but afterwards the stream is not locked`)
 		// 		}
 		// },1000)
 		return new Response(rs, {
@@ -114,3 +111,16 @@ export const GET: RequestHandler = async (event) => {
 		return json({ oops: true }, { status: 500 })
 	}
 };
+
+function modifyEnemies(){
+	for(const enemy of activeEnemies){
+		let eScene = scenes.get(enemy.currentScene)
+		if(eScene){
+			if(!eScene.solo){
+				let percentHealthBefore = enemy.currentHealth / enemy.maxHealth
+				enemy.maxHealth = Math.floor(modifiedEnemyHealth(enemy.template.baseHealth))
+				enemy.currentHealth = Math.floor(percentHealthBefore * enemy.maxHealth)
+			}
+		}
+	}
+}

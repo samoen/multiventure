@@ -52,7 +52,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		aggroGain: 80,
 		speed: 10,
 		onTakeDamage(incoming){
-			if(incoming > 20)return 20
+			if(incoming > 10)return 10
 			return incoming
 		}
 	},
@@ -82,7 +82,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 export const PERCENT_OF_BASE_ADDED_PER_PLAYER = 0.5
 
 export function modifiedEnemyHealth(h: number): number {
-	if (activePlayers.length < 1) return h
+	if (activePlayers().length < 2) return h
 	return h + ((activePlayers().length - 1) * PERCENT_OF_BASE_ADDED_PER_PLAYER * h)
 }
 

@@ -20,7 +20,8 @@ export type Scene = {
 	onEnterScene: (player: Player) => void;
 	onVictory?: (player: Player) => void;
 	actions: (player: Player) => void;
-	solo?: boolean
+	solo?: boolean;
+	hasEntered?:Set<HeroName>
 };
 
 const dead: Scene = {
@@ -442,7 +443,7 @@ const goblinCamp: Scene = {
 		}
 
 		let existingEnemies = enemiesInScene('goblinCamp').length
-		if (existingEnemies) {
+		if (existingEnemies && (!this.hasEntered || (this.hasEntered && !this.hasEntered.has(player.heroName)))) {
 			spawnEnemy(player.heroName.split('').reverse().join(''), 'goblin', 'goblinCamp')
 		}
 

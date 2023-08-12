@@ -77,7 +77,9 @@ export function healPlayer(player:Player, amount:number){
 
 export function activePlayers(): Player[]{
 	return Array.from(users.values())
-		.filter((usr) => usr.connectionState != null && usr.connectionState.stream && usr.connectionState.stream.locked)
+		.filter((usr) => usr.connectionState != null 
+		&& usr.connectionState.stream && usr.connectionState.stream.locked
+		)
 }
 
 export function activePlayersInScene(scene:SceneId) : Player[]{
