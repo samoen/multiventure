@@ -1,4 +1,4 @@
-import { FAKE_LATENCY, enterScene, pushHappening, sendEveryoneWorld, updateAllPlayerActions } from '$lib/server/messaging';
+import { FAKE_LATENCY, enterSceneOrWakeup, pushHappening, sendEveryoneWorld, updateAllPlayerActions } from '$lib/server/messaging';
 import { activePlayers, users } from '$lib/server/users';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
@@ -63,7 +63,7 @@ export const GET: RequestHandler = async (event) => {
 				pushHappening(`${player.heroName} joined the game`)
 				setTimeout(() => {
 					modifyEnemies()
-					enterScene(player)
+					enterSceneOrWakeup(player)
 					updateAllPlayerActions()
 					sendEveryoneWorld(from);
 				}, 1);

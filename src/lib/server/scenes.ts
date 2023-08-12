@@ -302,15 +302,17 @@ const castle: Scene = {
 		if (player.previousScene == 'forest') {
 			player.sceneTexts.push('You push your way through the piercing thorns and supple branches that seem to whip at your exposed flesh. After hours of arduous travel, you find yourself amongst thatch roof huts and tents. There are few people to be found, and those that are here seem dead behind the eyes. A dirty woman sit by a fire cooking what looks like a rat. You mention the castle and how you might enter, and she merely points a finger towards what appears to be an infinite staircase and turns her face back to the fire. You make your way towards it and ascend.')
 		}
-		if (!player.flags.has('metArthur')) {
+		if(player.flags.has('heardAboutHiddenPassage') && !player.flags.has('metArthur')){
 			player.flags.add('metArthur')
-			player.sceneTexts.push("This castle contains the memory of great beauty, but it feels long gone. In its place is an emptiness. A confusion. Wherevery ou turn, it feels as though there is an entity just at the periphery of your visual. The sense of something obscene inhabits this place. What should be a structure of strength and security, has become something maddening to the senses.")
 			player.sceneTexts.push("From an unknown place appears a voice. 'Hail!' It cries. You reach for a weapon that you suddenly remember you don't posess. While you see know doors, before you materialises a soldier. There is something about his eyes that tell you he is not afflicted by the same condition that seems to have twisted this land. 'I see you have found your way into this once hallowed hall. I would introduce myself, but whatever name I once had no longer has any meaning.'");
 			if (player.inventory.utility.itemId == 'empty') {
 				player.sceneTexts.push("From his cloak he produces a small object. A bandage. 'You may need this traveller. This land is unkind to strangers.")
 				player.inventory.utility.itemId = 'bandage';
 			}
 			player.sceneTexts.push("As quickly as he arrived, the mysterious warrior disappears back into the walls. You feel that this will not be the last your see of this odd spirit.");
+		}
+		if (!player.flags.has('heardAboutHiddenPassage')) {
+			player.sceneTexts.push("This castle contains the memory of great beauty, but it feels long gone. In its place is an emptiness. A confusion. Wherevery ou turn, it feels as though there is an entity just at the periphery of your visual. The sense of something obscene inhabits this place. What should be a structure of strength and security, has become something maddening to the senses.")
 		}
 		if (player.flags.has('killedGoblins') && !player.flags.has('sawArthurAfterBattle')) {
 			player.flags.add('sawArthurAfterBattle')
@@ -454,7 +456,12 @@ const goblinCamp: Scene = {
 		}
 	},
 	onBattleJoin(player){
-		spawnEnemy(player.heroName.split('').reverse().join(''), 'goblin', 'goblinCamp')
+		player.sceneTexts.push('You see heroes fighting goblins here already, you join the fray!')
+		let extraGoblinName = player.heroName.split('').reverse().join('')
+		spawnEnemy(extraGoblinName, 'goblin', 'goblinCamp')
+		for (const playerInScene of activePlayersInScene('goblinCamp')) {
+			playerInScene.sceneTexts.push(`${player.heroName} joins the battle, attracting the attention of another goblin - ${extraGoblinName}.`)
+		}
 	},
 	onVictory(player) {
 		player.sceneTexts.push('The goblins were slain!')

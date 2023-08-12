@@ -130,17 +130,8 @@ export function encode(event: string, data: object, noretry: boolean = false) {
 	return textEncoder.encode(toEncode);
 }
 
-export function enterScene(player: Player) {
-	// when moving to a new scene, state cooldowns to 0, warmups to the item warmup
-	for (const itemState of playerItemStates(player)) {
-		itemState.cooldown = 0
-		let wep = items[itemState.itemId]
-		if (wep != undefined && wep.warmup) {
-			itemState.warmup = wep.warmup
-		} else {
-			itemState.warmup = 0
-		}
-	}
+export function enterSceneOrWakeup(player: Player) {
+
 	// If no players except me in there, remove all enemies
 	if (!activePlayersInScene(player.currentScene).filter(p => p.heroName != player.heroName).length) {
 		for (const e of enemiesInScene(player.currentScene)) {
@@ -161,28 +152,46 @@ export function enterScene(player: Player) {
 		enteringScene.hasEntered = new Set()
 	}
 
-	// If it's the player's first mid-battle join, call the scene hook
+	// scene texts will be repopulated
+	player.sceneTexts = [];
+
+	const wasEnemiesPreEnter = enemiesInScene('goblinCamp').length
+
+	// Always call main enter scene hook
+	if (enteringScene.onEnterScene) {
+		enteringScene.onEnterScene(player);
+	}
+
+	// If it's the player's first mid-battle join
 	if (enteringScene.onBattleJoin
-		&& enemiesInScene('goblinCamp').length
+		&& wasEnemiesPreEnter
 		&& !enteringScene.hasEntered.has(player.heroName)
 	) {
 		enteringScene.onBattleJoin(player)
 	}
+
+
 	// Remember this player has entered
 	enteringScene.hasEntered.add(player.heroName)
-
-	// repopulate scene texts and spawn enemies
-	player.sceneTexts = [];
-	if (enteringScene.onEnterScene) {
-		enteringScene.onEnterScene(player);
-	}
 }
 
 export function handleAction(player: Player, actionFromId: GameAction) {
 	if (actionFromId.goTo) {
 		player.previousScene = player.currentScene
 		player.currentScene = actionFromId.goTo
-		enterScene(player)
+		
+		// When entering a new scene, state cooldowns to 0, state warmups to the item warmup
+		for (const itemState of playerItemStates(player)) {
+			itemState.cooldown = 0
+			let wep = items[itemState.itemId]
+			if (wep != undefined && wep.warmup) {
+				itemState.warmup = wep.warmup
+			} else {
+				itemState.warmup = 0
+			}
+		}
+
+		enterSceneOrWakeup(player)
 		return
 	}
 
