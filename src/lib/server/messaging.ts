@@ -55,7 +55,7 @@ export function updatePlayerActions(player: Player) {
 				},
 			}
 		)
-		if(player.currentScene != 'armory'){
+		if (player.currentScene != 'armory') {
 			return
 		}
 	}
@@ -130,39 +130,52 @@ export function encode(event: string, data: object, noretry: boolean = false) {
 	return textEncoder.encode(toEncode);
 }
 
-export function enterScene(player:Player){
+export function enterScene(player: Player) {
 	// when moving to a new scene, state cooldowns to 0, warmups to the item warmup
 	for (const itemState of playerItemStates(player)) {
 		itemState.cooldown = 0
 		let wep = items[itemState.itemId]
-		if(wep != undefined && wep.warmup){
+		if (wep != undefined && wep.warmup) {
 			itemState.warmup = wep.warmup
-		}else{
+		} else {
 			itemState.warmup = 0
 		}
 	}
-	// If no players in there, remove all enemies
-	if(!activePlayersInScene(player.currentScene).length){
-		for (const e of enemiesInScene(player.currentScene)){
+	// If no players except me in there, remove all enemies
+	if (!activePlayersInScene(player.currentScene).filter(p => p.heroName != player.heroName).length) {
+		for (const e of enemiesInScene(player.currentScene)) {
 			let index = activeEnemies.indexOf(e)
-			if(index != -1){
-				activeEnemies.splice(index,1)
+			if (index != -1) {
+				activeEnemies.splice(index, 1)
 			}
 		}
 		scenes.get(player.currentScene)?.hasEntered?.clear()
 	}
-	
-	player.sceneTexts = [];
-	const enterIngScene = scenes.get(player.currentScene);
-	if (enterIngScene && enterIngScene.onEnterScene) {
-		
-		enterIngScene.onEnterScene(player);
-		if(!enterIngScene.hasEntered){
-			enterIngScene.hasEntered = new Set()
-		}
-		enterIngScene.hasEntered.add(player.heroName)
+
+	const enteringScene = scenes.get(player.currentScene);
+	if (!enteringScene) {
+		return
 	}
 
+	if (!enteringScene.hasEntered) {
+		enteringScene.hasEntered = new Set()
+	}
+
+	// If it's the player's first mid-battle join, call the scene hook
+	if (enteringScene.onBattleJoin
+		&& enemiesInScene('goblinCamp').length
+		&& !enteringScene.hasEntered.has(player.heroName)
+	) {
+		enteringScene.onBattleJoin(player)
+	}
+	// Remember this player has entered
+	enteringScene.hasEntered.add(player.heroName)
+
+	// repopulate scene texts and spawn enemies
+	player.sceneTexts = [];
+	if (enteringScene.onEnterScene) {
+		enteringScene.onEnterScene(player);
+	}
 }
 
 export function handleAction(player: Player, actionFromId: GameAction) {
@@ -173,7 +186,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		return
 	}
 
-	if(!enemiesInScene(player.currentScene).length){
+	if (!enemiesInScene(player.currentScene).length) {
 		if (actionFromId.performAction) {
 			actionFromId.performAction();
 		}
@@ -186,21 +199,21 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 
 	if (!actionFromId.grantsImmunity) pushHappening('----');
-	
+
 	if (actionFromId.provoke) {
 		addAggro(player, actionFromId.provoke)
 	}
 
-	for(const enemy of enemiesInScene(player.currentScene)){
-		for(const s of enemy.statuses){
-			if(s.status == 'poison'){
+	for (const enemy of enemiesInScene(player.currentScene)) {
+		for (const s of enemy.statuses) {
+			if (s.status == 'poison') {
 				takePoisonDamage(enemy)
 				s.counter--
 			}
 		}
-		enemy.statuses = enemy.statuses.filter(s=>s.counter > 0)
+		enemy.statuses = enemy.statuses.filter(s => s.counter > 0)
 	}
-	
+
 	handleRetaliations(player, false, actionFromId)
 
 	if (player.health > 1) {
@@ -208,18 +221,18 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 			actionFromId.performAction();
 		}
 	}
-	
+
 	if (player.health > 1) {
 		handleRetaliations(player, true, actionFromId)
 	}
-	
-	
+
+
 	const playerScene = scenes.get(player.currentScene);
 	const postReactionEnemies = enemiesInScene(player.currentScene)
-	if ( !postReactionEnemies.length && playerScene?.onVictory) {
-		for (const playerInScene of activePlayersInScene(player.currentScene)){
+	if (!postReactionEnemies.length && playerScene?.onVictory) {
+		for (const playerInScene of activePlayersInScene(player.currentScene)) {
 			playerScene.onVictory(playerInScene)
-			if(playerScene.hasEntered){
+			if (playerScene.hasEntered) {
 				playerScene.hasEntered.clear()
 			}
 		}
@@ -240,9 +253,9 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 			let aggroForActor = enemyInScene.aggros.get(player.heroName)
 			if (aggroForActor) {
 				if ((Math.random() + (aggroForActor / 100)) > 1) {
-					if(enemyInScene.template.onAttack){
+					if (enemyInScene.template.onAttack) {
 						enemyInScene.template.onAttack(enemyInScene)
-					}else{
+					} else {
 						damagePlayer(enemyInScene, player)
 					}
 					enemyInScene.aggros.clear()

@@ -18,6 +18,7 @@ export type SceneId =
 
 export type Scene = {
 	onEnterScene: (player: Player) => void;
+	onBattleJoin?: (player: Player) => void;
 	onVictory?: (player: Player) => void;
 	actions: (player: Player) => void;
 	solo?: boolean;
@@ -443,10 +444,6 @@ const goblinCamp: Scene = {
 		}
 
 		let existingEnemies = enemiesInScene('goblinCamp').length
-		if (existingEnemies && (!this.hasEntered || (this.hasEntered && !this.hasEntered.has(player.heroName)))) {
-			spawnEnemy(player.heroName.split('').reverse().join(''), 'goblin', 'goblinCamp')
-		}
-
 		if (!player.flags.has('killedGoblins') && !existingEnemies) {
 			player.sceneTexts.push("There is a foul stench in the air. Goblins. The telltale signs of the disgusting beasts are everywhere. Various animal carcasses litter the area, and their homes, barely more than logs with tattered cloth strung between, are placed without method around the clearing.")
 			for (const playerInScene of activePlayersInScene('goblinCamp')) {
@@ -455,6 +452,9 @@ const goblinCamp: Scene = {
 			spawnEnemy('Gorlak', 'goblin', 'goblinCamp')
 			spawnEnemy('Murk', 'goblin', 'goblinCamp')
 		}
+	},
+	onBattleJoin(player){
+		spawnEnemy(player.heroName.split('').reverse().join(''), 'goblin', 'goblinCamp')
 	},
 	onVictory(player) {
 		player.sceneTexts.push('The goblins were slain!')
