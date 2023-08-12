@@ -22,8 +22,8 @@ export type MessageFromServer = {
 	globalFlags:GlobalFlag[];
 };
 export type EnemyStatusEffect = {
-	status:'poison';
-	counter:number;
+	status:'poison' | 'rage';
+	counter?:number;
 }
 
 export type EnemyInClient = {

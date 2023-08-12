@@ -190,9 +190,9 @@ const theifCloak: Item = {
 				buttonText: 'Hide in shadows',
 				grantsImmunity: true,
 				performAction() {
-					for (const enemy of enemiesInScene(player.currentScene)) {
-						enemy.aggros.delete(player.heroName)
-					}
+					// for (const enemy of enemiesInScene(player.currentScene)) {
+					// 	enemy.aggros.delete(player.heroName)
+					// }
 					player.inventory.body.cooldown = 3
 					pushHappening(`----`)
 					pushHappening(`${player.heroName} hid in shadows`)

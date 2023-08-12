@@ -36,8 +36,8 @@ export const POST: RequestHandler = async (r) => {
 		// startflags.add('gotFreeStarterWeapon')
 		// startflags.add('killedGoblins')
 		
-		let startScene: SceneId = 'forest'
-		startScene = `tutorial_${msg.join}`
+		let startScene: SceneId = `tutorial_${msg.join}`
+		// startScene = `forest`
 		// startScene = 'forestPassage' 
 		// startScene = 'throne'
 		// startScene = 'armory'

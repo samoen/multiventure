@@ -217,10 +217,14 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		for (const s of enemy.statuses) {
 			if (s.status == 'poison') {
 				takePoisonDamage(enemy)
-				s.counter--
+				if(s.counter) s.counter--
+			}
+			if(s.status == 'rage'){
+				enemy.damage += 10
+				pushHappening(`${enemy.name}'s rage grows!`)
 			}
 		}
-		enemy.statuses = enemy.statuses.filter(s => s.counter > 0)
+		enemy.statuses = enemy.statuses.filter(s => (s.counter != undefined && s.counter > 0) || s.counter == undefined)
 	}
 
 	handleRetaliations(player, false, actionFromId)

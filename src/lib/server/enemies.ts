@@ -86,7 +86,7 @@ export function modifiedEnemyHealth(h: number): number {
 	return h + ((activePlayers().length - 1) * PERCENT_OF_BASE_ADDED_PER_PLAYER * h)
 }
 
-export function spawnEnemy(name: string, template: EnemyTemplateId, where: SceneId) {
+export function spawnEnemy(name: string, template: EnemyTemplateId, where: SceneId, statuses : EnemyStatusEffect[]=[]) {
 	const baseHealth = enemyTemplates[template].baseHealth
 	let modifiedBaseHealth = scenes.get(where)?.solo ? baseHealth : modifiedEnemyHealth(baseHealth)
 	activeEnemies.push({
@@ -97,7 +97,7 @@ export function spawnEnemy(name: string, template: EnemyTemplateId, where: Scene
 		damage: enemyTemplates[template].baseDamage,
 		aggros: new Map(),
 		template: enemyTemplates[template],
-		statuses:[],
+		statuses:statuses,
 	})
 }
 
