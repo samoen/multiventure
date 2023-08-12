@@ -5,37 +5,28 @@
 
 	export let data;
 	let signupInput: string;
+	let signInNameInput: string;
+	let signInIdInput: string;
 	let source: EventSource | null;
 	let lastMsgFromServer: MessageFromServer | null;
 	let loading = true;
 	let waitingForMyEvent = true;
 	let status = 'starting up';
-	let joinedAs : string | undefined;
 	let happenings: HTMLElement;
 	let sceneTexts: HTMLElement;
-	let autoSignup : boolean = true;
+	let autoSignup: boolean = true;
 
-	// let runTimeData: { loggedIn: boolean; loggedInAs: string } | undefined;
 	onMount(() => {
-		// runTimeData = structuredClone(data);
 		console.log('mounted with ssr data ' + JSON.stringify(data));
-		// console.log('source ' + h)
-		// h = 'blah'
-		// if (data.loggedIn) {
-
-			// problem, page can remount but not not invalidate
 
 		if (data.readyToSubscribe) {
 			console.log(`ssr data says cookies are good. auto-subscribing..`);
-			// loginOrJoin(data);
-			// if(source == null){
-				status = 'auto subscribing';
-				subscribeEventsIfNotAlready();
-				// }
-			}else if(data.noPlayer && data.yourHeroCookie && autoSignup){
+			status = 'auto subscribing';
+			subscribeEventsIfNotAlready();
+		} else if (data.noPlayer && data.yourHeroCookie && autoSignup) {
 			console.log(`ssr data says my hero cookie not matching anyone, doing auto signup..`);
 			status = 'auto signup';
-			signUp(data.yourHeroCookie)
+			signUp(data.yourHeroCookie);
 		} else {
 			status = 'need manual login';
 			loading = false;
@@ -58,9 +49,6 @@
 			return;
 		}
 		status = 'waiting for my event';
-
-		// invalidateAll();
-		// lastMsgFromServer = res;
 	}
 
 	function subscribeEventsIfNotAlready() {
@@ -107,15 +95,21 @@
 			status = 'you logged in elsewhere, connection closed';
 			lastMsgFromServer = null;
 		});
-		console.log('subscribed')
+		console.log('subscribed');
 	}
 
 	async function deleteHero() {
-		lastMsgFromServer = null;
 		loading = true;
 		status = 'submitting hero delete';
 		let f = await fetch('/api/delete', { method: 'POST' });
+		if(!f.ok){
+			console.log('failed delete hero request')
+		}
 		// let r = await f.json()
+		leaveGame()
+	}
+	function leaveGame(){
+		lastMsgFromServer = null;
 		status = 'unsubscribing from events';
 		if (source?.readyState != source?.CLOSED) {
 			console.log('closing con from browser');
@@ -125,6 +119,7 @@
 		status = 'need manual login';
 		loading = false;
 	}
+
 	async function signUp(usrName: string) {
 		let joincall = await fetch('/api/signup', {
 			method: 'POST',
@@ -146,25 +141,48 @@
 
 		if (joincall.ok) {
 			// if we were to re-mount (hot-reload) after this point, page data would be misleading
-			invalidateAll()
+			invalidateAll();
 			// location.reload()
 			// joinedAs = usrName
 			status = 'waiting for first event';
 			subscribeEventsIfNotAlready();
 		} else {
 			console.log('joincall not ok');
-			status = 'signup failed, need manual'
-			loading = false
+			status = 'signup failed, need manual';
+			loading = false;
 		}
 	}
-	async function signUpButtonClicked() {
+	
+	function signUpButtonClicked() {
 		if (!signupInput) return;
 		loading = true;
 		status = 'submitting sign up';
 		let usrName = signupInput;
 		signupInput = '';
-
+		
 		signUp(usrName);
+	}
+
+	async function signInButtonClicked(){
+		loading = true;
+		status = 'submitting login';
+		let loginCall = await fetch('/api/login', {
+			method: 'POST',
+			body: JSON.stringify({ heroName: signInNameInput, userId: signInIdInput }),
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+		if(!loginCall.ok){
+			console.log('login nope')
+			loading = false
+		}
+		signInIdInput = ''
+		signInNameInput = ''
+		// let res = await loginCall.json();
+		invalidateAll()
+		status = 'waiting for first event';
+		subscribeEventsIfNotAlready();
 	}
 </script>
 
@@ -174,9 +192,16 @@
 {/if}
 <br />
 {#if !loading && lastMsgFromServer == null}
-	<p>Welcome! Please log in with your hero name:</p>
+	<p>Welcome! Please sign up with your hero name:</p>
 	<input type="text" bind:value={signupInput} />
 	<button disabled={!signupInput} on:click={signUpButtonClicked}>Sign Up</button>
+	
+	<p>Or Login with your hero name and the userID generated when you signed up:</p>
+	<label for="signInName">name</label>
+	<input id="signInName" type="text" bind:value={signInNameInput} />
+	<label for="signInId">Id</label>
+	<input id="signInId"type="text" bind:value={signInIdInput} />
+	<button disabled={!signInNameInput || !signInIdInput} on:click={signInButtonClicked}>Login</button>
 {/if}
 
 {#if lastMsgFromServer && (!source || source.readyState != source.OPEN)}
@@ -184,46 +209,46 @@
 {/if}
 
 {#if lastMsgFromServer && source && source.readyState == source.OPEN}
-<!-- <h3>Scene Texts:</h3> -->
-<div class="sceneTexts" bind:this={sceneTexts}>
-	{#each lastMsgFromServer.sceneTexts as t}
-	<p class="sceneText">{t}</p>
+	<!-- <h3>Scene Texts:</h3> -->
+	<div class="sceneTexts" bind:this={sceneTexts}>
+		{#each lastMsgFromServer.sceneTexts as t}
+			<p class="sceneText">{t}</p>
+			<br />
+		{/each}
+	</div>
+	{#if lastMsgFromServer.sceneActions.length}
+		<div class="sceneButtons">
+			{#each lastMsgFromServer.sceneActions as op, i}
+				<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
+					{op.buttonText}
+				</button>
+			{/each}
+		</div>
+	{/if}
 	<br />
-	{/each}
-</div>
-{#if lastMsgFromServer.sceneActions.length}
-<div class="sceneButtons">
-	{#each lastMsgFromServer.sceneActions as op, i}
-	<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
-		{op.buttonText}
-	</button>
-	{/each}
-</div>
-{/if}
-<br />
-{#if lastMsgFromServer.itemActions.length}
-<div class="actionButtons">
-	{#each lastMsgFromServer.itemActions as op, i}
-	<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
-		{op.buttonText}
-	</button>
-	{/each}
+	{#if lastMsgFromServer.itemActions.length}
+		<div class="actionButtons">
+			{#each lastMsgFromServer.itemActions as op, i}
+				<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
+					{op.buttonText}
+				</button>
+			{/each}
 		</div>
 	{/if}
 	<h3>{lastMsgFromServer.yourName}:</h3>
 	<p>
 		Health: {lastMsgFromServer.yourHp}hp
-		
 	</p>
 	<p>
 		Weapon:
 		{lastMsgFromServer.yourWeapon.itemId}
-		{lastMsgFromServer.yourWeapon.cooldown ? `cooldown: ${lastMsgFromServer.yourWeapon.cooldown}` : ''}
+		{lastMsgFromServer.yourWeapon.cooldown
+			? `cooldown: ${lastMsgFromServer.yourWeapon.cooldown}`
+			: ''}
 		{lastMsgFromServer.yourWeapon.warmup ? `warmup:${lastMsgFromServer.yourWeapon.warmup}` : ''}
 	</p>
 	<p>
 		Utility: {lastMsgFromServer.yourUtility.itemId}
-		
 	</p>
 	<p>
 		Armor: {lastMsgFromServer.yourBody.itemId}
@@ -236,21 +261,19 @@
 	<!-- <p>{lastMsgFromServer.playerFlags} {lastMsgFromServer.globalFlags}</p> -->
 	<h3>Nearby Enemies:</h3>
 	{#each lastMsgFromServer.enemiesInScene as e}
-	<p>
-		<strong>{e.name}</strong> Health: {e.health}, Aggro: {e.myAggro}, statuses: {JSON.stringify(e.statuses)}
-	</p>
-	<p />
+		<p>
+			<strong>{e.name}</strong> Health: {e.health}, Aggro: {e.myAggro}, statuses: {JSON.stringify(
+				e.statuses
+			)}
+		</p>
+		<p />
 	{/each}
 	<h3>Recent happenings:</h3>
 	<div class="happenings" bind:this={happenings}>
 		{#each lastMsgFromServer.happenings as h}
-		<p>{h}</p>
+			<p>{h}</p>
 		{/each}
 	</div>
-	<p>
-		Logged in as {lastMsgFromServer.yourName}
-		<button on:click={deleteHero}>Delete Hero</button>
-	</p>
 	<h3>Other Players:</h3>
 	{#each lastMsgFromServer.otherPlayers as p}
 	<p>
@@ -258,6 +281,14 @@
 	</p>
 	<p />
 	{/each}
+	<p>
+		Logged in as {lastMsgFromServer.yourName} uid: {data.userId} 
+		<button on:click={()=>{
+			lastMsgFromServer = null
+			leaveGame()
+		}}>Log Out</button>
+		<button on:click={deleteHero}>Delete Hero</button>
+	</p>
 {/if}
 
 <style>

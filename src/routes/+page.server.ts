@@ -31,6 +31,7 @@ export const load = (async (r) => {
 
 	return {
 		readyToSubscribe:true,
+		userId: uid,
 	}
 	
 	// return {

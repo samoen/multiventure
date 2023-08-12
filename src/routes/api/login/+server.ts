@@ -5,29 +5,35 @@ import { FAKE_LATENCY } from '$lib/server/messaging';
 import { users, type Player, type Flag, globalFlags } from '$lib/server/users';
 import { scenes, type SceneId, addSoloScenes } from '$lib/server/scenes';
 import type { Inventory } from '$lib/server/items';
-import { v4 } from 'uuid';
+
+type LoginRequest = {
+	heroName:string,
+	userId:string,
+}
+
+function isLoginRequest(msg:object): msg is LoginRequest{
+	return ('heroName' in msg) && ('userId' in msg)
+}
 
 export const POST: RequestHandler = async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
 	let msg = await r.request.json();
-	console.log(`signup request ${JSON.stringify(msg)}`)
-	if (!isJoin(msg)) {
-		return json('malformed login', { status: 400 });
+	console.log(`login request ${JSON.stringify(msg)}`)
+	if (!isLoginRequest(msg)) {
+		return json('malformed login request', { status: 400 });
 	}
-	// if(players.has(msg.join) && players.get(msg.join).connectionState){
-	//     return json('hero already connected', {status:401})
-	// }
-
-	let nameTaken = Array.from(users.values()).some(p => p.heroName == msg.join)
-	if (nameTaken) {
-		return json('hero name taken', { status: 400 });
+	
+	let player = users.get(msg.userId)
+	if (!player) {
+		return json({error:'no hero for that userID'}, { status: 400 });
 	}
-	// r.cookies.get('uid')
-	// let player = users.get(msg.join)
-	// if (!player) {
-		// new user
-		
 
+	if(player.heroName != msg.heroName){
+		return json({error:'bad hero name'}, { status: 400 });
+	}
 
-	return json({ alreadyConnected: false });
+	r.cookies.set('hero', msg.heroName, { path: '/', secure: false });
+	r.cookies.set('uid', msg.userId, { path: '/', secure: false });
+
+	return json({ success: true });
 };
