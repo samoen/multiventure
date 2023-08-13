@@ -1,7 +1,7 @@
 // This file is for stuff available to both the server and browser
 
 import type { EnemyTemplateId } from './server/enemies';
-import type { ItemState } from './server/items';
+import type { ItemState, ItemStateForSlot } from './server/items';
 import type { SceneId } from './server/scenes';
 import type { Flag, GlobalFlag, HeroName } from './server/users';
 
@@ -10,9 +10,9 @@ export type MessageFromServer = {
 	yourName: HeroName;
 	yourScene: SceneId;
 	yourHp: number;
-	yourWeapon: ItemState;
-	yourUtility: ItemState;
-	yourBody: ItemState;
+	yourWeapon: ItemStateForSlot<'weapon'>;
+	yourUtility: ItemStateForSlot<'utility'>;
+	yourBody: ItemStateForSlot<'body'>;
 	otherPlayers: OtherPlayerInfo[];
 	sceneTexts: string[];
 	sceneActions: GameActionSentToClient[];

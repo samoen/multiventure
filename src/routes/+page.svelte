@@ -2,6 +2,17 @@
 	import { invalidateAll } from '$app/navigation';
 	import { isMsgFromServer, type MessageFromServer, type GameActionSentToClient } from '$lib/utils';
 	import { onMount, tick } from 'svelte';
+	import peasant from '$lib/assets/peasant.png';
+	import spearman from '$lib/assets/spearman.png';
+	import rat from '$lib/assets/giant-rat.png';
+	import grunt from '$lib/assets/grunt.png';
+	import troll from '$lib/assets/young-ogre.png';
+	import ruffian from '$lib/assets/ruffian.png';
+	import rogue from '$lib/assets/rogue.png';
+	import fireghost from '$lib/assets/fireghost.png';
+	import theif from '$lib/assets/thief.png';
+	import mage from '$lib/assets/mage.png';
+	import type { ItemId, ItemIdForSlot } from '$lib/server/items.js';
 
 	export let data;
 	let signupInput: string;
@@ -15,6 +26,30 @@
 	let happenings: HTMLElement;
 	let sceneTexts: HTMLElement;
 	let autoSignup: boolean = true;
+
+	function heroSprite(weapon:ItemIdForSlot<'weapon'>){
+		if(weapon == 'club')return 'ruffian'
+		if(weapon == 'dagger')return 'theif'
+		if(weapon == 'fireStaff')return 'mage'
+		return 'peasant'
+	}
+
+	const heroSprites = {
+		peasant:peasant,
+		rogue:rogue,
+		theif:theif,
+		ruffian:ruffian,
+		mage:mage,
+
+	}
+
+	const enemySprites = {
+		goblin:spearman,
+		rat:rat,
+		hobGoblin:grunt,
+		troll:troll,
+		fireGremlin:fireghost,
+	}
 
 	onMount(() => {
 		console.log('mounted with ssr data ' + JSON.stringify(data));
@@ -236,6 +271,7 @@
 		</div>
 	{/if}
 	<h3>{lastMsgFromServer.yourName}:</h3>
+	<img alt="you" src={heroSprites[heroSprite(lastMsgFromServer.yourWeapon.itemId)]}>
 	<p>
 		Health: {lastMsgFromServer.yourHp}hp
 	</p>
@@ -261,6 +297,7 @@
 	<!-- <p>{lastMsgFromServer.playerFlags} {lastMsgFromServer.globalFlags}</p> -->
 	<h3>Nearby Enemies:</h3>
 	{#each lastMsgFromServer.enemiesInScene as e}
+		<img alt="enemy" src={enemySprites[e.templateId]}>
 		<p>
 			<strong>{e.name}:</strong> {e.templateId}, Health: {e.health}, Aggro: {e.myAggro}, statuses: {JSON.stringify(
 				e.statuses

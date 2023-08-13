@@ -2,6 +2,9 @@ import { enemiesInScene, enemyTemplates, spawnEnemy, type EnemyTemplateId } from
 import { bodyItems, utilityItems, weapons, type ItemIdForSlot } from './items';
 import { activePlayersInScene, globalFlags, healPlayer, type HeroName, type Player } from './users';
 
+
+export const scenes: Map<SceneId, Scene> = new Map()
+
 export type SceneId =
 	| `tutorial_${HeroName}`
 	| `trainingRoom1_${HeroName}`
@@ -9,10 +12,12 @@ export type SceneId =
 	| `trainingRoom3_${HeroName}`
 	| 'forest'
 	| 'castle'
+	| 'house'
 	| 'throne'
 	| 'forestPassage'
 	| 'goblinCamp'
 	| 'tunnelChamber'
+	| 'realmOfMadness'
 	| 'armory'
 	| 'dead';
 
@@ -22,8 +27,8 @@ export type Scene = {
 	onVictory?: (player: Player) => void
 	actions: (player: Player) => void
 	solo?: boolean
-	hasEntered?:Set<HeroName>
-	sceneFlags?:Record<string,boolean>
+	hasEntered?: Set<HeroName>
+	sceneFlags?: Record<string, boolean>
 };
 
 const dead: Scene = {
@@ -36,7 +41,7 @@ const dead: Scene = {
 			buttonText: 'Reincarnate in armory',
 			goTo: 'armory',
 		})
-		if(player.lastCheckpoint){
+		if (player.lastCheckpoint) {
 			player.sceneActions.push({
 				buttonText: `Reincarnate at checkpoint ${player.lastCheckpoint}`,
 				goTo: player.lastCheckpoint,
@@ -45,18 +50,18 @@ const dead: Scene = {
 	}
 }
 
-function newtutFlags(){
+function newtutFlags() {
 	return {
-		hesitated:false,
-		wasSnarky:false,
-		agreedToTrain:false,
+		hesitated: false,
+		wasSnarky: false,
+		agreedToTrain: false,
 	}
 }
 
 type TutFlags = ReturnType<typeof newtutFlags>
 
 const tutorial = {
-	sceneFlags:newtutFlags(),
+	sceneFlags: newtutFlags(),
 	onEnterScene(player) {
 		this.sceneFlags = newtutFlags()
 		player.inventory.body.itemId = 'rags'
@@ -139,14 +144,14 @@ const tutorial = {
 // type RequiredKeys<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
 // type RequiredKeysWithType<T, K extends keyof T, V> = Omit<T, K> & Required<Pick<T, K>> & { [key in K]: V };
 
-type SceneWithFlags<TFlags> = Omit<Scene,'sceneFlags'> & {sceneFlags:TFlags}
+type SceneWithFlags<TFlags> = Omit<Scene, 'sceneFlags'> & { sceneFlags: TFlags }
 // & Required<Pick<Scene,'sceneFlags'>>
 
 const trainingRoom1 = {
 	solo: true,
 	onEnterScene(player) {
 		player.lastCheckpoint = `tutorial_${player.heroName}`
-		if(player.previousScene == 'dead'){
+		if (player.previousScene == 'dead') {
 			this.onVictory && this.onVictory(player)
 			return
 		}
@@ -200,7 +205,7 @@ const trainingRoom2: Scene = {
 	solo: true,
 	onEnterScene(player) {
 		player.lastCheckpoint = `trainingRoom1_${player.heroName}`
-		if(player.previousScene == 'dead'){
+		if (player.previousScene == 'dead') {
 			this.onVictory && this.onVictory(player)
 			return
 		}
@@ -208,7 +213,7 @@ const trainingRoom2: Scene = {
 		player.sceneTexts.push("Florgus: 'There you go again Morgus, talking about Glornak like I'm not standing right here. And it's OUR training room now remember? Oh Great, another recruit equipped with a dagger..'")
 		player.sceneTexts.push("Scortchy: 'Burn! I burn you! REEEE HEEE HEEE'")
 		player.sceneTexts.push("Florgus: 'Remember Scortchy, aim for the recruit! Not us!'")
-		spawnEnemy('Borgus', 'hobGoblin', `trainingRoom2_${player.heroName}`,[{status:'rage'}])
+		spawnEnemy('Borgus', 'hobGoblin', `trainingRoom2_${player.heroName}`, [{ status: 'rage' }])
 		spawnEnemy('Florgus', 'hobGoblin', `trainingRoom2_${player.heroName}`)
 		spawnEnemy('Scorchy', 'fireGremlin', `trainingRoom2_${player.heroName}`)
 	},
@@ -323,7 +328,10 @@ const castle: Scene = {
 		if (player.previousScene == 'forest') {
 			player.sceneTexts.push('You push your way through the piercing thorns and supple branches that seem to whip at your exposed flesh. After hours of arduous travel, you find yourself amongst thatch roof huts and tents. There are few people to be found, and those that are here seem dead behind the eyes. A dirty woman sit by a fire cooking what looks like a rat. You mention the castle and how you might enter, and she merely points a finger towards what appears to be an infinite staircase and turns her face back to the fire. You make your way towards it and ascend.')
 		}
-		if(player.flags.has('heardAboutHiddenPassage') && !player.flags.has('metArthur')){
+		if (player.previousScene == 'house') {
+			player.sceneTexts.push('You exit the housing of the greiving mother. The castle looms, and the forest beckons.')
+		}
+		if (player.flags.has('heardAboutHiddenPassage') && !player.flags.has('metArthur')) {
 			player.flags.add('metArthur')
 			player.sceneTexts.push("From an unknown place appears a voice. 'Hail!' It cries. You reach for a weapon that you suddenly remember you don't posess. While you see know doors, before you materialises a soldier. There is something about his eyes that tell you he is not afflicted by the same condition that seems to have twisted this land. 'I see you have found your way into this once hallowed hall. I would introduce myself, but whatever name I once had no longer has any meaning.'");
 			if (player.inventory.utility.itemId == 'empty') {
@@ -338,16 +346,12 @@ const castle: Scene = {
 		if (player.flags.has('killedGoblins') && !player.flags.has('sawArthurAfterBattle')) {
 			player.flags.add('sawArthurAfterBattle')
 			healPlayer(player, 50)
-			player.sceneTexts.push("The soldier you passed earlier watches you approach and a smile grows on his face. 'I can smell battle on ye traveller! So you've had your first taste of blood in this foul land? Well I've learnt a trick or two in my time roaming this insane world. Hold still a minute...'. The soldiers face becomes blank for a moment, and in an instant you feel a burning heat passing through your body. As it subsides, you feel energised and repaired. 'That'll set you straight for a bit traveller!' Bellows the soldier as he trundles on his way'.")
+			player.sceneTexts.push("The soldier you passed earlier watches you approach and a smile grows on his face.\n\nArthur: I can smell battle on ye traveller! So you've had your first taste of blood in this foul land? Well I've learnt a trick or two in my time roaming this insane world. Hold still a minute...\n\nThe soldier's face becomes blank for a moment, and in an instant you feel a burning heat passing through your body. As it subsides, you feel energised and repaired.\n\nArthur:That'll set you straight for a bit traveller! As he trundles on his way he calls back to you.\n\nArthur: You may be wanting to see the King! Word of your victory travels fast around here.")
 		}
 	},
 	actions(player: Player) {
-		player.sceneActions.push(
-			{
-				buttonText: 'Delve into the forest',
-				goTo: 'forest',
-			}
-		)
+		player.sceneActions.push({ buttonText: 'Delve into the forest', goTo: 'forest', })
+		player.sceneActions.push({ buttonText: 'Go into house', goTo: 'house', })
 		player.sceneActions.push(
 			{
 				buttonText: 'Head towards the throne room',
@@ -357,28 +361,74 @@ const castle: Scene = {
 	}
 };
 
-const throne: Scene = {
+const house: SceneWithFlags<{accepted:boolean}> = {
+	sceneFlags:{
+		accepted:false,
+	},
 	onEnterScene(player) {
+		if(player.flags.has('killedGoblins')){
+			player.sceneTexts.push(`Dear Sir ${player.heroName}! You return with the stench of goblin blood about yourself. Thank you for obtaining vengence on my behalf. My son had this set of leather armour. If only he had been wearing it when he went on his adventure.\n\nI bequeath it to you so that his legacy may live on. Good luck out there ${player.heroName}`)
+		}else 
 		if (!player.flags.has('heardAboutHiddenPassage')) {
 			player.flags.add('heardAboutHiddenPassage')
-			player.sceneTexts.push('At the end of the entrace hall to this eldritch structure, you notice a great door. It seems to stretch up into infinity, and you see no handle. As you approach, it seems to crack apart, revealing a dazzling light. You step inside.')
-			player.sceneTexts.push("Before you is a great throne. Sitting aside it are two giant sculptures carved from marble. The one of the left depicts an angel, its wings spread to a might span. It wields a sword from which a great fire burns. To the left of the throne is a garoyle, its lips pulled back in a monstrous snarl revealing rows of serrated teeth. One of its arms are raised and it appears to hold a ball of pure electricity which crackles in the dim light. Atop the throne sits an emaciated figure.")
-			player.sceneTexts.push("The figure atop the throne opens its mouth and from it emerges something akin to speech, but with the qualities of a dying whisper. 'I am... or was.. the king of this wretched place.' The figure starts, haltingly. 'I... the forest.... there is a passage. Find it and return to me.' The figure falls silent and returns to its corpselike revery.");
-		} else if (!player.flags.has('killedGoblins')) {
-			player.sceneTexts.push("You hear a voice inside your head that sounds more like the screams of a dying calf than words. It tells you to leave here and not to return until you have discovered the passage in the depths of the forest.")
-		} else if (globalFlags.has('placedMedallion')) {
-			player.sceneTexts.push("the throne looks different because a player placed the medallion and fought the stranger")
-		} else if (globalFlags.has('smashedMedallion')) {
-			player.sceneTexts.push("the throne looks different because a player smashed the medallion")
-		} else {
-			player.sceneTexts.push("You once again approach the throne, but something feels wrong. As you pass between the two mighty sculptures of the warring demon and angel, a powerful energy fills the air. The flame from the angel's sword and the electrical charge from the demon's hand begin to grow in size and reach out towards each other. The rotting body of the king suddenly leaps from it's throne. He screams from from the centre of the skeletal form 'You have proven your worth traveller, but there is a greater threat at hand! The forces of good and evil are no longer in balance! You must take this medallion and complete the ritual before it's too late!' The throne appears to cave in on itself, and a path that leads to the depths of castle appears. You feel you have no choice but to enter.")
+			player.sceneTexts.push("You come upon a beautiful little thatched roof cottage. The air is sweet with the smell of flowery perfume, but there is a sense of sadness in the air. You notice the door slightly ajar and knock on it quietly. There is no response.\n\nYou gently push the door open and find a woman sitting at a table alone, sobbing silently. Startled, she jumps from her seat. You hold your hands up as in a sign of concilation. 'Traveller, what is it you do here? Do you not see I grieve? My son... he was murdered by Gorlak and his rowdy band of filthy goblin scum. He was barely a man yet had the stars in his eyes. He sought adventure but found his demise far too soon. Will you avenge him on my behalf? I don't have much but I'm sure I can find somethign to reward you")
+			// player.sceneTexts.push("The figure atop the throne opens its mouth and from it emerges something akin to speech, but with the qualities of a dying whisper. 'I am... or was.. the king of this wretched place.' The figure starts, haltingly. 'I... the forest.... there is a passage. Find it and return to me.' The figure falls silent and returns to its corpselike revery.");
 		}
+		else if (!player.flags.has('killedGoblins')) {
+			player.sceneTexts.push(`${player.heroName}... why do you return without the blood of those foul goblins on your hands? Leave me. I do not wish to see anyone while they still draw breath.`)
+		}
+	},
+	actions(player) {
+		let scene = this
+		player.sceneActions.push({ buttonText: 'Leave the house', goTo: 'castle', })
+		if(!scene.sceneFlags.accepted){
+			player.sceneActions.push({ 
+				buttonText: `'I will'`,
+				performAction() {
+					scene.sceneFlags.accepted = true
+					player.sceneTexts.push(`${player.heroName}: 'Good lady. I will do this deed for you. No goblin scum will unpunished for this dark deed. I will return when I have silenced their gibberings.'`)
+					player.sceneTexts.push(`Woman: 'Thank you kind traveller. There is a passage in the forest hidden from normal view. My son would often go searching in the lands beyond. Search the dark recesses of the forest and you will come upon this place. ${player.heroName}, find those wretched curs and show them no mercy.'`)
+				},
+			})
+		}
+		if(player.flags.has('killedGoblins') && player.inventory.body.itemId != 'leatherArmor'){
+			player.sceneActions.push({
+				buttonText:'Accept the gift',
+				performAction() {
+					player.inventory.body.itemId = 'leatherArmor'
+					player.sceneTexts.push(`${player.heroName}: Thank you good lady. I will not let his death be in vain.\n\nYou put on the leather armour and it fits snugly around you. With this, the blows of your enemies will not do nearly so much damage.`)
+				},
+			})
+		}
+
+	},
+}
+scenes.set('house', house)
+
+const throne: Scene = {
+	onEnterScene(player) {
+		if (globalFlags.has('placedMedallion')) {
+			player.sceneTexts.push("The dishevelled king turns to you and opens his arms as if to welcome you back. 'Stranger. You have done my bidding, but your fate is sealed. I have no time for pathetic weaklings like you. Prepare yourself. I am sending you to a place from which there is no return.")
+		} else if (globalFlags.has('smashedMedallion')) {
+			player.sceneTexts.push("The dishevelled king turns to you with something akin to a smile on his rotting visage. 'You have betrayed me stranger. And after I put my faith in you. You will suffer. Prepare yourself, I am sending you to the realm of madness.")
+		} else if (!player.flags.has('killedGoblins')) {
+			player.sceneTexts.push(`You approach the throne room's mighty doors. Before it stands a guard with a look on his face that could kill a troll. 'What business have you here, stranger? This is the throne room of the mighty king. I suggest you turn back until you have some business here.`)
+		} else {
+
+			player.sceneTexts.push('At the end of the entrance hall to this eldritch structure, you approach a mighty door guarded by a fearsome warrior.\n\nGuard: Ah. You have returned, traveller. Word of your deeds has reached the king and he has decided to give you and audience.\n\nAs you approach, the door seems to crack apart, revealing a dazzling light. You step inside.')
+			player.sceneTexts.push("Before you is a great throne. Sitting aside it are two giant sculptures carved from marble. The one of the left depicts an angel, its wings spread to a might span. It wields a sword from which a great fire burns. To the left of the throne is a garoyle, its lips pulled back in a monstrous snarl revealing rows of serrated teeth. One of its arms are raised and it appears to hold a ball of pure electricity which crackles in the dim light. Atop the throne sits an emaciated figure.")
+			player.sceneTexts.push("You approach the throne, but something feels wrong. As you pass between two mighty sculptures of a warring demon and angel, a powerful energy fills the air. The flame from the angel's sword and the electrical charge from the demon's hand begin to grow in size and reach out towards each other. The rotting body of the king suddenly leaps from it's throne. He screams from from the centre of the skeletal form 'You have proven your worth traveller, but there is a greater threat at hand! The forces of good and evil are no longer in balance! You must take this medallion and complete the ritual before it's too late!' The throne appears to cave in on itself, and a path that leads to the depths of castle appears. You feel you have no choice but to enter.")
+		}
+		
+		
+		
+		
 	},
 	actions(player: Player) {
 		const hasDoneMedallion = globalFlags.has('smashedMedallion') || globalFlags.has('placedMedallion')
 		const mustGoThroughTunnel = player.flags.has('killedGoblins') && !hasDoneMedallion
 
-		if (!mustGoThroughTunnel) {
+		if (!mustGoThroughTunnel && !hasDoneMedallion) {
 			player.sceneActions.push(
 				{
 					buttonText: 'Take your leave',
@@ -396,12 +446,22 @@ const throne: Scene = {
 		}
 		if (hasDoneMedallion) {
 			player.sceneActions.push({
-				buttonText: 'Go to armory',
-				goTo: 'armory',
+				buttonText: 'Brace yourself',
+				goTo: 'realmOfMadness',
 			})
 		}
 	}
 }
+
+const realmOfMadness: Scene = {
+	onEnterScene(player) {
+		player.sceneTexts.push('your in the realm')
+	},
+	actions(player) {
+
+	},
+}
+scenes.set('realmOfMadness', realmOfMadness)
 
 const forestPassage: Scene = {
 	onEnterScene(player) {
@@ -473,10 +533,10 @@ const goblinCamp: Scene = {
 				playerInScene.sceneTexts.push(`Suddendly, A pair of goblins rush out of a tent.. "Hey Gorlak, looks like lunch!" "Right you are Murk. Let's eat!"`)
 			}
 			spawnEnemy('Gorlak', 'goblin', 'goblinCamp')
-			spawnEnemy('Murk', 'goblin', 'goblinCamp', [{status:'rage'}])
+			spawnEnemy('Murk', 'goblin', 'goblinCamp', [{ status: 'rage' }])
 		}
 	},
-	onBattleJoin(player){
+	onBattleJoin(player) {
 		player.sceneTexts.push('You see heroes fighting goblins here already, you join the fray!')
 		let extraGoblinName = player.heroName.split('').reverse().join('')
 		spawnEnemy(extraGoblinName, 'goblin', 'goblinCamp')
@@ -523,6 +583,8 @@ const tunnelChamber: Scene = {
 							allPlayer.sceneTexts.push("You hear a rumbling from below. The king says 'yay someone placed the medallion. If I just told you to do that, never mind..'  that explains why your actions just changed mid scene. Stragglers can still get their ealier quests from here still. hopefully it makes sense.")
 						}
 						spawnEnemy('Hooded Figure', 'hobGoblin', 'tunnelChamber')
+						spawnEnemy('Skritter', 'rat', 'tunnelChamber')
+						spawnEnemy('Snivels', 'rat', 'tunnelChamber')
 					},
 				}
 			)
@@ -601,6 +663,7 @@ const armory: Scene = {
 	},
 }
 
+
 export function addSoloScenes(name: string) {
 	let t = Object.assign({}, tutorial)
 	// t.sceneFlags = structuredClone(tutorial.sceneFlags)
@@ -611,7 +674,6 @@ export function addSoloScenes(name: string) {
 	scenes.set(`trainingRoom3_${name}`, trainingRoom3)
 }
 
-export const scenes: Map<SceneId, Scene> = new Map()
 scenes.set('dead', dead)
 scenes.set('forest', forest)
 scenes.set('castle', castle)
