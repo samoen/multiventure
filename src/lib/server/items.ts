@@ -169,7 +169,6 @@ const plateMail: Item = {
 				buttonText: 'Taunt',
 				performAction() {
 					player.inventory.body.cooldown = 2
-					pushHappening(`----`)
 					pushHappening(`${player.heroName} infuriates enemies!`)
 				},
 			})
@@ -194,7 +193,6 @@ const theifCloak: Item = {
 					// 	enemy.aggros.delete(player.heroName)
 					// }
 					player.inventory.body.cooldown = 3
-					pushHappening(`----`)
 					pushHappening(`${player.heroName} hid in shadows`)
 				},
 			})

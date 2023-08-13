@@ -80,7 +80,7 @@ export function encode(event: string, data: object, noretry: boolean = false) {
 
 export function pushHappening(toPush: string, endSection: boolean = false) {
 	recentHappenings.push(toPush);
-	if (recentHappenings.length > 10) {
+	if (recentHappenings.length > 30) {
 		recentHappenings.shift();
 	}
 	if (endSection) {

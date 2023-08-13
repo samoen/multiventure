@@ -19,12 +19,13 @@ export type ActiveEnemy = {
 }
 
 export type EnemyTemplate = {
-	baseHealth: number;
-	baseDamage: number;
-	aggroGain: number;
-	speed: number;
+	strikes?:number
+	baseHealth: number
+	baseDamage: number
+	aggroGain: number
+	speed: number
 	onTakeDamage?: (incoming: number) => number
-	onAttack?: (me: ActiveEnemy) => void
+	specialAttack?: (me: ActiveEnemy) => void
 };
 
 export type EnemyTemplateId =
@@ -36,6 +37,7 @@ export type EnemyTemplateId =
 
 export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 	rat: {
+		strikes: 2,
 		baseHealth: 5,
 		baseDamage: 10,
 		aggroGain: 50,
@@ -50,7 +52,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 	hobGoblin: {
 		baseHealth: 50,
 		baseDamage: 5,
-		aggroGain: 80,
+		aggroGain: 30,
 		speed: 10,
 		onTakeDamage(incoming) {
 			if (incoming > 10) return 10
@@ -62,7 +64,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		baseDamage: 5,
 		aggroGain: 90,
 		speed: 10,
-		onAttack(me: ActiveEnemy) {
+		specialAttack(me: ActiveEnemy) {
 			for (const enemy of enemiesInScene(me.currentScene)) {
 				if (enemy.name != me.name) {
 					infightDamage(me, enemy)
@@ -80,6 +82,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		speed: 1,
 	}
 };
+
 export const PERCENT_OF_BASE_ADDED_PER_PLAYER = 0.5
 
 export function modifiedEnemyHealth(h: number): number {
@@ -165,12 +168,10 @@ export function takePoisonDamage(enemy: ActiveEnemy) {
 export function checkEnemyDeath(target: ActiveEnemy): { killed: boolean } {
 	if (target.currentHealth < 1) {
 		const i = activeEnemies.findIndex(e => e === target)
-		// activeEnemies.findIndex
 		if (i >= 0) {
 			activeEnemies.splice(i, 1)
 		}
 		return { killed: true }
 	}
 	return { killed: false }
-
 }

@@ -1,13 +1,9 @@
-import { activeEnemies, addAggro, damagePlayer, enemiesInScene, takePoisonDamage } from '$lib/server/enemies';
-import { scenes, type SceneId } from '$lib/server/scenes';
-import { playerItemStates, users, type GameAction, type Player, activePlayersInScene } from '$lib/server/users';
+import { handleAction, updateAllPlayerActions, updatePlayerActions } from '$lib/server/logic';
+import { FAKE_LATENCY, pushHappening, sendEveryoneWorld } from '$lib/server/messaging';
+import { users } from '$lib/server/users';
 import { isGameActionSelected } from '$lib/utils';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { items } from '$lib/server/items';
-import { goto } from '$app/navigation';
-import { updatePlayerActions, handleAction, updateAllPlayerActions } from '$lib/server/logic';
-import { FAKE_LATENCY, pushHappening, sendEveryoneWorld } from '$lib/server/messaging';
 
 export const POST = (async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));

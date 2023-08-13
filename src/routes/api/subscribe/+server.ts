@@ -60,7 +60,6 @@ export const GET: RequestHandler = async (event) => {
 				console.log(`stream started with: ${ip}, hero ${player.heroName}`);
 				player.connectionState.ip = ip;
 				player.connectionState.con = c;
-				pushHappening('----');
 				pushHappening(`${player.heroName} joined the game`)
 				setTimeout(() => {
 					modifyEnemies()
@@ -80,7 +79,6 @@ export const GET: RequestHandler = async (event) => {
 					// } catch (e) {
 						//     console.log(`stream cancel handler failed to close controller for ${ip} ${from} because ${e}`);
 				// }
-				pushHappening(`----`)
 				pushHappening(`${player.heroName} left the game`)
 				player.connectionState = null;
 
@@ -92,13 +90,6 @@ export const GET: RequestHandler = async (event) => {
 		});
 		player.connectionState.stream = rs;
 		
-		// setTimeout(()=>{
-		// 	if(
-			// 		(player.connectionState != null && player.connectionState.stream != null && !player.connectionState?.stream?.locked)				
-			// 		){
-				// 			console.log(`${player.heroName} subscribed but afterwards the stream is not locked`)
-		// 		}
-		// },1000)
 		return new Response(rs, {
 			headers: {
 				connection: 'keep-alive',

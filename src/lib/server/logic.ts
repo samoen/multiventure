@@ -125,8 +125,8 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		if (cd.warmup > 0) cd.warmup--
 	}
 
-	if (!actionFromId.grantsImmunity) pushHappening('----');
-
+	// if (!actionFromId.grantsImmunity) pushHappening('----');
+    pushHappening('----');
 	if (actionFromId.provoke) {
 		addAggro(player, actionFromId.provoke)
 	}
@@ -184,10 +184,12 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 			let aggroForActor = enemyInScene.aggros.get(player.heroName)
 			if (aggroForActor) {
 				if ((Math.random() + (aggroForActor / 100)) > 1) {
-					if (enemyInScene.template.onAttack) {
-						enemyInScene.template.onAttack(enemyInScene)
+					if (enemyInScene.template.specialAttack) {
+						enemyInScene.template.specialAttack(enemyInScene)
 					} else {
-						damagePlayer(enemyInScene, player)
+                        for(const _ of Array.from({length:enemyInScene.template.strikes ?? 1})){
+                            damagePlayer(enemyInScene, player)
+                        }
 					}
 					enemyInScene.aggros.clear()
 				}
