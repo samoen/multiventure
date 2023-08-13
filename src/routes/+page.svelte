@@ -186,7 +186,7 @@
 	}
 </script>
 
-<h3>Status: {status}</h3>
+<!-- <h3>Status: {status}</h3> -->
 {#if loading}
 	<p>loading...</p>
 {/if}
