@@ -27,6 +27,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 		triggeredBy: triggeredBy,
 		yourName: forPlayer.heroName,
 		yourHp: forPlayer.health,
+		yourMaxHp: forPlayer.maxHealth,
 		yourWeapon: forPlayer.inventory.weapon,
 		yourUtility: forPlayer.inventory.utility,
 		yourBody: forPlayer.inventory.body,

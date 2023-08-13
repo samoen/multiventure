@@ -27,6 +27,10 @@
 	let sceneTexts: HTMLElement;
 	let autoSignup: boolean = true;
 
+	$: hpBar = 
+		(lastMsgFromServer && lastMsgFromServer.yourHp > 0) ? (100*(lastMsgFromServer.yourHp/lastMsgFromServer.yourMaxHp)) : 0
+	
+
 	function heroSprite(weapon:ItemIdForSlot<'weapon'>){
 		if(weapon == 'club')return 'ruffian'
 		if(weapon == 'dagger')return 'theif'
@@ -270,13 +274,35 @@
 			{/each}
 		</div>
 	{/if}
-	<h3>{lastMsgFromServer.yourName}:</h3>
-	<img alt="you" src={heroSprites[heroSprite(lastMsgFromServer.yourWeapon.itemId)]}>
-	<p>
-		Health: {lastMsgFromServer.yourHp}hp
-	</p>
-	<p>
-		Weapon:
+	<div class="visual">
+		<div class="heroes">
+			<img alt="you" src={heroSprites[heroSprite(lastMsgFromServer.yourWeapon.itemId)]}>
+			<div class="healthbar">
+				<div 
+				class="healthbar_health"
+				style:width="{hpBar}%"
+				></div>
+			</div>
+		</div>
+		<div class="enemies">
+			{#each lastMsgFromServer.enemiesInScene as e}
+				<img alt="enemy" src={enemySprites[e.templateId]}>
+				<div class="healthbar">
+					<div 
+					class="healthbar_health"
+					style:width="{100*e.health/e.maxHealth}%"
+					></div>
+				</div>
+				{/each}
+				
+			</div>
+		</div>
+		<h3>{lastMsgFromServer.yourName}:</h3>
+		<p>
+			Health: {lastMsgFromServer.yourHp}hp
+		</p>
+		<p>
+			Weapon:
 		{lastMsgFromServer.yourWeapon.itemId}
 		{lastMsgFromServer.yourWeapon.cooldown
 			? `cooldown: ${lastMsgFromServer.yourWeapon.cooldown}`
@@ -297,7 +323,6 @@
 	<!-- <p>{lastMsgFromServer.playerFlags} {lastMsgFromServer.globalFlags}</p> -->
 	<h3>Nearby Enemies:</h3>
 	{#each lastMsgFromServer.enemiesInScene as e}
-		<img alt="enemy" src={enemySprites[e.templateId]}>
 		<p>
 			<strong>{e.name}:</strong> {e.templateId}, Health: {e.health}, Aggro: {e.myAggro}, statuses: {JSON.stringify(
 				e.statuses
@@ -378,5 +403,24 @@
 		display: inline-block;
 		background-color: beige;
 		border: 1px solid black;
+	}
+	.healthbar{
+		width:80px;
+		height:10px;
+		border: 1px solid black;
+	}
+	.healthbar_health{
+		background-color: green;
+		/* width: 60%; */
+		height:100%;
+	}
+	.heroes {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+	}
+	.visual{
+		display: flex;
+		justify-content: space-around;
 	}
 </style>

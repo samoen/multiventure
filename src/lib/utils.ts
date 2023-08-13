@@ -10,6 +10,7 @@ export type MessageFromServer = {
 	yourName: HeroName;
 	yourScene: SceneId;
 	yourHp: number;
+	yourMaxHp:number;
 	yourWeapon: ItemStateForSlot<'weapon'>;
 	yourUtility: ItemStateForSlot<'utility'>;
 	yourBody: ItemStateForSlot<'body'>;

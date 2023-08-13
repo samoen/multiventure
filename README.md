@@ -2,6 +2,8 @@
 
 A multiplayer text aventure just for fun!
 
+![alt text](https://www.gnu.org/graphics/gplv3-with-text-136x68.png)
+
 ## Developing
 
 Once you've cloned this repo:
