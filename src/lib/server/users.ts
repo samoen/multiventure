@@ -8,9 +8,6 @@ export const globalFlags = new Set<GlobalFlag>();
 export type UserId = string;
 export type HeroName = string;
 export type Flag =
-	| 'tutorial1'
-	| 'tutorial2'
-	| 'tutorial3'
 	| 'metArthur'
 	| 'heardAboutHiddenPassage'
 	| 'gotFreeStarterWeapon'
@@ -35,6 +32,7 @@ export type Player = {
 	inventory:Inventory;
 	currentScene: SceneId;
 	previousScene: SceneId;
+	lastCheckpoint?: SceneId;
 	itemActions: GameAction[];
 	sceneActions: GameAction[];
 	sceneTexts: string[];

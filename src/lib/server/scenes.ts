@@ -17,12 +17,13 @@ export type SceneId =
 	| 'dead';
 
 export type Scene = {
-	onEnterScene: (player: Player) => void;
-	onBattleJoin?: (player: Player) => void;
-	onVictory?: (player: Player) => void;
-	actions: (player: Player) => void;
-	solo?: boolean;
+	onEnterScene: (player: Player) => void
+	onBattleJoin?: (player: Player) => void
+	onVictory?: (player: Player) => void
+	actions: (player: Player) => void
+	solo?: boolean
 	hasEntered?:Set<HeroName>
+	sceneFlags?:Record<string,boolean>
 };
 
 const dead: Scene = {
@@ -32,65 +33,63 @@ const dead: Scene = {
 	},
 	actions(player) {
 		player.sceneActions.push({
-			buttonText: 'Reincarnate in forest',
-			goTo: 'forest',
-		})
-		player.sceneActions.push({
 			buttonText: 'Reincarnate in armory',
 			goTo: 'armory',
 		})
-		player.sceneActions.push({
-			buttonText: 'Reincarnate in tutorial',
-			goTo: `tutorial_${player.heroName}`,
-		})
+		if(player.lastCheckpoint){
+			player.sceneActions.push({
+				buttonText: `Reincarnate at checkpoint ${player.lastCheckpoint}`,
+				goTo: player.lastCheckpoint,
+			})
+		}
 	}
 }
-export function addSoloScenes(name: string) {
-	scenes.set(`tutorial_${name}`, tutorial)
-	scenes.set(`trainingRoom1_${name}`, trainingRoom1)
-	scenes.set(`trainingRoom2_${name}`, trainingRoom2)
-	scenes.set(`trainingRoom3_${name}`, trainingRoom3)
+
+function newtutFlags(){
+	return {
+		hesitated:false,
+		wasSnarky:false,
+		agreedToTrain:false,
+	}
 }
-const tutorial: Scene = {
+
+type TutFlags = ReturnType<typeof newtutFlags>
+
+const tutorial = {
+	sceneFlags:newtutFlags(),
 	onEnterScene(player) {
-		player.flags.delete('tutorial1')
-		player.flags.delete('tutorial2')
-		player.flags.delete('tutorial3')
+		this.sceneFlags = newtutFlags()
 		player.inventory.body.itemId = 'rags'
 		player.inventory.utility.itemId = 'empty'
 		player.inventory.weapon.itemId = 'unarmed'
 		player.sceneTexts.push(`You are standing at a castle barracks. Soliders mill around swinging swords and grunting in cool morning air. You see Arthur, the captain of the castle guard marching towards you.\n\nArthur: 'Look alive recruit! The first day of training can be the most dangerous of a guardsman's life. You must be ${player.heroName}, welcome aboard. In this barracks we wake up early, follow orders, and NEVER skip the tutorial. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.'`)
 	},
 	actions(player) {
-		const agreedToProceed = () => {
-			player.flags.delete('tutorial1')
-			player.flags.add('tutorial2')
-		}
-
-		if (player.flags.has('tutorial1')) {
+		if (this.sceneFlags.hesitated) {
 			player.sceneActions.push({
 				buttonText: 'Skip tutorial',
 				goTo: 'forest',
 			})
 		}
-		if (!player.flags.has('tutorial2')) {
-			if (!player.flags.has('tutorial1')) {
+		let tut = this
+		if (!this.sceneFlags.agreedToTrain) {
+			if (!this.sceneFlags.hesitated) {
 				let t = "'Huh? Danger... Early mornings?? I didn't sign up for any of this!'"
 				player.sceneActions.push({
 					buttonText: t,
 					performAction() {
 						player.sceneTexts.push(`${player.heroName}: ${t}`)
 						player.sceneTexts.push("Arthur: 'Hmmf, if you think you can weasel your way through this game without enduring hardship you're in for a rude awakening.. anyway it's just a quick tutorial, skip it only with good reason.'")
-						player.flags.add('tutorial1')
+						tut.sceneFlags.hesitated = true
 					},
 				})
 			}
-			if (!player.flags.has('tutorial3')) {
+			if (!this.sceneFlags.wasSnarky) {
 				let wall = "'I would rather you didn't break the fourth wall, I'm into more serious RPGs.'"
 				player.sceneActions.push({
 					buttonText: wall,
 					performAction() {
-						player.flags.add('tutorial3')
+						tut.sceneFlags.wasSnarky = true
 						player.sceneTexts.push(`${player.heroName}: ${wall}`)
 						player.sceneTexts.push("Arthur: 'Lighten up recruit. Things will get plenty dark and gritty soon enough. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.'")
 					},
@@ -102,11 +101,12 @@ const tutorial: Scene = {
 				performAction() {
 					player.sceneTexts.push(`${player.heroName}: ${breeze}`)
 					player.sceneTexts.push(`Arthur: 'Great to hear ${player.heroName}! Our training goblin is ready for you. Also there's a bit of a rat problem in the training room right now.. so grab some equipment off the rack and let's go.'`)
-					agreedToProceed()
+					tut.sceneFlags.hesitated = false
+					tut.sceneFlags.agreedToTrain = true
 				},
 			})
 		}
-		if (player.flags.has('tutorial2') && player.inventory.weapon.itemId != 'club') {
+		if (this.sceneFlags.agreedToTrain && player.inventory.weapon.itemId != 'club') {
 			player.sceneActions.push({
 				buttonText: "Equip Club",
 				performAction() {
@@ -115,7 +115,7 @@ const tutorial: Scene = {
 				},
 			})
 		}
-		if (player.flags.has('tutorial2') && player.inventory.utility.itemId != 'bomb') {
+		if (this.sceneFlags.agreedToTrain && player.inventory.utility.itemId != 'bomb') {
 			player.sceneActions.push({
 				buttonText: "Equip Powderbomb",
 				performAction() {
@@ -131,11 +131,25 @@ const tutorial: Scene = {
 			})
 		}
 	},
-}
+} satisfies SceneWithFlags<TutFlags>
 
-const trainingRoom1: Scene = {
+// satisfies SceneWithFlags<{hesitated:boolean,agreedToTrain:boolean,wasSnarky:boolean}>
+// satisfies RequiredKeysWithType<Scene,'sceneFlags',{hesitated:boolean,agreedToTrain:boolean,wasSnarky:boolean}>
+
+// type RequiredKeys<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
+// type RequiredKeysWithType<T, K extends keyof T, V> = Omit<T, K> & Required<Pick<T, K>> & { [key in K]: V };
+
+type SceneWithFlags<TFlags> = Omit<Scene,'sceneFlags'> & {sceneFlags:TFlags}
+// & Required<Pick<Scene,'sceneFlags'>>
+
+const trainingRoom1 = {
 	solo: true,
 	onEnterScene(player) {
+		player.lastCheckpoint = `tutorial_${player.heroName}`
+		if(player.previousScene == 'dead'){
+			this.onVictory && this.onVictory(player)
+			return
+		}
 		player.sceneTexts.push("You enter the training room. It is well worn by many training sessions. The walls are covered in blast marks, dents and splinters.")
 		player.sceneTexts.push("Glornak: 'Hey you! I've never seen a more pitiful excuse for a guardsman in my life, and I've been working here since Arthur was a recruit! Go, my rats!'")
 		player.sceneTexts.push("Skitters: 'Squeak!'")
@@ -169,7 +183,7 @@ const trainingRoom1: Scene = {
 				buttonText: 'Equip Bandage',
 				performAction() {
 					player.inventory.utility.itemId = 'bandage'
-					player.sceneTexts.push("Use that bandage when you get low on health. By the way, the hobgoblin named Florgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!")
+					player.sceneTexts.push("Use that bandage when you get low on health. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!")
 				},
 			})
 		}
@@ -180,16 +194,22 @@ const trainingRoom1: Scene = {
 		player.sceneTexts.push("Glornak falls down in a very convincing display.")
 		player.sceneTexts.push("Arthur: 'Great job! Let's switch up your equipment. Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you.'")
 	},
-}
+} satisfies Scene
+
 const trainingRoom2: Scene = {
 	solo: true,
 	onEnterScene(player) {
-		player.sceneTexts.push("Morgus: 'Raaargh! What are you hob-doing in MY hob-training room?! How is Glornak by the way? We used to work in the same room but they split us up.'")
+		player.lastCheckpoint = `trainingRoom1_${player.heroName}`
+		if(player.previousScene == 'dead'){
+			this.onVictory && this.onVictory(player)
+			return
+		}
+		player.sceneTexts.push("Borgus: 'Raaargh! What are you hob-doing in MY hob-training room?! How is Glornak by the way? We used to work in the same room but they split us up.'")
 		player.sceneTexts.push("Florgus: 'There you go again Morgus, talking about Glornak like I'm not standing right here. And it's OUR training room now remember? Oh Great, another recruit equipped with a dagger..'")
 		player.sceneTexts.push("Scortchy: 'Burn! I burn you! REEEE HEEE HEEE'")
 		player.sceneTexts.push("Florgus: 'Remember Scortchy, aim for the recruit! Not us!'")
-		spawnEnemy('Morgus', 'hobGoblin', `trainingRoom2_${player.heroName}`)
-		spawnEnemy('Florgus', 'hobGoblin', `trainingRoom2_${player.heroName}`,[{status:'rage'}])
+		spawnEnemy('Borgus', 'hobGoblin', `trainingRoom2_${player.heroName}`,[{status:'rage'}])
+		spawnEnemy('Florgus', 'hobGoblin', `trainingRoom2_${player.heroName}`)
 		spawnEnemy('Scorchy', 'fireGremlin', `trainingRoom2_${player.heroName}`)
 	},
 	actions(player) {
@@ -235,6 +255,7 @@ const trainingRoom2: Scene = {
 const trainingRoom3: Scene = {
 	solo: true,
 	onEnterScene(player) {
+		player.lastCheckpoint = `trainingRoom2_${player.heroName}`
 		player.sceneTexts.push("You enter a dark, stinking place. Iron bars slam shut behind you. It looks more like a prison cell than a training room. The bones of previous recruits are strewn about the place. A giant figure emerges from the darkness.")
 		player.sceneTexts.push("Ragor: 'RRRAAAAAAUUUUUUGHHH!'")
 		player.sceneTexts.push("You hear Arthur's voice from behind the barred doors.")
@@ -261,6 +282,7 @@ const trainingRoom3: Scene = {
 
 const forest: Scene = {
 	onEnterScene(player) {
+		player.lastCheckpoint = 'forest'
 		if (player.previousScene == 'dead' || player.previousScene == `tutorial_${player.heroName}` || player.previousScene == `trainingRoom3_${player.heroName}`) {
 			player.sceneTexts.push("You awake in a cold sweat with no memory of anything. \n\nThe world around you seems dark and permeated by an unholy madness. \n\nThere's a strange sickly smell that seems familiar. The smell of corruption. The smell of death.")
 		}
@@ -289,7 +311,6 @@ const forest: Scene = {
 					goTo: 'forestPassage',
 				}
 			)
-
 		}
 	}
 }
@@ -452,7 +473,7 @@ const goblinCamp: Scene = {
 				playerInScene.sceneTexts.push(`Suddendly, A pair of goblins rush out of a tent.. "Hey Gorlak, looks like lunch!" "Right you are Murk. Let's eat!"`)
 			}
 			spawnEnemy('Gorlak', 'goblin', 'goblinCamp')
-			spawnEnemy('Murk', 'goblin', 'goblinCamp')
+			spawnEnemy('Murk', 'goblin', 'goblinCamp', [{status:'rage'}])
 		}
 	},
 	onBattleJoin(player){
@@ -501,7 +522,7 @@ const tunnelChamber: Scene = {
 						for (const allPlayer of activePlayersInScene('throne')) {
 							allPlayer.sceneTexts.push("You hear a rumbling from below. The king says 'yay someone placed the medallion. If I just told you to do that, never mind..'  that explains why your actions just changed mid scene. Stragglers can still get their ealier quests from here still. hopefully it makes sense.")
 						}
-						spawnEnemy('Hooded Figure', 'goblin', 'tunnelChamber')
+						spawnEnemy('Hooded Figure', 'hobGoblin', 'tunnelChamber')
 					},
 				}
 			)
@@ -580,18 +601,14 @@ const armory: Scene = {
 	},
 }
 
-export function getSoloScene(id: SceneId) {
-	if (id.startsWith('tutorial')) {
-		return tutorial
-	} else if (id.startsWith('trainingRoom1')) {
-		return trainingRoom1
-
-	} else if (id.startsWith('trainingRoom2')) {
-		return trainingRoom2
-
-	} else if (id.startsWith('trainingRoom3')) {
-		return trainingRoom3
-	}
+export function addSoloScenes(name: string) {
+	let t = Object.assign({}, tutorial)
+	// t.sceneFlags = structuredClone(tutorial.sceneFlags)
+	t.sceneFlags = newtutFlags()
+	scenes.set(`tutorial_${name}`, t)
+	scenes.set(`trainingRoom1_${name}`, trainingRoom1)
+	scenes.set(`trainingRoom2_${name}`, trainingRoom2)
+	scenes.set(`trainingRoom3_${name}`, trainingRoom3)
 }
 
 export const scenes: Map<SceneId, Scene> = new Map()
@@ -603,19 +620,3 @@ scenes.set('forestPassage', forestPassage)
 scenes.set('goblinCamp', goblinCamp)
 scenes.set('tunnelChamber', tunnelChamber)
 scenes.set('armory', armory)
-
-
-// export const scenes: Record<SceneId, Scene> = {
-// 	dead: dead,
-// 	// tutorial: tutorial,
-// 	// trainingRoom1: trainingRoom1,
-// 	// trainingRoom2: trainingRoom2,
-// 	// trainingRoom3: trainingRoom3,
-// 	forest: forest,
-// 	castle: castle,
-// 	throne: throne,
-// 	forestPassage: forestPassage,
-// 	goblinCamp: goblinCamp,
-// 	tunnelChamber: tunnelChamber,
-// 	armory: armory
-// };

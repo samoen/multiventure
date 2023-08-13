@@ -262,7 +262,7 @@
 	<h3>Nearby Enemies:</h3>
 	{#each lastMsgFromServer.enemiesInScene as e}
 		<p>
-			<strong>{e.name}</strong> Health: {e.health}, Aggro: {e.myAggro}, statuses: {JSON.stringify(
+			<strong>{e.name}:</strong> {e.templateId}, Health: {e.health}, Aggro: {e.myAggro}, statuses: {JSON.stringify(
 				e.statuses
 			)}
 		</p>
@@ -323,7 +323,7 @@
 		margin-bottom: 0px;
 	}
 	.sceneTexts {
-		height: calc(450px - 20vw);
+		height: calc(400px - 20vw);
 		/* height: 5; */
 		overflow-y: auto;
 		border: 1px solid black;

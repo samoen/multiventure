@@ -1,5 +1,6 @@
 // This file is for stuff available to both the server and browser
 
+import type { EnemyTemplateId } from './server/enemies';
 import type { ItemState } from './server/items';
 import type { SceneId } from './server/scenes';
 import type { Flag, GlobalFlag, HeroName } from './server/users';
@@ -27,10 +28,12 @@ export type EnemyStatusEffect = {
 }
 
 export type EnemyInClient = {
-	name:string;
-	health:number;
-	myAggro:number;
-	statuses:EnemyStatusEffect[];
+	name:string
+	templateId:EnemyTemplateId
+	health:number
+	maxHealth:number
+	myAggro:number
+	statuses:EnemyStatusEffect[]
 }
 
 export function isMsgFromServer(msg: object): msg is MessageFromServer {

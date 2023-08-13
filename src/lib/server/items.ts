@@ -73,7 +73,7 @@ const club: Item = {
 					provoke: 40,
 					speed: 2,
 					performAction() {
-						damageEnemy(player, enemy, 20)
+						damageEnemy(player, enemy, 25)
 					}
 				}
 			)
@@ -129,7 +129,7 @@ const bomb: Item = {
 				performAction() {
 					for (const enemy of enemiesInScene(player.currentScene)) {
 						enemy.aggros.clear()
-						damageEnemy(player, enemy, 15)
+						damageEnemy(player, enemy, 5)
 					}
 					player.inventory.utility.itemId = 'empty'
 				},

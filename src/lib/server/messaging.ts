@@ -109,7 +109,9 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 		enemiesInScene: enemiesInScene(forPlayer.currentScene).map((e) => {
 			return {
 				health: e.currentHealth,
+				maxHealth: e.maxHealth,
 				name: e.name,
+				templateId: e.templateId,
 				myAggro: e.aggros.get(forPlayer.heroName) ?? 0,
 				statuses: e.statuses,
 			}
