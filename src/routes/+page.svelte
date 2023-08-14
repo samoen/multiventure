@@ -1,8 +1,15 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import { isMsgFromServer, type MessageFromServer, type GameActionSentToClient } from '$lib/utils';
+	import {
+		isMsgFromServer,
+		type MessageFromServer,
+		type GameActionSentToClient,
+		type EnemyName
+	} from '$lib/utils';
 	import { onMount, tick } from 'svelte';
 	import peasant from '$lib/assets/peasant.png';
+	import peasantPortrait from '$lib/assets/portraits/peasant.webp';
+	import gruntPortrait from '$lib/assets/portraits/grunt.webp';
 	import spearman from '$lib/assets/spearman.png';
 	import rat from '$lib/assets/giant-rat.png';
 	import grunt from '$lib/assets/grunt.png';
@@ -14,46 +21,57 @@
 	import mage from '$lib/assets/mage.png';
 	import type { ItemId, ItemIdForSlot } from '$lib/server/items.js';
 	import Unit from '$lib/Components/Unit.svelte';
-	import { choose, clientState } from '$lib/client/ui';
+	import { choose, clientState, lastMsgFromServer, selectedDetail } from '$lib/client/ui';
+	import type { EnemyTemplateId } from '$lib/server/enemies.js';
 
 	export let data;
 	let signupInput: string;
 	let signInNameInput: string;
 	let signInIdInput: string;
 	let source: EventSource | null;
-	let lastMsgFromServer: MessageFromServer | null;
+	
+
 	let loading = true;
+
+	// let unitsDetails: UnitDetails[] = [];
 	
-	
+
 	let happenings: HTMLElement;
 	let sceneTexts: HTMLElement;
 	let autoSignup: boolean = true;
 
-		
+	
 
-	function heroSprite(weapon:ItemIdForSlot<'weapon'>){
-		if(weapon == 'club')return 'ruffian'
-		if(weapon == 'dagger')return 'theif'
-		if(weapon == 'fireStaff')return 'mage'
-		return 'peasant'
+	function heroSprite(weapon: ItemIdForSlot<'weapon'>) {
+		if (weapon == 'club') return 'ruffian';
+		if (weapon == 'dagger') return 'theif';
+		if (weapon == 'fireStaff') return 'mage';
+		return 'peasant';
 	}
+
+	let enemyPortraits = {
+		hobGoblin:gruntPortrait,
+		rat:gruntPortrait,
+		goblin:gruntPortrait,
+		fireGremlin:gruntPortrait,
+		troll:gruntPortrait
+	} satisfies Record<EnemyTemplateId,string>
 
 	const heroSprites = {
-		peasant:peasant,
-		rogue:rogue,
-		theif:theif,
-		ruffian:ruffian,
-		mage:mage,
-
-	}
+		peasant: peasant,
+		rogue: rogue,
+		theif: theif,
+		ruffian: ruffian,
+		mage: mage
+	};
 
 	const enemySprites = {
-		goblin:spearman,
-		rat:rat,
-		hobGoblin:grunt,
-		troll:troll,
-		fireGremlin:fireghost,
-	}
+		goblin: spearman,
+		rat: rat,
+		hobGoblin: grunt,
+		troll: troll,
+		fireGremlin: fireghost
+	};
 
 	onMount(() => {
 		console.log('mounted with ssr data ' + JSON.stringify(data));
@@ -90,7 +108,7 @@
 			console.error(`event source error ${JSON.stringify(ev)}`, ev);
 			$clientState.status = 'Event source errored, need manual action';
 			this.close();
-			lastMsgFromServer = null;
+			$lastMsgFromServer = null;
 			loading = false;
 		};
 
@@ -100,7 +118,7 @@
 				console.log('malformed event from server');
 				return;
 			}
-			lastMsgFromServer = sMsg;
+			$lastMsgFromServer = sMsg;
 			if ($clientState.waitingForMyEvent && sMsg.triggeredBy == sMsg.yourName) {
 				$clientState.status = 'playing';
 				$clientState.waitingForMyEvent = false;
@@ -114,7 +132,7 @@
 			console.log('got closing msg');
 			source?.close();
 			$clientState.status = 'you logged in elsewhere, connection closed';
-			lastMsgFromServer = null;
+			$lastMsgFromServer = null;
 		});
 		console.log('subscribed');
 	}
@@ -123,14 +141,14 @@
 		loading = true;
 		$clientState.status = 'submitting hero delete';
 		let f = await fetch('/api/delete', { method: 'POST' });
-		if(!f.ok){
-			console.log('failed delete hero request')
+		if (!f.ok) {
+			console.log('failed delete hero request');
 		}
 		// let r = await f.json()
-		leaveGame()
+		leaveGame();
 	}
-	function leaveGame(){
-		lastMsgFromServer = null;
+	function leaveGame() {
+		$lastMsgFromServer = null;
 		$clientState.status = 'unsubscribing from events';
 		if (source?.readyState != source?.CLOSED) {
 			console.log('closing con from browser');
@@ -173,18 +191,18 @@
 			loading = false;
 		}
 	}
-	
+
 	function signUpButtonClicked() {
 		if (!signupInput) return;
 		loading = true;
 		$clientState.status = 'submitting sign up';
 		let usrName = signupInput;
 		signupInput = '';
-		
+
 		signUp(usrName);
 	}
 
-	async function signInButtonClicked(){
+	async function signInButtonClicked() {
 		loading = true;
 		$clientState.status = 'submitting login';
 		let loginCall = await fetch('/api/login', {
@@ -194,14 +212,14 @@
 				'Content-Type': 'application/json'
 			}
 		});
-		if(!loginCall.ok){
-			console.log('login nope')
-			loading = false
+		if (!loginCall.ok) {
+			console.log('login nope');
+			loading = false;
 		}
-		signInIdInput = ''
-		signInNameInput = ''
+		signInIdInput = '';
+		signInNameInput = '';
 		// let res = await loginCall.json();
-		invalidateAll()
+		invalidateAll();
 		$clientState.status = 'waiting for first event';
 		subscribeEventsIfNotAlready();
 	}
@@ -212,34 +230,35 @@
 	<p>loading...</p>
 {/if}
 <br />
-{#if !loading && lastMsgFromServer == null}
+{#if !loading && $lastMsgFromServer == null}
 	<p>Welcome! Please sign up with your hero name:</p>
 	<input type="text" bind:value={signupInput} />
 	<button disabled={!signupInput} on:click={signUpButtonClicked}>Sign Up</button>
-	
+
 	<p>Or Login with your hero name and the userID generated when you signed up:</p>
 	<label for="signInName">name</label>
 	<input id="signInName" type="text" bind:value={signInNameInput} />
 	<label for="signInId">Id</label>
-	<input id="signInId"type="text" bind:value={signInIdInput} />
-	<button disabled={!signInNameInput || !signInIdInput} on:click={signInButtonClicked}>Login</button>
+	<input id="signInId" type="text" bind:value={signInIdInput} />
+	<button disabled={!signInNameInput || !signInIdInput} on:click={signInButtonClicked}>Login</button
+	>
 {/if}
 
-{#if lastMsgFromServer && (!source || source.readyState != source.OPEN)}
+{#if $lastMsgFromServer && (!source || source.readyState != source.OPEN)}
 	<p>event source got closed.. if stuck here there's a bug</p>
 {/if}
 
-{#if lastMsgFromServer && source && source.readyState == source.OPEN}
+{#if $lastMsgFromServer && source && source.readyState == source.OPEN}
 	<!-- <h3>Scene Texts:</h3> -->
 	<div class="sceneTexts" bind:this={sceneTexts}>
-		{#each lastMsgFromServer.sceneTexts as t}
+		{#each $lastMsgFromServer.sceneTexts as t}
 			<p class="sceneText">{t}</p>
 			<br />
 		{/each}
 	</div>
-	{#if lastMsgFromServer.sceneActions.length}
+	{#if $lastMsgFromServer.sceneActions.length}
 		<div class="sceneButtons">
-			{#each lastMsgFromServer.sceneActions as op, i}
+			{#each $lastMsgFromServer.sceneActions as op, i}
 				<button on:click={() => choose(op)} disabled={$clientState.waitingForMyEvent}>
 					{op.buttonText}
 				</button>
@@ -247,9 +266,9 @@
 		</div>
 	{/if}
 	<br />
-	{#if lastMsgFromServer.itemActions.length}
+	{#if $lastMsgFromServer.itemActions.length}
 		<div class="actionButtons">
-			{#each lastMsgFromServer.itemActions as op, i}
+			{#each $lastMsgFromServer.itemActions as op, i}
 				<button on:click={() => choose(op)} disabled={$clientState.waitingForMyEvent}>
 					{op.buttonText}
 				</button>
@@ -258,97 +277,156 @@
 	{/if}
 	<div class="visual">
 		<div class="units">
-			<Unit 
-			name={lastMsgFromServer.yourName} 
-			src={heroSprites[heroSprite(lastMsgFromServer.yourWeapon.itemId)]}
-			hp={lastMsgFromServer.yourHp}
-			maxHp={lastMsgFromServer.yourMaxHp}
-			acts={lastMsgFromServer.itemActions.filter(ia=>
-				ia && ia.target 
-				&& (
-					(ia.target.kind == 'friendly' && ia.target.targetName == lastMsgFromServer?.yourName) 
-					|| ia.target.kind=='onlySelf'))
+			<Unit
+				name={$lastMsgFromServer.yourName}
+				src={heroSprites[heroSprite($lastMsgFromServer.yourWeapon.itemId)]}
+				hp={$lastMsgFromServer.yourHp}
+				maxHp={$lastMsgFromServer.yourMaxHp}
+				acts={$lastMsgFromServer.itemActions.filter(
+					(ia) =>
+						ia &&
+						ia.target &&
+						((ia.target.kind == 'friendly' &&
+							ia.target.targetName == $lastMsgFromServer?.yourName) ||
+							ia.target.kind == 'onlySelf')
+				)}
+				clicky={()=>{
+					if($lastMsgFromServer){
+						$selectedDetail = {
+							kind:'me',
+							portrait:peasantPortrait,
+							me:{
+								myName : $lastMsgFromServer.yourName,
+								myHealth : $lastMsgFromServer.yourHp,
+							},
+						}
 					}
-			></Unit>
-			{#each lastMsgFromServer.otherPlayers.filter(op=>op.currentScene == lastMsgFromServer?.yourScene) as p}
-			<Unit 
-			name={p.heroName} 
-			src={heroSprites[heroSprite(p.weapon.itemId)]}
-			hp={p.health}
-			maxHp={p.maxHealth}
-			acts={lastMsgFromServer.itemActions.filter(ia=>ia && ia.target && ((ia.target.kind == 'friendly' && ia.target.targetName == p.heroName)))}
-			></Unit>
+				}}
+			/>
+			{#each $lastMsgFromServer.otherPlayers.filter((op) => op.currentScene == $lastMsgFromServer?.yourScene) as p}
+				<Unit
+					name={p.heroName}
+					src={heroSprites[heroSprite(p.weapon.itemId)]}
+					hp={p.health}
+					maxHp={p.maxHealth}
+					acts={$lastMsgFromServer.itemActions.filter(
+						(ia) =>
+							ia && ia.target && ia.target.kind == 'friendly' && ia.target.targetName == p.heroName
+					)}
+					clicky={()=>{
+						if($lastMsgFromServer){
+							$selectedDetail = {
+								portrait:peasantPortrait,
+								other:p,
+								kind:'otherPlayer',
+							}
+						}
+					}}
+				/>
 			{/each}
 		</div>
 		<div class="units">
-			<!-- {JSON.stringify(lastMsgFromServer.itemActions)} -->
-			{#each lastMsgFromServer.enemiesInScene as e}
+			<!-- {JSON.stringify($lastMsgFromServer.itemActions)} -->
+			{#each $lastMsgFromServer.enemiesInScene as e}
 				<Unit
-					name={e.name} 
+					name={e.name}
 					src={enemySprites[e.templateId]}
 					hp={e.health}
 					maxHp={e.maxHealth}
 					flip={true}
-					acts={
-					lastMsgFromServer.itemActions.filter(ia=>ia && ia.target && ((ia.target.kind == 'targetEnemy' && ia.target.targetName == e.name) || ia.target.kind == 'anyEnemy'))
-				}
-					></Unit>
-					{/each}
-				
-			</div>
+					acts={$lastMsgFromServer.itemActions.filter(
+						(ia) =>
+							ia &&
+							ia.target &&
+							((ia.target.kind == 'targetEnemy' && ia.target.targetName == e.name) ||
+								ia.target.kind == 'anyEnemy')
+					)}
+					clicky={()=>{
+						$selectedDetail = {
+							kind:'enemy',
+							enemy:e,
+							portrait:enemyPortraits[e.templateId]
+						}
+					}}
+				/>
+			{/each}
 		</div>
-		<h3>{lastMsgFromServer.yourName}:</h3>
-		<p>
-			Health: {lastMsgFromServer.yourHp}hp
-		</p>
-		<p>
-			Weapon:
-		{lastMsgFromServer.yourWeapon.itemId}
-		{lastMsgFromServer.yourWeapon.cooldown
-			? `cooldown: ${lastMsgFromServer.yourWeapon.cooldown}`
+	</div>
+	<div class="selectedDetails">
+		<div class="selectedPortrait">
+			<img class="portrait" src={$selectedDetail?.portrait} alt="portrait">
+		</div>
+		<div class="selectedStats">
+			{#if $selectedDetail?.kind == 'me'}
+			<p>
+				name: {$selectedDetail?.me.myName ?? ''}
+			</p>
+			<p>
+				health : {$selectedDetail?.me.myHealth}/{$lastMsgFromServer.yourMaxHp}
+			</p>
+			{/if}
+			{#if $selectedDetail?.kind == 'otherPlayer'}
+			other
+			{/if}
+			{#if $selectedDetail?.kind == 'enemy'}
+			stuff
+			{/if}
+
+		</div>
+	</div>
+	<h3>{$lastMsgFromServer.yourName}:</h3>
+	<p>
+		Health: {$lastMsgFromServer.yourHp}hp
+	</p>
+	<p>
+		Weapon:
+		{$lastMsgFromServer.yourWeapon.itemId}
+		{$lastMsgFromServer.yourWeapon.cooldown
+			? `cooldown: ${$lastMsgFromServer.yourWeapon.cooldown}`
 			: ''}
-		{lastMsgFromServer.yourWeapon.warmup ? `warmup:${lastMsgFromServer.yourWeapon.warmup}` : ''}
+		{$lastMsgFromServer.yourWeapon.warmup ? `warmup:${$lastMsgFromServer.yourWeapon.warmup}` : ''}
 	</p>
 	<p>
-		Utility: {lastMsgFromServer.yourUtility.itemId}
+		Utility: {$lastMsgFromServer.yourUtility.itemId}
 	</p>
 	<p>
-		Armor: {lastMsgFromServer.yourBody.itemId}
-		{lastMsgFromServer.yourBody.cooldown ? `cooldown:${lastMsgFromServer.yourBody.cooldown}` : ''}
-		{lastMsgFromServer.yourBody.warmup ? `warmup:${lastMsgFromServer.yourBody.warmup}` : ''}
+		Armor: {$lastMsgFromServer.yourBody.itemId}
+		{$lastMsgFromServer.yourBody.cooldown ? `cooldown:${$lastMsgFromServer.yourBody.cooldown}` : ''}
+		{$lastMsgFromServer.yourBody.warmup ? `warmup:${$lastMsgFromServer.yourBody.warmup}` : ''}
 	</p>
 	<p>
-		Location: {lastMsgFromServer.yourScene}
+		Location: {$lastMsgFromServer.yourScene}
 	</p>
-	<!-- <p>{lastMsgFromServer.playerFlags} {lastMsgFromServer.globalFlags}</p> -->
+	<!-- <p>{$lastMsgFromServer.playerFlags} {$lastMsgFromServer.globalFlags}</p> -->
 	<h3>Nearby Enemies:</h3>
-	{#each lastMsgFromServer.enemiesInScene as e}
+	{#each $lastMsgFromServer.enemiesInScene as e}
 		<p>
-			<strong>{e.name}:</strong> {e.templateId}, Health: {e.health}, Aggro: {e.myAggro}, statuses: {JSON.stringify(
-				e.statuses
-			)}
+			<strong>{e.name}:</strong>
+			{e.templateId}, Health: {e.health}, Aggro: {e.myAggro}, statuses: {JSON.stringify(e.statuses)}
 		</p>
 		<p />
 	{/each}
 	<h3>Recent happenings:</h3>
 	<div class="happenings" bind:this={happenings}>
-		{#each lastMsgFromServer.happenings as h}
+		{#each $lastMsgFromServer.happenings as h}
 			<p>{h}</p>
 		{/each}
 	</div>
 	<h3>Other Players:</h3>
-	{#each lastMsgFromServer.otherPlayers as p}
-	<p>
-		{p.heroName} is in {p.currentScene} with {p.health}hp
-	</p>
-	<p />
+	{#each $lastMsgFromServer.otherPlayers as p}
+		<p>
+			{p.heroName} is in {p.currentScene} with {p.health}hp
+		</p>
+		<p />
 	{/each}
 	<p>
-		Logged in as {lastMsgFromServer.yourName} uid: {data.userId} 
-		<button on:click={()=>{
-			lastMsgFromServer = null
-			leaveGame()
-		}}>Log Out</button>
+		Logged in as {$lastMsgFromServer.yourName} uid: {data.userId}
+		<button
+			on:click={() => {
+				$lastMsgFromServer = null;
+				leaveGame();
+			}}>Log Out</button
+		>
 		<button on:click={deleteHero}>Delete Hero</button>
 	</p>
 {/if}
@@ -405,17 +483,31 @@
 		border: 1px solid black;
 	}
 
-	
 	.units {
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
-		gap:10px;
+		gap: 10px;
 	}
-	.visual{
+	.visual {
 		background-color: burlywood;
 		display: flex;
 		justify-content: space-around;
 	}
-	
+	.selectedDetails{
+		background-color: beige;
+		display: inline-flex;
+	}
+	.selectedPortrait{
+		width: 100px;
+		height:100px;
+		background-color: blueviolet;
+	}
+	.selectedPortrait > img{
+		height:100%;
+		width: 100%;
+	}
+	.selectedStats{
+
+	}
 </style>

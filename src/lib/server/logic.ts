@@ -25,7 +25,7 @@ export function updatePlayerActions(player: Player) {
 	for (const cd of playerItemStates(player)) {
 		const i = items[cd.itemId]
 		if (i.actions) {
-			if (cd.cooldown < 1 && cd.warmup < 1) {
+			if (cd.cooldown < 1 && cd.warmup < 1 && (cd.stock > 0 || (!i.startStock))) {
 				i.actions(player)
 			}
 		}
@@ -99,15 +99,21 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		player.previousScene = player.currentScene
 		player.currentScene = actionFromId.goTo
 		
-		// When entering a new scene, state cooldowns to 0, state warmups to the item warmup
+		// When entering a new scene, state cooldowns to 0,
+        // state warmups to the item warmup, stocks to start
 		for (const itemState of playerItemStates(player)) {
 			itemState.cooldown = 0
 			let wep = items[itemState.itemId]
-			if (wep != undefined && wep.warmup) {
-				itemState.warmup = wep.warmup
-			} else {
-				itemState.warmup = 0
-			}
+			if (wep != undefined) {
+                if(wep.warmup){
+                    itemState.warmup = wep.warmup
+                } else {
+                    itemState.warmup = 0
+                }
+                if(wep.startStock){
+                    itemState.stock = wep.startStock
+                }
+            }
 		}
 
 		enterSceneOrWakeup(player)

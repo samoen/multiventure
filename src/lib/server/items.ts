@@ -31,6 +31,7 @@ export type ItemStateForSlot<T extends EquipmentSlot> = {
 	itemId: ItemIdForSlot<T>;
 	cooldown: number;
 	warmup: number;
+	stock:number;
 }
 
 export type ItemState = ItemStateForSlot<EquipmentSlot>
@@ -43,6 +44,7 @@ export type Item = {
 	actions?: (player: Player) => void
 	onTakeDamage?: (incoming: number) => number
 	warmup?: number
+	startStock?:number
 }
 
 const dagger: Item = {
@@ -104,6 +106,7 @@ const fireStaff: Item = {
 }
 
 const bandage: Item = {
+	startStock:2,
 	actions(player) {
 		for (const friend of activePlayersInScene(player.currentScene)) {
 			if (friend.health < friend.maxHealth) {
@@ -114,8 +117,10 @@ const bandage: Item = {
 						grantsImmunity: true,
 						provoke: 1,
 						performAction: () => {
-							healPlayer(friend, 40)
-							player.inventory.utility.itemId = 'empty'
+							healPlayer(friend, 20)
+							if(player.inventory.utility.stock){
+								player.inventory.utility.stock--
+							}
 						},
 					}
 				)
@@ -125,6 +130,7 @@ const bandage: Item = {
 }
 
 const bomb: Item = {
+	startStock:1,
 	actions(player) {
 		if (enemiesInScene(player.currentScene).length) {
 			player.itemActions.push({
@@ -136,7 +142,9 @@ const bomb: Item = {
 						enemy.aggros.clear()
 						damageEnemy(player, enemy, 5)
 					}
-					player.inventory.utility.itemId = 'empty'
+					if(player.inventory.utility.stock){
+						player.inventory.utility.stock--
+					}
 				},
 			})
 		}

@@ -1,6 +1,12 @@
+<script lang="ts" context="module">
+const activeId = writable(0)
+let id = 0
+</script>
+
 <script lang="ts">
 	import { choose, clientState } from "$lib/client/ui";
 	import type { GameActionSentToClient } from "$lib/utils";
+	import { writable } from "svelte/store";
 
     export let name:string;
     export let src:string;
@@ -8,14 +14,24 @@
     export let maxHp:number;
     export let flip:boolean=false;
     export let acts:GameActionSentToClient[]
-    
+    export let clicky : ()=>void
+    $: selected = $activeId === componentId
     // let selected = false;
     $: hpBar = 
 		(hp > 0) ? (100*(hp/maxHp)) : 0
 
+    const componentId = ++id
+
 </script>
 <div class="unitAndArea">
-    <div class="visualHero" on:click={()=>{$clientState.selectedUnit =`${flip}${name}` }} on:keydown role="button" tabindex="0">
+    <div class="visualHero" on:click={()=>{
+        clicky()
+        // selected = !selected
+        if(acts.length){
+            $activeId = componentId
+        }
+        // $clientState.selectedUnit =`${flip}${name}` 
+        }} on:keydown role="button" tabindex="0">
         <p>{name}</p>
         <div class="outerHeroSprite">
             <img 
@@ -35,11 +51,13 @@
     class="area"
     style:order={flip ? 1 : 2}
     >
-    {#if $clientState.selectedUnit === `${flip}${name}`}
+    {#if selected}
+    <!-- {#if $clientState.selectedUnit === `${flip}${name}`} -->
     <div class="actions" class:startAligned={!flip} class:endAligned={flip}>
         {#each acts as a}
             <button class="action" on:click={()=>{
                 // selected = false
+                $activeId = 0
                 choose(a)
                 }}>{a.buttonText}</button>
         {/each}
