@@ -36,6 +36,7 @@ export function updatePlayerActions(player: Player) {
 		player.itemActions.push(
 			{
 				buttonText: 'wait',
+                target:{kind:'onlySelf'},
 				provoke: 1,
 				performAction() {
 				},
@@ -185,7 +186,7 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 			if (aggroForActor) {
 				if ((Math.random() + (aggroForActor / 100)) > 1) {
 					if (enemyInScene.template.specialAttack) {
-						enemyInScene.template.specialAttack(enemyInScene)
+						enemyInScene.template.specialAttack(enemyInScene, player)
 					} else {
                         for(const _ of Array.from({length:enemyInScene.template.strikes ?? 1})){
                             damagePlayer(enemyInScene, player)

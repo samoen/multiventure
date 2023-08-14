@@ -13,6 +13,8 @@
 	import theif from '$lib/assets/thief.png';
 	import mage from '$lib/assets/mage.png';
 	import type { ItemId, ItemIdForSlot } from '$lib/server/items.js';
+	import Unit from '$lib/Components/Unit.svelte';
+	import { choose, clientState } from '$lib/client/ui';
 
 	export let data;
 	let signupInput: string;
@@ -21,15 +23,13 @@
 	let source: EventSource | null;
 	let lastMsgFromServer: MessageFromServer | null;
 	let loading = true;
-	let waitingForMyEvent = true;
-	let status = 'starting up';
+	
+	
 	let happenings: HTMLElement;
 	let sceneTexts: HTMLElement;
 	let autoSignup: boolean = true;
 
-	$: hpBar = 
-		(lastMsgFromServer && lastMsgFromServer.yourHp > 0) ? (100*(lastMsgFromServer.yourHp/lastMsgFromServer.yourMaxHp)) : 0
-	
+		
 
 	function heroSprite(weapon:ItemIdForSlot<'weapon'>){
 		if(weapon == 'club')return 'ruffian'
@@ -60,43 +60,25 @@
 
 		if (data.readyToSubscribe) {
 			console.log(`ssr data says cookies are good. auto-subscribing..`);
-			status = 'auto subscribing';
+			$clientState.status = 'auto subscribing';
 			subscribeEventsIfNotAlready();
 		} else if (data.noPlayer && data.yourHeroCookie && autoSignup) {
 			console.log(`ssr data says my hero cookie not matching anyone, doing auto signup..`);
-			status = 'auto signup';
+			$clientState.status = 'auto signup';
 			signUp(data.yourHeroCookie);
 		} else {
-			status = 'need manual login';
+			$clientState.status = 'need manual login';
 			loading = false;
 		}
 	});
-
-	async function choose(chosen: GameActionSentToClient) {
-		waitingForMyEvent = true;
-		status = 'submitting action';
-		let f = await fetch('/api/action', {
-			method: 'POST',
-			body: JSON.stringify({ buttonText: chosen.buttonText })
-		});
-
-		if (f.status > 399) {
-			// let res = await f.json();
-			console.log('action submit failed');
-			waitingForMyEvent = false;
-			status = 'playing';
-			return;
-		}
-		status = 'waiting for my event';
-	}
 
 	function subscribeEventsIfNotAlready() {
 		if (source != null && source.readyState != EventSource.CLOSED) {
 			console.log('no need to subscribe');
 			return;
 		}
-		status = 'subscribing to events';
-		waitingForMyEvent = true;
+		$clientState.status = 'subscribing to events';
+		$clientState.waitingForMyEvent = true;
 		try {
 			source = new EventSource('/api/subscribe');
 		} catch (e) {
@@ -106,7 +88,7 @@
 		}
 		source.onerror = function (ev) {
 			console.error(`event source error ${JSON.stringify(ev)}`, ev);
-			status = 'Event source errored, need manual action';
+			$clientState.status = 'Event source errored, need manual action';
 			this.close();
 			lastMsgFromServer = null;
 			loading = false;
@@ -119,9 +101,9 @@
 				return;
 			}
 			lastMsgFromServer = sMsg;
-			if (waitingForMyEvent && sMsg.triggeredBy == sMsg.yourName) {
-				status = 'playing';
-				waitingForMyEvent = false;
+			if ($clientState.waitingForMyEvent && sMsg.triggeredBy == sMsg.yourName) {
+				$clientState.status = 'playing';
+				$clientState.waitingForMyEvent = false;
 				loading = false;
 			}
 			await tick();
@@ -131,7 +113,7 @@
 		source.addEventListener('closing', (e) => {
 			console.log('got closing msg');
 			source?.close();
-			status = 'you logged in elsewhere, connection closed';
+			$clientState.status = 'you logged in elsewhere, connection closed';
 			lastMsgFromServer = null;
 		});
 		console.log('subscribed');
@@ -139,7 +121,7 @@
 
 	async function deleteHero() {
 		loading = true;
-		status = 'submitting hero delete';
+		$clientState.status = 'submitting hero delete';
 		let f = await fetch('/api/delete', { method: 'POST' });
 		if(!f.ok){
 			console.log('failed delete hero request')
@@ -149,13 +131,13 @@
 	}
 	function leaveGame(){
 		lastMsgFromServer = null;
-		status = 'unsubscribing from events';
+		$clientState.status = 'unsubscribing from events';
 		if (source?.readyState != source?.CLOSED) {
 			console.log('closing con from browser');
 			source?.close();
 		}
 		source = null;
-		status = 'need manual login';
+		$clientState.status = 'need manual login';
 		loading = false;
 	}
 
@@ -183,11 +165,11 @@
 			invalidateAll();
 			// location.reload()
 			// joinedAs = usrName
-			status = 'waiting for first event';
+			$clientState.status = 'waiting for first event';
 			subscribeEventsIfNotAlready();
 		} else {
 			console.log('joincall not ok');
-			status = 'signup failed, need manual';
+			$clientState.status = 'signup failed, need manual';
 			loading = false;
 		}
 	}
@@ -195,7 +177,7 @@
 	function signUpButtonClicked() {
 		if (!signupInput) return;
 		loading = true;
-		status = 'submitting sign up';
+		$clientState.status = 'submitting sign up';
 		let usrName = signupInput;
 		signupInput = '';
 		
@@ -204,7 +186,7 @@
 
 	async function signInButtonClicked(){
 		loading = true;
-		status = 'submitting login';
+		$clientState.status = 'submitting login';
 		let loginCall = await fetch('/api/login', {
 			method: 'POST',
 			body: JSON.stringify({ heroName: signInNameInput, userId: signInIdInput }),
@@ -220,12 +202,12 @@
 		signInNameInput = ''
 		// let res = await loginCall.json();
 		invalidateAll()
-		status = 'waiting for first event';
+		$clientState.status = 'waiting for first event';
 		subscribeEventsIfNotAlready();
 	}
 </script>
 
-<!-- <h3>Status: {status}</h3> -->
+<!-- <h3>Status: {clientState.status}</h3> -->
 {#if loading}
 	<p>loading...</p>
 {/if}
@@ -258,7 +240,7 @@
 	{#if lastMsgFromServer.sceneActions.length}
 		<div class="sceneButtons">
 			{#each lastMsgFromServer.sceneActions as op, i}
-				<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
+				<button on:click={() => choose(op)} disabled={$clientState.waitingForMyEvent}>
 					{op.buttonText}
 				</button>
 			{/each}
@@ -268,32 +250,50 @@
 	{#if lastMsgFromServer.itemActions.length}
 		<div class="actionButtons">
 			{#each lastMsgFromServer.itemActions as op, i}
-				<button on:click={() => choose(op)} disabled={waitingForMyEvent}>
+				<button on:click={() => choose(op)} disabled={$clientState.waitingForMyEvent}>
 					{op.buttonText}
 				</button>
 			{/each}
 		</div>
 	{/if}
 	<div class="visual">
-		<div class="heroes">
-			<img alt="you" src={heroSprites[heroSprite(lastMsgFromServer.yourWeapon.itemId)]}>
-			<div class="healthbar">
-				<div 
-				class="healthbar_health"
-				style:width="{hpBar}%"
-				></div>
-			</div>
+		<div class="units">
+			<Unit 
+			name={lastMsgFromServer.yourName} 
+			src={heroSprites[heroSprite(lastMsgFromServer.yourWeapon.itemId)]}
+			hp={lastMsgFromServer.yourHp}
+			maxHp={lastMsgFromServer.yourMaxHp}
+			acts={lastMsgFromServer.itemActions.filter(ia=>
+				ia && ia.target 
+				&& (
+					(ia.target.kind == 'friendly' && ia.target.targetName == lastMsgFromServer?.yourName) 
+					|| ia.target.kind=='onlySelf'))
+					}
+			></Unit>
+			{#each lastMsgFromServer.otherPlayers.filter(op=>op.currentScene == lastMsgFromServer?.yourScene) as p}
+			<Unit 
+			name={p.heroName} 
+			src={heroSprites[heroSprite(p.weapon.itemId)]}
+			hp={p.health}
+			maxHp={p.maxHealth}
+			acts={lastMsgFromServer.itemActions.filter(ia=>ia && ia.target && ((ia.target.kind == 'friendly' && ia.target.targetName == p.heroName)))}
+			></Unit>
+			{/each}
 		</div>
-		<div class="enemies">
+		<div class="units">
+			<!-- {JSON.stringify(lastMsgFromServer.itemActions)} -->
 			{#each lastMsgFromServer.enemiesInScene as e}
-				<img alt="enemy" src={enemySprites[e.templateId]}>
-				<div class="healthbar">
-					<div 
-					class="healthbar_health"
-					style:width="{100*e.health/e.maxHealth}%"
-					></div>
-				</div>
-				{/each}
+				<Unit
+					name={e.name} 
+					src={enemySprites[e.templateId]}
+					hp={e.health}
+					maxHp={e.maxHealth}
+					flip={true}
+					acts={
+					lastMsgFromServer.itemActions.filter(ia=>ia && ia.target && ((ia.target.kind == 'targetEnemy' && ia.target.targetName == e.name) || ia.target.kind == 'anyEnemy'))
+				}
+					></Unit>
+					{/each}
 				
 			</div>
 		</div>
@@ -404,23 +404,18 @@
 		background-color: beige;
 		border: 1px solid black;
 	}
-	.healthbar{
-		width:80px;
-		height:10px;
-		border: 1px solid black;
-	}
-	.healthbar_health{
-		background-color: green;
-		/* width: 60%; */
-		height:100%;
-	}
-	.heroes {
+
+	
+	.units {
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
+		gap:10px;
 	}
 	.visual{
+		background-color: burlywood;
 		display: flex;
 		justify-content: space-around;
 	}
+	
 </style>

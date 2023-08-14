@@ -29,7 +29,7 @@ export type EnemyStatusEffect = {
 }
 
 export type EnemyInClient = {
-	name:string
+	name:EnemyName
 	templateId:EnemyTemplateId
 	health:number
 	maxHealth:number
@@ -46,6 +46,8 @@ export type OtherPlayerInfo = {
 	heroName: HeroName;
 	currentScene: SceneId;
 	health: number;
+	maxHealth:number;
+	weapon: ItemStateForSlot<'weapon'>
 };
 
 export type GameActionSelected = {
@@ -57,7 +59,17 @@ export function isGameActionSelected(msg: object): msg is GameActionSelected {
 
 export type GameActionSentToClient = {
 	buttonText: string;
+	target?: ActionTarget
 };
+
+export type ActionTarget = 
+// {
+// 	kind:'friendly' | 'aggressive' | 'anyEnemy' | 'onlySelf',
+// 	targetName?:HeroName
+// }
+{kind:'friendly', targetName:HeroName} | {kind:'targetEnemy',targetName:EnemyName} | {kind:'anyEnemy'} | {kind:'onlySelf'}
+
+export type EnemyName = string
 
 
 export type JoinGame = {

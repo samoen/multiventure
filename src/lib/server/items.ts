@@ -1,4 +1,4 @@
-import { addAggro, damageEnemy, enemiesInScene, takePoisonDamage } from './enemies';
+import { damageEnemy, enemiesInScene, takePoisonDamage } from './enemies';
 import { pushHappening } from './messaging';
 import { activePlayersInScene, healPlayer, type Player } from './users';
 
@@ -53,6 +53,7 @@ const dagger: Item = {
 					buttonText: `Attack ${enemy.name} with Dagger`,
 					provoke: 7,
 					speed: 8,
+					target:{kind:'targetEnemy',targetName:enemy.name},
 					performAction() {
 						damageEnemy(player, enemy, 7)
 						damageEnemy(player, enemy, 7)
@@ -72,6 +73,7 @@ const club: Item = {
 					buttonText: `Hit ${enemy.name} with Club`,
 					provoke: 40,
 					speed: 2,
+					target:{kind:'targetEnemy',targetName:enemy.name},
 					performAction() {
 						damageEnemy(player, enemy, 25)
 					}
@@ -90,6 +92,7 @@ const fireStaff: Item = {
 					buttonText: `Blast ${enemy.name} with Firebolt`,
 					provoke: 60,
 					speed: 10,
+					target:{kind:'targetEnemy',targetName:enemy.name},
 					performAction() {
 						damageEnemy(player, enemy, 40)
 						player.inventory.weapon.cooldown = 2
@@ -107,6 +110,7 @@ const bandage: Item = {
 				player.itemActions.push(
 					{
 						buttonText: `Heal ${friend.heroName == player.heroName ? 'myself' : friend.heroName} with bandage`,
+						target:{kind:'friendly',targetName:friend.heroName},
 						grantsImmunity: true,
 						provoke: 1,
 						performAction: () => {
@@ -126,6 +130,7 @@ const bomb: Item = {
 			player.itemActions.push({
 				buttonText: 'Throw Powderbomb',
 				speed: 12,
+				target:{kind:'anyEnemy'},
 				performAction() {
 					for (const enemy of enemiesInScene(player.currentScene)) {
 						enemy.aggros.clear()
@@ -145,6 +150,7 @@ const poisonDart: Item = {
 				{
 					buttonText: `Throw poison dart at ${enemy.name}`,
 					provoke: 100,
+					target:{kind:'targetEnemy',targetName:enemy.name},
 					performAction() {
 						let found = enemy.statuses.find(s => s.status == 'poison')
 						if (found != undefined) {
@@ -188,6 +194,7 @@ const theifCloak: Item = {
 			player.itemActions.push({
 				buttonText: 'Hide in shadows',
 				grantsImmunity: true,
+				target:{kind:'onlySelf'},
 				performAction() {
 					// for (const enemy of enemiesInScene(player.currentScene)) {
 					// 	enemy.aggros.delete(player.heroName)

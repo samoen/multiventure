@@ -1,3 +1,4 @@
+import type { ActionTarget } from '$lib/utils';
 import { items, type Inventory, type Item, type ItemState } from './items';
 import { pushHappening } from './messaging';
 import type { SceneId } from './scenes';
@@ -46,6 +47,7 @@ export type GameAction = {
 	speed?:number;
 	provoke?:number;
 	grantsImmunity?:boolean;
+	target?: ActionTarget;
 };
 
 export function playerEquipped(player:Player) : Item[]{

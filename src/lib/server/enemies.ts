@@ -1,4 +1,4 @@
-import type { EnemyStatusEffect } from "$lib/utils";
+import type { EnemyName, EnemyStatusEffect } from "$lib/utils";
 import { pushHappening } from "./messaging";
 import { scenes, type SceneId } from "./scenes";
 import { playerEquipped, type HeroName, type Player, activePlayers, activePlayersInScene } from "./users";
@@ -7,7 +7,7 @@ import { playerEquipped, type HeroName, type Player, activePlayers, activePlayer
 export const activeEnemies: ActiveEnemy[] = []
 
 export type ActiveEnemy = {
-	name: string
+	name: EnemyName
 	templateId:EnemyTemplateId
 	currentScene: SceneId
 	currentHealth: number
@@ -25,7 +25,7 @@ export type EnemyTemplate = {
 	aggroGain: number
 	speed: number
 	onTakeDamage?: (incoming: number) => number
-	specialAttack?: (me: ActiveEnemy) => void
+	specialAttack?: (me: ActiveEnemy, player:Player) => void
 };
 
 export type EnemyTemplateId =
@@ -64,15 +64,15 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		baseDamage: 5,
 		aggroGain: 90,
 		speed: 10,
-		specialAttack(me: ActiveEnemy) {
+		specialAttack(me: ActiveEnemy, player:Player) {
 			for (const enemy of enemiesInScene(me.currentScene)) {
 				if (enemy.name != me.name) {
 					infightDamage(me, enemy)
 				}
 			}
-			for (const player of activePlayersInScene(me.currentScene)) {
+			// for (const player of activePlayersInScene(me.currentScene)) {
 				damagePlayer(me, player)
-			}
+			// }
 		}
 	},
 	troll: {

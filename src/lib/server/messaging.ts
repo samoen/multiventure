@@ -38,6 +38,8 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				return {
 					heroName: u.heroName,
 					health: u.health,
+					maxHealth: u.maxHealth,
+					weapon: u.inventory.weapon,
 					currentScene: u.currentScene
 				} satisfies OtherPlayerInfo;
 			}),
@@ -45,11 +47,13 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 			sceneActions: forPlayer.sceneActions.map((gameAction) => {
 			return {
 				buttonText: gameAction.buttonText,
+				target:gameAction.target
 			};
 		}),
 		itemActions: forPlayer.itemActions.map((gameAction) => {
 			return {
 				buttonText: gameAction.buttonText,
+				target:gameAction.target,
 			};
 		}),
 		happenings: recentHappenings,
