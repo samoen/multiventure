@@ -63,37 +63,35 @@ export type VisualUnitProps = {
         export let currentAnimation : Writable<BattleAnimation|undefined> = writable(undefined)
         export let currentAnimationIndex : Writable<number> = writable(0)
 
-        export function findVisualUnitProps(name:string):VisualUnitProps | undefined{
-            if(name == 'werdd' ){
-                return get(heroVisualUnitProps)
-            }
-            let en = get(enemiesVisualUnitProps).find(e=>name==e.name)
-            if(en) return en
+        // export function findVisualUnitProps(name:string):VisualUnitProps | undefined{
+        //     if(name == 'werdd' ){
+        //         return get(heroVisualUnitProps)
+        //     }
+        //     let en = get(enemiesVisualUnitProps).find(e=>name==e.name)
+        //     if(en) return en
+        // }
 
-        }
+    // enemiesVisualUnitProps.subscribe(enemies=>{
+    //     let e = enemies.at(0)
+    //     if(e){
+    //         actingEnemyVUP.update(olde=>{
+    //             if(e){
+    //                 console.log('upding acting')
+    //                 return {
+    //                     name: e.name,
+    //                     src: e.src,
+    //                     hp: e.hp,
+    //                     maxHp: e.maxHp,
+    //                     flip: true,
+    //                     animating:false as boolean,
+    //                 }
+    //             }
+    //             return olde
+    //         })
 
-    enemiesVisualUnitProps.subscribe(enemies=>{
-        let e = enemies.at(0)
-        if(e){
-            actingEnemyVUP.update(olde=>{
-                if(e){
-                    console.log('upding acting')
-                    return {
-                        name: e.name,
-                        src: e.src,
-                        hp: e.hp,
-                        maxHp: e.maxHp,
-                        flip: true,
-                        animating:false as boolean,
-                    }
-                }
-                return olde
-                
-            })
+    //     }
 
-        }
-
-    })
+    // })
 
 lastMsgFromServer.subscribe((l) => {
     if (l) {

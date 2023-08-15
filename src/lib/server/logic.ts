@@ -194,9 +194,9 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 					if (enemyInScene.template.specialAttack) {
 						enemyInScene.template.specialAttack(enemyInScene, player)
 					} else {
-                        for(const _ of Array.from({length:enemyInScene.template.strikes ?? 1})){
+                        // for(const _ of Array.from({length:enemyInScene.template.strikes ?? 1})){
                             damagePlayer(enemyInScene, player)
-                        }
+                        // }
 					}
 					enemyInScene.aggros.clear()
 				}

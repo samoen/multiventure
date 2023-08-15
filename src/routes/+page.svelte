@@ -29,7 +29,6 @@
 		currentAnimationIndex,
 		enemiesVisualUnitProps,
 		enemySprites,
-		findVisualUnitProps,
 		heroSprite,
 		heroSprites,
 		heroVisualUnitProps,
@@ -122,6 +121,10 @@
 				$clientState.waitingForMyEvent = false;
 				loading = false;
 			}
+			console.log(`got animations: ${JSON.stringify(sMsg.animations)}`)
+			$currentAnimationIndex = 0
+			$currentAnimation = $lastMsgFromServer.animations.at($currentAnimationIndex)
+
 			await tick();
 			if (happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
 			if (sceneTexts) sceneTexts.scroll({ top: sceneTexts.scrollHeight, behavior: 'smooth' });
@@ -189,7 +192,13 @@
 			loading = false;
 		}
 	}
-
+	function findVisualUnitProps(name:string):VisualUnitProps | undefined{
+            if(name == $lastMsgFromServer?.yourName ){
+                return $heroVisualUnitProps
+            }
+            let en = $enemiesVisualUnitProps.find(e=>name==e.name)
+            if(en) return en
+    }
 	function signUpButtonClicked() {
 		if (!signupInput) return;
 		loading = true;
@@ -326,8 +335,8 @@
 	<div class="visual">
 		<div class="units">
 			<Unit
-				host={$currentAnimation?.source == 'werdd' ? undefined : $heroVisualUnitProps}
-				guest={$currentAnimation?.target == 'werdd' ? findVisualUnitProps($currentAnimation.source):undefined}
+				host={$currentAnimation?.source == $lastMsgFromServer.yourName ? undefined : $heroVisualUnitProps}
+				guest={$currentAnimation?.target == $lastMsgFromServer.yourName ? findVisualUnitProps($currentAnimation.source):undefined}
 				acts={$lastMsgFromServer.itemActions.filter(
 					(ia) =>
 						ia &&

@@ -124,25 +124,38 @@ export function enemiesInScene(sceneKey: SceneId): ActiveEnemy[] {
 }
 
 export function damagePlayer(enemy: ActiveEnemy, player: Player) {
-	let dmg = enemy.damage
-	for (const item of playerEquipped(player)) {
-		if (item.onTakeDamage) {
-			dmg = item.onTakeDamage(dmg)
+	let dmgDone = 0
+	let strikes = enemy.template.strikes ?? 1
+	for(const _ of Array.from({length:strikes})){
+		let dmg = enemy.damage
+		for (const item of playerEquipped(player)) {
+			if (item.onTakeDamage) {
+				dmg = item.onTakeDamage(dmg)
+			}
 		}
+		player.health -= dmg
+		dmgDone +=dmg
 	}
-	// player.animations.push({
-	// 	source:enemy.name,
-	// 	target:player.heroName,
-	// })
-	player.health -= dmg
-	pushHappening(`${enemy.name} hit ${player.heroName} for ${dmg} damage`)
+
+	player.animations.push({
+		source:enemy.name,
+		target:player.heroName,
+	})
+	
+	pushHappening(`${enemy.name} hit ${player.heroName} ${strikes>1?strikes+' times':''} for ${dmgDone} damage`)
 }
 
-export function damageEnemy(actor: Player, enemy: ActiveEnemy, damage: number) {
+export function damageEnemy(actor: Player, enemy: ActiveEnemy, damage: number, strikes:number=1) {
 	if (enemy.currentHealth < 1) return
-	damage = enemy.template.onTakeDamage?.(damage) ?? damage
-	enemy.currentHealth -= damage
-	pushHappening(`${actor.heroName} hit ${enemy.name} for ${damage} damage`)
+
+	let dmgDone = 0
+	for(const _ of Array.from({length:strikes})){
+		let dmg = enemy.template.onTakeDamage?.(damage) ?? damage
+		enemy.currentHealth -= dmg
+		dmgDone +=dmg
+	}
+
+	pushHappening(`${actor.heroName} hit ${enemy.name} ${strikes>1?strikes+' times':''} for ${dmgDone} damage`)
 	actor.animations.push({
 		source:actor.heroName,
 		target:enemy.name,

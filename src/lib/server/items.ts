@@ -57,9 +57,7 @@ const dagger: Item = {
 					speed: 8,
 					target:{kind:'targetEnemy',targetName:enemy.name},
 					performAction() {
-						damageEnemy(player, enemy, 7)
-						damageEnemy(player, enemy, 7)
-						damageEnemy(player, enemy, 7)
+						damageEnemy(player, enemy, 7, 3)
 					}
 				}
 			)
