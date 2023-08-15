@@ -46,12 +46,12 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 	goblin: {
 		baseHealth: 50,
 		baseDamage: 10,
-		aggroGain: 10,
+		aggroGain: 90,
 		speed: 4,
 	},
 	hobGoblin: {
 		baseHealth: 50,
-		baseDamage: 5,
+		baseDamage: 10,
 		aggroGain: 30,
 		speed: 10,
 		onTakeDamage(incoming) {
@@ -140,6 +140,7 @@ export function damagePlayer(enemy: ActiveEnemy, player: Player) {
 	player.animations.push({
 		source:enemy.name,
 		target:player.heroName,
+		damage:dmgDone,
 	})
 	
 	pushHappening(`${enemy.name} hit ${player.heroName} ${strikes>1?strikes+' times':''} for ${dmgDone} damage`)
@@ -159,6 +160,7 @@ export function damageEnemy(actor: Player, enemy: ActiveEnemy, damage: number, s
 	actor.animations.push({
 		source:actor.heroName,
 		target:enemy.name,
+		damage:dmgDone,
 	})
 	let result = checkEnemyDeath(enemy)
 	if (result.killed) {

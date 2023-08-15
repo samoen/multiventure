@@ -51,6 +51,8 @@ export function updatePlayerActions(player: Player) {
 }
 export function enterSceneOrWakeup(player: Player) {
 
+    player.animations = []
+
 	// If no players except me in there, remove all enemies
 	if (!activePlayersInScene(player.currentScene).filter(p => p.heroName != player.heroName).length) {
 		for (const e of enemiesInScene(player.currentScene)) {

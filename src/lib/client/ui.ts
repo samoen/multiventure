@@ -42,9 +42,8 @@ export type VisualUnitProps = {
     name:string;
     src:string;
     hp:number;
+    displayHp:number
     maxHp:number;
-    flip:boolean;
-    animating:boolean;
 }
         
 	export const enemySprites = {
@@ -56,6 +55,7 @@ export type VisualUnitProps = {
 	};
         
         export const lastMsgFromServer: Writable<MessageFromServer | null> = writable(null);
+        export const previousMsgFromServer: Writable<MessageFromServer | null> = writable(null);
         export const selectedDetail: Writable<UnitDetails | null> = writable(null)
         export const heroVisualUnitProps: Writable<VisualUnitProps> = writable()
         export let enemiesVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
@@ -93,47 +93,77 @@ export type VisualUnitProps = {
 
     // })
 
-lastMsgFromServer.subscribe((l) => {
-    if (l) {
-        enemiesVisualUnitProps.update(_=>{
-            return l.enemiesInScene.map(e=>{
-                return {
-                    name: e.name,
-                    src: enemySprites[e.templateId],
-                    hp: e.health,
-                    maxHp: e.maxHealth,
-                    flip: true,
-                    animating:false as boolean,
-                }
-            })  
-        })
-        heroVisualUnitProps.update(_=>{
-            return {
-                name: l.yourName,
-                src: heroSprites[heroSprite(l.yourWeapon?.itemId)],
-                hp: l.yourHp,
-                maxHp: l.yourMaxHp,
-                flip: false,
-                animating:false as boolean,
-            }
-        })
-        selectedDetail.update(u => {
-            if (u == null) {
-                return {
-                    portrait:peasantPortrait,
-                    me: {
-                        myName: l.yourName,
-                        myHealth: l.yourHp,
-                    },
-                    // maxHealth : l.yourMaxHp,
-                    kind: 'me',
-                }
-            }
-            return u
-        })
-    }
-})
 
+
+    // previousMsgFromServer.subscribe((l) => {
+        // if (l) {
+        //     enemiesVisualUnitProps.update(_=>{
+        //         return l.enemiesInScene.map(e=>{
+        //             return {
+        //                 name: e.name,
+        //                 src: enemySprites[e.templateId],
+        //                 hp: e.health,
+        //                 maxHp: e.maxHealth,
+        //                 flip: true,
+        //                 animating:false as boolean,
+        //             }
+        //         })  
+        //     })
+        //     heroVisualUnitProps.update(_=>{
+        //         return {
+        //             name: l.yourName,
+        //             src: heroSprites[heroSprite(l.yourWeapon?.itemId)],
+        //             hp: l.yourHp,
+        //             maxHp: l.yourMaxHp,
+        //             flip: false,
+        //             animating:false as boolean,
+        //         }
+        //     })
+        // }
+    // })
+    lastMsgFromServer.subscribe((l) => {
+        if (l) {
+            // enemiesVisualUnitProps.update(previous=>{
+            //     return l.enemiesInScene.map(e=>{
+            //         let findInPrevious = previous.find(pe=>{pe.name == e.name})
+
+            //         return {
+            //             name: e.name,
+            //             src: enemySprites[e.templateId],
+            //             hp: e.health,
+            //             displayHp:findInPrevious?.hp ?? 0,    
+            //             maxHp: e.maxHealth,
+            //             flip: true,
+            //             animating:false as boolean,
+            //         }
+            //     })  
+            // })
+            // heroVisualUnitProps.update(previous=>{
+            //     return {
+            //         name: l.yourName,
+            //         src: heroSprites[heroSprite(l.yourWeapon?.itemId)],
+            //         hp: l.yourHp,
+            //         maxHp: l.yourMaxHp,
+            //         displayHp:previous?.hp??0,
+            //     }
+            // })
+            selectedDetail.update(u => {
+                if (u == null) {
+                    return {
+                        portrait:peasantPortrait,
+                        me: {
+                            myName: l.yourName,
+                            myHealth: l.yourHp,
+                        },
+                        // maxHealth : l.yourMaxHp,
+                        kind: 'me',
+                    }
+                }
+                return u
+            })
+        }
+    })
+    
 export function heroSprite(weapon: ItemIdForSlot<'weapon'>) {
     if (weapon == 'club') return 'ruffian';
     if (weapon == 'dagger') return 'theif';

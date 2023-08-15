@@ -2,13 +2,14 @@
 	import type { VisualUnitProps } from '$lib/client/ui';
 
 	export let vu: VisualUnitProps;
-	$: hpBar = vu.hp > 0 ? 100 * (vu.hp / vu.maxHp) : 0;
+    export let flipped: boolean
+	$: hpBar = vu.displayHp > 0 ? 100 * (vu.displayHp / vu.maxHp) : 0;
 </script>
 
 <div class="visualHero">
     <p>{vu.name}</p>
     <div class="outerHeroSprite">
-        <img class="heroSprite" class:flipped={vu.flip} alt="you" src={vu.src} />
+        <img class="heroSprite" class:flipped={flipped} alt="you" src={vu.src} />
     </div>
     <div class="healthbar">
         <div class="healthbar_health" style:width="{hpBar}%" />

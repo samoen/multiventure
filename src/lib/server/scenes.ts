@@ -632,12 +632,17 @@ const armory: Scene = {
 			})
 		}
 		for (const id in utilityItems) {
-			if (id == 'empty' || id == player.inventory.utility.itemId) continue
+			if (id == 'empty' 
+			// || id == player.inventory.utility.itemId
+			) continue
 			player.sceneActions.push({
 				buttonText: `Equip Utility ${id}`,
 				grantsImmunity: true,
 				performAction() {
-					player.inventory.utility.itemId = id as ItemIdForSlot<'utility'>
+					let typedId = id as ItemIdForSlot<'utility'>
+					player.inventory.utility.itemId = typedId
+					let baseItem = utilityItems[typedId]
+					if(baseItem && baseItem.startStock) player.inventory.utility.stock = baseItem.startStock
 				},
 			})
 		}

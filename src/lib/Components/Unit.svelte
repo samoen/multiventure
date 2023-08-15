@@ -2,7 +2,7 @@
 	const activeId = writable(0);
 	let id = 0;
 	const [send, receive] = crossfade({
-		duration: (d) => Math.sqrt(d * 600),
+		duration: (d) => Math.sqrt(d * 4600),
 
 		fallback(node, params) {
 			const style = getComputedStyle(node);
@@ -21,7 +21,7 @@
 </script>
 
 <script lang="ts">
-	import { choose, clientState, currentAnimation, currentAnimationIndex, heroVisualUnitProps, lastMsgFromServer, type VisualUnitProps } from '$lib/client/ui';
+	import { choose, clientState, currentAnimation, currentAnimationIndex, heroVisualUnitProps, lastMsgFromServer, enemiesVisualUnitProps, type VisualUnitProps } from '$lib/client/ui';
 	import type { GameActionSentToClient } from '$lib/utils';
 	import { quintOut } from 'svelte/easing';
 	import { writable, type Writable } from 'svelte/store';
@@ -63,8 +63,13 @@
         <div out:send={{ key: 'movehero' }} in:receive={{ key: 'movehero' }} on:introend={()=>{
             $currentAnimationIndex++
             $currentAnimation = $lastMsgFromServer?.animations.at($currentAnimationIndex)
+            if($currentAnimation == undefined){
+                // $previousMsgFromServer = $lastMsgFromServer
+                $heroVisualUnitProps.displayHp = $heroVisualUnitProps.hp
+				$enemiesVisualUnitProps.forEach(e=>{e.displayHp = e.hp})
+            }
         }   }>
-            <VisualUnit vu={host} />
+            <VisualUnit vu={host} flipped={flipped}/>
         </div>
     {/if}
 	</div>
@@ -72,13 +77,21 @@
 		<!-- {#if guest?.animating} -->
 		{#if guest}
 			<div class="placeHolder" in:receive={{ key: 'movehero' }} out:send={{ key: 'movehero' }} on:introend={()=>{
+                if(host){
+                    console.log(host.name + 'animation dmg')
+                    if($currentAnimation) host.displayHp -= $currentAnimation?.damage
+                    // host.displayHp = host.hp
+                    // host.hp -= 10
+                }
+
                 // if(guest)guest.animating = false
                 // guest = guest
                 // $heroVisualUnitProps.animating = false
+
                 $currentAnimation = undefined
             }
                 }>
-				<VisualUnit vu={guest} />
+				<VisualUnit vu={guest} flipped={flipped}/>
 			</div>
 		{/if}
 		{#if selected}

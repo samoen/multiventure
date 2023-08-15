@@ -33,6 +33,7 @@
 		heroSprites,
 		heroVisualUnitProps,
 		lastMsgFromServer,
+		previousMsgFromServer,
 		selectedDetail,
 
 		type VisualUnitProps
@@ -115,15 +116,46 @@
 				console.log('malformed event from server');
 				return;
 			}
+
+			let prevMsg = structuredClone($lastMsgFromServer)
 			$lastMsgFromServer = sMsg;
 			if ($clientState.waitingForMyEvent && sMsg.triggeredBy == sMsg.yourName) {
 				$clientState.status = 'playing';
 				$clientState.waitingForMyEvent = false;
 				loading = false;
 			}
+			$enemiesVisualUnitProps = $lastMsgFromServer.enemiesInScene.map(e=>{
+				    let findInPrevious = prevMsg?.enemiesInScene.find(pe=>pe.name == e.name)
+					if(!findInPrevious){
+						console.log('new enemy')
+					}
+                    return {
+                        name: e.name,
+                        src: enemySprites[e.templateId],
+                        hp: e.health,
+                        displayHp:findInPrevious?.health ?? e.health,    
+                        maxHp: e.maxHealth,
+                    }
+                })
+			$heroVisualUnitProps =
+                {
+                    name: $lastMsgFromServer.yourName,
+                    src: heroSprites[heroSprite($lastMsgFromServer.yourWeapon?.itemId)],
+                    hp: $lastMsgFromServer.yourHp,
+                    maxHp: $lastMsgFromServer.yourMaxHp,
+                    displayHp: prevMsg?.yourHp??$lastMsgFromServer.yourHp,
+                }
+
 			console.log(`got animations: ${JSON.stringify(sMsg.animations)}`)
-			$currentAnimationIndex = 0
-			$currentAnimation = $lastMsgFromServer.animations.at($currentAnimationIndex)
+			if(!sMsg.animations.length){
+				
+				$heroVisualUnitProps.displayHp = $heroVisualUnitProps.hp
+				$enemiesVisualUnitProps.forEach(e=>{e.displayHp = e.hp})
+				// $previousMsgFromServer = $lastMsgFromServer
+			}else{
+				$currentAnimationIndex = 0
+				$currentAnimation = $lastMsgFromServer.animations.at($currentAnimationIndex)
+			}
 
 			await tick();
 			if (happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
@@ -287,7 +319,7 @@
 	<button
 		on:click={() => {
 			// $heroVisualUnitProps.animating = !$heroVisualUnitProps.animating
-			$currentAnimation = {source:'werdd',target:'Gorlak'}
+			// $currentAnimation = {source:'werdd',target:'Gorlak'}
 		}}>start animating</button
 	>
 	<button
@@ -304,11 +336,11 @@
 			// 	return acting
 			// })
 				// $currentAnimation = {source:'Gorlak',target:'werdd'}
-				if(lastMsgFromServer && $lastMsgFromServer){
-					$lastMsgFromServer.animations = [{source:'Gorlak',target:'werdd'},{source:'werdd',target:'Gorlak'}]
-					$currentAnimationIndex = 0
-					$currentAnimation = $lastMsgFromServer.animations.at($currentAnimationIndex)
-				}
+				// if(lastMsgFromServer && $lastMsgFromServer){
+				// 	$lastMsgFromServer.animations = [{source:'Gorlak',target:'werdd'},{source:'werdd',target:'Gorlak'}]
+				// 	$currentAnimationIndex = 0
+				// 	$currentAnimation = $lastMsgFromServer.animations.at($currentAnimationIndex)
+				// }
 
 			// if($enemiesVisualUnitProps){
 			// 	let firste = $enemiesVisualUnitProps.at(0)
@@ -366,9 +398,8 @@
 							name:p.heroName,
 							hp:p.health,
 							maxHp:p.maxHealth,
+							displayHp:p.health,
 							src:heroSprites[heroSprite(p.weapon.itemId)],
-							flip:false,
-							animating:false,
 						}}
 					guest={undefined}
 					acts={$lastMsgFromServer.itemActions.filter(
@@ -446,7 +477,7 @@
 		{$lastMsgFromServer.yourWeapon.warmup ? `warmup:${$lastMsgFromServer.yourWeapon.warmup}` : ''}
 	</p>
 	<p>
-		Utility: {$lastMsgFromServer.yourUtility.itemId}
+		Utility: {$lastMsgFromServer.yourUtility.itemId +', stock: '+ $lastMsgFromServer.yourUtility.stock}
 	</p>
 	<p>
 		Armor: {$lastMsgFromServer.yourBody.itemId}
