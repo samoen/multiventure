@@ -21,57 +21,52 @@
 	import mage from '$lib/assets/mage.png';
 	import type { ItemId, ItemIdForSlot } from '$lib/server/items.js';
 	import Unit from '$lib/Components/Unit.svelte';
-	import { choose, clientState, lastMsgFromServer, selectedDetail } from '$lib/client/ui';
+	import {
+	actingEnemyVUP,
+		choose,
+		clientState,
+		enemiesVisualUnitProps,
+		enemySprites,
+		heroSprite,
+		heroSprites,
+		heroVisualUnitProps,
+		lastMsgFromServer,
+		selectedDetail,
+
+		type VisualUnitProps
+
+	} from '$lib/client/ui';
 	import type { EnemyTemplateId } from '$lib/server/enemies.js';
+	import { crossfade } from 'svelte/transition';
+	import { quintOut } from 'svelte/easing';
+	import VisualUnit from '$lib/Components/VisualUnit.svelte';
+	import { get } from 'svelte/store';
 
 	export let data;
 	let signupInput: string;
 	let signInNameInput: string;
 	let signInIdInput: string;
 	let source: EventSource | null;
-	
 
 	let loading = true;
 
 	// let unitsDetails: UnitDetails[] = [];
-	
 
 	let happenings: HTMLElement;
 	let sceneTexts: HTMLElement;
 	let autoSignup: boolean = true;
 
-	
 
-	function heroSprite(weapon: ItemIdForSlot<'weapon'>) {
-		if (weapon == 'club') return 'ruffian';
-		if (weapon == 'dagger') return 'theif';
-		if (weapon == 'fireStaff') return 'mage';
-		return 'peasant';
-	}
 
 	let enemyPortraits = {
-		hobGoblin:gruntPortrait,
-		rat:gruntPortrait,
-		goblin:gruntPortrait,
-		fireGremlin:gruntPortrait,
-		troll:gruntPortrait
-	} satisfies Record<EnemyTemplateId,string>
+		hobGoblin: gruntPortrait,
+		rat: gruntPortrait,
+		goblin: gruntPortrait,
+		fireGremlin: gruntPortrait,
+		troll: gruntPortrait
+	} satisfies Record<EnemyTemplateId, string>;
 
-	const heroSprites = {
-		peasant: peasant,
-		rogue: rogue,
-		theif: theif,
-		ruffian: ruffian,
-		mage: mage
-	};
 
-	const enemySprites = {
-		goblin: spearman,
-		rat: rat,
-		hobGoblin: grunt,
-		troll: troll,
-		fireGremlin: fireghost
-	};
 
 	onMount(() => {
 		console.log('mounted with ssr data ' + JSON.stringify(data));
@@ -223,6 +218,8 @@
 		$clientState.status = 'waiting for first event';
 		subscribeEventsIfNotAlready();
 	}
+
+	
 </script>
 
 <!-- <h3>Status: {clientState.status}</h3> -->
@@ -275,13 +272,50 @@
 			{/each}
 		</div>
 	{/if}
+	<button
+		on:click={() => {
+			$heroVisualUnitProps.animating = !$heroVisualUnitProps.animating
+		}}>start animating</button
+	>
+	<button
+		on:click={() => {
+			// $actingEnemyVUP = $enemiesVisualUnitProps.at(0)
+			// if($actingEnemyVUP)
+			// $actingEnemyVUP.animating = !$actingEnemyVUP.animating
+			actingEnemyVUP.update(acting=>{
+				if(acting){
+					acting.animating = !acting.animating
+
+				}
+				return acting
+			})
+			// if($enemiesVisualUnitProps){
+			// 	let firste = $enemiesVisualUnitProps.at(0)
+			// 	if(firste){
+			// 		firste.animating = !firste.animating
+			// 	}
+			// }
+			
+			// enemiesVisualUnitProps.update(ep=>{
+			// 	// for(const e of ep){
+			// 	// 	e.animating = !e.animating
+			// 	// 	break
+			// 	// }
+			// 	return ep
+			// 	// return ep.map(e=>{
+			// 	// 	e.animating = !e.animating
+			// 	// 	return e
+			// 	// })
+			// })
+			console.log($actingEnemyVUP)
+			// enemiesVisualUnitProps .animating = true
+		}}>enemy animate</button
+	>
 	<div class="visual">
 		<div class="units">
 			<Unit
-				name={$lastMsgFromServer.yourName}
-				src={heroSprites[heroSprite($lastMsgFromServer.yourWeapon.itemId)]}
-				hp={$lastMsgFromServer.yourHp}
-				maxHp={$lastMsgFromServer.yourMaxHp}
+				host={$heroVisualUnitProps}
+				guest={actingEnemyVUP}
 				acts={$lastMsgFromServer.itemActions.filter(
 					(ia) =>
 						ia &&
@@ -290,25 +324,32 @@
 							ia.target.targetName == $lastMsgFromServer?.yourName) ||
 							ia.target.kind == 'onlySelf')
 				)}
-				clicky={()=>{
-					if($lastMsgFromServer){
+				clicky={() => {
+					if ($lastMsgFromServer) {
 						$selectedDetail = {
-							kind:'me',
-							portrait:peasantPortrait,
-							me:{
-								myName : $lastMsgFromServer.yourName,
-								myHealth : $lastMsgFromServer.yourHp,
-							},
-						}
+							kind: 'me',
+							portrait: peasantPortrait,
+							me: {
+								myName: $lastMsgFromServer.yourName,
+								myHealth: $lastMsgFromServer.yourHp
+							}
+						};
 					}
 				}}
 			/>
+
 			{#each $lastMsgFromServer.otherPlayers.filter((op) => op.currentScene == $lastMsgFromServer?.yourScene) as p}
 				<Unit
-					name={p.heroName}
-					src={heroSprites[heroSprite(p.weapon.itemId)]}
-					hp={p.health}
-					maxHp={p.maxHealth}
+					host={
+						{
+							name:p.heroName,
+							hp:p.health,
+							maxHp:p.maxHealth,
+							src:heroSprites[heroSprite(p.weapon.itemId)],
+							flip:false,
+							animating:false,
+						}}
+					guest={undefined}
 					acts={$lastMsgFromServer.itemActions.filter(
 						(ia) =>
 							ia && ia.target && ia.target.kind == 'friendly' && ia.target.targetName == p.heroName
@@ -326,14 +367,10 @@
 			{/each}
 		</div>
 		<div class="units">
-			<!-- {JSON.stringify($lastMsgFromServer.itemActions)} -->
-			{#each $lastMsgFromServer.enemiesInScene as e}
+			{#each $enemiesVisualUnitProps as e}
 				<Unit
-					name={e.name}
-					src={enemySprites[e.templateId]}
-					hp={e.health}
-					maxHp={e.maxHealth}
-					flip={true}
+					host={e.name == $actingEnemyVUP?.name ? $actingEnemyVUP : e}
+					guest={e.name == $actingEnemyVUP?.name ? heroVisualUnitProps : undefined}
 					acts={$lastMsgFromServer.itemActions.filter(
 						(ia) =>
 							ia &&
@@ -341,12 +378,12 @@
 							((ia.target.kind == 'targetEnemy' && ia.target.targetName == e.name) ||
 								ia.target.kind == 'anyEnemy')
 					)}
-					clicky={()=>{
-						$selectedDetail = {
-							kind:'enemy',
-							enemy:e,
-							portrait:enemyPortraits[e.templateId]
-						}
+					clicky={() => {
+						// $selectedDetail = {
+						// 	kind: 'enemy',
+						// 	enemy: e,
+						// 	portrait: enemyPortraits[e.templateId]
+						// };
 					}}
 				/>
 			{/each}
@@ -354,24 +391,23 @@
 	</div>
 	<div class="selectedDetails">
 		<div class="selectedPortrait">
-			<img class="portrait" src={$selectedDetail?.portrait} alt="portrait">
+			<img class="portrait" src={$selectedDetail?.portrait} alt="portrait" />
 		</div>
 		<div class="selectedStats">
 			{#if $selectedDetail?.kind == 'me'}
-			<p>
-				name: {$selectedDetail?.me.myName ?? ''}
-			</p>
-			<p>
-				health : {$selectedDetail?.me.myHealth}/{$lastMsgFromServer.yourMaxHp}
-			</p>
+				<p>
+					name: {$selectedDetail?.me.myName ?? ''}
+				</p>
+				<p>
+					health : {$selectedDetail?.me.myHealth}/{$lastMsgFromServer.yourMaxHp}
+				</p>
 			{/if}
 			{#if $selectedDetail?.kind == 'otherPlayer'}
-			other
+				other
 			{/if}
 			{#if $selectedDetail?.kind == 'enemy'}
-			stuff
+				stuff
 			{/if}
-
 		</div>
 	</div>
 	<h3>{$lastMsgFromServer.yourName}:</h3>
@@ -494,20 +530,20 @@
 		display: flex;
 		justify-content: space-around;
 	}
-	.selectedDetails{
+	.selectedDetails {
 		background-color: beige;
 		display: inline-flex;
 	}
-	.selectedPortrait{
+	.selectedPortrait {
 		width: 100px;
-		height:100px;
+		height: 100px;
 		background-color: blueviolet;
 	}
-	.selectedPortrait > img{
-		height:100%;
+	.selectedPortrait > img {
+		height: 100%;
 		width: 100%;
 	}
-	.selectedStats{
-
+	.selectedStats {
+		background-color: aquamarine;
 	}
 </style>

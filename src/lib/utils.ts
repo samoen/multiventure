@@ -19,10 +19,13 @@ export type MessageFromServer = {
 	sceneActions: GameActionSentToClient[];
 	itemActions: GameActionSentToClient[];
 	happenings: string[];
+	animations: BattleAnimation[];
 	enemiesInScene:EnemyInClient[];
 	playerFlags:Flag[];
 	globalFlags:GlobalFlag[];
 };
+
+export type BattleAnimation = {source:string,target:string}
 export type EnemyStatusEffect = {
 	status:'poison' | 'rage';
 	counter?:number;

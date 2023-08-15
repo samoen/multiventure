@@ -57,6 +57,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 			};
 		}),
 		happenings: recentHappenings,
+		animations: forPlayer.animations,
 		enemiesInScene: enemiesInScene(forPlayer.currentScene).map((e) => {
 			return {
 				health: e.currentHealth,

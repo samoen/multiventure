@@ -35,7 +35,7 @@ export const POST = (async (r) => {
 		console.log(`rejected action ${JSON.stringify(msg)} because not available`);
 		return json(`action ${msg.buttonText} not available`, { status: 400 });
 	}
-
+	player.animations = []
 	handleAction(player, actionFromId)
 	
 	if(player.health < 1){

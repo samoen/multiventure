@@ -76,6 +76,7 @@ export const POST: RequestHandler = async (r) => {
 			itemActions: [],
 			sceneTexts: [],
 			flags: startflags,
+			animations:[],
 		} satisfies Player
 		
 		addSoloScenes(msg.join)

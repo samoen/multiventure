@@ -130,6 +130,10 @@ export function damagePlayer(enemy: ActiveEnemy, player: Player) {
 			dmg = item.onTakeDamage(dmg)
 		}
 	}
+	// player.animations.push({
+	// 	source:enemy.name,
+	// 	target:player.heroName,
+	// })
 	player.health -= dmg
 	pushHappening(`${enemy.name} hit ${player.heroName} for ${dmg} damage`)
 }
@@ -139,6 +143,10 @@ export function damageEnemy(actor: Player, enemy: ActiveEnemy, damage: number) {
 	damage = enemy.template.onTakeDamage?.(damage) ?? damage
 	enemy.currentHealth -= damage
 	pushHappening(`${actor.heroName} hit ${enemy.name} for ${damage} damage`)
+	actor.animations.push({
+		source:actor.heroName,
+		target:enemy.name,
+	})
 	let result = checkEnemyDeath(enemy)
 	if (result.killed) {
 		pushHappening(`${actor.heroName} killed ${enemy.name}`)

@@ -1,4 +1,4 @@
-import type { ActionTarget } from '$lib/utils';
+import type { ActionTarget, BattleAnimation } from '$lib/utils';
 import { items, type Inventory, type Item, type ItemState } from './items';
 import { pushHappening } from './messaging';
 import type { SceneId } from './scenes';
@@ -38,6 +38,7 @@ export type Player = {
 	sceneActions: GameAction[];
 	sceneTexts: string[];
 	flags: Set<Flag>;
+	animations: BattleAnimation[];
 };
 
 export type GameAction = {
