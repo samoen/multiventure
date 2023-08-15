@@ -1,6 +1,6 @@
 import type { HeroName } from "$lib/server/users";
-import type { EnemyInClient, EnemyName, GameActionSentToClient, MessageFromServer, OtherPlayerInfo } from "$lib/utils";
-import { writable, type Writable } from "svelte/store";
+import type { BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient, MessageFromServer, OtherPlayerInfo } from "$lib/utils";
+import { get, writable, type Writable } from "svelte/store";
 import peasantPortrait from '$lib/assets/portraits/peasant.webp';
 import peasant from '$lib/assets/peasant.png';
 	import gruntPortrait from '$lib/assets/portraits/grunt.webp';
@@ -60,6 +60,17 @@ export type VisualUnitProps = {
         export const heroVisualUnitProps: Writable<VisualUnitProps> = writable()
         export let enemiesVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
         export let actingEnemyVUP : Writable<VisualUnitProps | undefined> = writable()
+        export let currentAnimation : Writable<BattleAnimation|undefined> = writable(undefined)
+        export let currentAnimationIndex : Writable<number> = writable(0)
+
+        export function findVisualUnitProps(name:string):VisualUnitProps | undefined{
+            if(name == 'werdd' ){
+                return get(heroVisualUnitProps)
+            }
+            let en = get(enemiesVisualUnitProps).find(e=>name==e.name)
+            if(en) return en
+
+        }
 
     enemiesVisualUnitProps.subscribe(enemies=>{
         let e = enemies.at(0)

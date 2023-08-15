@@ -25,8 +25,11 @@
 	actingEnemyVUP,
 		choose,
 		clientState,
+		currentAnimation,
+		currentAnimationIndex,
 		enemiesVisualUnitProps,
 		enemySprites,
+		findVisualUnitProps,
 		heroSprite,
 		heroSprites,
 		heroVisualUnitProps,
@@ -274,7 +277,8 @@
 	{/if}
 	<button
 		on:click={() => {
-			$heroVisualUnitProps.animating = !$heroVisualUnitProps.animating
+			// $heroVisualUnitProps.animating = !$heroVisualUnitProps.animating
+			$currentAnimation = {source:'werdd',target:'Gorlak'}
 		}}>start animating</button
 	>
 	<button
@@ -282,13 +286,21 @@
 			// $actingEnemyVUP = $enemiesVisualUnitProps.at(0)
 			// if($actingEnemyVUP)
 			// $actingEnemyVUP.animating = !$actingEnemyVUP.animating
-			actingEnemyVUP.update(acting=>{
-				if(acting){
-					acting.animating = !acting.animating
+			
+			// actingEnemyVUP.update(acting=>{
+			// 	if(acting){
+			// 		acting.animating = !acting.animating
 
+			// 	}
+			// 	return acting
+			// })
+				// $currentAnimation = {source:'Gorlak',target:'werdd'}
+				if(lastMsgFromServer && $lastMsgFromServer){
+					$lastMsgFromServer.animations = [{source:'Gorlak',target:'werdd'},{source:'werdd',target:'Gorlak'}]
+					$currentAnimationIndex = 0
+					$currentAnimation = $lastMsgFromServer.animations.at($currentAnimationIndex)
 				}
-				return acting
-			})
+
 			// if($enemiesVisualUnitProps){
 			// 	let firste = $enemiesVisualUnitProps.at(0)
 			// 	if(firste){
@@ -307,15 +319,15 @@
 			// 	// 	return e
 			// 	// })
 			// })
-			console.log($actingEnemyVUP)
+			// console.log($actingEnemyVUP)
 			// enemiesVisualUnitProps .animating = true
 		}}>enemy animate</button
 	>
 	<div class="visual">
 		<div class="units">
 			<Unit
-				host={$heroVisualUnitProps}
-				guest={actingEnemyVUP}
+				host={$currentAnimation?.source == 'werdd' ? undefined : $heroVisualUnitProps}
+				guest={$currentAnimation?.target == 'werdd' ? findVisualUnitProps($currentAnimation.source):undefined}
 				acts={$lastMsgFromServer.itemActions.filter(
 					(ia) =>
 						ia &&
@@ -368,9 +380,11 @@
 		</div>
 		<div class="units">
 			{#each $enemiesVisualUnitProps as e}
+			<!-- host={e.name == $actingEnemyVUP?.name ? $actingEnemyVUP : e} -->
 				<Unit
-					host={e.name == $actingEnemyVUP?.name ? $actingEnemyVUP : e}
-					guest={e.name == $actingEnemyVUP?.name ? heroVisualUnitProps : undefined}
+					host={$currentAnimation?.source == e.name ? undefined : e}
+					guest={e.name == $currentAnimation?.target ? findVisualUnitProps($currentAnimation.source) : undefined}
+					flipped={true}
 					acts={$lastMsgFromServer.itemActions.filter(
 						(ia) =>
 							ia &&

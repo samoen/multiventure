@@ -2,7 +2,7 @@
 	const activeId = writable(0);
 	let id = 0;
 	const [send, receive] = crossfade({
-		duration: (d) => Math.sqrt(d * 4600),
+		duration: (d) => Math.sqrt(d * 600),
 
 		fallback(node, params) {
 			const style = getComputedStyle(node);
@@ -21,7 +21,7 @@
 </script>
 
 <script lang="ts">
-	import { choose, clientState, heroVisualUnitProps, type VisualUnitProps } from '$lib/client/ui';
+	import { choose, clientState, currentAnimation, currentAnimationIndex, heroVisualUnitProps, lastMsgFromServer, type VisualUnitProps } from '$lib/client/ui';
 	import type { GameActionSentToClient } from '$lib/utils';
 	import { quintOut } from 'svelte/easing';
 	import { writable, type Writable } from 'svelte/store';
@@ -29,8 +29,9 @@
 	import VisualUnit from './VisualUnit.svelte';
 
 	export let host: VisualUnitProps | undefined;
-	export let guest: Writable<VisualUnitProps | undefined> | undefined;
-
+	// export let guest: Writable<VisualUnitProps | undefined> | undefined;
+	export let guest: VisualUnitProps | undefined;
+    export let flipped : boolean = false
 	export let acts: GameActionSentToClient[];
 	export let clicky: () => void;
 
@@ -57,26 +58,32 @@
 		tabindex="0"
 		on:keydown
 	>
-    {#if host && !host.animating}
-        <div out:send={{ key: 'movehero' }} in:receive={{ key: 'movehero' }}>
+    {#if host}
+    <!-- {#if host && !host.animating} -->
+        <div out:send={{ key: 'movehero' }} in:receive={{ key: 'movehero' }} on:introend={()=>{
+            $currentAnimationIndex++
+            $currentAnimation = $lastMsgFromServer?.animations.at($currentAnimationIndex)
+        }   }>
             <VisualUnit vu={host} />
         </div>
     {/if}
 	</div>
-	<div class="area" style:order={host?.flip ? 0 : 2}>
-		{#if $guest?.animating}
+	<div class="area" style:order={flipped ? 0 : 2}>
+		<!-- {#if guest?.animating} -->
+		{#if guest}
 			<div class="placeHolder" in:receive={{ key: 'movehero' }} out:send={{ key: 'movehero' }} on:introend={()=>{
-                if($guest)$guest.animating = false
+                // if(guest)guest.animating = false
                 // guest = guest
                 // $heroVisualUnitProps.animating = false
+                $currentAnimation = undefined
             }
                 }>
-				<VisualUnit vu={$guest} />
+				<VisualUnit vu={guest} />
 			</div>
 		{/if}
 		{#if selected}
 			<!-- {#if $clientState.selectedUnit === `${flip}${name}`} -->
-			<div class="actions" class:startAligned={!host?.flip} class:endAligned={host?.flip}>
+			<div class="actions" class:startAligned={!flipped} class:endAligned={flipped}>
 				{#each acts as a}
 					<button
 						class="action"

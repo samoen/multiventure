@@ -38,7 +38,8 @@ export const POST: RequestHandler = async (r) => {
 		
 		let startScene: SceneId = `tutorial_${msg.join}`
 		// startScene = `forest`
-		// startScene = 'forestPassage' 
+		// startScene = 'forestPassage'
+		startScene = 'goblinCamp'
 		// startScene = 'throne'
 		// startScene = 'armory'
 		
