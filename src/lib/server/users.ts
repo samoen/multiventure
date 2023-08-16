@@ -66,7 +66,7 @@ export function playerItemStates(player:Player) : ItemState[]{
 	]
 }
 
-export function healPlayer(player:Player, amount:number){
+export function healPlayer(player:Player, amount:number) : {healed:number}{
 	let missing = player.maxHealth - player.health	
 	let toHeal = amount
 	if(missing < amount){
@@ -74,6 +74,7 @@ export function healPlayer(player:Player, amount:number){
 	}
 	player.health += toHeal
 	pushHappening(`${player.heroName} was healed for ${toHeal}hp`);
+	return {healed:toHeal}
 }
 
 export function activePlayers(): Player[]{

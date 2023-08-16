@@ -1,4 +1,4 @@
-import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer } from "./enemies"
+import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation } from "./enemies"
 import { items } from "./items"
 import { pushHappening } from "./messaging"
 import { scenes } from "./scenes"
@@ -197,7 +197,10 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 						enemyInScene.template.specialAttack(enemyInScene, player)
 					} else {
                         // for(const _ of Array.from({length:enemyInScene.template.strikes ?? 1})){
-                            damagePlayer(enemyInScene, player)
+                            let r = damagePlayer(enemyInScene, player)
+							if(r.dmgDone > 0){
+								pushAnimation(enemyInScene.name,player.heroName,player,r.dmgDone)
+							}
                         // }
 					}
 					enemyInScene.aggros.clear()

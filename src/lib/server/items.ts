@@ -1,4 +1,4 @@
-import { damageEnemy, enemiesInScene, takePoisonDamage } from './enemies';
+import { damageEnemy, enemiesInScene, pushAnimation, takePoisonDamage } from './enemies';
 import { pushHappening } from './messaging';
 import { activePlayersInScene, healPlayer, type Player } from './users';
 
@@ -57,7 +57,10 @@ const dagger: Item = {
 					speed: 8,
 					target:{kind:'targetEnemy',targetName:enemy.name},
 					performAction() {
-						damageEnemy(player, enemy, 7, 3)
+						let r = damageEnemy(player, enemy, 7, 3)
+						if(r.dmgDone > 0){
+							pushAnimation(player.heroName, enemy.name, player, r.dmgDone)
+						}
 					}
 				}
 			)
@@ -75,7 +78,10 @@ const club: Item = {
 					speed: 2,
 					target:{kind:'targetEnemy',targetName:enemy.name},
 					performAction() {
-						damageEnemy(player, enemy, 25)
+						let r = damageEnemy(player, enemy, 25)
+						if(r.dmgDone > 0){
+							pushAnimation(player.heroName, enemy.name, player, r.dmgDone)
+						}
 					}
 				}
 			)
@@ -94,7 +100,10 @@ const fireStaff: Item = {
 					speed: 10,
 					target:{kind:'targetEnemy',targetName:enemy.name},
 					performAction() {
-						damageEnemy(player, enemy, 40)
+						let r =damageEnemy(player, enemy, 40)
+						if(r.dmgDone > 0){
+							pushAnimation(player.heroName, enemy.name, player, r.dmgDone)
+						}
 						player.inventory.weapon.cooldown = 2
 					}
 				}
@@ -107,7 +116,7 @@ const bandage: Item = {
 	startStock:2,
 	actions(player) {
 		for (const friend of activePlayersInScene(player.currentScene)) {
-			if (friend.health < friend.maxHealth) {
+			if (friend.health < friend.maxHealth && friend.health > 0) {
 				player.itemActions.push(
 					{
 						buttonText: `Heal ${friend.heroName == player.heroName ? 'myself' : friend.heroName} with bandage`,
@@ -115,7 +124,10 @@ const bandage: Item = {
 						grantsImmunity: true,
 						provoke: 1,
 						performAction: () => {
-							healPlayer(friend, 20)
+							let r = healPlayer(friend, 20)
+							if(friend.heroName != player.heroName && r.healed > 0){
+								pushAnimation(player.heroName, friend.heroName, player, r.healed*-1)
+							}
 							if(player.inventory.utility.stock){
 								player.inventory.utility.stock--
 							}
@@ -159,10 +171,10 @@ const poisonDart: Item = {
 					target:{kind:'targetEnemy',targetName:enemy.name},
 					performAction() {
 						let found = enemy.statuses.find(s => s.status == 'poison')
-						if (found != undefined) {
-							found.counter = 3
+						if (found != undefined && found.counter) {
+							found.counter += 3
 						} else {
-							enemy.statuses.push({ status: 'poison', counter: 2 })
+							enemy.statuses.push({ status: 'poison', counter: 3 })
 						}
 						takePoisonDamage(enemy)
 						player.inventory.utility.itemId = 'empty'

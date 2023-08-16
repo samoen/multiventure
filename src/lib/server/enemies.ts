@@ -123,8 +123,8 @@ export function enemiesInScene(sceneKey: SceneId): ActiveEnemy[] {
 	return activeEnemies.filter(e => e.currentScene == sceneKey)
 }
 
-export function damagePlayer(enemy: ActiveEnemy, player: Player) {
-	if(player.health < 1) return
+export function damagePlayer(enemy: ActiveEnemy, player: Player) : {dmgDone:number} {
+	if(player.health < 1) return {dmgDone:0}
 	let dmgDone = 0
 	let strikes = enemy.template.strikes ?? 1
 	for(const _ of Array.from({length:strikes})){
@@ -137,19 +137,13 @@ export function damagePlayer(enemy: ActiveEnemy, player: Player) {
 		player.health -= dmg
 		dmgDone +=dmg
 	}
-	activePlayersInScene(player.currentScene).forEach(p=>{
-		p.animations.push({
-			source:enemy.name,
-			target:player.heroName,
-			damage:dmgDone,
-		})
-	})
 	
 	pushHappening(`${enemy.name} hit ${player.heroName} ${strikes>1?strikes+' times':''} for ${dmgDone} damage`)
+	return {dmgDone:dmgDone}
 }
 
-export function damageEnemy(actor: Player, enemy: ActiveEnemy, damage: number, strikes:number=1) {
-	if (enemy.currentHealth < 1) return
+export function damageEnemy(actor: Player, enemy: ActiveEnemy, damage: number, strikes:number=1) : {dmgDone:number} {
+	if (enemy.currentHealth < 1) return {dmgDone:0}
 
 	let dmgDone = 0
 	for(const _ of Array.from({length:strikes})){
@@ -159,17 +153,22 @@ export function damageEnemy(actor: Player, enemy: ActiveEnemy, damage: number, s
 	}
 
 	pushHappening(`${actor.heroName} hit ${enemy.name} ${strikes>1?strikes+' times':''} for ${dmgDone} damage`)
-	activePlayersInScene(actor.currentScene).forEach(p=>{
-		p.animations.push({
-			source:actor.heroName,
-			target:enemy.name,
-			damage:dmgDone,
-		})
-	})
+	
 	let result = checkEnemyDeath(enemy)
 	if (result.killed) {
 		pushHappening(`${actor.heroName} killed ${enemy.name}`)
 	}
+	return {dmgDone:dmgDone}
+}
+
+export function pushAnimation(source:string,target:string, actor:Player, dmg:number){
+	activePlayersInScene(actor.currentScene).forEach(p=>{
+		p.animations.push({
+			source:source,
+			target:target,
+			damage:dmg,
+		})
+	})
 }
 
 export function infightDamage(actor: ActiveEnemy, target: ActiveEnemy) {
@@ -183,6 +182,7 @@ export function infightDamage(actor: ActiveEnemy, target: ActiveEnemy) {
 }
 
 export function takePoisonDamage(enemy: ActiveEnemy) {
+	if(enemy.currentHealth < 1) return
 	let dmg = Math.floor(enemy.maxHealth * 0.25)
 	enemy.currentHealth -= dmg
 	pushHappening(`${enemy.name} took ${dmg}damage from poison`)
