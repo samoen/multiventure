@@ -14,9 +14,8 @@
 		enemiesVisualUnitProps,
 		type VisualUnitProps,
 		syncVisualsToLatest,
-		animationSpeed,
-		receive,
-		send,
+		receiveMelee,
+		sendMelee,
 
 		animationCancelled,
 
@@ -24,7 +23,13 @@
 
 		type ProjectileProps,
 
-		type Projectile
+		type Projectile,
+
+		receiveProj,
+
+		sendProj
+
+
 
 
 
@@ -80,8 +85,8 @@
 		{#if host}
 			<!-- {#if host && !host.animating} -->
 			<div
-				out:send={{ key: $animationCancelled?0:'movehero' }}
-				in:receive={{ key: $animationCancelled?1:'movehero' }}
+				out:sendMelee={{ key: $animationCancelled?0:'movehero' }}
+				in:receiveMelee={{ key: $animationCancelled?1:'movehero' }}
 				on:introend={async () => {
 					if (currentAnimation != undefined && !$animationCancelled) {
 						$currentAnimationIndex++;
@@ -104,8 +109,8 @@
 		{#if guest}
 			<div
 				class="placeHolder"
-				in:receive={{ key: $animationCancelled?3:'movehero' }}
-				out:send={{ key: $animationCancelled?4:'movehero' }}
+				in:receiveMelee={{ key: $animationCancelled?3:'movehero' }}
+				out:sendMelee={{ key: $animationCancelled?4:'movehero' }}
 				on:introend={() => {
 					if ($currentAnimation != undefined && !$animationCancelled) {
 						if (host) {
@@ -123,7 +128,7 @@
 			<div
 				class="projSourceHolder"
 				class:startAlignSelf={!flipped} class:endAlignSelf={flipped}
-				out:send={{ key: $animationCancelled?7:'proj' }}
+				out:sendProj={{ key: $animationCancelled?7:'proj' }}
 			>
 				<img class="projectile" src={projectileSource.projectileImg} alt="a projectile">
 			</div>
@@ -132,7 +137,7 @@
 			<div
 				class="projHolder"
 				class:startAlignSelf={!flipped} class:endAlignSelf={flipped}
-				in:receive={{ key: $animationCancelled?8:'proj' }}
+				in:receiveProj={{ key: $animationCancelled?8:'proj' }}
 				on:introend={async () => {
 					if ($currentAnimation != undefined && !$animationCancelled) {
 						if (host) {

@@ -71,7 +71,10 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 				}
 			}
 			// for (const player of activePlayersInScene(me.currentScene)) {
-				damagePlayer(me, player)
+				let r = damagePlayer(me, player)
+				if(r.dmgDone > 0){
+					pushAnimation({name:me.name,side:'enemy'},{name:player.heroName,side:'hero'},player,r.dmgDone,'arrow')
+				}
 			// }
 		}
 	},

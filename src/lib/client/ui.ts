@@ -15,7 +15,7 @@ import theif from '$lib/assets/thief.png';
 import mage from '$lib/assets/mage.png';
 import type { ItemId, ItemIdForSlot } from '$lib/server/items.js';
 import { crossfade } from "svelte/transition";
-import { quintOut } from "svelte/easing";
+import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easing";
 
 
 // export let waitingForMyEvent = true;
@@ -72,26 +72,27 @@ export let enemiesVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 export let alliesVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 export let currentAnimation: Writable<BattleAnimation | undefined> = writable(undefined)
 export let currentAnimationIndex: Writable<number> = writable(0)
-export const animationSpeed = writable(3000)
 export const animationCancelled = writable(false)
 
-export const [send, receive] = crossfade({
-    duration: (d) => Math.sqrt(d * get(animationSpeed)),
-
+export const [sendMelee, receiveMelee] = crossfade({
+    duration: (d) => Math.sqrt(d * 600),
+    easing:quintInOut,
     fallback(node, params) {
-        // const style = getComputedStyle(node);
-        // const transform = style.transform === 'none' ? '' : style.transform;
-
         return {
             duration: 0,
-            // easing: quintOut,
-            // css: (t) => `
-            //     transform: ${transform} scale(${t});
-            //     opacity: ${t}
-            // `
         };
     }
 });
+export const [sendProj, receiveProj] = crossfade({
+    duration: (d) => Math.sqrt(d * 350),
+    easing:linear,
+    fallback(node, params) {
+        return {
+            duration: 0,
+        };
+    }
+});
+
 // export let animationQueue: Writable<
 // (
 // BattleAnimation[]

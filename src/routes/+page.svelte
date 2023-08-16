@@ -23,7 +23,6 @@
 	import Unit from '$lib/Components/Unit.svelte';
 	import {
 	animationCancelled,
-	animationSpeed,
 		choose,
 		clientState,
 		currentAnimation,
@@ -342,16 +341,8 @@
 	{/if}
 	<button
 		on:click={() => {
-			// $heroVisualUnitProps.animating = !$heroVisualUnitProps.animating
-			// $currentAnimation = {source:'werdd',target:'Gorlak'}
+
 		}}>start animating</button
-	>
-	<button
-		on:click={() => {
-			$animationSpeed = 0
-			$currentAnimation = undefined
-			$animationCancelled = true
-		}}>cancel animate</button
 	>
 	<div class="visual">
 		<div class="units">
@@ -359,11 +350,13 @@
 				host={$currentAnimation?.projectile=='melee' && $currentAnimation?.source.side == 'hero' && $currentAnimation?.source.name == $lastMsgFromServer.yourName
 					? undefined
 					: $heroVisualUnitProps}
-				guest={$currentAnimation?.target.side == 'hero' && $currentAnimation?.target.name == $lastMsgFromServer.yourName
+				guest={$currentAnimation?.projectile=='melee' && $currentAnimation?.target.side == 'hero' && $currentAnimation?.target.name == $lastMsgFromServer.yourName
 					? findVisualUnitProps($currentAnimation.source.name)
 					: undefined}
 				projectileSource={$currentAnimation?.projectile == 'arrow' && $currentAnimation?.source.name == $lastMsgFromServer.yourName && $currentAnimation?.source.side == 'hero' && !$currentAnimation?.fired ? {projectileImg:arrow} : undefined}
-				projectileTarget={undefined}
+				projectileTarget={$currentAnimation?.projectile=='arrow' && $currentAnimation?.target.side == 'hero' && $lastMsgFromServer.yourName == $currentAnimation?.target.name && $currentAnimation?.fired
+				? {projectileImg:arrow}
+				: undefined}
 				acts={$lastMsgFromServer.itemActions.filter(
 					(ia) =>
 						ia &&
@@ -389,11 +382,13 @@
 			{#each $alliesVisualUnitProps as p}
 				<Unit
 					host={$currentAnimation?.projectile=='melee' && $currentAnimation?.source.side == 'hero' && $currentAnimation?.source.name == p.name ? undefined : p}
-					guest={$currentAnimation?.target.side == 'hero' && p.name == $currentAnimation?.target.name
+					guest={$currentAnimation?.projectile=='melee' && $currentAnimation?.target.side == 'hero' && p.name == $currentAnimation?.target.name
 						? findVisualUnitProps($currentAnimation.source.name)
 						: undefined}
 					projectileSource={$currentAnimation?.projectile == 'arrow' && $currentAnimation?.source.name == p.name && $currentAnimation?.source.side == 'hero' && !$currentAnimation?.fired ? {projectileImg:arrow} : undefined}
-					projectileTarget={undefined}
+					projectileTarget={$currentAnimation?.projectile=='arrow' && $currentAnimation?.target.side == 'hero' && p.name == $currentAnimation?.target.name && $currentAnimation?.fired
+					? {projectileImg:arrow}
+					: undefined}
 					acts={$lastMsgFromServer.itemActions.filter(
 						(ia) =>
 							ia && ia.target && ia.target.kind == 'friendly' && ia.target.targetName == p.name
@@ -417,7 +412,7 @@
 					guest={$currentAnimation?.projectile=='melee' && $currentAnimation?.target.side == 'enemy' && e.name == $currentAnimation?.target.name
 						? findVisualUnitProps($currentAnimation.source.name)
 						: undefined}
-					projectileSource={undefined}
+					projectileSource={$currentAnimation?.projectile == 'arrow' && $currentAnimation?.source.name == e.name && $currentAnimation?.source.side == 'enemy' && !$currentAnimation?.fired ? {projectileImg:arrow} : undefined}
 					projectileTarget={$currentAnimation?.projectile=='arrow' && $currentAnimation?.target.side == 'enemy' && e.name == $currentAnimation?.target.name && $currentAnimation?.fired
 						? {projectileImg:arrow}
 						: undefined}
