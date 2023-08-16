@@ -62,6 +62,7 @@ export const previousMsgFromServer: Writable<MessageFromServer | null> = writabl
 export const selectedDetail: Writable<UnitDetails | null> = writable(null)
 export const heroVisualUnitProps: Writable<VisualUnitProps> = writable()
 export let enemiesVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
+export let alliesVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 export let currentAnimation: Writable<BattleAnimation | undefined> = writable(undefined)
 export let currentAnimationIndex: Writable<number> = writable(0)
 export const animationSpeed = writable(3000)
@@ -86,10 +87,10 @@ export const [send, receive] = crossfade({
 });
 // export let animationQueue: Writable<
 // (
-    // BattleAnimation[]
+// BattleAnimation[]
 // &{done:boolean})
 // > = writable([])
-export function syncVisualsToLatest(lastMsg : MessageFromServer | undefined) {
+export function syncVisualsToLatest(lastMsg: MessageFromServer | undefined) {
     // let lastMsg = get(lastMsgFromServer)
     if (lastMsg) {
         heroVisualUnitProps.set(
@@ -110,8 +111,21 @@ export function syncVisualsToLatest(lastMsg : MessageFromServer | undefined) {
                 displayHp: e.health,
                 maxHp: e.maxHealth,
             }
-        })
-        )
+        }))
+        alliesVisualUnitProps.set(
+            lastMsg.otherPlayers
+                .filter(p => p.currentScene == lastMsg.yourScene)
+                .map(p => {
+                    return {
+                        name: p.heroName,
+                        src: heroSprites[heroSprite(p.weapon.itemId)],
+                        hp: p.health,
+                        displayHp: p.health,
+                        maxHp: p.maxHealth,
+                    }
+                }))
+
+
     }
 }
 

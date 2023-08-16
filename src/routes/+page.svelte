@@ -29,6 +29,7 @@
 		currentAnimation,
 		currentAnimationIndex,
 		enemiesVisualUnitProps,
+		alliesVisualUnitProps,
 		enemySprites,
 		heroSprite,
 		heroSprites,
@@ -121,7 +122,8 @@
 				loading = false;
 			}
 
-			// console.log(`got animations: ${JSON.stringify(sMsg.animations)}`);
+			console.log(`got animations: ${JSON.stringify(sMsg.animations)}`);
+			console.log(`current when got ${JSON.stringify($currentAnimation)}`)
 			
 			// first message or no animations just sync instant
 			if(
@@ -133,7 +135,7 @@
 			
 			if(sMsg.animations.length && $currentAnimation != undefined && sMsg.triggeredBy == sMsg.yourName){
 				// this msg was triggered by us, cancel current animation and prepare for new animation
-				// $animationSpeed = 0
+				console.log(`cancelling animation`)
 				$animationCancelled = true
 				$currentAnimation = undefined
 				syncVisualsToLatest(prevMsg)
@@ -143,7 +145,7 @@
 				// syncVisualsToLatest(prevMsg)
 			}
 
-
+			console.log(`precheck start anim ${JSON.stringify($currentAnimation)}`)
 			if(sMsg.animations.length && $currentAnimation == undefined){
 				// new animations and we aren't animating, start animating
 				console.log('starting anim')
@@ -247,7 +249,11 @@
 		}
 		let en = $enemiesVisualUnitProps.find((e) => name == e.name);
 		if (en) return en;
+
+		let ally = $alliesVisualUnitProps.find((e) => name == e.name);
+		if (ally) return ally;
 	}
+
 	function signUpButtonClicked() {
 		if (!signupInput) return;
 		loading = true;
@@ -375,35 +381,30 @@
 				}}
 			/>
 
-			{#each $lastMsgFromServer.otherPlayers.filter((op) => op.currentScene == $lastMsgFromServer?.yourScene) as p}
+			{#each $alliesVisualUnitProps as p}
 				<Unit
-					host={{
-						name: p.heroName,
-						hp: p.health,
-						maxHp: p.maxHealth,
-						displayHp: p.health,
-						src: heroSprites[heroSprite(p.weapon.itemId)]
-					}}
-					guest={undefined}
+					host={$currentAnimation?.source == p.name ? undefined : p}
+					guest={p.name == $currentAnimation?.target
+						? findVisualUnitProps($currentAnimation.source)
+						: undefined}
 					acts={$lastMsgFromServer.itemActions.filter(
 						(ia) =>
-							ia && ia.target && ia.target.kind == 'friendly' && ia.target.targetName == p.heroName
+							ia && ia.target && ia.target.kind == 'friendly' && ia.target.targetName == p.name
 					)}
 					clicky={() => {
-						if ($lastMsgFromServer) {
-							$selectedDetail = {
-								portrait: peasantPortrait,
-								other: p,
-								kind: 'otherPlayer'
-							};
-						}
+						// if ($lastMsgFromServer) {
+						// 	$selectedDetail = {
+						// 		portrait: peasantPortrait,
+						// 		other: p,
+						// 		kind: 'otherPlayer'
+						// 	};
+						// }
 					}}
 				/>
 			{/each}
 		</div>
 		<div class="units">
 			{#each $enemiesVisualUnitProps as e}
-				<!-- host={e.name == $actingEnemyVUP?.name ? $actingEnemyVUP : e} -->
 				<Unit
 					host={$currentAnimation?.source == e.name ? undefined : e}
 					guest={e.name == $currentAnimation?.target

@@ -137,11 +137,12 @@ export function damagePlayer(enemy: ActiveEnemy, player: Player) {
 		player.health -= dmg
 		dmgDone +=dmg
 	}
-
-	player.animations.push({
-		source:enemy.name,
-		target:player.heroName,
-		damage:dmgDone,
+	activePlayersInScene(player.currentScene).forEach(p=>{
+		p.animations.push({
+			source:enemy.name,
+			target:player.heroName,
+			damage:dmgDone,
+		})
 	})
 	
 	pushHappening(`${enemy.name} hit ${player.heroName} ${strikes>1?strikes+' times':''} for ${dmgDone} damage`)
@@ -158,10 +159,12 @@ export function damageEnemy(actor: Player, enemy: ActiveEnemy, damage: number, s
 	}
 
 	pushHappening(`${actor.heroName} hit ${enemy.name} ${strikes>1?strikes+' times':''} for ${dmgDone} damage`)
-	actor.animations.push({
-		source:actor.heroName,
-		target:enemy.name,
-		damage:dmgDone,
+	activePlayersInScene(actor.currentScene).forEach(p=>{
+		p.animations.push({
+			source:actor.heroName,
+			target:enemy.name,
+			damage:dmgDone,
+		})
 	})
 	let result = checkEnemyDeath(enemy)
 	if (result.killed) {
