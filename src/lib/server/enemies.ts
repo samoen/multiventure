@@ -1,4 +1,4 @@
-import type { EnemyName, EnemyStatusEffect } from "$lib/utils";
+import type { AnimationTarget, EnemyName, EnemyStatusEffect } from "$lib/utils";
 import { pushHappening } from "./messaging";
 import { scenes, type SceneId } from "./scenes";
 import { playerEquipped, type HeroName, type Player, activePlayers, activePlayersInScene } from "./users";
@@ -161,7 +161,7 @@ export function damageEnemy(actor: Player, enemy: ActiveEnemy, damage: number, s
 	return {dmgDone:dmgDone}
 }
 
-export function pushAnimation(source:string,target:string, actor:Player, dmg:number){
+export function pushAnimation(source:AnimationTarget,target:AnimationTarget, actor:Player, dmg:number){
 	activePlayersInScene(actor.currentScene).forEach(p=>{
 		p.animations.push({
 			source:source,

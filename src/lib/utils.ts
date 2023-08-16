@@ -25,11 +25,20 @@ export type MessageFromServer = {
 	globalFlags:GlobalFlag[];
 };
 
+export type AnimationTarget = {
+name:HeroName,
+side:'hero'
+} | {
+	name:EnemyName,
+	side: 'enemy'
+}
+
 export type BattleAnimation = {
-	source:string,
-	target:string,
+	source:AnimationTarget,
+	target:AnimationTarget,
 	damage:number,
 }
+
 export type EnemyStatusEffect = {
 	status:'poison' | 'rage';
 	counter?:number;

@@ -59,7 +59,7 @@ const dagger: Item = {
 					performAction() {
 						let r = damageEnemy(player, enemy, 7, 3)
 						if(r.dmgDone > 0){
-							pushAnimation(player.heroName, enemy.name, player, r.dmgDone)
+							pushAnimation({name:player.heroName, side:'hero'}, {name:enemy.name,side:'enemy'}, player, r.dmgDone)
 						}
 					}
 				}
@@ -80,7 +80,7 @@ const club: Item = {
 					performAction() {
 						let r = damageEnemy(player, enemy, 25)
 						if(r.dmgDone > 0){
-							pushAnimation(player.heroName, enemy.name, player, r.dmgDone)
+							pushAnimation({name:player.heroName, side:'hero'}, {name:enemy.name,side:'enemy'}, player, r.dmgDone)
 						}
 					}
 				}
@@ -102,7 +102,7 @@ const fireStaff: Item = {
 					performAction() {
 						let r =damageEnemy(player, enemy, 40)
 						if(r.dmgDone > 0){
-							pushAnimation(player.heroName, enemy.name, player, r.dmgDone)
+							pushAnimation({name:player.heroName, side:'hero'}, {name:enemy.name,side:'enemy'}, player, r.dmgDone)
 						}
 						player.inventory.weapon.cooldown = 2
 					}
@@ -126,7 +126,7 @@ const bandage: Item = {
 						performAction: () => {
 							let r = healPlayer(friend, 20)
 							if(friend.heroName != player.heroName && r.healed > 0){
-								pushAnimation(player.heroName, friend.heroName, player, r.healed*-1)
+								pushAnimation({name:player.heroName,side:'hero'}, {name:friend.heroName,side:'hero'}, player, r.healed*-1)
 							}
 							if(player.inventory.utility.stock){
 								player.inventory.utility.stock--

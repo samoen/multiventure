@@ -353,11 +353,11 @@
 	<div class="visual">
 		<div class="units">
 			<Unit
-				host={$currentAnimation?.source == $lastMsgFromServer.yourName
+				host={$currentAnimation?.source.side == 'hero' && $currentAnimation?.source.name == $lastMsgFromServer.yourName
 					? undefined
 					: $heroVisualUnitProps}
-				guest={$currentAnimation?.target == $lastMsgFromServer.yourName
-					? findVisualUnitProps($currentAnimation.source)
+				guest={$currentAnimation?.target.side == 'hero' && $currentAnimation?.target.name == $lastMsgFromServer.yourName
+					? findVisualUnitProps($currentAnimation.source.name)
 					: undefined}
 				acts={$lastMsgFromServer.itemActions.filter(
 					(ia) =>
@@ -383,9 +383,9 @@
 
 			{#each $alliesVisualUnitProps as p}
 				<Unit
-					host={$currentAnimation?.source == p.name ? undefined : p}
-					guest={p.name == $currentAnimation?.target
-						? findVisualUnitProps($currentAnimation.source)
+					host={$currentAnimation?.source.side == 'hero' && $currentAnimation?.source.name == p.name ? undefined : p}
+					guest={$currentAnimation?.target.side == 'hero' && p.name == $currentAnimation?.target.name
+						? findVisualUnitProps($currentAnimation.source.name)
 						: undefined}
 					acts={$lastMsgFromServer.itemActions.filter(
 						(ia) =>
@@ -406,9 +406,9 @@
 		<div class="units">
 			{#each $enemiesVisualUnitProps as e}
 				<Unit
-					host={$currentAnimation?.source == e.name ? undefined : e}
-					guest={e.name == $currentAnimation?.target
-						? findVisualUnitProps($currentAnimation.source)
+					host={$currentAnimation?.source.side == 'enemy' && $currentAnimation?.source.name == e.name ? undefined : e}
+					guest={$currentAnimation?.target.side == 'enemy' && e.name == $currentAnimation?.target.name
+						? findVisualUnitProps($currentAnimation.source.name)
 						: undefined}
 					flipped={true}
 					acts={$lastMsgFromServer.itemActions.filter(

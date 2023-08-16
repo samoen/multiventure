@@ -199,7 +199,7 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
                         // for(const _ of Array.from({length:enemyInScene.template.strikes ?? 1})){
                             let r = damagePlayer(enemyInScene, player)
 							if(r.dmgDone > 0){
-								pushAnimation(enemyInScene.name,player.heroName,player,r.dmgDone)
+								pushAnimation({name:enemyInScene.name,side:'enemy'},{name:player.heroName,side:'hero'},player,r.dmgDone)
 							}
                         // }
 					}
