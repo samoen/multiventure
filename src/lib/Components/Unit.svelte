@@ -18,7 +18,16 @@
 		receive,
 		send,
 
-		animationCancelled
+		animationCancelled,
+
+		type Guest,
+
+		type ProjectileProps,
+
+		type Projectile
+
+
+
 
 	} from '$lib/client/ui';
 	import type { GameActionSentToClient } from '$lib/utils';
@@ -30,7 +39,17 @@
 
 	export let host: VisualUnitProps | undefined;
 	// export let guest: Writable<VisualUnitProps | undefined> | undefined;
-	export let guest: VisualUnitProps | undefined;
+		
+
+
+	export let guest: Guest;
+	export let projectileSource : Projectile
+	export let projectileTarget : Projectile
+
+	// function isProjectileProps(guest:Guest) : guest is ProjectileProps{
+	// 	return typeof guest == 'object' && 'projectileImg' in guest
+	// }
+
 	export let flipped: boolean = false;
 	export let acts: GameActionSentToClient[];
 	export let clicky: () => void;
@@ -63,12 +82,15 @@
 			<div
 				out:send={{ key: $animationCancelled?0:'movehero' }}
 				in:receive={{ key: $animationCancelled?1:'movehero' }}
-				on:introend={() => {
+				on:introend={async () => {
 					if (currentAnimation != undefined && !$animationCancelled) {
 						$currentAnimationIndex++;
 						$currentAnimation = $lastMsgFromServer?.animations.at($currentAnimationIndex);
 						if ($currentAnimation == undefined) {
 							syncVisualsToLatest($lastMsgFromServer);
+						}else{
+							await tick()
+							$currentAnimation.fired = true
 						}
 					}
 				}}
@@ -94,7 +116,41 @@
 					}
 				}}
 			>
-				<VisualUnit vu={guest} {flipped} />
+				<VisualUnit vu={guest} flipped={!flipped} />
+			</div>
+			{/if}
+			{#if projectileSource}
+			<div
+				class="projSourceHolder"
+				class:startAlignSelf={!flipped} class:endAlignSelf={flipped}
+				out:send={{ key: $animationCancelled?7:'proj' }}
+			>
+				<img class="projectile" src={projectileSource.projectileImg} alt="a projectile">
+			</div>
+		{/if}
+			{#if projectileTarget}
+			<div
+				class="projHolder"
+				class:startAlignSelf={!flipped} class:endAlignSelf={flipped}
+				in:receive={{ key: $animationCancelled?8:'proj' }}
+				on:introend={async () => {
+					if ($currentAnimation != undefined && !$animationCancelled) {
+						if (host) {
+							console.log(host.name + 'projectile animation dmg');
+							if ($currentAnimation) host.displayHp -= $currentAnimation?.damage;
+							$currentAnimationIndex++;
+							$currentAnimation = $lastMsgFromServer?.animations.at($currentAnimationIndex);
+							if ($currentAnimation == undefined) {
+								syncVisualsToLatest($lastMsgFromServer);
+							}else{
+								await tick()
+								$currentAnimation.fired = true
+							}
+						}
+					}
+				}}
+			>
+				<img class="projectile" src={projectileTarget.projectileImg} alt="a projectile">
 			</div>
 		{/if}
 		{#if selected}
@@ -121,6 +177,24 @@
 		order: 1;
 		width: 60px;
 	}
+	.projHolder{
+		background-color: aquamarine;
+		/* display: none; */
+		/* opacity: 0; */
+		height:20px;
+		width:20px;
+	}
+	.projSourceHolder{
+		background-color: aquamarine;
+		/* display: none; */
+		/* opacity: 0; */
+		height:20px;
+		width:20px;
+	}
+	.projectile {
+		height:20px;
+		width:20px;
+	}
 	/* .guest {
 		background-color: red;
 		height: 40px;
@@ -141,6 +215,12 @@
 	.startAligned {
 		align-items: flex-start;
 	}
+	.endAlignSelf {
+		align-self: flex-end;
+	}
+	.startAlignSelf {
+		align-self: flex-start;
+	}
 	.unitAndArea {
 		display: flex;
 		flex-direction: row;
@@ -149,5 +229,8 @@
 	.area {
 		background-color: brown;
 		width: 60px;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
 	}
 </style>

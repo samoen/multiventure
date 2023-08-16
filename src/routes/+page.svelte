@@ -18,7 +18,7 @@
 	import rogue from '$lib/assets/rogue.png';
 	import fireghost from '$lib/assets/fireghost.png';
 	import theif from '$lib/assets/thief.png';
-	import mage from '$lib/assets/mage.png';
+	import arrow from '$lib/assets/arrow.png';
 	import type { ItemId, ItemIdForSlot } from '$lib/server/items.js';
 	import Unit from '$lib/Components/Unit.svelte';
 	import {
@@ -177,6 +177,9 @@
 
 			// wait for dom elements to be populated
 			await tick();
+			if($currentAnimation){
+				$currentAnimation.fired = true
+			}
 			if (happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
 			if (sceneTexts) sceneTexts.scroll({ top: sceneTexts.scrollHeight, behavior: 'smooth' });
 		});
@@ -353,12 +356,14 @@
 	<div class="visual">
 		<div class="units">
 			<Unit
-				host={$currentAnimation?.source.side == 'hero' && $currentAnimation?.source.name == $lastMsgFromServer.yourName
+				host={$currentAnimation?.projectile=='melee' && $currentAnimation?.source.side == 'hero' && $currentAnimation?.source.name == $lastMsgFromServer.yourName
 					? undefined
 					: $heroVisualUnitProps}
 				guest={$currentAnimation?.target.side == 'hero' && $currentAnimation?.target.name == $lastMsgFromServer.yourName
 					? findVisualUnitProps($currentAnimation.source.name)
 					: undefined}
+				projectileSource={$currentAnimation?.projectile == 'arrow' && $currentAnimation?.source.name == $lastMsgFromServer.yourName && $currentAnimation?.source.side == 'hero' && !$currentAnimation?.fired ? {projectileImg:arrow} : undefined}
+				projectileTarget={undefined}
 				acts={$lastMsgFromServer.itemActions.filter(
 					(ia) =>
 						ia &&
@@ -383,10 +388,12 @@
 
 			{#each $alliesVisualUnitProps as p}
 				<Unit
-					host={$currentAnimation?.source.side == 'hero' && $currentAnimation?.source.name == p.name ? undefined : p}
+					host={$currentAnimation?.projectile=='melee' && $currentAnimation?.source.side == 'hero' && $currentAnimation?.source.name == p.name ? undefined : p}
 					guest={$currentAnimation?.target.side == 'hero' && p.name == $currentAnimation?.target.name
 						? findVisualUnitProps($currentAnimation.source.name)
 						: undefined}
+					projectileSource={$currentAnimation?.projectile == 'arrow' && $currentAnimation?.source.name == p.name && $currentAnimation?.source.side == 'hero' && !$currentAnimation?.fired ? {projectileImg:arrow} : undefined}
+					projectileTarget={undefined}
 					acts={$lastMsgFromServer.itemActions.filter(
 						(ia) =>
 							ia && ia.target && ia.target.kind == 'friendly' && ia.target.targetName == p.name
@@ -406,10 +413,15 @@
 		<div class="units">
 			{#each $enemiesVisualUnitProps as e}
 				<Unit
-					host={$currentAnimation?.source.side == 'enemy' && $currentAnimation?.source.name == e.name ? undefined : e}
-					guest={$currentAnimation?.target.side == 'enemy' && e.name == $currentAnimation?.target.name
+					host={$currentAnimation?.projectile=='melee' && $currentAnimation?.source.side == 'enemy' && $currentAnimation?.source.name == e.name ? undefined : e}
+					guest={$currentAnimation?.projectile=='melee' && $currentAnimation?.target.side == 'enemy' && e.name == $currentAnimation?.target.name
 						? findVisualUnitProps($currentAnimation.source.name)
 						: undefined}
+					projectileSource={undefined}
+					projectileTarget={$currentAnimation?.projectile=='arrow' && $currentAnimation?.target.side == 'enemy' && e.name == $currentAnimation?.target.name && $currentAnimation?.fired
+						? {projectileImg:arrow}
+						: undefined}
+
 					flipped={true}
 					acts={$lastMsgFromServer.itemActions.filter(
 						(ia) =>
@@ -571,6 +583,7 @@
 		background-color: burlywood;
 		display: flex;
 		justify-content: space-around;
+		padding:50px;
 	}
 	.selectedDetails {
 		background-color: beige;

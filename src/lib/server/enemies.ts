@@ -161,12 +161,13 @@ export function damageEnemy(actor: Player, enemy: ActiveEnemy, damage: number, s
 	return {dmgDone:dmgDone}
 }
 
-export function pushAnimation(source:AnimationTarget,target:AnimationTarget, actor:Player, dmg:number){
+export function pushAnimation(source:AnimationTarget,target:AnimationTarget, actor:Player, dmg:number, projectile:'arrow'|'melee' = 'melee'){
 	activePlayersInScene(actor.currentScene).forEach(p=>{
 		p.animations.push({
 			source:source,
 			target:target,
 			damage:dmg,
+			projectile:projectile,
 		})
 	})
 }
@@ -181,8 +182,8 @@ export function infightDamage(actor: ActiveEnemy, target: ActiveEnemy) {
 	}
 }
 
-export function takePoisonDamage(enemy: ActiveEnemy) {
-	if(enemy.currentHealth < 1) return
+export function takePoisonDamage(enemy: ActiveEnemy) : {dmgDone:number} {
+	if(enemy.currentHealth < 1) return {dmgDone:0}
 	let dmg = Math.floor(enemy.maxHealth * 0.25)
 	enemy.currentHealth -= dmg
 	pushHappening(`${enemy.name} took ${dmg}damage from poison`)
@@ -190,6 +191,7 @@ export function takePoisonDamage(enemy: ActiveEnemy) {
 	if (result.killed) {
 		pushHappening(`${enemy.name} died from poison`)
 	}
+	return {dmgDone:dmg}
 }
 
 export function checkEnemyDeath(target: ActiveEnemy): { killed: boolean } {

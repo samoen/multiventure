@@ -90,21 +90,21 @@ const club: Item = {
 }
 
 const fireStaff: Item = {
-	warmup:2,
+	warmup:1,
 	actions(player) {
 		for (const enemy of enemiesInScene(player.currentScene)) {
 			player.itemActions.push(
 				{
 					buttonText: `Blast ${enemy.name} with Firebolt`,
 					provoke: 60,
-					speed: 10,
+					speed: 1,
 					target:{kind:'targetEnemy',targetName:enemy.name},
 					performAction() {
-						let r =damageEnemy(player, enemy, 40)
+						let r =damageEnemy(player, enemy, 10)
 						if(r.dmgDone > 0){
-							pushAnimation({name:player.heroName, side:'hero'}, {name:enemy.name,side:'enemy'}, player, r.dmgDone)
+							pushAnimation({name:player.heroName, side:'hero'}, {name:enemy.name,side:'enemy'}, player, r.dmgDone,'arrow')
 						}
-						player.inventory.weapon.cooldown = 2
+						// player.inventory.weapon.cooldown = 1
 					}
 				}
 			)
@@ -176,7 +176,10 @@ const poisonDart: Item = {
 						} else {
 							enemy.statuses.push({ status: 'poison', counter: 3 })
 						}
-						takePoisonDamage(enemy)
+						let r = takePoisonDamage(enemy)
+						if(r.dmgDone > 0){
+							pushAnimation({name:player.heroName, side:'hero'}, {name:enemy.name,side:'enemy'}, player, r.dmgDone,'arrow')
+						}
 						player.inventory.utility.itemId = 'empty'
 					},
 				}

@@ -56,6 +56,13 @@ export const enemySprites = {
     fireGremlin: fireghost
 };
 
+export type ProjectileProps ={
+    projectileImg:string
+}
+
+export type Guest = VisualUnitProps | undefined
+export type Projectile = undefined | ProjectileProps
+
 
 export const lastMsgFromServer: Writable<MessageFromServer | undefined> = writable();
 export const previousMsgFromServer: Writable<MessageFromServer | null> = writable(null);

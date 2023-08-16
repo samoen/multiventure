@@ -37,6 +37,8 @@ export type BattleAnimation = {
 	source:AnimationTarget,
 	target:AnimationTarget,
 	damage:number,
+	projectile:'arrow'|'melee',
+	fired?:boolean,
 }
 
 export type EnemyStatusEffect = {
