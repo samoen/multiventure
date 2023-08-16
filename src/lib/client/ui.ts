@@ -3,17 +3,19 @@ import type { BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient,
 import { get, writable, type Writable } from "svelte/store";
 import peasantPortrait from '$lib/assets/portraits/peasant.webp';
 import peasant from '$lib/assets/peasant.png';
-	import gruntPortrait from '$lib/assets/portraits/grunt.webp';
-	import spearman from '$lib/assets/spearman.png';
-	import rat from '$lib/assets/giant-rat.png';
-	import grunt from '$lib/assets/grunt.png';
-	import troll from '$lib/assets/young-ogre.png';
-	import ruffian from '$lib/assets/ruffian.png';
-	import rogue from '$lib/assets/rogue.png';
-	import fireghost from '$lib/assets/fireghost.png';
-	import theif from '$lib/assets/thief.png';
-	import mage from '$lib/assets/mage.png';
-	import type { ItemId, ItemIdForSlot } from '$lib/server/items.js';
+import gruntPortrait from '$lib/assets/portraits/grunt.webp';
+import spearman from '$lib/assets/spearman.png';
+import rat from '$lib/assets/giant-rat.png';
+import grunt from '$lib/assets/grunt.png';
+import troll from '$lib/assets/young-ogre.png';
+import ruffian from '$lib/assets/ruffian.png';
+import rogue from '$lib/assets/rogue.png';
+import fireghost from '$lib/assets/fireghost.png';
+import theif from '$lib/assets/thief.png';
+import mage from '$lib/assets/mage.png';
+import type { ItemId, ItemIdForSlot } from '$lib/server/items.js';
+import { crossfade } from "svelte/transition";
+import { quintOut } from "svelte/easing";
 
 
 // export let waitingForMyEvent = true;
@@ -39,131 +41,99 @@ export let clientState = writable({
     status: 'starting up',
 })
 export type VisualUnitProps = {
-    name:string;
-    src:string;
-    hp:number;
-    displayHp:number
-    maxHp:number;
+    name: string;
+    src: string;
+    hp: number;
+    displayHp: number
+    maxHp: number;
 }
-        
-	export const enemySprites = {
-		goblin: spearman,
-		rat: rat,
-		hobGoblin: grunt,
-		troll: troll,
-		fireGremlin: fireghost
-	};
-        
-        export const lastMsgFromServer: Writable<MessageFromServer | null> = writable(null);
-        export const previousMsgFromServer: Writable<MessageFromServer | null> = writable(null);
-        export const selectedDetail: Writable<UnitDetails | null> = writable(null)
-        export const heroVisualUnitProps: Writable<VisualUnitProps> = writable()
-        export let enemiesVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
-        export let actingEnemyVUP : Writable<VisualUnitProps | undefined> = writable()
-        export let currentAnimation : Writable<BattleAnimation|undefined> = writable(undefined)
-        export let currentAnimationIndex : Writable<number> = writable(0)
 
-        // export function findVisualUnitProps(name:string):VisualUnitProps | undefined{
-        //     if(name == 'werdd' ){
-        //         return get(heroVisualUnitProps)
-        //     }
-        //     let en = get(enemiesVisualUnitProps).find(e=>name==e.name)
-        //     if(en) return en
-        // }
-
-    // enemiesVisualUnitProps.subscribe(enemies=>{
-    //     let e = enemies.at(0)
-    //     if(e){
-    //         actingEnemyVUP.update(olde=>{
-    //             if(e){
-    //                 console.log('upding acting')
-    //                 return {
-    //                     name: e.name,
-    //                     src: e.src,
-    //                     hp: e.hp,
-    //                     maxHp: e.maxHp,
-    //                     flip: true,
-    //                     animating:false as boolean,
-    //                 }
-    //             }
-    //             return olde
-    //         })
-
-    //     }
-
-    // })
+export const enemySprites = {
+    goblin: spearman,
+    rat: rat,
+    hobGoblin: grunt,
+    troll: troll,
+    fireGremlin: fireghost
+};
 
 
+export const lastMsgFromServer: Writable<MessageFromServer | undefined> = writable();
+export const previousMsgFromServer: Writable<MessageFromServer | null> = writable(null);
+export const selectedDetail: Writable<UnitDetails | null> = writable(null)
+export const heroVisualUnitProps: Writable<VisualUnitProps> = writable()
+export let enemiesVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
+export let currentAnimation: Writable<BattleAnimation | undefined> = writable(undefined)
+export let currentAnimationIndex: Writable<number> = writable(0)
+export const animationSpeed = writable(3000)
+export const animationCancelled = writable(false)
 
-    // previousMsgFromServer.subscribe((l) => {
-        // if (l) {
-        //     enemiesVisualUnitProps.update(_=>{
-        //         return l.enemiesInScene.map(e=>{
-        //             return {
-        //                 name: e.name,
-        //                 src: enemySprites[e.templateId],
-        //                 hp: e.health,
-        //                 maxHp: e.maxHealth,
-        //                 flip: true,
-        //                 animating:false as boolean,
-        //             }
-        //         })  
-        //     })
-        //     heroVisualUnitProps.update(_=>{
-        //         return {
-        //             name: l.yourName,
-        //             src: heroSprites[heroSprite(l.yourWeapon?.itemId)],
-        //             hp: l.yourHp,
-        //             maxHp: l.yourMaxHp,
-        //             flip: false,
-        //             animating:false as boolean,
-        //         }
-        //     })
-        // }
-    // })
-    lastMsgFromServer.subscribe((l) => {
-        if (l) {
-            // enemiesVisualUnitProps.update(previous=>{
-            //     return l.enemiesInScene.map(e=>{
-            //         let findInPrevious = previous.find(pe=>{pe.name == e.name})
+export const [send, receive] = crossfade({
+    duration: (d) => Math.sqrt(d * get(animationSpeed)),
 
-            //         return {
-            //             name: e.name,
-            //             src: enemySprites[e.templateId],
-            //             hp: e.health,
-            //             displayHp:findInPrevious?.hp ?? 0,    
-            //             maxHp: e.maxHealth,
-            //             flip: true,
-            //             animating:false as boolean,
-            //         }
-            //     })  
-            // })
-            // heroVisualUnitProps.update(previous=>{
-            //     return {
-            //         name: l.yourName,
-            //         src: heroSprites[heroSprite(l.yourWeapon?.itemId)],
-            //         hp: l.yourHp,
-            //         maxHp: l.yourMaxHp,
-            //         displayHp:previous?.hp??0,
-            //     }
-            // })
-            selectedDetail.update(u => {
-                if (u == null) {
-                    return {
-                        portrait:peasantPortrait,
-                        me: {
-                            myName: l.yourName,
-                            myHealth: l.yourHp,
-                        },
-                        // maxHealth : l.yourMaxHp,
-                        kind: 'me',
-                    }
+    fallback(node, params) {
+        // const style = getComputedStyle(node);
+        // const transform = style.transform === 'none' ? '' : style.transform;
+
+        return {
+            duration: 0,
+            // easing: quintOut,
+            // css: (t) => `
+            //     transform: ${transform} scale(${t});
+            //     opacity: ${t}
+            // `
+        };
+    }
+});
+// export let animationQueue: Writable<
+// (
+    // BattleAnimation[]
+// &{done:boolean})
+// > = writable([])
+export function syncVisualsToLatest(lastMsg : MessageFromServer | undefined) {
+    // let lastMsg = get(lastMsgFromServer)
+    if (lastMsg) {
+        heroVisualUnitProps.set(
+            {
+                name: lastMsg.yourName,
+                src: heroSprites[heroSprite(lastMsg.yourWeapon?.itemId)],
+                hp: lastMsg.yourHp,
+                maxHp: lastMsg.yourMaxHp,
+                displayHp: lastMsg.yourHp
+            }
+        )
+
+        enemiesVisualUnitProps.set(lastMsg.enemiesInScene.map(e => {
+            return {
+                name: e.name,
+                src: enemySprites[e.templateId],
+                hp: e.health,
+                displayHp: e.health,
+                maxHp: e.maxHealth,
+            }
+        })
+        )
+    }
+}
+
+lastMsgFromServer.subscribe((l) => {
+    if (l) {
+        selectedDetail.update(u => {
+            if (u == null) {
+                return {
+                    portrait: peasantPortrait,
+                    me: {
+                        myName: l.yourName,
+                        myHealth: l.yourHp,
+                    },
+                    // maxHealth : l.yourMaxHp,
+                    kind: 'me',
                 }
-                return u
-            })
-        }
-    })
-    
+            }
+            return u
+        })
+    }
+})
+
 export function heroSprite(weapon: ItemIdForSlot<'weapon'>) {
     if (weapon == 'club') return 'ruffian';
     if (weapon == 'dagger') return 'theif';

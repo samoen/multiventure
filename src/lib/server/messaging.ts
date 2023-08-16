@@ -17,6 +17,7 @@ export async function sendEveryoneWorld(triggeredBy: HeroName) {
 		if (user.connectionState && user.connectionState.con) {
 			const toSend = buildNextMessage(user, triggeredBy);
 			user.connectionState.con.enqueue(encode(`world`, toSend));
+			user.animations = []
 		}
 	}
 }

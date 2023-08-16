@@ -22,7 +22,8 @@
 	import type { ItemId, ItemIdForSlot } from '$lib/server/items.js';
 	import Unit from '$lib/Components/Unit.svelte';
 	import {
-	actingEnemyVUP,
+	animationCancelled,
+	animationSpeed,
 		choose,
 		clientState,
 		currentAnimation,
@@ -35,9 +36,8 @@
 		lastMsgFromServer,
 		previousMsgFromServer,
 		selectedDetail,
-
+		syncVisualsToLatest,
 		type VisualUnitProps
-
 	} from '$lib/client/ui';
 	import type { EnemyTemplateId } from '$lib/server/enemies.js';
 	import { crossfade } from 'svelte/transition';
@@ -59,8 +59,6 @@
 	let sceneTexts: HTMLElement;
 	let autoSignup: boolean = true;
 
-
-
 	let enemyPortraits = {
 		hobGoblin: gruntPortrait,
 		rat: gruntPortrait,
@@ -68,8 +66,6 @@
 		fireGremlin: gruntPortrait,
 		troll: gruntPortrait
 	} satisfies Record<EnemyTemplateId, string>;
-
-
 
 	onMount(() => {
 		console.log('mounted with ssr data ' + JSON.stringify(data));
@@ -106,7 +102,7 @@
 			console.error(`event source error ${JSON.stringify(ev)}`, ev);
 			$clientState.status = 'Event source errored, need manual action';
 			this.close();
-			$lastMsgFromServer = null;
+			$lastMsgFromServer = undefined;
 			loading = false;
 		};
 
@@ -117,46 +113,67 @@
 				return;
 			}
 
-			let prevMsg = structuredClone($lastMsgFromServer)
+			let prevMsg = structuredClone($lastMsgFromServer);
 			$lastMsgFromServer = sMsg;
 			if ($clientState.waitingForMyEvent && sMsg.triggeredBy == sMsg.yourName) {
 				$clientState.status = 'playing';
 				$clientState.waitingForMyEvent = false;
 				loading = false;
 			}
-			$enemiesVisualUnitProps = $lastMsgFromServer.enemiesInScene.map(e=>{
-				    let findInPrevious = prevMsg?.enemiesInScene.find(pe=>pe.name == e.name)
-					if(!findInPrevious){
-						console.log('new enemy')
-					}
-                    return {
-                        name: e.name,
-                        src: enemySprites[e.templateId],
-                        hp: e.health,
-                        displayHp:findInPrevious?.health ?? e.health,    
-                        maxHp: e.maxHealth,
-                    }
-                })
-			$heroVisualUnitProps =
-                {
-                    name: $lastMsgFromServer.yourName,
-                    src: heroSprites[heroSprite($lastMsgFromServer.yourWeapon?.itemId)],
-                    hp: $lastMsgFromServer.yourHp,
-                    maxHp: $lastMsgFromServer.yourMaxHp,
-                    displayHp: prevMsg?.yourHp??$lastMsgFromServer.yourHp,
-                }
 
-			console.log(`got animations: ${JSON.stringify(sMsg.animations)}`)
-			if(!sMsg.animations.length){
-				
-				$heroVisualUnitProps.displayHp = $heroVisualUnitProps.hp
-				$enemiesVisualUnitProps.forEach(e=>{e.displayHp = e.hp})
-				// $previousMsgFromServer = $lastMsgFromServer
-			}else{
-				$currentAnimationIndex = 0
-				$currentAnimation = $lastMsgFromServer.animations.at($currentAnimationIndex)
+			// console.log(`got animations: ${JSON.stringify(sMsg.animations)}`);
+			
+			// first message or no animations just sync instant
+			if(
+				!prevMsg
+			|| (!sMsg.animations.length && $currentAnimation == undefined)
+			){
+				syncVisualsToLatest($lastMsgFromServer)
+			}
+			
+			if(sMsg.animations.length && $currentAnimation != undefined && sMsg.triggeredBy == sMsg.yourName){
+				// this msg was triggered by us, cancel current animation and prepare for new animation
+				// $animationSpeed = 0
+				$animationCancelled = true
+				$currentAnimation = undefined
+				syncVisualsToLatest(prevMsg)
+				await tick()
+				await new Promise(r=>setTimeout(r,100))
+				$animationCancelled = false
+				// syncVisualsToLatest(prevMsg)
 			}
 
+
+			if(sMsg.animations.length && $currentAnimation == undefined){
+				// new animations and we aren't animating, start animating
+				console.log('starting anim')
+				// $animationSpeed = 3000
+				$lastMsgFromServer.enemiesInScene.forEach((e) => {
+					let findInPrevious = $enemiesVisualUnitProps.find((pe) => pe.name == e.name);
+					if (!findInPrevious) {
+						$enemiesVisualUnitProps.push({
+							name: e.name,
+							src: enemySprites[e.templateId],
+							hp: e.health,
+							displayHp: e.health,
+							maxHp: e.maxHealth
+						});
+					}
+				});
+				
+				for (const enemyProps of $enemiesVisualUnitProps) {
+					let findInNew = $lastMsgFromServer?.enemiesInScene.find((ne) => ne.name == enemyProps.name);
+					if (!findInNew) {
+						enemyProps.hp = 0;
+					} else {
+						enemyProps.hp = findInNew.health;
+					}
+				}
+				$currentAnimationIndex = 0;
+				$currentAnimation = $lastMsgFromServer.animations.at($currentAnimationIndex);
+			}
+
+			// wait for dom elements to be populated
 			await tick();
 			if (happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
 			if (sceneTexts) sceneTexts.scroll({ top: sceneTexts.scrollHeight, behavior: 'smooth' });
@@ -165,7 +182,7 @@
 			console.log('got closing msg');
 			source?.close();
 			$clientState.status = 'you logged in elsewhere, connection closed';
-			$lastMsgFromServer = null;
+			$lastMsgFromServer = undefined;
 		});
 		console.log('subscribed');
 	}
@@ -181,7 +198,7 @@
 		leaveGame();
 	}
 	function leaveGame() {
-		$lastMsgFromServer = null;
+		$lastMsgFromServer = undefined;
 		$clientState.status = 'unsubscribing from events';
 		if (source?.readyState != source?.CLOSED) {
 			console.log('closing con from browser');
@@ -224,13 +241,13 @@
 			loading = false;
 		}
 	}
-	function findVisualUnitProps(name:string):VisualUnitProps | undefined{
-            if(name == $lastMsgFromServer?.yourName ){
-                return $heroVisualUnitProps
-            }
-            let en = $enemiesVisualUnitProps.find(e=>name==e.name)
-            if(en) return en
-    }
+	function findVisualUnitProps(name: string): VisualUnitProps | undefined {
+		if (name == $lastMsgFromServer?.yourName) {
+			return $heroVisualUnitProps;
+		}
+		let en = $enemiesVisualUnitProps.find((e) => name == e.name);
+		if (en) return en;
+	}
 	function signUpButtonClicked() {
 		if (!signupInput) return;
 		loading = true;
@@ -262,8 +279,6 @@
 		$clientState.status = 'waiting for first event';
 		subscribeEventsIfNotAlready();
 	}
-
-	
 </script>
 
 <!-- <h3>Status: {clientState.status}</h3> -->
@@ -324,51 +339,20 @@
 	>
 	<button
 		on:click={() => {
-			// $actingEnemyVUP = $enemiesVisualUnitProps.at(0)
-			// if($actingEnemyVUP)
-			// $actingEnemyVUP.animating = !$actingEnemyVUP.animating
-			
-			// actingEnemyVUP.update(acting=>{
-			// 	if(acting){
-			// 		acting.animating = !acting.animating
-
-			// 	}
-			// 	return acting
-			// })
-				// $currentAnimation = {source:'Gorlak',target:'werdd'}
-				// if(lastMsgFromServer && $lastMsgFromServer){
-				// 	$lastMsgFromServer.animations = [{source:'Gorlak',target:'werdd'},{source:'werdd',target:'Gorlak'}]
-				// 	$currentAnimationIndex = 0
-				// 	$currentAnimation = $lastMsgFromServer.animations.at($currentAnimationIndex)
-				// }
-
-			// if($enemiesVisualUnitProps){
-			// 	let firste = $enemiesVisualUnitProps.at(0)
-			// 	if(firste){
-			// 		firste.animating = !firste.animating
-			// 	}
-			// }
-			
-			// enemiesVisualUnitProps.update(ep=>{
-			// 	// for(const e of ep){
-			// 	// 	e.animating = !e.animating
-			// 	// 	break
-			// 	// }
-			// 	return ep
-			// 	// return ep.map(e=>{
-			// 	// 	e.animating = !e.animating
-			// 	// 	return e
-			// 	// })
-			// })
-			// console.log($actingEnemyVUP)
-			// enemiesVisualUnitProps .animating = true
-		}}>enemy animate</button
+			$animationSpeed = 0
+			$currentAnimation = undefined
+			$animationCancelled = true
+		}}>cancel animate</button
 	>
 	<div class="visual">
 		<div class="units">
 			<Unit
-				host={$currentAnimation?.source == $lastMsgFromServer.yourName ? undefined : $heroVisualUnitProps}
-				guest={$currentAnimation?.target == $lastMsgFromServer.yourName ? findVisualUnitProps($currentAnimation.source):undefined}
+				host={$currentAnimation?.source == $lastMsgFromServer.yourName
+					? undefined
+					: $heroVisualUnitProps}
+				guest={$currentAnimation?.target == $lastMsgFromServer.yourName
+					? findVisualUnitProps($currentAnimation.source)
+					: undefined}
 				acts={$lastMsgFromServer.itemActions.filter(
 					(ia) =>
 						ia &&
@@ -393,26 +377,25 @@
 
 			{#each $lastMsgFromServer.otherPlayers.filter((op) => op.currentScene == $lastMsgFromServer?.yourScene) as p}
 				<Unit
-					host={
-						{
-							name:p.heroName,
-							hp:p.health,
-							maxHp:p.maxHealth,
-							displayHp:p.health,
-							src:heroSprites[heroSprite(p.weapon.itemId)],
-						}}
+					host={{
+						name: p.heroName,
+						hp: p.health,
+						maxHp: p.maxHealth,
+						displayHp: p.health,
+						src: heroSprites[heroSprite(p.weapon.itemId)]
+					}}
 					guest={undefined}
 					acts={$lastMsgFromServer.itemActions.filter(
 						(ia) =>
 							ia && ia.target && ia.target.kind == 'friendly' && ia.target.targetName == p.heroName
 					)}
-					clicky={()=>{
-						if($lastMsgFromServer){
+					clicky={() => {
+						if ($lastMsgFromServer) {
 							$selectedDetail = {
-								portrait:peasantPortrait,
-								other:p,
-								kind:'otherPlayer',
-							}
+								portrait: peasantPortrait,
+								other: p,
+								kind: 'otherPlayer'
+							};
 						}
 					}}
 				/>
@@ -420,10 +403,12 @@
 		</div>
 		<div class="units">
 			{#each $enemiesVisualUnitProps as e}
-			<!-- host={e.name == $actingEnemyVUP?.name ? $actingEnemyVUP : e} -->
+				<!-- host={e.name == $actingEnemyVUP?.name ? $actingEnemyVUP : e} -->
 				<Unit
 					host={$currentAnimation?.source == e.name ? undefined : e}
-					guest={e.name == $currentAnimation?.target ? findVisualUnitProps($currentAnimation.source) : undefined}
+					guest={e.name == $currentAnimation?.target
+						? findVisualUnitProps($currentAnimation.source)
+						: undefined}
 					flipped={true}
 					acts={$lastMsgFromServer.itemActions.filter(
 						(ia) =>
@@ -477,7 +462,9 @@
 		{$lastMsgFromServer.yourWeapon.warmup ? `warmup:${$lastMsgFromServer.yourWeapon.warmup}` : ''}
 	</p>
 	<p>
-		Utility: {$lastMsgFromServer.yourUtility.itemId +', stock: '+ $lastMsgFromServer.yourUtility.stock}
+		Utility: {$lastMsgFromServer.yourUtility.itemId +
+			', stock: ' +
+			$lastMsgFromServer.yourUtility.stock}
 	</p>
 	<p>
 		Armor: {$lastMsgFromServer.yourBody.itemId}
@@ -513,7 +500,7 @@
 		Logged in as {$lastMsgFromServer.yourName} uid: {data.userId}
 		<button
 			on:click={() => {
-				$lastMsgFromServer = null;
+				$lastMsgFromServer = undefined;
 				leaveGame();
 			}}>Log Out</button
 		>

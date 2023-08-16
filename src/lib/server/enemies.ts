@@ -124,6 +124,7 @@ export function enemiesInScene(sceneKey: SceneId): ActiveEnemy[] {
 }
 
 export function damagePlayer(enemy: ActiveEnemy, player: Player) {
+	if(player.health < 1) return
 	let dmgDone = 0
 	let strikes = enemy.template.strikes ?? 1
 	for(const _ of Array.from({length:strikes})){
