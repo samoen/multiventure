@@ -70,6 +70,7 @@ export const selectedDetail: Writable<UnitDetails | null> = writable(null)
 export const heroVisualUnitProps: Writable<VisualUnitProps> = writable()
 export let enemiesVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 export let alliesVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
+// export let pAnimations : Writable<{ba:BattleAnimation, sourceProps:VisualUnitProps, targetProps:VisualUnitProps}>
 export let currentAnimation: Writable<BattleAnimation | undefined> = writable(undefined)
 export let currentAnimationIndex: Writable<number> = writable(0)
 export const animationCancelled = writable(false)

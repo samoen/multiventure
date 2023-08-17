@@ -1,7 +1,7 @@
-<script lang="ts" context="module">
+<!-- <script lang="ts" context="module">
 	const activeId = writable(0);
 	let id = 0;
-</script>
+</script> -->
 
 <script lang="ts">
 	import {
@@ -12,59 +12,110 @@
 		heroVisualUnitProps,
 		lastMsgFromServer,
 		enemiesVisualUnitProps,
+		alliesVisualUnitProps,
 		type VisualUnitProps,
 		syncVisualsToLatest,
 		receiveMelee,
 		sendMelee,
-
 		animationCancelled,
-
 		type Guest,
-
 		type ProjectileProps,
-
 		type Projectile,
-
 		receiveProj,
-
 		sendProj
-
-
-
-
-
-
 	} from '$lib/client/ui';
-	import type { GameActionSentToClient } from '$lib/utils';
+	import arrow from '$lib/assets/arrow.png';
+	import type { AnimationTarget, GameActionSentToClient } from '$lib/utils';
 	import { quintOut } from 'svelte/easing';
-	import { writable, type Writable } from 'svelte/store';
+	import { derived, writable, type Writable } from 'svelte/store';
 	import { crossfade } from 'svelte/transition';
 	import VisualUnit from './VisualUnit.svelte';
 	import { tick } from 'svelte';
 
-	export let host: VisualUnitProps | undefined;
-	// export let guest: Writable<VisualUnitProps | undefined> | undefined;
-		
 
-
-	export let guest: Guest;
-	export let projectileSource : Projectile
-	export let projectileTarget : Projectile
-
-	// function isProjectileProps(guest:Guest) : guest is ProjectileProps{
-	// 	return typeof guest == 'object' && 'projectileImg' in guest
-	// }
+	export let side: 'hero' | 'enemy';
+	export let stableHost: VisualUnitProps;
 
 	export let flipped: boolean = false;
-	export let acts: GameActionSentToClient[];
+	// export let acts: GameActionSentToClient[];
 	export let clicky: () => void;
+
+	const hostHome = derived(currentAnimation, ($i) => {
+		// let currentAnim = $lastMsgFromServer?.animations.at($i)
+		console.log('calc host home');
+		let currentAnim = $i;
+		if (!currentAnim) return true;
+		if (
+			currentAnim.projectile == 'melee' &&
+			currentAnim.source.side == side &&
+			currentAnim.source.name == stableHost.name
+		) {
+			console.log('host not home');
+			return false;
+		}
+		return true;
+	});
+
+	function findVisualUnitProps2(at: AnimationTarget): VisualUnitProps | undefined {
+		if (at.side == 'hero' && at.name == $lastMsgFromServer?.yourName) {
+			return $heroVisualUnitProps;
+		}
+		if(at.side == 'enemy'){
+			let en = $enemiesVisualUnitProps.find((e) => at.name == e.name);
+			if (en) return en;
+		}
+		if(at.side == 'hero'){
+			let ally = $alliesVisualUnitProps.find((e) => at.name == e.name);
+			if (ally) return ally;
+		}
+		return undefined
+	}
+
+	const dGuest = derived(currentAnimation, ($i) => {
+		let currentAnim = $i;
+		if (!currentAnim) return undefined;
+		if (
+			currentAnim.projectile == 'melee' &&
+			currentAnim.target.side == side &&
+			currentAnim.target.name == stableHost.name
+		) {
+			return findVisualUnitProps2(currentAnim.source);
+		}
+		return undefined;
+	});
+
+	const dProjectileSource = derived(currentAnimation, ($currentAnimation) => {
+		if (!$currentAnimation) return undefined;
+		if (
+			$currentAnimation.projectile == 'arrow' &&
+			$currentAnimation.source.name == stableHost.name &&
+			$currentAnimation.source.side == side &&
+			!$currentAnimation.fired
+		) {
+			return { projectileImg: arrow };
+		}
+		return undefined;
+	});
+
+	const dProjectileTarget = derived(currentAnimation, ($currentAnimation) => {
+		if (!$currentAnimation) return undefined;
+		if (
+			$currentAnimation?.projectile == 'arrow' &&
+			$currentAnimation?.target.side == side &&
+			stableHost.name == $currentAnimation?.target.name &&
+			$currentAnimation?.fired
+		) {
+			return { projectileImg: arrow };
+		}
+		return undefined;
+	});
 
 	// export let recv
 	// export let snd
-	$: selected = $activeId === componentId;
+	// $: selected = $activeId === componentId;
 	// let selected = false;
 
-	const componentId = ++id;
+	// const componentId = ++id;
 </script>
 
 <div class="unitAndArea">
@@ -73,106 +124,100 @@
 		on:click={() => {
 			clicky();
 			// selected = !selected
-			if (acts.length) {
-				$activeId = componentId;
-			}
+			// if (acts.length) {
+			// 	$activeId = componentId;
+			// }
 			// $clientState.selectedUnit =`${flip}${name}`
 		}}
 		role="button"
 		tabindex="0"
 		on:keydown
 	>
-		{#if host}
+		{#if $hostHome}
 			<!-- {#if host && !host.animating} -->
 			<div
-				out:sendMelee={{ key: $animationCancelled?0:'movehero' }}
-				in:receiveMelee={{ key: $animationCancelled?1:'movehero' }}
+				out:sendMelee={{ key: $animationCancelled ? 0 : 'movehero' }}
+				in:receiveMelee={{ key: $animationCancelled ? 1 : 'movehero' }}
 				on:introend={async () => {
 					if (currentAnimation != undefined && !$animationCancelled) {
 						$currentAnimationIndex++;
 						$currentAnimation = $lastMsgFromServer?.animations.at($currentAnimationIndex);
 						if ($currentAnimation == undefined) {
 							syncVisualsToLatest($lastMsgFromServer);
-						}else{
-							await tick()
-							$currentAnimation.fired = true
+						} else {
+							await tick();
+							$currentAnimation.fired = true;
 						}
 					}
 				}}
 			>
-				<VisualUnit vu={host} {flipped} />
+				<VisualUnit vu={stableHost} {flipped} />
 			</div>
 		{/if}
 	</div>
 	<div class="area" style:order={flipped ? 0 : 2}>
 		<!-- {#if guest?.animating} -->
-		{#if guest}
+		{#if $dGuest}
 			<div
 				class="placeHolder"
-				in:receiveMelee={{ key: $animationCancelled?3:'movehero' }}
-				out:sendMelee={{ key: $animationCancelled?4:'movehero' }}
+				in:receiveMelee={{ key: $animationCancelled ? 3 : 'movehero' }}
+				out:sendMelee={{ key: $animationCancelled ? 4 : 'movehero' }}
 				on:introend={() => {
 					if ($currentAnimation != undefined && !$animationCancelled) {
-						if (host) {
-							console.log(host.name + 'animation dmg');
-							if ($currentAnimation) host.displayHp -= $currentAnimation?.damage;
+							if ($currentAnimation) stableHost.displayHp -= $currentAnimation?.damage;
 							$currentAnimation = undefined;
-						}
 					}
 				}}
 			>
-				<VisualUnit vu={guest} flipped={!flipped} />
-			</div>
-			{/if}
-			{#if projectileSource}
-			<div
-				class="projSourceHolder"
-				class:startAlignSelf={!flipped} class:endAlignSelf={flipped}
-				out:sendProj={{ key: $animationCancelled?7:'proj' }}
-			>
-				<img class="projectile" src={projectileSource.projectileImg} alt="a projectile">
+				<VisualUnit vu={$dGuest} flipped={!flipped} />
 			</div>
 		{/if}
-			{#if projectileTarget}
+		{#if $dProjectileSource}
+			<div
+				class="projSourceHolder"
+				class:startAlignSelf={!flipped}
+				class:endAlignSelf={flipped}
+				out:sendProj={{ key: $animationCancelled ? 7 : 'proj' }}
+			>
+				<img class="projectile" src={$dProjectileSource.projectileImg} alt="a projectile" />
+			</div>
+		{/if}
+		{#if $dProjectileTarget}
 			<div
 				class="projHolder"
-				class:startAlignSelf={!flipped} class:endAlignSelf={flipped}
-				in:receiveProj={{ key: $animationCancelled?8:'proj' }}
+				class:startAlignSelf={!flipped}
+				class:endAlignSelf={flipped}
+				in:receiveProj={{ key: $animationCancelled ? 8 : 'proj' }}
 				on:introend={async () => {
 					if ($currentAnimation != undefined && !$animationCancelled) {
-						if (host) {
-							console.log(host.name + 'projectile animation dmg');
-							if ($currentAnimation) host.displayHp -= $currentAnimation?.damage;
+							if ($currentAnimation) stableHost.displayHp -= $currentAnimation?.damage;
 							$currentAnimationIndex++;
 							$currentAnimation = $lastMsgFromServer?.animations.at($currentAnimationIndex);
 							if ($currentAnimation == undefined) {
 								syncVisualsToLatest($lastMsgFromServer);
-							}else{
-								await tick()
-								$currentAnimation.fired = true
+							} else {
+								await tick();
+								$currentAnimation.fired = true;
 							}
-						}
 					}
 				}}
 			>
-				<img class="projectile" src={projectileTarget.projectileImg} alt="a projectile">
+				<img class="projectile" src={$dProjectileTarget.projectileImg} alt="a projectile" />
 			</div>
 		{/if}
-		{#if selected}
-			<!-- {#if $clientState.selectedUnit === `${flip}${name}`} -->
+		<!-- {#if selected}
 			<div class="actions" class:startAligned={!flipped} class:endAligned={flipped}>
 				{#each acts as a}
 					<button
 						class="action"
 						on:click={() => {
-							// selected = false
 							$activeId = 0;
 							choose(a);
 						}}>{a.buttonText}</button
 					>
 				{/each}
 			</div>
-		{/if}
+		{/if} -->
 	</div>
 </div>
 
@@ -182,23 +227,23 @@
 		order: 1;
 		width: 60px;
 	}
-	.projHolder{
+	.projHolder {
 		background-color: aquamarine;
 		/* display: none; */
 		/* opacity: 0; */
-		height:20px;
-		width:20px;
+		height: 20px;
+		width: 20px;
 	}
-	.projSourceHolder{
+	.projSourceHolder {
 		background-color: aquamarine;
 		/* display: none; */
 		/* opacity: 0; */
-		height:20px;
-		width:20px;
+		height: 20px;
+		width: 20px;
 	}
 	.projectile {
-		height:20px;
-		width:20px;
+		height: 20px;
+		width: 20px;
 	}
 	/* .guest {
 		background-color: red;
@@ -206,7 +251,7 @@
 		width: 40px;
 	} */
 
-	.action {
+	/* .action {
 		white-space: nowrap;
 	}
 	.actions {
@@ -219,7 +264,7 @@
 	}
 	.startAligned {
 		align-items: flex-start;
-	}
+	} */
 	.endAlignSelf {
 		align-self: flex-end;
 	}

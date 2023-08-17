@@ -186,6 +186,7 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 		playerHitSpeed += action.speed
 	}
 	for (const enemyInScene of enemiesInScene(player.currentScene).sort((a, b) => b.template.speed - a.template.speed)) {
+		if(enemyInScene.currentHealth < 1)continue
 		if (
 			(postAction && (playerHitSpeed >= enemyInScene.template.speed))
 			|| (!postAction && (playerHitSpeed < enemyInScene.template.speed))
