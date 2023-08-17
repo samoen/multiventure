@@ -67,7 +67,7 @@ const dagger: Item = {
 										source: { name: player.heroName, side: 'hero' },
 										target: { name: enemy.name, side: 'enemy' },
 										damage: r.dmgDone,
-										projectile: 'melee',
+										behavior: 'melee',
 									}
 								})
 						}
@@ -97,7 +97,7 @@ const club: Item = {
 										source: { name: player.heroName, side: 'hero' },
 										target: { name: enemy.name, side: 'enemy' },
 										damage: r.dmgDone,
-										projectile: 'melee',
+										behavior: 'melee',
 									}
 								})
 						}
@@ -128,7 +128,8 @@ const fireStaff: Item = {
 										source: { name: player.heroName, side: 'hero' },
 										target: { name: enemy.name, side: 'enemy' },
 										damage: r.dmgDone,
-										projectile: 'arrow',
+										behavior: 'missile',
+										extraSprite:'flame',
 									}
 								})
 						}
@@ -152,7 +153,7 @@ const bandage: Item = {
 						grantsImmunity: true,
 						provoke: 1,
 						performAction: () => {
-							let r = healPlayer(friend, 20)
+							let r = healPlayer(friend, 90)
 							if (friend.heroName != player.heroName && r.healed > 0) {
 								pushAnimation(
 									{
@@ -161,7 +162,7 @@ const bandage: Item = {
 											source: { name: player.heroName, side: 'hero' },
 											target: { name: friend.heroName, side: 'hero' },
 											damage: r.healed*-1,
-											projectile: 'melee',
+											behavior: 'melee',
 										}
 									})
 							}
@@ -183,10 +184,11 @@ const bomb: Item = {
 			player.itemActions.push({
 				buttonText: 'Throw Powderbomb',
 				speed: 12,
+				provoke:5,
 				// target:{kind:'anyEnemy'},
 				performAction() {
 					for (const enemy of enemiesInScene(player.currentScene)) {
-						enemy.aggros.clear()
+						// enemy.aggros.clear()
 						damageEnemy(player, enemy, 5)
 					}
 					if (player.inventory.utility.stock) {
@@ -222,7 +224,8 @@ const poisonDart: Item = {
 										source: { name: player.heroName, side: 'hero' },
 										target: { name: enemy.name, side: 'enemy' },
 										damage: r.dmgDone,
-										projectile: 'arrow',
+										behavior: 'missile',
+										extraSprite:'arrow',
 									}
 								})
 						}

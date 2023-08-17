@@ -1,4 +1,4 @@
-import type { AnimationTarget, BattleAnimation, EnemyName, EnemyStatusEffect } from "$lib/utils";
+import type { AnimationBehavior, AnimationTarget, BattleAnimation, EnemyName, EnemyStatusEffect } from "$lib/utils";
 import { pushHappening } from "./messaging";
 import { scenes, type SceneId } from "./scenes";
 import { playerEquipped, type HeroName, type Player, activePlayers, activePlayersInScene } from "./users";
@@ -22,7 +22,7 @@ export type EnemyTemplate = {
 	strikes?:number
 	baseHealth: number
 	baseDamage: number
-	projectile?: 'melee' | 'arrow'
+	behavior?: AnimationBehavior
 	aggroGain: number
 	speed: number
 	onTakeDamage?: (incoming: number) => number
@@ -47,7 +47,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 	goblin: {
 		baseHealth: 50,
 		baseDamage: 10,
-		aggroGain: 90,
+		aggroGain: 10,
 		speed: 4,
 	},
 	hobGoblin: {
@@ -66,11 +66,11 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		aggroGain: 90,
 		speed: 10,
 		specialAttack(me: ActiveEnemy, player:Player) {
-			let dmged:AnimationTarget[] = []
+			let dmged:({target:AnimationTarget, amount:number})[] = []
 			for (const enemy of enemiesInScene(me.currentScene)) {
 				if (enemy.name != me.name) {
 					let r = infightDamage(me, enemy)
-					if(r.dmgDone > 0)dmged.push({name:enemy.name,side:'enemy'})
+					if(r.dmgDone > 0)dmged.push({target:{name:enemy.name,side:'enemy'},amount:r.dmgDone})
 				}
 			}
 			// for (const player of activePlayersInScene(me.currentScene)) {
@@ -82,7 +82,8 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 							source:{name:me.name,side:'enemy'},
 							target: {name:player.heroName,side:'hero'},
 							damage:r.dmgDone,
-							projectile:'arrow',
+							behavior:'missile',
+							extraSprite:'flame',
 							alsoDamages: dmged,
 						},
 					})
@@ -125,11 +126,14 @@ export function addAggro(actor: Player, provoke: number) {
 	for (const respondingEnemy of enemiesInScene(actor.currentScene)) {
 		const aggroGain = provoke + respondingEnemy.template.aggroGain
 		let existingAggro = respondingEnemy.aggros.get(actor.heroName)
-		if (existingAggro) {
-			respondingEnemy.aggros.set(actor.heroName, existingAggro + aggroGain)
-		} else {
-			respondingEnemy.aggros.set(actor.heroName, aggroGain)
+		if(existingAggro == undefined){
+			existingAggro = 0
 		}
+		let newAggro = existingAggro + aggroGain
+		if(newAggro > 100){
+			newAggro = 100
+		}
+		respondingEnemy.aggros.set(actor.heroName, newAggro)
 	}
 
 }
@@ -177,16 +181,9 @@ export function damageEnemy(actor: Player, enemy: ActiveEnemy, damage: number, s
 }
 
 export function pushAnimation(
-	// source:AnimationTarget,target:AnimationTarget, actor:Player, dmg:number, projectile:'arrow'|'melee' = 'melee'
 	{sceneId,battleAnimation}:{sceneId:SceneId,battleAnimation:BattleAnimation}
 	){
 	activePlayersInScene(sceneId).forEach(p=>{
-		// p.animations.push({
-		// 	source:source,
-		// 	target:target,
-		// 	damage:dmg,
-		// 	projectile:projectile,
-		// })
 		p.animations.push(battleAnimation)
 
 	})

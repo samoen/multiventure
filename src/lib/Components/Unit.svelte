@@ -24,7 +24,10 @@
 		receiveProj,
 		sendProj,
 		nextAnimationIndex,
-		subAnimationStage
+		subAnimationStage,
+
+		extraSprites
+
 	} from '$lib/client/ui';
 	import arrow from '$lib/assets/arrow.png';
 	import type { AnimationTarget, GameActionSentToClient } from '$lib/utils';
@@ -56,7 +59,7 @@
 				return true;
 			}
 			if (
-				$currentAnim.projectile == 'melee' &&
+				$currentAnim.behavior == 'melee' &&
 				$currentAnim.source.side == side &&
 				$currentAnim.source.name == stableHost.name &&
 				$subAnimationStage == 'fire'
@@ -89,7 +92,7 @@
 		([$currentAnimation, $subAnimationStage]) => {
 			if (!$currentAnimation) return undefined;
 			if (
-				$currentAnimation.projectile == 'melee' &&
+				$currentAnimation.behavior == 'melee' &&
 				$currentAnimation.target.side == side &&
 				$currentAnimation.target.name == stableHost.name &&
 				$subAnimationStage == 'fire'
@@ -103,21 +106,21 @@
 	const dProjectileSource = derived(
 		[currentAnimation, subAnimationStage],
 		([$currentAnimation, $subAnimationStage]) => {
-			if (!$currentAnimation) return undefined;
+			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
 			if (
-				$currentAnimation.projectile == 'arrow' &&
+				$currentAnimation.behavior == 'missile' &&
 				$currentAnimation.source.name == stableHost.name &&
 				$currentAnimation.source.side == side &&
 				$subAnimationStage == 'start'
 			) {
-				if(stableHost.name.startsWith('fireGrem')){
-					console.log(`SOURCE ${stableHost.name} source proj`);
-				}
-				return { projectileImg: arrow };
+				// if(stableHost.name.startsWith('fireGrem')){
+				// 	console.log(`SOURCE ${stableHost.name} source proj`);
+				// }
+				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
 			}
-			if(stableHost.name.startsWith('fireGrem')){
-				console.log(`${stableHost.name} not source proj`);
-			}
+			// if(stableHost.name.startsWith('fireGrem')){
+			// 	console.log(`${stableHost.name} not source proj`);
+			// }
 			return undefined;
 		}
 	);
@@ -125,10 +128,10 @@
 	const dProjectileTarget = derived(
 		[currentAnimation, subAnimationStage],
 		([$currentAnimation, $subAnimationStage]) => {
-			if (!$currentAnimation) return undefined;
+			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
 			// console.log(`calc target proj ${stableHost.name}`)
 			if (
-				$currentAnimation.projectile == 'arrow' &&
+				$currentAnimation.behavior == 'missile' &&
 				(($currentAnimation.target.side == side &&
 					stableHost.name == $currentAnimation.target.name) 
 					// ||
@@ -139,7 +142,7 @@
 				$subAnimationStage == 'fire'
 			) {
 				console.log(`ONTARGET ${stableHost.name} is target proj`);
-				return { projectileImg: arrow };
+				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
 			}
 			return undefined;
 		}
@@ -202,21 +205,6 @@
 			</div>
 		{/if}
 		{#if $dProjectileSource}
-			<!-- {#if $currentAnimation && $currentAnimation.alsoDamages}
-			{#each $currentAnimation.alsoDamages as ad}
-				<div
-					class="projSourceHolder"
-					class:startAlignSelf={!flipped}
-					class:endAlignSelf={flipped}
-					out:sendProj={{ key: $animationCancelled ? 7 : 'proj' }}
-				>
-					<img 
-					class="projectile" class:flipped={flipped} src={$dProjectileSource.projectileImg} alt="a projectile" />
-				</div>
-				
-			{/each}
-
-			{/if} -->
 			<div
 				class="projSourceHolder"
 				class:startAlignSelf={!flipped}
@@ -242,10 +230,10 @@
 						stableHost.displayHp -= $currentAnimation.damage;
 						if($currentAnimation.alsoDamages){
 							for (const other of $currentAnimation.alsoDamages){
-								let otherProps = findVisualUnitProps(other)
+								let otherProps = findVisualUnitProps(other.target)
 								if(otherProps){
 									console.log('hitting other')
-									otherProps.displayHp -= $currentAnimation.damage
+									otherProps.displayHp -= other.amount
 								}
 							}
 							$enemiesVisualUnitProps = $enemiesVisualUnitProps

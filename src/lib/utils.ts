@@ -37,10 +37,14 @@ export type BattleAnimation = {
 	source: AnimationTarget,
 	target: AnimationTarget,
 	damage: number,
-	projectile: 'arrow' | 'melee',
-	fired?: boolean,
-	alsoDamages?:AnimationTarget[],
+	behavior: AnimationBehavior,
+	extraSprite?: ExtraSprite,
+	alsoDamages?:{target:AnimationTarget,amount:number}[],
 }
+
+export type ExtraSprite = 'arrow' | 'bomb' | 'flame'
+
+export type AnimationBehavior = 'missile' | 'melee' | 'noTarget'
 
 export type EnemyStatusEffect = {
 	status: 'poison' | 'rage';

@@ -1,5 +1,5 @@
 import type { HeroName } from "$lib/server/users";
-import type { BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient, MessageFromServer, OtherPlayerInfo } from "$lib/utils";
+import type { BattleAnimation, EnemyInClient, EnemyName, ExtraSprite, GameActionSentToClient, MessageFromServer, OtherPlayerInfo } from "$lib/utils";
 import { derived, get, writable, type Writable } from "svelte/store";
 import peasantPortrait from '$lib/assets/portraits/peasant.webp';
 import peasant from '$lib/assets/peasant.png';
@@ -13,6 +13,8 @@ import rogue from '$lib/assets/rogue.png';
 import fireghost from '$lib/assets/fireghost.png';
 import theif from '$lib/assets/thief.png';
 import mage from '$lib/assets/mage.png';
+import arrow from '$lib/assets/arrow.png';
+import bomb from '$lib/assets/bomb.png';
 import type { ItemId, ItemIdForSlot } from '$lib/server/items.js';
 import { crossfade } from "svelte/transition";
 import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easing";
@@ -146,6 +148,11 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer) {
     }
 }
 
+export const extraSprites : Record<ExtraSprite,string> = {
+    arrow:arrow,
+    bomb:bomb,
+    flame:arrow,
+}
 
 export async function nextAnimationIndex(start:boolean){
     if(start){
