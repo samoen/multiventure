@@ -1,3 +1,4 @@
+import type { AnimationTarget } from '$lib/utils';
 import { damageEnemy, enemiesInScene, pushAnimation, takePoisonDamage } from './enemies';
 import { pushHappening } from './messaging';
 import { activePlayersInScene, healPlayer, type Player } from './users';
@@ -187,10 +188,32 @@ const bomb: Item = {
 				provoke:5,
 				// target:{kind:'anyEnemy'},
 				performAction() {
+					let dmgs : {target:AnimationTarget,amount:number}[]= []
 					for (const enemy of enemiesInScene(player.currentScene)) {
 						// enemy.aggros.clear()
-						damageEnemy(player, enemy, 5)
+						let r = damageEnemy(player, enemy, 5)
+						if(r.dmgDone>0){
+							dmgs.push({
+								amount:r.dmgDone,
+								target:{
+									name:enemy.name,
+									side:'enemy',
+								}
+							})
+						}
 					}
+					pushAnimation(
+						{
+							sceneId: player.currentScene,
+							battleAnimation: {
+								source: { name: player.heroName, side: 'hero' },
+								target: { name: player.heroName, side: 'hero' },
+								damage: 0,
+								behavior: 'noTarget',
+								alsoDamages:dmgs,
+								extraSprite:'bomb'
+							}
+						})
 					if (player.inventory.utility.stock) {
 						player.inventory.utility.stock--
 					}

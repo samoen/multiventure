@@ -26,11 +26,17 @@
 		nextAnimationIndex,
 		subAnimationStage,
 
-		extraSprites
+		extraSprites,
+
+		findVisualUnitProps,
+
+		sendCenter
+
+
 
 	} from '$lib/client/ui';
 	import arrow from '$lib/assets/arrow.png';
-	import type { AnimationTarget, GameActionSentToClient } from '$lib/utils';
+	import type { AnimationTarget, GameActionSentToClient, MessageFromServer } from '$lib/utils';
 	import { quintOut } from 'svelte/easing';
 	import { derived, writable, type Writable } from 'svelte/store';
 	import { crossfade } from 'svelte/transition';
@@ -72,20 +78,20 @@
 		}
 	);
 
-	function findVisualUnitProps(at: AnimationTarget): VisualUnitProps | undefined {
-		if (at.side == 'hero' && at.name == $lastMsgFromServer?.yourName) {
-			return $heroVisualUnitProps;
-		}
-		if (at.side == 'enemy') {
-			let en = $enemiesVisualUnitProps.find((e) => at.name == e.name);
-			if (en) return en;
-		}
-		if (at.side == 'hero') {
-			let ally = $alliesVisualUnitProps.find((e) => at.name == e.name);
-			if (ally) return ally;
-		}
-		return undefined;
-	}
+	// function findVisualUnitProps(at: AnimationTarget, lastMsg:MessageFromServer, heroProps:VisualUnitProps, enemies:VisualUnitProps[], allies:VisualUnitProps[] ): VisualUnitProps | undefined {
+	// 	if (at.side == 'hero' && at.name == $lastMsgFromServer?.yourName) {
+	// 		return $heroVisualUnitProps;
+	// 	}
+	// 	if (at.side == 'enemy') {
+	// 		let en = $enemiesVisualUnitProps.find((e) => at.name == e.name);
+	// 		if (en) return en;
+	// 	}
+	// 	if (at.side == 'hero') {
+	// 		let ally = $alliesVisualUnitProps.find((e) => at.name == e.name);
+	// 		if (ally) return ally;
+	// 	}
+	// 	return undefined;
+	// }
 
 	const dGuest = derived(
 		[currentAnimation, subAnimationStage],
@@ -97,12 +103,33 @@
 				$currentAnimation.target.name == stableHost.name &&
 				$subAnimationStage == 'fire'
 			) {
-				return findVisualUnitProps($currentAnimation.source);
+				return findVisualUnitProps($currentAnimation.source,$lastMsgFromServer, $heroVisualUnitProps, $enemiesVisualUnitProps, $alliesVisualUnitProps);
 			}
 			return undefined;
 		}
 	);
 
+	const dNoTargetSource = derived(
+		[currentAnimation, subAnimationStage],
+		([$currentAnimation, $subAnimationStage]) => {
+			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
+			if (
+				$currentAnimation.behavior == 'noTarget' &&
+				$currentAnimation.source.name == stableHost.name &&
+				$currentAnimation.source.side == side &&
+				$subAnimationStage == 'start'
+			) {
+				// if(stableHost.name.startsWith('fireGrem')){
+				// 	console.log(`SOURCE ${stableHost.name} source proj`);
+				// }
+				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
+			}
+			// if(stableHost.name.startsWith('fireGrem')){
+			// 	console.log(`${stableHost.name} not source proj`);
+			// }
+			return undefined;
+		}
+	);
 	const dProjectileSource = derived(
 		[currentAnimation, subAnimationStage],
 		([$currentAnimation, $subAnimationStage]) => {
@@ -219,6 +246,21 @@
 				/>
 			</div>
 		{/if}
+		{#if $dNoTargetSource}
+			<div
+				class="projSourceHolder"
+				class:startAlignSelf={!flipped}
+				class:endAlignSelf={flipped}
+				out:sendCenter={{ key: $animationCancelled ? 11 : 'cen' }}
+			>
+				<img
+					class="projectile"
+					class:flipped
+					src={$dNoTargetSource.projectileImg}
+					alt="a projectile"
+				/>
+			</div>
+		{/if}
 		{#if $dProjectileTarget}
 			<div
 				class="projHolder"
@@ -230,7 +272,7 @@
 						stableHost.displayHp -= $currentAnimation.damage;
 						if($currentAnimation.alsoDamages){
 							for (const other of $currentAnimation.alsoDamages){
-								let otherProps = findVisualUnitProps(other.target)
+								let otherProps = findVisualUnitProps(other.target,$lastMsgFromServer, $heroVisualUnitProps, $enemiesVisualUnitProps, $alliesVisualUnitProps)
 								if(otherProps){
 									console.log('hitting other')
 									otherProps.displayHp -= other.amount

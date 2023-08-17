@@ -41,7 +41,19 @@
 
 		nextAnimationIndex,
 
-		subAnimationStage
+		subAnimationStage,
+
+		receiveProj,
+
+		centerFieldTarget,
+
+		findVisualUnitProps,
+
+		receiveCenter
+
+
+
+
 
 
 	} from '$lib/client/ui';
@@ -439,6 +451,41 @@
 				/>
 			{/each}
 		</div>
+		{#if $centerFieldTarget}
+			<div 
+			class="centerField"
+			in:receiveCenter={{ key: $animationCancelled ? 10 : 'cen' }}
+			on:introend={() => {
+				if ($currentAnimation != undefined && !$animationCancelled && $lastMsgFromServer) {
+					if($currentAnimation.alsoDamages){
+						for (const other of $currentAnimation.alsoDamages){
+							let otherProps = findVisualUnitProps(other.target, $lastMsgFromServer, $heroVisualUnitProps, $enemiesVisualUnitProps, $alliesVisualUnitProps)
+							if(otherProps){
+								otherProps.displayHp -= other.amount
+							}
+						}
+						$enemiesVisualUnitProps = $enemiesVisualUnitProps
+						$alliesVisualUnitProps = $alliesVisualUnitProps
+						$heroVisualUnitProps = $heroVisualUnitProps
+					}
+					// if (
+					// 	$currentAnimation.target.name == stableHost.name &&
+					// 	$currentAnimation.target.side == side
+					// ) {
+						console.log(`center reached, nexting`)
+						nextAnimationIndex(false);
+					// }
+				}
+			}}
+			>
+			<img
+					class="centerImg"
+					src={$centerFieldTarget.projectileImg}
+					alt="a center target"
+				/>
+			</div>
+			
+		{/if}
 		<div class="units">
 			<!-- acts={$lastMsgFromServer.itemActions.filter(
 						(ia) =>
@@ -600,6 +647,13 @@
 		flex-direction: column;
 		justify-content: center;
 		gap: 10px;
+	}
+	.centerField{
+		background-color: aqua;
+		height:40px;
+		width:40px;
+		justify-self: center;
+		align-self: center;
 	}
 	.visual {
 		background-color: burlywood;

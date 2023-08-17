@@ -1,5 +1,5 @@
 import type { HeroName } from "$lib/server/users";
-import type { BattleAnimation, EnemyInClient, EnemyName, ExtraSprite, GameActionSentToClient, MessageFromServer, OtherPlayerInfo } from "$lib/utils";
+import type { AnimationTarget, BattleAnimation, EnemyInClient, EnemyName, ExtraSprite, GameActionSentToClient, MessageFromServer, OtherPlayerInfo } from "$lib/utils";
 import { derived, get, writable, type Writable } from "svelte/store";
 import peasantPortrait from '$lib/assets/portraits/peasant.webp';
 import peasant from '$lib/assets/peasant.png';
@@ -92,8 +92,17 @@ export const [sendMelee, receiveMelee] = crossfade({
     }
 });
 export const [sendProj, receiveProj] = crossfade({
-    duration: (d) => Math.sqrt(d * 400),
+    duration: (d) => Math.sqrt(d * 500),
     easing:linear,
+    fallback(node, params) {
+        return {
+            duration: 0,
+        };
+    }
+});
+export const [sendCenter, receiveCenter] = crossfade({
+    duration: (d) => Math.sqrt(d * 1900),
+    easing:quintOut,
     fallback(node, params) {
         return {
             duration: 0,
@@ -153,6 +162,36 @@ export const extraSprites : Record<ExtraSprite,string> = {
     bomb:bomb,
     flame:arrow,
 }
+
+export function findVisualUnitProps(at: AnimationTarget, lastMsg:MessageFromServer|undefined, heroProps:VisualUnitProps|undefined, enemies:VisualUnitProps[], allies:VisualUnitProps[] ): VisualUnitProps | undefined {
+    if (at.side == 'hero' && at.name == lastMsg?.yourName) {
+        return heroProps;
+    }
+    if (at.side == 'enemy') {
+        let en = enemies.find((e) => at.name == e.name);
+        if (en) return en;
+    }
+    if (at.side == 'hero') {
+        let ally = allies.find((e) => at.name == e.name);
+        if (ally) return ally;
+    }
+    return undefined;
+}
+
+export const centerFieldTarget = derived(
+    [currentAnimation, subAnimationStage],
+    ([$currentAnimation, $subAnimationStage]) => {
+        if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
+        // console.log(`calc target proj ${stableHost.name}`)
+        if (
+            $currentAnimation.behavior == 'noTarget' &&
+            $subAnimationStage == 'fire'
+        ) {
+            return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
+        }
+        return undefined;
+    }
+);
 
 export async function nextAnimationIndex(start:boolean){
     if(start){
