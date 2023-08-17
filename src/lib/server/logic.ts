@@ -1,4 +1,4 @@
-import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation } from "./enemies"
+import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer } from "./enemies"
 import { items } from "./items"
 import { pushHappening } from "./messaging"
 import { scenes } from "./scenes"
@@ -191,9 +191,9 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 			(postAction && (playerHitSpeed >= enemyInScene.template.speed))
 			|| (!postAction && (playerHitSpeed < enemyInScene.template.speed))
 		) {
-			let aggroForActor = enemyInScene.aggros.get(player.heroName)
+			let aggroForActor = getAggroForPlayer(enemyInScene,player)
 			if (aggroForActor) {
-				if ((Math.random() + (aggroForActor / 100)) > 1) {
+				if ((Math.random() < (aggroForActor / 100))) {
 					if (enemyInScene.template.specialAttack) {
 						enemyInScene.template.specialAttack(enemyInScene, player)
 					} else {
@@ -213,7 +213,11 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 							}
                         // }
 					}
-					enemyInScene.aggros.clear()
+					
+					// enemyInScene.aggros.clear()
+					for (const key of enemyInScene.aggros.keys()) {
+						enemyInScene.aggros.set(key, 0);
+					}
 				}
 			}
 		}

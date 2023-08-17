@@ -649,16 +649,23 @@
 		gap: 10px;
 	}
 	.centerField{
-		background-color: aqua;
-		height:40px;
-		width:40px;
+		/* background-color: aqua; */
+		height:60px;
+		width:60px;
 		justify-self: center;
 		align-self: center;
+		display: flex;
+		justify-content: center;
+		align-content: center;
+	}
+	.centerImg{
+		height:100%;
+		width:100%;
 	}
 	.visual {
 		background-color: burlywood;
 		display: flex;
-		justify-content: space-around;
+		justify-content: space-between;
 		padding: 50px;
 	}
 	.selectedDetails {

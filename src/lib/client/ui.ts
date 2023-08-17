@@ -49,6 +49,7 @@ export type VisualUnitProps = {
     hp: number;
     displayHp: number
     maxHp: number;
+    aggro?:number;
 }
 
 export const enemySprites = {
@@ -83,7 +84,7 @@ export const animationCancelled = writable(false)
 export const subAnimationStage :Writable<'start'|'fire'|'sentHome'> = writable('start')
 
 export const [sendMelee, receiveMelee] = crossfade({
-    duration: (d) => Math.sqrt(d * 600),
+    duration: (d) => Math.sqrt(d * 900),
     easing:quintInOut,
     fallback(node, params) {
         return {
@@ -92,7 +93,7 @@ export const [sendMelee, receiveMelee] = crossfade({
     }
 });
 export const [sendProj, receiveProj] = crossfade({
-    duration: (d) => Math.sqrt(d * 500),
+    duration: (d) => Math.sqrt(d * 600),
     easing:linear,
     fallback(node, params) {
         return {
@@ -138,6 +139,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer) {
                 hp: e.health,
                 displayHp: e.health,
                 maxHp: e.maxHealth,
+                aggro:e.myAggro,
             }
         }))
         alliesVisualUnitProps.set(
@@ -214,7 +216,7 @@ export async function nextAnimationIndex(start:boolean){
     }
 
     subAnimationStage.set('start')
-    console.log('tick')
+    // console.log('tick')
     await tick()
 
 

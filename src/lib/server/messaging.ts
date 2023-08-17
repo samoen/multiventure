@@ -1,5 +1,5 @@
 import type { MessageFromServer, OtherPlayerInfo } from '$lib/utils';
-import { activeEnemies, addAggro, damagePlayer, enemiesInScene, takePoisonDamage } from './enemies';
+import { activeEnemies, addAggro, damagePlayer, enemiesInScene, getAggroForPlayer, takePoisonDamage } from './enemies';
 import { items } from './items';
 import { scenes } from './scenes';
 import { activePlayers, globalFlags, playerItemStates, users, type HeroName, type Player, type GameAction, activePlayersInScene } from './users';
@@ -65,7 +65,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				maxHealth: e.maxHealth,
 				name: e.name,
 				templateId: e.templateId,
-				myAggro: e.aggros.get(forPlayer.heroName) ?? 0,
+				myAggro: getAggroForPlayer(e,forPlayer),
 				statuses: e.statuses,
 			}
 		}),

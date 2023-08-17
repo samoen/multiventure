@@ -18,12 +18,22 @@ export type ActiveEnemy = {
 	statuses: EnemyStatusEffect[]
 }
 
+export function getAggroForPlayer(enemy:ActiveEnemy, player:Player):number{
+	let existing = enemy.aggros.get(player.heroName)
+	if(existing == undefined){
+		enemy.aggros.set(player.heroName,enemy.template.startAggro)
+		existing = enemy.template.startAggro
+	}
+	return existing
+}
+
 export type EnemyTemplate = {
 	strikes?:number
 	baseHealth: number
 	baseDamage: number
 	behavior?: AnimationBehavior
 	aggroGain: number
+	startAggro: number
 	speed: number
 	onTakeDamage?: (incoming: number) => number
 	specialAttack?: (me: ActiveEnemy, player:Player) => void
@@ -41,19 +51,22 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		strikes: 2,
 		baseHealth: 5,
 		baseDamage: 10,
-		aggroGain: 50,
+		aggroGain: 10,
+		startAggro: 50,
 		speed: 3
 	},
 	goblin: {
 		baseHealth: 50,
 		baseDamage: 10,
 		aggroGain: 10,
+		startAggro:10,
 		speed: 4,
 	},
 	hobGoblin: {
 		baseHealth: 50,
 		baseDamage: 10,
 		aggroGain: 30,
+		startAggro:0,
 		speed: 10,
 		onTakeDamage(incoming) {
 			if (incoming > 10) return 10
@@ -63,7 +76,8 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 	fireGremlin: {
 		baseHealth: 10,
 		baseDamage: 5,
-		aggroGain: 90,
+		aggroGain: 50,
+		startAggro:100,
 		speed: 10,
 		specialAttack(me: ActiveEnemy, player:Player) {
 			let dmged:({target:AnimationTarget, amount:number})[] = []
@@ -95,6 +109,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		baseHealth: 150,
 		baseDamage: 50,
 		aggroGain: 1,
+		startAggro:0,
 		speed: 1,
 	}
 };
@@ -125,10 +140,7 @@ export function spawnEnemy(name: string, template: EnemyTemplateId, where: Scene
 export function addAggro(actor: Player, provoke: number) {
 	for (const respondingEnemy of enemiesInScene(actor.currentScene)) {
 		const aggroGain = provoke + respondingEnemy.template.aggroGain
-		let existingAggro = respondingEnemy.aggros.get(actor.heroName)
-		if(existingAggro == undefined){
-			existingAggro = 0
-		}
+		let existingAggro = getAggroForPlayer(respondingEnemy,actor)
 		let newAggro = existingAggro + aggroGain
 		if(newAggro > 100){
 			newAggro = 100

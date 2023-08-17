@@ -39,14 +39,13 @@
 	import type { AnimationTarget, GameActionSentToClient, MessageFromServer } from '$lib/utils';
 	import { quintOut } from 'svelte/easing';
 	import { derived, writable, type Writable } from 'svelte/store';
-	import { crossfade } from 'svelte/transition';
+	import { crossfade, fade } from 'svelte/transition';
 	import VisualUnit from './VisualUnit.svelte';
 	import { tick } from 'svelte';
 
 	export let side: 'hero' | 'enemy';
 	export let stableHost: VisualUnitProps;
 	// console.log('stablehost: ' + JSON.stringify(stableHost))
-
 	export let flipped: boolean = false;
 	// export let acts: GameActionSentToClient[];
 	export let clicky: () => void;
@@ -78,23 +77,8 @@
 		}
 	);
 
-	// function findVisualUnitProps(at: AnimationTarget, lastMsg:MessageFromServer, heroProps:VisualUnitProps, enemies:VisualUnitProps[], allies:VisualUnitProps[] ): VisualUnitProps | undefined {
-	// 	if (at.side == 'hero' && at.name == $lastMsgFromServer?.yourName) {
-	// 		return $heroVisualUnitProps;
-	// 	}
-	// 	if (at.side == 'enemy') {
-	// 		let en = $enemiesVisualUnitProps.find((e) => at.name == e.name);
-	// 		if (en) return en;
-	// 	}
-	// 	if (at.side == 'hero') {
-	// 		let ally = $alliesVisualUnitProps.find((e) => at.name == e.name);
-	// 		if (ally) return ally;
-	// 	}
-	// 	return undefined;
-	// }
-
 	const dGuest = derived(
-		[currentAnimation, subAnimationStage],
+		[currentAnimation, subAnimationStage, enemiesVisualUnitProps],
 		([$currentAnimation, $subAnimationStage]) => {
 			if (!$currentAnimation) return undefined;
 			if (
@@ -103,7 +87,11 @@
 				$currentAnimation.target.name == stableHost.name &&
 				$subAnimationStage == 'fire'
 			) {
-				return findVisualUnitProps($currentAnimation.source,$lastMsgFromServer, $heroVisualUnitProps, $enemiesVisualUnitProps, $alliesVisualUnitProps);
+				let found = findVisualUnitProps($currentAnimation.source,$lastMsgFromServer, $heroVisualUnitProps, $enemiesVisualUnitProps, $alliesVisualUnitProps);
+				if(found){
+				// 	found.aggro = 0
+					return found
+				}
 			}
 			return undefined;
 		}
@@ -208,6 +196,28 @@
 						nextAnimationIndex(false);
 					}
 				}}
+				
+				on:outrostart={async()=>{
+					if(stableHost.aggro){
+						// console.log('outstart')
+						// stableHost.aggro = 0
+						// stableHost = stableHost
+						// let found = $enemiesVisualUnitProps.find(e=>e === stableHost)
+						// if(found){
+						// 	console.log('FOUNDDDY' + found.aggro)
+						// 	found.aggro = 0
+						// }
+						// enemiesVisualUnitProps.update((es)=>{
+						// 	return es.map(e=>{
+						// 		e.aggro = 0
+						// 		return e
+						// 	})
+						// })
+						// stableHost.aggro = 0
+						// await tick()
+					}
+					// $enemiesVisualUnitProps = $enemiesVisualUnitProps
+				}}
 			>
 				<VisualUnit vu={stableHost} {flipped} />
 			</div>
@@ -220,9 +230,16 @@
 				class="placeHolder"
 				in:receiveMelee={{ key: $animationCancelled ? 3 : 'movehero' }}
 				out:sendMelee={{ key: $animationCancelled ? 4 : 'movehero' }}
-				on:introend={() => {
+				on:introend={async () => {
 					if ($currentAnimation != undefined && !$animationCancelled) {
 						stableHost.displayHp -= $currentAnimation?.damage;
+						if($dGuest && $dGuest.aggro){
+							let dg = $dGuest
+							dg.aggro = 0
+							$enemiesVisualUnitProps = $enemiesVisualUnitProps
+							await tick()
+						}
+						
 						console.log('sending guest home');
 						$subAnimationStage = 'sentHome';
 					}
@@ -234,9 +251,15 @@
 		{#if $dProjectileSource}
 			<div
 				class="projSourceHolder"
+				out:sendProj={{ key: $animationCancelled ? 7 : 'proj' }}
 				class:startAlignSelf={!flipped}
 				class:endAlignSelf={flipped}
-				out:sendProj={{ key: $animationCancelled ? 7 : 'proj' }}
+				in:fade={{duration:1}}
+				on:introstart={()=>{
+					if(stableHost.aggro){
+						stableHost.aggro = 0
+					}
+				}}
 			>
 				<img
 					class="projectile"
@@ -248,13 +271,19 @@
 		{/if}
 		{#if $dNoTargetSource}
 			<div
-				class="projSourceHolder"
+				class="noTargetSourceHolder"
 				class:startAlignSelf={!flipped}
 				class:endAlignSelf={flipped}
+				in:fade={{duration:1}}
+				on:introstart={()=>{
+					if(stableHost.aggro){
+						stableHost.aggro = 0
+					}
+				}}
 				out:sendCenter={{ key: $animationCancelled ? 11 : 'cen' }}
 			>
 				<img
-					class="projectile"
+					class="noTargetImg"
 					class:flipped
 					src={$dNoTargetSource.projectileImg}
 					alt="a projectile"
@@ -321,19 +350,19 @@
 		transform: scaleX(-1);
 	}
 	.placeHolder {
-		border: 3px solid black;
+		/* border: 3px solid black; */
 		order: 1;
 		width: 60px;
 	}
 	.projHolder {
-		background-color: aquamarine;
+		/* background-color: aquamarine; */
 		/* display: none; */
 		/* opacity: 0; */
 		height: 20px;
 		width: 20px;
 	}
 	.projSourceHolder {
-		background-color: aquamarine;
+		/* background-color: aquamarine; */
 		/* display: none; */
 		/* opacity: 0; */
 		height: 20px;
@@ -342,6 +371,14 @@
 	.projectile {
 		height: 20px;
 		width: 20px;
+	}
+	.noTargetSourceHolder{
+		height:60px;
+		width:60px;
+	}
+	.noTargetImg{
+		height:100%;
+		width:100%;
 	}
 	/* .guest {
 		background-color: red;
@@ -373,9 +410,9 @@
 		display: flex;
 		flex-direction: row;
 		height: 100px;
+		/* background-color: brown; */
 	}
 	.area {
-		background-color: brown;
 		width: 60px;
 		display: flex;
 		flex-direction: column;
