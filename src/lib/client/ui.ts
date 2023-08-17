@@ -85,7 +85,7 @@ export const [sendMelee, receiveMelee] = crossfade({
     }
 });
 export const [sendProj, receiveProj] = crossfade({
-    duration: (d) => Math.sqrt(d * 350),
+    duration: (d) => Math.sqrt(d * 400),
     easing:linear,
     fallback(node, params) {
         return {

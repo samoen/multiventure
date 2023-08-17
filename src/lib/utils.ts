@@ -10,7 +10,7 @@ export type MessageFromServer = {
 	yourName: HeroName;
 	yourScene: SceneId;
 	yourHp: number;
-	yourMaxHp:number;
+	yourMaxHp: number;
 	yourWeapon: ItemStateForSlot<'weapon'>;
 	yourUtility: ItemStateForSlot<'utility'>;
 	yourBody: ItemStateForSlot<'body'>;
@@ -20,39 +20,40 @@ export type MessageFromServer = {
 	itemActions: GameActionSentToClient[];
 	happenings: string[];
 	animations: BattleAnimation[];
-	enemiesInScene:EnemyInClient[];
-	playerFlags:Flag[];
-	globalFlags:GlobalFlag[];
+	enemiesInScene: EnemyInClient[];
+	playerFlags: Flag[];
+	globalFlags: GlobalFlag[];
 };
 
 export type AnimationTarget = {
-name:HeroName,
-side:'hero'
+	name: HeroName,
+	side: 'hero'
 } | {
-	name:EnemyName,
+	name: EnemyName,
 	side: 'enemy'
 }
 
 export type BattleAnimation = {
-	source:AnimationTarget,
-	target:AnimationTarget,
-	damage:number,
-	projectile:'arrow'|'melee',
-	fired?:boolean,
+	source: AnimationTarget,
+	target: AnimationTarget,
+	damage: number,
+	projectile: 'arrow' | 'melee',
+	fired?: boolean,
+	alsoDamages?:AnimationTarget[],
 }
 
 export type EnemyStatusEffect = {
-	status:'poison' | 'rage';
-	counter?:number;
+	status: 'poison' | 'rage';
+	counter?: number;
 }
 
 export type EnemyInClient = {
-	name:EnemyName
-	templateId:EnemyTemplateId
-	health:number
-	maxHealth:number
-	myAggro:number
-	statuses:EnemyStatusEffect[]
+	name: EnemyName
+	templateId: EnemyTemplateId
+	health: number
+	maxHealth: number
+	myAggro: number
+	statuses: EnemyStatusEffect[]
 }
 
 export function isMsgFromServer(msg: object): msg is MessageFromServer {
@@ -64,7 +65,7 @@ export type OtherPlayerInfo = {
 	heroName: HeroName;
 	currentScene: SceneId;
 	health: number;
-	maxHealth:number;
+	maxHealth: number;
 	weapon: ItemStateForSlot<'weapon'>
 };
 
@@ -77,15 +78,14 @@ export function isGameActionSelected(msg: object): msg is GameActionSelected {
 
 export type GameActionSentToClient = {
 	buttonText: string;
-	target?: ActionTarget
+	// target?: ActionTarget
 };
 
-export type ActionTarget = 
-// {
-// 	kind:'friendly' | 'aggressive' | 'anyEnemy' | 'onlySelf',
-// 	targetName?:HeroName
-// }
-{kind:'friendly', targetName:HeroName} | {kind:'targetEnemy',targetName:EnemyName} | {kind:'anyEnemy'} | {kind:'onlySelf'}
+// export type ActionTarget =
+// 	| { kind: 'friendly', targetName: HeroName } 
+// 	| { kind: 'targetEnemy', targetName: EnemyName } 
+// 	| { kind: 'anyEnemy' } 
+// 	| { kind: 'onlySelf' }
 
 export type EnemyName = string
 

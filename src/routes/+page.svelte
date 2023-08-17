@@ -251,16 +251,6 @@
 			loading = false;
 		}
 	}
-	function findVisualUnitProps(name: string): VisualUnitProps | undefined {
-		if (name == $lastMsgFromServer?.yourName) {
-			return $heroVisualUnitProps;
-		}
-		let en = $enemiesVisualUnitProps.find((e) => name == e.name);
-		if (en) return en;
-
-		let ally = $alliesVisualUnitProps.find((e) => name == e.name);
-		if (ally) return ally;
-	}
 
 	function signUpButtonClicked() {
 		if (!signupInput) return;

@@ -36,7 +36,7 @@ export function updatePlayerActions(player: Player) {
 		player.itemActions.push(
 			{
 				buttonText: 'wait',
-                target:{kind:'onlySelf'},
+                // target:{kind:'onlySelf'},
 				provoke: 1,
 				performAction() {
 				},
@@ -200,7 +200,16 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
                         // for(const _ of Array.from({length:enemyInScene.template.strikes ?? 1})){
                             let r = damagePlayer(enemyInScene, player)
 							if(r.dmgDone > 0){
-								pushAnimation({name:enemyInScene.name,side:'enemy'},{name:player.heroName,side:'hero'},player,r.dmgDone)
+								pushAnimation(
+									{
+										sceneId: player.currentScene,
+										battleAnimation: {
+											source: { name: enemyInScene.name, side: 'enemy' },
+											target: { name: player.heroName, side: 'hero' },
+											damage: r.dmgDone,
+											projectile: enemyInScene.template.projectile ?? 'melee',
+										}
+									})
 							}
                         // }
 					}

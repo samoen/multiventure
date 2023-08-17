@@ -56,7 +56,7 @@
 		return true;
 	});
 
-	function findVisualUnitProps2(at: AnimationTarget): VisualUnitProps | undefined {
+	function findVisualUnitProps(at: AnimationTarget): VisualUnitProps | undefined {
 		if (at.side == 'hero' && at.name == $lastMsgFromServer?.yourName) {
 			return $heroVisualUnitProps;
 		}
@@ -79,7 +79,7 @@
 			currentAnim.target.side == side &&
 			currentAnim.target.name == stableHost.name
 		) {
-			return findVisualUnitProps2(currentAnim.source);
+			return findVisualUnitProps(currentAnim.source);
 		}
 		return undefined;
 	});
@@ -101,8 +101,10 @@
 		if (!$currentAnimation) return undefined;
 		if (
 			$currentAnimation?.projectile == 'arrow' &&
-			$currentAnimation?.target.side == side &&
-			stableHost.name == $currentAnimation?.target.name &&
+			(($currentAnimation?.target.side == side &&
+			stableHost.name == $currentAnimation?.target.name)
+			|| ($currentAnimation.alsoDamages?.some(ad=>ad.name==stableHost.name && ad.side==side))
+			) &&
 			$currentAnimation?.fired
 		) {
 			return { projectileImg: arrow };
@@ -145,6 +147,7 @@
 						if ($currentAnimation == undefined) {
 							syncVisualsToLatest($lastMsgFromServer);
 						} else {
+							// if next anim is ranged, fire it
 							await tick();
 							$currentAnimation.fired = true;
 						}
@@ -173,13 +176,29 @@
 			</div>
 		{/if}
 		{#if $dProjectileSource}
+			<!-- {#if $currentAnimation && $currentAnimation.alsoDamages}
+			{#each $currentAnimation.alsoDamages as ad}
+				<div
+					class="projSourceHolder"
+					class:startAlignSelf={!flipped}
+					class:endAlignSelf={flipped}
+					out:sendProj={{ key: $animationCancelled ? 7 : 'proj' }}
+				>
+					<img 
+					class="projectile" class:flipped={flipped} src={$dProjectileSource.projectileImg} alt="a projectile" />
+				</div>
+				
+			{/each}
+
+			{/if} -->
 			<div
 				class="projSourceHolder"
 				class:startAlignSelf={!flipped}
 				class:endAlignSelf={flipped}
 				out:sendProj={{ key: $animationCancelled ? 7 : 'proj' }}
 			>
-				<img class="projectile" src={$dProjectileSource.projectileImg} alt="a projectile" />
+				<img 
+				class="projectile" class:flipped={flipped} src={$dProjectileSource.projectileImg} alt="a projectile" />
 			</div>
 		{/if}
 		{#if $dProjectileTarget}
@@ -191,18 +210,24 @@
 				on:introend={async () => {
 					if ($currentAnimation != undefined && !$animationCancelled) {
 							if ($currentAnimation) stableHost.displayHp -= $currentAnimation?.damage;
-							$currentAnimationIndex++;
-							$currentAnimation = $lastMsgFromServer?.animations.at($currentAnimationIndex);
-							if ($currentAnimation == undefined) {
-								syncVisualsToLatest($lastMsgFromServer);
-							} else {
-								await tick();
-								$currentAnimation.fired = true;
+							if($currentAnimation.target.name == stableHost.name && $currentAnimation.target.side == side){
+								$currentAnimationIndex++;
+								$currentAnimation = $lastMsgFromServer?.animations.at($currentAnimationIndex);
+								if ($currentAnimation == undefined) {
+									syncVisualsToLatest($lastMsgFromServer);
+								} else {
+									// if next anim is ranged, fire it
+									await tick();
+									$currentAnimation.fired = true;
+								}
 							}
 					}
 				}}
 			>
-				<img class="projectile" src={$dProjectileTarget.projectileImg} alt="a projectile" />
+				<img 
+				class="projectile"
+				class:flipped={!flipped}
+				src={$dProjectileTarget.projectileImg} alt="a projectile" />
 			</div>
 		{/if}
 		<!-- {#if selected}
@@ -222,6 +247,9 @@
 </div>
 
 <style>
+	.flipped {
+		transform: scaleX(-1);
+	}
 	.placeHolder {
 		border: 3px solid black;
 		order: 1;

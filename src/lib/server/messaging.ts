@@ -48,13 +48,13 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 			sceneActions: forPlayer.sceneActions.map((gameAction) => {
 			return {
 				buttonText: gameAction.buttonText,
-				target:gameAction.target
+				// target:gameAction.target
 			};
 		}),
 		itemActions: forPlayer.itemActions.map((gameAction) => {
 			return {
 				buttonText: gameAction.buttonText,
-				target:gameAction.target,
+				// target:gameAction.target,
 			};
 		}),
 		happenings: recentHappenings,

@@ -31,7 +31,7 @@ export type ItemStateForSlot<T extends EquipmentSlot> = {
 	itemId: ItemIdForSlot<T>;
 	cooldown: number;
 	warmup: number;
-	stock:number;
+	stock: number;
 }
 
 export type ItemState = ItemStateForSlot<EquipmentSlot>
@@ -44,7 +44,7 @@ export type Item = {
 	actions?: (player: Player) => void
 	onTakeDamage?: (incoming: number) => number
 	warmup?: number
-	startStock?:number
+	startStock?: number
 }
 
 const dagger: Item = {
@@ -55,11 +55,21 @@ const dagger: Item = {
 					buttonText: `Attack ${enemy.name} with Dagger`,
 					provoke: 7,
 					speed: 8,
-					target:{kind:'targetEnemy',targetName:enemy.name},
+					// target:{kind:'targetEnemy',targetName:enemy.name},
 					performAction() {
 						let r = damageEnemy(player, enemy, 7, 3)
-						if(r.dmgDone > 0){
-							pushAnimation({name:player.heroName, side:'hero'}, {name:enemy.name,side:'enemy'}, player, r.dmgDone)
+						if (r.dmgDone > 0) {
+
+							pushAnimation(
+								{
+									sceneId: player.currentScene,
+									battleAnimation: {
+										source: { name: player.heroName, side: 'hero' },
+										target: { name: enemy.name, side: 'enemy' },
+										damage: r.dmgDone,
+										projectile: 'melee',
+									}
+								})
 						}
 					}
 				}
@@ -76,11 +86,20 @@ const club: Item = {
 					buttonText: `Hit ${enemy.name} with Club`,
 					provoke: 40,
 					speed: 2,
-					target:{kind:'targetEnemy',targetName:enemy.name},
+					// target:{kind:'targetEnemy',targetName:enemy.name},
 					performAction() {
 						let r = damageEnemy(player, enemy, 25)
-						if(r.dmgDone > 0){
-							pushAnimation({name:player.heroName, side:'hero'}, {name:enemy.name,side:'enemy'}, player, r.dmgDone)
+						if (r.dmgDone > 0) {
+							pushAnimation(
+								{
+									sceneId: player.currentScene,
+									battleAnimation: {
+										source: { name: player.heroName, side: 'hero' },
+										target: { name: enemy.name, side: 'enemy' },
+										damage: r.dmgDone,
+										projectile: 'melee',
+									}
+								})
 						}
 					}
 				}
@@ -90,7 +109,7 @@ const club: Item = {
 }
 
 const fireStaff: Item = {
-	warmup:1,
+	warmup: 1,
 	actions(player) {
 		for (const enemy of enemiesInScene(player.currentScene)) {
 			player.itemActions.push(
@@ -98,11 +117,20 @@ const fireStaff: Item = {
 					buttonText: `Blast ${enemy.name} with Firebolt`,
 					provoke: 60,
 					speed: 1,
-					target:{kind:'targetEnemy',targetName:enemy.name},
+					// target:{kind:'targetEnemy',targetName:enemy.name},
 					performAction() {
-						let r =damageEnemy(player, enemy, 10)
-						if(r.dmgDone > 0){
-							pushAnimation({name:player.heroName, side:'hero'}, {name:enemy.name,side:'enemy'}, player, r.dmgDone,'arrow')
+						let r = damageEnemy(player, enemy, 10)
+						if (r.dmgDone > 0) {
+							pushAnimation(
+								{
+									sceneId: player.currentScene,
+									battleAnimation: {
+										source: { name: player.heroName, side: 'hero' },
+										target: { name: enemy.name, side: 'enemy' },
+										damage: r.dmgDone,
+										projectile: 'arrow',
+									}
+								})
 						}
 						// player.inventory.weapon.cooldown = 1
 					}
@@ -113,22 +141,31 @@ const fireStaff: Item = {
 }
 
 const bandage: Item = {
-	startStock:2,
+	startStock: 2,
 	actions(player) {
 		for (const friend of activePlayersInScene(player.currentScene)) {
 			if (friend.health < friend.maxHealth && friend.health > 0) {
 				player.itemActions.push(
 					{
 						buttonText: `Heal ${friend.heroName == player.heroName ? 'myself' : friend.heroName} with bandage`,
-						target:{kind:'friendly',targetName:friend.heroName},
+						// target:{kind:'friendly',targetName:friend.heroName},
 						grantsImmunity: true,
 						provoke: 1,
 						performAction: () => {
 							let r = healPlayer(friend, 20)
-							if(friend.heroName != player.heroName && r.healed > 0){
-								pushAnimation({name:player.heroName,side:'hero'}, {name:friend.heroName,side:'hero'}, player, r.healed*-1)
+							if (friend.heroName != player.heroName && r.healed > 0) {
+								pushAnimation(
+									{
+										sceneId: player.currentScene,
+										battleAnimation: {
+											source: { name: player.heroName, side: 'hero' },
+											target: { name: friend.heroName, side: 'hero' },
+											damage: r.healed*-1,
+											projectile: 'melee',
+										}
+									})
 							}
-							if(player.inventory.utility.stock){
+							if (player.inventory.utility.stock) {
 								player.inventory.utility.stock--
 							}
 						},
@@ -140,19 +177,19 @@ const bandage: Item = {
 }
 
 const bomb: Item = {
-	startStock:1,
+	startStock: 1,
 	actions(player) {
 		if (enemiesInScene(player.currentScene).length) {
 			player.itemActions.push({
 				buttonText: 'Throw Powderbomb',
 				speed: 12,
-				target:{kind:'anyEnemy'},
+				// target:{kind:'anyEnemy'},
 				performAction() {
 					for (const enemy of enemiesInScene(player.currentScene)) {
 						enemy.aggros.clear()
 						damageEnemy(player, enemy, 5)
 					}
-					if(player.inventory.utility.stock){
+					if (player.inventory.utility.stock) {
 						player.inventory.utility.stock--
 					}
 				},
@@ -168,7 +205,7 @@ const poisonDart: Item = {
 				{
 					buttonText: `Throw poison dart at ${enemy.name}`,
 					provoke: 100,
-					target:{kind:'targetEnemy',targetName:enemy.name},
+					// target:{kind:'targetEnemy',targetName:enemy.name},
 					performAction() {
 						let found = enemy.statuses.find(s => s.status == 'poison')
 						if (found != undefined && found.counter) {
@@ -177,8 +214,17 @@ const poisonDart: Item = {
 							enemy.statuses.push({ status: 'poison', counter: 3 })
 						}
 						let r = takePoisonDamage(enemy)
-						if(r.dmgDone > 0){
-							pushAnimation({name:player.heroName, side:'hero'}, {name:enemy.name,side:'enemy'}, player, r.dmgDone,'arrow')
+						if (r.dmgDone > 0) {
+							pushAnimation(
+								{
+									sceneId: player.currentScene,
+									battleAnimation: {
+										source: { name: player.heroName, side: 'hero' },
+										target: { name: enemy.name, side: 'enemy' },
+										damage: r.dmgDone,
+										projectile: 'arrow',
+									}
+								})
 						}
 						player.inventory.utility.itemId = 'empty'
 					},
@@ -215,7 +261,7 @@ const theifCloak: Item = {
 			player.itemActions.push({
 				buttonText: 'Hide in shadows',
 				grantsImmunity: true,
-				target:{kind:'onlySelf'},
+				// target:{kind:'onlySelf'},
 				performAction() {
 					// for (const enemy of enemiesInScene(player.currentScene)) {
 					// 	enemy.aggros.delete(player.heroName)
@@ -255,7 +301,7 @@ export const bodyItems: Record<ItemIdForSlot<'body'>, Item> = {
 	rags: {},
 	plateMail: plateMail,
 	leatherArmor: leatherArmor,
-	theifCloak:theifCloak,
+	theifCloak: theifCloak,
 }
 
 export const items: Record<ItemId, Item> = {

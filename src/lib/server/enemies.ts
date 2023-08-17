@@ -1,4 +1,4 @@
-import type { AnimationTarget, EnemyName, EnemyStatusEffect } from "$lib/utils";
+import type { AnimationTarget, BattleAnimation, EnemyName, EnemyStatusEffect } from "$lib/utils";
 import { pushHappening } from "./messaging";
 import { scenes, type SceneId } from "./scenes";
 import { playerEquipped, type HeroName, type Player, activePlayers, activePlayersInScene } from "./users";
@@ -22,6 +22,7 @@ export type EnemyTemplate = {
 	strikes?:number
 	baseHealth: number
 	baseDamage: number
+	projectile?: 'melee' | 'arrow'
 	aggroGain: number
 	speed: number
 	onTakeDamage?: (incoming: number) => number
@@ -65,15 +66,26 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		aggroGain: 90,
 		speed: 10,
 		specialAttack(me: ActiveEnemy, player:Player) {
+			let dmged:AnimationTarget[] = []
 			for (const enemy of enemiesInScene(me.currentScene)) {
 				if (enemy.name != me.name) {
-					infightDamage(me, enemy)
+					let r = infightDamage(me, enemy)
+					if(r.dmgDone > 0)dmged.push({name:enemy.name,side:'enemy'})
 				}
 			}
 			// for (const player of activePlayersInScene(me.currentScene)) {
 				let r = damagePlayer(me, player)
 				if(r.dmgDone > 0){
-					pushAnimation({name:me.name,side:'enemy'},{name:player.heroName,side:'hero'},player,r.dmgDone,'arrow')
+					pushAnimation({
+						sceneId:player.currentScene,
+						battleAnimation:{
+							source:{name:me.name,side:'enemy'},
+							target: {name:player.heroName,side:'hero'},
+							damage:r.dmgDone,
+							projectile:'arrow',
+							alsoDamages: dmged,
+						},
+					})
 				}
 			// }
 		}
@@ -164,18 +176,24 @@ export function damageEnemy(actor: Player, enemy: ActiveEnemy, damage: number, s
 	return {dmgDone:dmgDone}
 }
 
-export function pushAnimation(source:AnimationTarget,target:AnimationTarget, actor:Player, dmg:number, projectile:'arrow'|'melee' = 'melee'){
-	activePlayersInScene(actor.currentScene).forEach(p=>{
-		p.animations.push({
-			source:source,
-			target:target,
-			damage:dmg,
-			projectile:projectile,
-		})
+export function pushAnimation(
+	// source:AnimationTarget,target:AnimationTarget, actor:Player, dmg:number, projectile:'arrow'|'melee' = 'melee'
+	{sceneId,battleAnimation}:{sceneId:SceneId,battleAnimation:BattleAnimation}
+	){
+	activePlayersInScene(sceneId).forEach(p=>{
+		// p.animations.push({
+		// 	source:source,
+		// 	target:target,
+		// 	damage:dmg,
+		// 	projectile:projectile,
+		// })
+		p.animations.push(battleAnimation)
+
 	})
 }
 
-export function infightDamage(actor: ActiveEnemy, target: ActiveEnemy) {
+export function infightDamage(actor: ActiveEnemy, target: ActiveEnemy) :{dmgDone:number}{
+	if(target.currentHealth < 1)return {dmgDone:0}
 	let damage = target.template.onTakeDamage?.(actor.damage) ?? actor.damage
 	target.currentHealth -= damage
 	pushHappening(`${actor.name} accidentally hit ${target.name} for ${damage} damage`)
@@ -183,6 +201,7 @@ export function infightDamage(actor: ActiveEnemy, target: ActiveEnemy) {
 	if (result.killed) {
 		pushHappening(`${actor.name} killed ${target.name}`)
 	}
+	return {dmgDone:damage}
 }
 
 export function takePoisonDamage(enemy: ActiveEnemy) : {dmgDone:number} {
