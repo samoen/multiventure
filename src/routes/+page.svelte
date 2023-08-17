@@ -22,7 +22,7 @@
 	import type { ItemId, ItemIdForSlot } from '$lib/server/items.js';
 	import Unit from '$lib/Components/Unit.svelte';
 	import {
-	animationCancelled,
+		animationCancelled,
 		choose,
 		clientState,
 		currentAnimation,
@@ -36,8 +36,12 @@
 		lastMsgFromServer,
 		previousMsgFromServer,
 		selectedDetail,
-		syncVisualsToLatest,
+		syncVisualsToMsg,
 		type VisualUnitProps,
+
+		nextAnimationIndex,
+
+		subAnimationStage
 
 
 	} from '$lib/client/ui';
@@ -122,69 +126,12 @@
 				$clientState.waitingForMyEvent = false;
 				loading = false;
 			}
-
-			console.log(`got animations: ${JSON.stringify(sMsg.animations)}`);
-			console.log(`current when got ${JSON.stringify($currentAnimation)}`)
-			
-			// first message or no animations just sync instant
-			if(
-				!prevMsg
-			|| (!sMsg.animations.length && $currentAnimation == undefined)
-			){
-				syncVisualsToLatest($lastMsgFromServer)
-			}
-			
-			if(sMsg.animations.length && $currentAnimation != undefined && sMsg.triggeredBy == sMsg.yourName){
-				// this msg was triggered by us, cancel current animation and prepare for new animation
-				console.log(`cancelling animation`)
-				$animationCancelled = true
-				$currentAnimation = undefined
-				syncVisualsToLatest(prevMsg)
-				await tick()
-				await new Promise(r=>setTimeout(r,100))
-				$animationCancelled = false
-				// syncVisualsToLatest(prevMsg)
-			}
-
-			console.log(`precheck start anim ${JSON.stringify($currentAnimation)}`)
-			if(sMsg.animations.length && $currentAnimation == undefined){
-				// new animations and we aren't animating, start animating
-				console.log('starting anim')
-
-				// $pAnimations = sMsg.animations.map((a)=>{
-
-				// })
-
-				$lastMsgFromServer.enemiesInScene.forEach((e) => {
-					let findInPrevious = $enemiesVisualUnitProps.find((pe) => pe.name == e.name);
-					if (!findInPrevious) {
-						$enemiesVisualUnitProps.push({
-							name: e.name,
-							src: enemySprites[e.templateId],
-							hp: e.health,
-							displayHp: e.health,
-							maxHp: e.maxHealth
-						});
-					}
-				});
-				
-				for (const enemyProps of $enemiesVisualUnitProps) {
-					let findInNew = $lastMsgFromServer?.enemiesInScene.find((ne) => ne.name == enemyProps.name);
-					if (!findInNew) {
-						enemyProps.hp = 0;
-					} else {
-						enemyProps.hp = findInNew.health;
-					}
-				}
-				$currentAnimationIndex = 0;
-				$currentAnimation = $lastMsgFromServer.animations.at($currentAnimationIndex);
-			}
+			console.log(`gotworld`)
+			await handleAnimationsOnMessage(prevMsg, sMsg);
 
 			// wait for dom elements to be populated
+			console.log('tick')
 			await tick();
-			if($currentAnimation){
-				$currentAnimation.fired = true
-			}
 			if (happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
 			if (sceneTexts) sceneTexts.scroll({ top: sceneTexts.scrollHeight, behavior: 'smooth' });
 		});
@@ -196,6 +143,113 @@
 		});
 		console.log('subscribed');
 	}
+
+	async function cancelAnimations() {
+		// console.log(`cancelling animations`)
+		$animationCancelled = true;
+		$currentAnimationIndex = 999;
+		// $currentAnimation = undefined;
+		console.log('tick')
+		await tick();
+		// await new Promise((r) => setTimeout(r, 100));
+		$animationCancelled = false;
+	}
+
+	async function startAnimating(previous: MessageFromServer, latest: MessageFromServer) {
+		latest.enemiesInScene.forEach((e) => {
+			let findInPrevious = $enemiesVisualUnitProps.find((pe) => pe.name == e.name);
+			if (!findInPrevious) {
+				$enemiesVisualUnitProps.push({
+					name: e.name,
+					src: enemySprites[e.templateId],
+					hp: e.health,
+					displayHp: e.health,
+					maxHp: e.maxHealth
+				});
+			}
+		});
+
+		for (const enemyProps of $enemiesVisualUnitProps) {
+			let findInNew = $lastMsgFromServer?.enemiesInScene.find((ne) => ne.name == enemyProps.name);
+			if (!findInNew) {
+				enemyProps.hp = 0;
+			} else {
+				enemyProps.hp = findInNew.health;
+			}
+		}
+		console.log('starting anims')
+		await nextAnimationIndex(true)
+		// $currentAnimationIndex = 0
+		// subAnimationStage.set('start')
+		
+	}
+
+	async function handleAnimationsOnMessage(
+		previous: MessageFromServer | undefined,
+		latest: MessageFromServer
+	) {
+		console.log(`got animations: ${JSON.stringify(latest.animations)}`);
+		// console.log(`current when got ${JSON.stringify($currentAnimation)}`)
+
+		// first message just sync instant
+		if (!previous) {
+			console.log('first message');
+			await cancelAnimations();
+			syncVisualsToMsg(latest);
+			return;
+		}
+
+		// our message with no animations
+		if (latest.triggeredBy == latest.yourName && !latest.animations.length) {
+			console.log('ours with no')
+			await cancelAnimations();
+			syncVisualsToMsg(latest);
+			return;
+		}
+		
+		// someone else's message and we are animating
+		if (latest.triggeredBy != latest.yourName && $currentAnimation != undefined) {
+			console.log(`someone else and animating ${JSON.stringify($currentAnimation)}`)
+			return;
+		}
+		
+
+		// anyone's message with no animations and not animating
+		if ($currentAnimation == undefined && !latest.animations.length) {
+			// await cancelAnimations();
+			console.log('anyones and nono')
+			syncVisualsToMsg(latest);
+			return;
+		}
+
+		// our message with animations but animation is in progress
+		if (
+			latest.animations.length &&
+			$currentAnimation != undefined &&
+			latest.triggeredBy == latest.yourName
+		) {
+			console.log('ours with anims but in prog')
+			await cancelAnimations();
+			syncVisualsToMsg(previous);
+			await startAnimating(previous, latest);
+			return;
+		}
+
+		// console.log(`precheck start anim ${JSON.stringify($currentAnimation)}`)
+
+		// new animations and we aren't animating, start animating
+		if (latest.animations.length && $currentAnimation == undefined) {
+			console.log('anyones message, we not animating. starting')
+			// await cancelAnimations();
+			syncVisualsToMsg(previous);
+			await startAnimating(previous, latest);
+			return;
+		}
+		console.log('no specific anim handling')
+		syncVisualsToMsg(latest)
+	}
+
+
 
 	async function deleteHero() {
 		loading = true;
@@ -335,11 +389,7 @@
 			{/each}
 		</div>
 	{/if}
-	<button
-		on:click={() => {
-
-		}}>start animating</button
-	>
+	<button on:click={() => {}}>start animating</button>
 	<div class="visual">
 		<div class="units">
 			<!-- acts={$lastMsgFromServer.itemActions.filter(
@@ -350,25 +400,27 @@
 						ia.target.targetName == $lastMsgFromServer?.yourName) ||
 						ia.target.kind == 'onlySelf')
 			)} -->
-			<Unit
-				side={'hero'}
-				stableHost={$heroVisualUnitProps}
-				clicky={() => {
-					if ($lastMsgFromServer) {
-						$selectedDetail = {
-							kind: 'me',
-							portrait: peasantPortrait,
-							me: {
-								myName: $lastMsgFromServer.yourName,
-								myHealth: $lastMsgFromServer.yourHp
-							}
-						};
-					}
-				}}
-			/>
+			{#if $heroVisualUnitProps}
+				<Unit
+					side={'hero'}
+					stableHost={$heroVisualUnitProps}
+					clicky={() => {
+						if ($lastMsgFromServer) {
+							$selectedDetail = {
+								kind: 'me',
+								portrait: peasantPortrait,
+								me: {
+									myName: $lastMsgFromServer.yourName,
+									myHealth: $lastMsgFromServer.yourHp
+								}
+							};
+						}
+					}}
+				/>
+			{/if}
 
 			{#each $alliesVisualUnitProps as p}
-					<!-- acts={$lastMsgFromServer.itemActions.filter(
+				<!-- acts={$lastMsgFromServer.itemActions.filter(
 						(ia) =>
 							ia && ia.target && ia.target.kind == 'friendly' && ia.target.targetName == p.name
 					)} -->
@@ -388,7 +440,7 @@
 			{/each}
 		</div>
 		<div class="units">
-					<!-- acts={$lastMsgFromServer.itemActions.filter(
+			<!-- acts={$lastMsgFromServer.itemActions.filter(
 						(ia) =>
 							ia &&
 							ia.target &&
@@ -553,7 +605,7 @@
 		background-color: burlywood;
 		display: flex;
 		justify-content: space-around;
-		padding:50px;
+		padding: 50px;
 	}
 	.selectedDetails {
 		background-color: beige;

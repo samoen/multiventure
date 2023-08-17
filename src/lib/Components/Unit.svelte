@@ -14,7 +14,7 @@
 		enemiesVisualUnitProps,
 		alliesVisualUnitProps,
 		type VisualUnitProps,
-		syncVisualsToLatest,
+		syncVisualsToMsg,
 		receiveMelee,
 		sendMelee,
 		animationCancelled,
@@ -22,7 +22,9 @@
 		type ProjectileProps,
 		type Projectile,
 		receiveProj,
-		sendProj
+		sendProj,
+		nextAnimationIndex,
+		subAnimationStage
 	} from '$lib/client/ui';
 	import arrow from '$lib/assets/arrow.png';
 	import type { AnimationTarget, GameActionSentToClient } from '$lib/utils';
@@ -32,85 +34,116 @@
 	import VisualUnit from './VisualUnit.svelte';
 	import { tick } from 'svelte';
 
-
 	export let side: 'hero' | 'enemy';
 	export let stableHost: VisualUnitProps;
+	// console.log('stablehost: ' + JSON.stringify(stableHost))
 
 	export let flipped: boolean = false;
 	// export let acts: GameActionSentToClient[];
 	export let clicky: () => void;
 
-	const hostHome = derived(currentAnimation, ($i) => {
-		// let currentAnim = $lastMsgFromServer?.animations.at($i)
-		console.log('calc host home');
-		let currentAnim = $i;
-		if (!currentAnim) return true;
-		if (
-			currentAnim.projectile == 'melee' &&
-			currentAnim.source.side == side &&
-			currentAnim.source.name == stableHost.name
-		) {
-			console.log('host not home');
-			return false;
+	const hostHome = derived(
+		[currentAnimation, subAnimationStage],
+		([$currentAnim, $subAnimationStage]) => {
+			// let currentAnim = $lastMsgFromServer?.animations.at($i)
+			// console.log(`current animation is ${$i}`)
+			// if(!stableHost) {
+			// 	console.log('calced host not home because stablehost undefined');
+			// 	return false
+			// };
+			if (!$currentAnim) {
+				// console.log('calc host but anim undefined')
+				return true;
+			}
+			if (
+				$currentAnim.projectile == 'melee' &&
+				$currentAnim.source.side == side &&
+				$currentAnim.source.name == stableHost.name &&
+				$subAnimationStage == 'fire'
+			) {
+				console.log(`host ${stableHost.name} not home`);
+				return false;
+			}
+			// console.log(`host ${stableHost.name} must be home`)
+			return true;
 		}
-		return true;
-	});
+	);
 
 	function findVisualUnitProps(at: AnimationTarget): VisualUnitProps | undefined {
 		if (at.side == 'hero' && at.name == $lastMsgFromServer?.yourName) {
 			return $heroVisualUnitProps;
 		}
-		if(at.side == 'enemy'){
+		if (at.side == 'enemy') {
 			let en = $enemiesVisualUnitProps.find((e) => at.name == e.name);
 			if (en) return en;
 		}
-		if(at.side == 'hero'){
+		if (at.side == 'hero') {
 			let ally = $alliesVisualUnitProps.find((e) => at.name == e.name);
 			if (ally) return ally;
 		}
-		return undefined
+		return undefined;
 	}
 
-	const dGuest = derived(currentAnimation, ($i) => {
-		let currentAnim = $i;
-		if (!currentAnim) return undefined;
-		if (
-			currentAnim.projectile == 'melee' &&
-			currentAnim.target.side == side &&
-			currentAnim.target.name == stableHost.name
-		) {
-			return findVisualUnitProps(currentAnim.source);
+	const dGuest = derived(
+		[currentAnimation, subAnimationStage],
+		([$currentAnimation, $subAnimationStage]) => {
+			if (!$currentAnimation) return undefined;
+			if (
+				$currentAnimation.projectile == 'melee' &&
+				$currentAnimation.target.side == side &&
+				$currentAnimation.target.name == stableHost.name &&
+				$subAnimationStage == 'fire'
+			) {
+				return findVisualUnitProps($currentAnimation.source);
+			}
+			return undefined;
 		}
-		return undefined;
-	});
+	);
 
-	const dProjectileSource = derived(currentAnimation, ($currentAnimation) => {
-		if (!$currentAnimation) return undefined;
-		if (
-			$currentAnimation.projectile == 'arrow' &&
-			$currentAnimation.source.name == stableHost.name &&
-			$currentAnimation.source.side == side &&
-			!$currentAnimation.fired
-		) {
-			return { projectileImg: arrow };
+	const dProjectileSource = derived(
+		[currentAnimation, subAnimationStage],
+		([$currentAnimation, $subAnimationStage]) => {
+			if (!$currentAnimation) return undefined;
+			if (
+				$currentAnimation.projectile == 'arrow' &&
+				$currentAnimation.source.name == stableHost.name &&
+				$currentAnimation.source.side == side &&
+				$subAnimationStage == 'start'
+			) {
+				if(stableHost.name.startsWith('fireGrem')){
+					console.log(`SOURCE ${stableHost.name} source proj`);
+				}
+				return { projectileImg: arrow };
+			}
+			if(stableHost.name.startsWith('fireGrem')){
+				console.log(`${stableHost.name} not source proj`);
+			}
+			return undefined;
 		}
-		return undefined;
-	});
+	);
 
-	const dProjectileTarget = derived(currentAnimation, ($currentAnimation) => {
-		if (!$currentAnimation) return undefined;
-		if (
-			$currentAnimation?.projectile == 'arrow' &&
-			(($currentAnimation?.target.side == side &&
-			stableHost.name == $currentAnimation?.target.name)
-			|| ($currentAnimation.alsoDamages?.some(ad=>ad.name==stableHost.name && ad.side==side))
-			) &&
-			$currentAnimation?.fired
-		) {
-			return { projectileImg: arrow };
+	const dProjectileTarget = derived(
+		[currentAnimation, subAnimationStage],
+		([$currentAnimation, $subAnimationStage]) => {
+			if (!$currentAnimation) return undefined;
+			// console.log(`calc target proj ${stableHost.name}`)
+			if (
+				$currentAnimation.projectile == 'arrow' &&
+				(($currentAnimation.target.side == side &&
+					stableHost.name == $currentAnimation.target.name) 
+					// ||
+					// $currentAnimation.alsoDamages?.some(
+						// (ad) => ad.name == stableHost.name && ad.side == side
+					) 
+					&&
+				$subAnimationStage == 'fire'
+			) {
+				console.log(`ONTARGET ${stableHost.name} is target proj`);
+				return { projectileImg: arrow };
+			}
+			return undefined;
 		}
-		return undefined;
-	});
+	);
 
 	// export let recv
 	// export let snd
@@ -140,17 +173,9 @@
 			<div
 				out:sendMelee={{ key: $animationCancelled ? 0 : 'movehero' }}
 				in:receiveMelee={{ key: $animationCancelled ? 1 : 'movehero' }}
-				on:introend={async () => {
-					if (currentAnimation != undefined && !$animationCancelled) {
-						$currentAnimationIndex++;
-						$currentAnimation = $lastMsgFromServer?.animations.at($currentAnimationIndex);
-						if ($currentAnimation == undefined) {
-							syncVisualsToLatest($lastMsgFromServer);
-						} else {
-							// if next anim is ranged, fire it
-							await tick();
-							$currentAnimation.fired = true;
-						}
+				on:introend={() => {
+					if (currentAnimation != undefined && !$animationCancelled && $lastMsgFromServer) {
+						nextAnimationIndex(false);
 					}
 				}}
 			>
@@ -167,8 +192,9 @@
 				out:sendMelee={{ key: $animationCancelled ? 4 : 'movehero' }}
 				on:introend={() => {
 					if ($currentAnimation != undefined && !$animationCancelled) {
-							if ($currentAnimation) stableHost.displayHp -= $currentAnimation?.damage;
-							$currentAnimation = undefined;
+						stableHost.displayHp -= $currentAnimation?.damage;
+						console.log('sending guest home');
+						$subAnimationStage = 'sentHome';
 					}
 				}}
 			>
@@ -197,8 +223,12 @@
 				class:endAlignSelf={flipped}
 				out:sendProj={{ key: $animationCancelled ? 7 : 'proj' }}
 			>
-				<img 
-				class="projectile" class:flipped={flipped} src={$dProjectileSource.projectileImg} alt="a projectile" />
+				<img
+					class="projectile"
+					class:flipped
+					src={$dProjectileSource.projectileImg}
+					alt="a projectile"
+				/>
 			</div>
 		{/if}
 		{#if $dProjectileTarget}
@@ -207,27 +237,37 @@
 				class:startAlignSelf={!flipped}
 				class:endAlignSelf={flipped}
 				in:receiveProj={{ key: $animationCancelled ? 8 : 'proj' }}
-				on:introend={async () => {
-					if ($currentAnimation != undefined && !$animationCancelled) {
-							if ($currentAnimation) stableHost.displayHp -= $currentAnimation?.damage;
-							if($currentAnimation.target.name == stableHost.name && $currentAnimation.target.side == side){
-								$currentAnimationIndex++;
-								$currentAnimation = $lastMsgFromServer?.animations.at($currentAnimationIndex);
-								if ($currentAnimation == undefined) {
-									syncVisualsToLatest($lastMsgFromServer);
-								} else {
-									// if next anim is ranged, fire it
-									await tick();
-									$currentAnimation.fired = true;
+				on:introend={() => {
+					if ($currentAnimation != undefined && !$animationCancelled && $lastMsgFromServer) {
+						stableHost.displayHp -= $currentAnimation.damage;
+						if($currentAnimation.alsoDamages){
+							for (const other of $currentAnimation.alsoDamages){
+								let otherProps = findVisualUnitProps(other)
+								if(otherProps){
+									console.log('hitting other')
+									otherProps.displayHp -= $currentAnimation.damage
 								}
 							}
+							$enemiesVisualUnitProps = $enemiesVisualUnitProps
+							$alliesVisualUnitProps = $alliesVisualUnitProps
+							$heroVisualUnitProps = $heroVisualUnitProps
+						}
+						// if (
+						// 	$currentAnimation.target.name == stableHost.name &&
+						// 	$currentAnimation.target.side == side
+						// ) {
+							console.log(`target ${stableHost.name} reached, nexting`)
+							nextAnimationIndex(false);
+						// }
 					}
 				}}
 			>
-				<img 
-				class="projectile"
-				class:flipped={!flipped}
-				src={$dProjectileTarget.projectileImg} alt="a projectile" />
+				<img
+					class="projectile"
+					class:flipped={!flipped}
+					src={$dProjectileTarget.projectileImg}
+					alt="a projectile"
+				/>
 			</div>
 		{/if}
 		<!-- {#if selected}

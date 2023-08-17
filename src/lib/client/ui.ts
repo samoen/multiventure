@@ -1,6 +1,6 @@
 import type { HeroName } from "$lib/server/users";
 import type { BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient, MessageFromServer, OtherPlayerInfo } from "$lib/utils";
-import { get, writable, type Writable } from "svelte/store";
+import { derived, get, writable, type Writable } from "svelte/store";
 import peasantPortrait from '$lib/assets/portraits/peasant.webp';
 import peasant from '$lib/assets/peasant.png';
 import gruntPortrait from '$lib/assets/portraits/grunt.webp';
@@ -16,6 +16,7 @@ import mage from '$lib/assets/mage.png';
 import type { ItemId, ItemIdForSlot } from '$lib/server/items.js';
 import { crossfade } from "svelte/transition";
 import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easing";
+import { tick } from "svelte";
 
 
 // export let waitingForMyEvent = true;
@@ -65,15 +66,19 @@ export type Projectile = undefined | ProjectileProps
 
 
 export const lastMsgFromServer: Writable<MessageFromServer | undefined> = writable();
-export const previousMsgFromServer: Writable<MessageFromServer | null> = writable(null);
-export const selectedDetail: Writable<UnitDetails | null> = writable(null)
-export const heroVisualUnitProps: Writable<VisualUnitProps> = writable()
+export const previousMsgFromServer: Writable<MessageFromServer | undefined> = writable();
+export const selectedDetail: Writable<UnitDetails | undefined> = writable()
+export const heroVisualUnitProps: Writable<VisualUnitProps|undefined> = writable()
 export let enemiesVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 export let alliesVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 // export let pAnimations : Writable<{ba:BattleAnimation, sourceProps:VisualUnitProps, targetProps:VisualUnitProps}>
-export let currentAnimation: Writable<BattleAnimation | undefined> = writable(undefined)
 export let currentAnimationIndex: Writable<number> = writable(0)
+// export let currentAnimation: Writable<BattleAnimation | undefined> = writable(undefined)
+export let currentAnimation = derived([currentAnimationIndex],([$currentAnimationIndex])=>{
+    return get(lastMsgFromServer)?.animations.at($currentAnimationIndex)
+})
 export const animationCancelled = writable(false)
+export const subAnimationStage :Writable<'start'|'fire'|'sentHome'> = writable('start')
 
 export const [sendMelee, receiveMelee] = crossfade({
     duration: (d) => Math.sqrt(d * 600),
@@ -99,8 +104,11 @@ export const [sendProj, receiveProj] = crossfade({
 // BattleAnimation[]
 // &{done:boolean})
 // > = writable([])
-export function syncVisualsToLatest(lastMsg: MessageFromServer | undefined) {
+export function syncVisualsToMsg(lastMsg: MessageFromServer) {
     // let lastMsg = get(lastMsgFromServer)
+    if(!lastMsg){
+        console.log('tried to sync with bad msg')
+    }
     if (lastMsg) {
         heroVisualUnitProps.set(
             {
@@ -134,8 +142,53 @@ export function syncVisualsToLatest(lastMsg: MessageFromServer | undefined) {
                     }
                 }))
 
+                // console.log('synced visuals with allies '+JSON.stringify(get(alliesVisualUnitProps)))
+    }
+}
+
+
+export async function nextAnimationIndex(start:boolean){
+    if(start){
+        currentAnimationIndex.set(0)
+        
+    }else{
+        currentAnimationIndex.update(o=>{
+            return o+1
+        })
 
     }
+    
+    let lm = get(lastMsgFromServer)
+    let cai = get(currentAnimationIndex)
+    if(!lm)return
+    if(cai > lm.animations.length - 1){
+        console.log('animations done, sync to recent')
+        syncVisualsToMsg(lm)
+        return
+    }
+
+    subAnimationStage.set('start')
+    console.log('tick')
+    await tick()
+
+
+    
+    // $currentAnimationIndex = 0;
+		// $currentAnimation = latest.animations.at($currentAnimationIndex);
+		// await tick();
+		// if (get(currentAnimation)) {
+            console.log('firing substage')
+            subAnimationStage.set('fire')
+		// }else{
+            // subAnimationStage.set('start')
+            // let lm = get(lastMsgFromServer)
+            // if(lm){
+                
+                // console.log('animations done, sync to recent')
+                // syncVisualsToMsg(lm)
+            // }
+		// }
+    // currentAnimation.set()
 }
 
 lastMsgFromServer.subscribe((l) => {
