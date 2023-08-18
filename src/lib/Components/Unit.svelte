@@ -381,8 +381,8 @@
 	}
 	.placeHolder {
 		border: 3px groove transparent;
-		width: 61px;
-		height: 99px;
+		width: 60px;
+		height: 100px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -395,11 +395,13 @@
 		/* background-color: aquamarine; */
 		/* display: none; */
 		/* opacity: 0; */
+		z-index: 2;
 		height: 30px;
 		width: 30px;
 	}
 	.projectile {
 		/* background-color: aqua; */
+		z-index: 2;
 		height: 100%;
 		width: 100%;
 	}
@@ -417,5 +419,6 @@
 	}
 	.guestArea {
 		/* background-color: brown; */
+		z-index:2;
 	}
 </style>

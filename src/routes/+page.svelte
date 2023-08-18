@@ -694,21 +694,7 @@
 		background-color: beige;
 		border: 1px solid black;
 	}
-
-	.wrapGameField {
-		overflow: auto;
-		height: 30vh;
-		position: relative;
-		margin-block: 5px;
-	}
-	.visual {
-		background-color: burlywood;
-		display: flex;
-		justify-content: space-evenly;
-		/* align-items: safe center; */
-		align-items: center;
-		min-height: 100%;
-	}
+	
 	.yourSceneLabel {
 		position:absolute;
 		left: 0;
@@ -724,35 +710,42 @@
 		color: brown;
 		background-color: beige;
 	}
+	.wrapGameField {
+		overflow: auto;
+		height: 30vh;
+		position: relative;
+		margin-block: 5px;
+		padding:5px;
+		/* background-color: aqua; */
+		/* display: flex; */
+	}
+	.visual {
+		background-color: burlywood;
+		display:grid;
+		grid-template-columns: minmax(120px,1fr) auto minmax(120px,1fr);
+		grid-template-rows: auto;
+		align-items: center;
+		height: fit-content;
+		min-height: 100%;
+	}
 
 	.units {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		margin-block: auto;
-		/* min-height: min-content; */
-		/* flex-wrap: wrap; */
-		/* margin-block:20px; */
-		/* gap: 10px; */
-		/* background-color: bisque; */
+		/* flex-grow:1; */
+
+		display: grid;
+		/* background-color: beige; */
+		grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+		justify-items: center;
+		/* gap:1px; */
 	}
 	.centerPlaceHolder {
 		height: 30px;
 		width: 30px;
 		/* background-color: aqua; */
-		/* position:absolute;
-		left:50%;
-		top:50%; */
 	}
 	.centerField {
 		height: 100%;
 		width: 100%;
-		justify-self: center;
-		align-self: center;
-		/* display: flex;
-		justify-content: center;
-		align-content: center; */
 	}
 	.centerImg {
 		height: 100%;
@@ -765,13 +758,13 @@
 	.selectedPortrait {
 		width: 100px;
 		height: 100px;
-		background-color: blueviolet;
+		/* background-color: blueviolet; */
 	}
 	.selectedPortrait > img {
 		height: 100%;
 		width: 100%;
 	}
 	.selectedStats {
-		background-color: aquamarine;
+		/* background-color: aquamarine; */
 	}
 </style>
