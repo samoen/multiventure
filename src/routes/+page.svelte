@@ -1,60 +1,38 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import {
-		isMsgFromServer,
-		type MessageFromServer,
-		type GameActionSentToClient,
-		type EnemyName
-	} from '$lib/utils';
-	import { onMount, tick } from 'svelte';
-	import peasant from '$lib/assets/peasant.png';
-	import peasantPortrait from '$lib/assets/portraits/peasant.webp';
-	import gruntPortrait from '$lib/assets/portraits/grunt.webp';
-	import spearman from '$lib/assets/spearman.png';
-	import rat from '$lib/assets/giant-rat.png';
-	import grunt from '$lib/assets/grunt.png';
-	import troll from '$lib/assets/young-ogre.png';
-	import ruffian from '$lib/assets/ruffian.png';
-	import rogue from '$lib/assets/rogue.png';
-	import fireghost from '$lib/assets/fireghost.png';
-	import theif from '$lib/assets/thief.png';
-	import arrow from '$lib/assets/arrow.png';
-	import type { ItemId, ItemIdForSlot } from '$lib/server/items.js';
 	import Unit from '$lib/Components/Unit.svelte';
+	import gruntPortrait from '$lib/assets/portraits/grunt.webp';
 	import {
+		alliesVisualUnitProps,
 		animationCancelled,
+		bodySlotActions,
+		centerFieldTarget,
 		choose,
 		clientState,
 		currentAnimation,
 		currentAnimationIndex,
+		currentAnimationsWithData,
 		enemiesVisualUnitProps,
-		alliesVisualUnitProps,
-		enemySprites,
-		heroSprite,
-		heroSprites,
 		heroVisualUnitProps,
 		lastMsgFromServer,
-		previousMsgFromServer,
-		syncVisualsToMsg,
-		type VisualUnitProps,
-		nextAnimationIndex,
-		subAnimationStage,
-		receiveProj,
-		centerFieldTarget,
-		findVisualUnitProps,
-		receiveCenter,
-		wepSlotActions,
-		utilitySlotActions,
-		bodySlotActions,
 		latestSlotButtonInput,
+		nextAnimationIndex,
+		receiveCenter,
+		syncVisualsToMsg,
+		utilitySlotActions,
 		waitButtonAction,
-		waitingForMyAnimation
+		waitingForMyAnimation,
+		wepSlotActions,
+		type AnimationWithData,
+		type VisualUnitProps
 	} from '$lib/client/ui';
 	import type { EnemyTemplateId } from '$lib/server/enemies.js';
-	import { crossfade } from 'svelte/transition';
-	import { quintOut } from 'svelte/easing';
-	import VisualUnit from '$lib/Components/VisualUnit.svelte';
-	import { get } from 'svelte/store';
+	import {
+		isMsgFromServer,
+		type AnimationTarget,
+		type MessageFromServer
+	} from '$lib/utils';
+	import { onMount, tick } from 'svelte';
 
 	export let data;
 	let signupInput: string;
@@ -160,7 +138,49 @@
 		$animationCancelled = false;
 	}
 
+	function findPropFromAnimationTarget(at: AnimationTarget): VisualUnitProps | undefined {
+		if (at.side == 'hero' && at.name == $lastMsgFromServer?.yourName) {
+			return $heroVisualUnitProps;
+		}
+		if (at.side == 'enemy') {
+			let en = $enemiesVisualUnitProps.find((e) => at.name == e.name);
+			if (en) return en;
+		}
+		if (at.side == 'hero') {
+			let ally = $alliesVisualUnitProps.find((e) => at.name == e.name);
+			if (ally) return ally;
+		}
+		return undefined;
+	}
+
 	async function startAnimating(previous: MessageFromServer, latest: MessageFromServer) {
+		let newAnimationsWithData : AnimationWithData[] = []
+		for(const a of latest.animations){
+			let sourceProp = findPropFromAnimationTarget(a.source);
+			if(!sourceProp) continue
+			let targetProp = a.target ? findPropFromAnimationTarget(a.target) : undefined;
+			let alsoDmgsProps: { target: VisualUnitProps; amount: number }[] = [];
+			if (a.alsoDamages) {
+				for (const alsoDmged of a.alsoDamages) {
+					let dmged = findPropFromAnimationTarget(alsoDmged.target);
+					if (dmged) {
+						alsoDmgsProps.push({
+							target: dmged,
+							amount: alsoDmged.amount
+						});
+					}
+				}
+			}
+			let animWithData : AnimationWithData = {
+				...a,
+				sourceProp: sourceProp,
+				targetProp: targetProp,
+				alsoDmgsProps: alsoDmgsProps
+			};
+			newAnimationsWithData.push(animWithData)
+
+		}
+		$currentAnimationsWithData = newAnimationsWithData
 		// latest.enemiesInScene.forEach((e) => {
 		// 	let findInPrevious = $enemiesVisualUnitProps.find((pe) => pe.name == e.name);
 		// 	if (!findInPrevious) {
@@ -407,7 +427,8 @@
 	<!-- <button on:click={() => {}}>debug something</button> -->
 	<div class="wrapGameField">
 		<span class="yourSceneLabel">{$lastMsgFromServer.yourScene}</span>
-		<div class="visual"
+		<div
+			class="visual"
 			role="button"
 			tabindex="0"
 			on:keydown
@@ -434,12 +455,6 @@
 				{/if}
 
 				{#each $alliesVisualUnitProps as p}
-					<!-- acts={$lastMsgFromServer.itemActions.filter(
-						(ia) =>
-							ia && ia.target && ia.target.kind == 'friendly' && ia.target.targetName == p.name
-					)} -->
-					<!-- clicky={() => {
-					}} -->
 					<Unit side={'hero'} stableHost={p} />
 				{/each}
 			</div>
@@ -451,29 +466,16 @@
 						on:introend={() => {
 							if ($currentAnimation != undefined && !$animationCancelled && $lastMsgFromServer) {
 								if ($currentAnimation.alsoDamages) {
-									for (const other of $currentAnimation.alsoDamages) {
-										let otherProps = findVisualUnitProps(
-											other.target,
-											$lastMsgFromServer,
-											$heroVisualUnitProps,
-											$enemiesVisualUnitProps,
-											$alliesVisualUnitProps
-										);
-										if (otherProps) {
-											otherProps.displayHp -= other.amount;
+									for (const other of $currentAnimation.alsoDmgsProps) {
+										if (other.target) {
+											other.target.displayHp -= other.amount;
 										}
 									}
 									$enemiesVisualUnitProps = $enemiesVisualUnitProps;
 									$alliesVisualUnitProps = $alliesVisualUnitProps;
 									$heroVisualUnitProps = $heroVisualUnitProps;
 								}
-								// if (
-								// 	$currentAnimation.target.name == stableHost.name &&
-								// 	$currentAnimation.target.side == side
-								// ) {
-								console.log(`center reached, nexting`);
 								nextAnimationIndex(false);
-								// }
 							}
 						}}
 					>
@@ -693,9 +695,9 @@
 		background-color: beige;
 		border: 1px solid black;
 	}
-	
+
 	.yourSceneLabel {
-		position:absolute;
+		position: absolute;
 		left: 0;
 		top: 0;
 		float: left;
@@ -715,12 +717,12 @@
 		height: 30vh;
 		position: relative;
 		margin-block: 5px;
-		padding:3px;
+		padding: 3px;
 		background-color: brown;
 	}
 	.visual {
 		background-color: burlywood;
-		display:grid;
+		display: grid;
 		grid-template-columns: 1fr auto 1fr;
 		/* gap:4px; */
 		/* justify-content: center; */

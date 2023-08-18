@@ -81,9 +81,19 @@ export let alliesVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 // export let pAnimations : Writable<{ba:BattleAnimation, sourceProps:VisualUnitProps, targetProps:VisualUnitProps}>
 export let currentAnimationIndex: Writable<number> = writable(0)
 // export let currentAnimation: Writable<BattleAnimation | undefined> = writable(undefined)
-export let currentAnimation = derived([currentAnimationIndex],([$currentAnimationIndex])=>{
-    return get(lastMsgFromServer)?.animations.at($currentAnimationIndex)
+
+export type AnimationWithData = BattleAnimation &{
+    sourceProp: VisualUnitProps,
+    targetProp: VisualUnitProps | undefined,
+    alsoDmgsProps: {target:VisualUnitProps,amount:number}[]
+}
+
+export const currentAnimationsWithData : Writable<AnimationWithData[] | undefined> = writable()
+
+export let currentAnimation = derived([currentAnimationIndex,currentAnimationsWithData],([$currentAnimationIndex,$currentAnimationsWithData])=>{
+    return $currentAnimationsWithData?.at($currentAnimationIndex)
 })
+
 export const animationCancelled = writable(false)
 export const subAnimationStage :Writable<'start'|'fire'|'sentHome'> = writable('start')
 
@@ -191,20 +201,6 @@ export const extraSprites : Record<ExtraSprite,string> = {
     flame:arrow,
 }
 
-export function findVisualUnitProps(at: AnimationTarget, lastMsg:MessageFromServer|undefined, heroProps:VisualUnitProps|undefined, enemies:VisualUnitProps[], allies:VisualUnitProps[] ): VisualUnitProps | undefined {
-    if (at.side == 'hero' && at.name == lastMsg?.yourName) {
-        return heroProps;
-    }
-    if (at.side == 'enemy') {
-        let en = enemies.find((e) => at.name == e.name);
-        if (en) return en;
-    }
-    if (at.side == 'hero') {
-        let ally = allies.find((e) => at.name == e.name);
-        if (ally) return ally;
-    }
-    return undefined;
-}
 
 export const centerFieldTarget = derived(
     [currentAnimation, subAnimationStage],

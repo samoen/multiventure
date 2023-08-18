@@ -5,45 +5,32 @@
 
 <script lang="ts">
 	import {
+		alliesVisualUnitProps,
+		animationCancelled,
+		bodySlotActions,
 		choose,
-		clientState,
 		currentAnimation,
-		currentAnimationIndex,
+		enemiesVisualUnitProps,
+		extraSprites,
 		heroVisualUnitProps,
 		lastMsgFromServer,
-		enemiesVisualUnitProps,
-		alliesVisualUnitProps,
-		type VisualUnitProps,
-		syncVisualsToMsg,
-		receiveMelee,
-		sendMelee,
-		animationCancelled,
-		type Guest,
-		type ProjectileProps,
-		type Projectile,
-		receiveProj,
-		sendProj,
-		nextAnimationIndex,
-		subAnimationStage,
-		extraSprites,
-		findVisualUnitProps,
-		sendCenter,
+		lastUnitClicked,
 		latestSlotButtonInput,
-		wepSlotActions,
+		nextAnimationIndex,
+		receiveMelee,
+		receiveProj,
+		sendCenter,
+		sendMelee,
+		sendProj,
+		subAnimationStage,
 		utilitySlotActions,
-		bodySlotActions,
-
-		lastUnitClicked
-
+		wepSlotActions,
+		type VisualUnitProps
 	} from '$lib/client/ui';
-	import arrow from '$lib/assets/arrow.png';
-	import bomb from '$lib/assets/bomb.png';
-	import type { AnimationTarget, GameActionSentToClient, MessageFromServer } from '$lib/utils';
-	import { quintOut } from 'svelte/easing';
-	import { derived, writable, type Writable } from 'svelte/store';
-	import { crossfade, fade } from 'svelte/transition';
-	import VisualUnit from './VisualUnit.svelte';
 	import { tick } from 'svelte';
+	import { derived } from 'svelte/store';
+	import { fade } from 'svelte/transition';
+	import VisualUnit from './VisualUnit.svelte';
 
 	export let side: 'hero' | 'enemy';
 	export let stableHost: VisualUnitProps;
@@ -121,17 +108,18 @@
 				$currentAnimation.target.name == stableHost.name &&
 				$subAnimationStage == 'fire'
 			) {
-				let found = findVisualUnitProps(
-					$currentAnimation.source,
-					$lastMsgFromServer,
-					$heroVisualUnitProps,
-					$enemiesVisualUnitProps,
-					$alliesVisualUnitProps
-				);
-				if (found) {
-					// 	found.aggro = 0
-					return found;
-				}
+				return $currentAnimation.sourceProp
+				// let found = findVisualUnitProps(
+				// 	$currentAnimation.source,
+				// 	$lastMsgFromServer,
+				// 	$heroVisualUnitProps,
+				// 	$enemiesVisualUnitProps,
+				// 	$alliesVisualUnitProps
+				// );
+				// if (found) {
+				// 	// 	found.aggro = 0
+				// 	return found;
+				// }
 			}
 			return undefined;
 		}
@@ -324,17 +312,17 @@
 					if ($currentAnimation != undefined && !$animationCancelled && $lastMsgFromServer) {
 						stableHost.displayHp -= $currentAnimation.damage;
 						if ($currentAnimation.alsoDamages) {
-							for (const other of $currentAnimation.alsoDamages) {
-								let otherProps = findVisualUnitProps(
-									other.target,
-									$lastMsgFromServer,
-									$heroVisualUnitProps,
-									$enemiesVisualUnitProps,
-									$alliesVisualUnitProps
-								);
-								if (otherProps) {
+							for (const other of $currentAnimation.alsoDmgsProps) {
+								// let otherProps = findVisualUnitProps(
+								// 	other.target,
+								// 	$lastMsgFromServer,
+								// 	$heroVisualUnitProps,
+								// 	$enemiesVisualUnitProps,
+								// 	$alliesVisualUnitProps
+								// );
+								if (other.target) {
 									console.log('hitting other');
-									otherProps.displayHp -= other.amount;
+									other.target.displayHp -= other.amount;
 								}
 							}
 							$enemiesVisualUnitProps = $enemiesVisualUnitProps;
