@@ -25,29 +25,16 @@
 		sendProj,
 		nextAnimationIndex,
 		subAnimationStage,
-
 		extraSprites,
-
 		findVisualUnitProps,
-
 		sendCenter,
-
 		latestSlotButtonInput,
-
 		wepSlotActions,
-
 		utilitySlotActions,
-
 		bodySlotActions
-
-
-
-
-
-
-
 	} from '$lib/client/ui';
 	import arrow from '$lib/assets/arrow.png';
+	import bomb from '$lib/assets/bomb.png';
 	import type { AnimationTarget, GameActionSentToClient, MessageFromServer } from '$lib/utils';
 	import { quintOut } from 'svelte/easing';
 	import { derived, writable, type Writable } from 'svelte/store';
@@ -63,40 +50,42 @@
 	// export let acts: GameActionSentToClient[];
 	// export let clicky: () => void;
 
-	const highlightedForAct = derived([latestSlotButtonInput,wepSlotActions, utilitySlotActions,bodySlotActions],([$latestSlotButtonInput,$wepSlotActions, $utilitySlotActions,$bodySlotActions])=>{
-		if($latestSlotButtonInput == 'none') return undefined
-		if($latestSlotButtonInput == 'weapon'){
-			if(!$wepSlotActions) return undefined
+	const highlightedForAct = derived(
+		[latestSlotButtonInput, wepSlotActions, utilitySlotActions, bodySlotActions],
+		([$latestSlotButtonInput, $wepSlotActions, $utilitySlotActions, $bodySlotActions]) => {
+			if ($latestSlotButtonInput == 'none') return undefined;
+			if ($latestSlotButtonInput == 'weapon') {
+				if (!$wepSlotActions) return undefined;
 				for (const wepAct of $wepSlotActions) {
 					if (wepAct.target) {
-						if(wepAct.target.name == stableHost.name && wepAct.target.side == side){
-							return wepAct
+						if (wepAct.target.name == stableHost.name && wepAct.target.side == side) {
+							return wepAct;
 						}
 					}
 				}
-		}
-		if($latestSlotButtonInput == 'utility'){
-			if(!$utilitySlotActions) return undefined
+			}
+			if ($latestSlotButtonInput == 'utility') {
+				if (!$utilitySlotActions) return undefined;
 				for (const act of $utilitySlotActions) {
 					if (act.target) {
-						if(act.target.name == stableHost.name && act.target.side == side){
-							return act
+						if (act.target.name == stableHost.name && act.target.side == side) {
+							return act;
 						}
 					}
 				}
-		}
-		if($latestSlotButtonInput == 'body'){
-			if(!$bodySlotActions) return undefined
+			}
+			if ($latestSlotButtonInput == 'body') {
+				if (!$bodySlotActions) return undefined;
 				for (const act of $bodySlotActions) {
 					if (act.target) {
-						if(act.target.name == stableHost.name && act.target.side == side){
-							return act
+						if (act.target.name == stableHost.name && act.target.side == side) {
+							return act;
 						}
 					}
 				}
+			}
 		}
-
-	})
+	);
 
 	const hostHome = derived(
 		[currentAnimation, subAnimationStage],
@@ -124,14 +113,21 @@
 			if (!$currentAnimation) return undefined;
 			if (
 				$currentAnimation.behavior == 'melee' &&
-				$currentAnimation.target && $currentAnimation.target.side == side &&
+				$currentAnimation.target &&
+				$currentAnimation.target.side == side &&
 				$currentAnimation.target.name == stableHost.name &&
 				$subAnimationStage == 'fire'
 			) {
-				let found = findVisualUnitProps($currentAnimation.source,$lastMsgFromServer, $heroVisualUnitProps, $enemiesVisualUnitProps, $alliesVisualUnitProps);
-				if(found){
-				// 	found.aggro = 0
-					return found
+				let found = findVisualUnitProps(
+					$currentAnimation.source,
+					$lastMsgFromServer,
+					$heroVisualUnitProps,
+					$enemiesVisualUnitProps,
+					$alliesVisualUnitProps
+				);
+				if (found) {
+					// 	found.aggro = 0
+					return found;
 				}
 			}
 			return undefined;
@@ -188,13 +184,12 @@
 			// console.log(`calc target proj ${stableHost.name}`)
 			if (
 				$currentAnimation.behavior == 'missile' &&
-				(($currentAnimation.target && $currentAnimation.target.side == side &&
-					stableHost.name == $currentAnimation.target.name) 
-					// ||
-					// $currentAnimation.alsoDamages?.some(
-						// (ad) => ad.name == stableHost.name && ad.side == side
-					) 
-					&&
+				$currentAnimation.target &&
+				$currentAnimation.target.side == side &&
+				stableHost.name == $currentAnimation.target.name &&
+				// ||
+				// $currentAnimation.alsoDamages?.some(
+				// (ad) => ad.name == stableHost.name && ad.side == side
 				$subAnimationStage == 'fire'
 			) {
 				console.log(`ONTARGET ${stableHost.name} is target proj`);
@@ -211,15 +206,16 @@
 
 	// const componentId = ++id;
 </script>
+
 <div class="unitAndArea">
 	<!-- class:clickable={stableHost.clickableAction} -->
 	<div
 		class="home placeHolder"
 		on:click|preventDefault|stopPropagation={() => {
 			// clicky();
-			if($highlightedForAct){
-				choose($highlightedForAct)
-				$latestSlotButtonInput = 'none'
+			if ($highlightedForAct) {
+				choose($highlightedForAct);
+				$latestSlotButtonInput = 'none';
 			}
 			// selected = !selected
 			// if (acts.length) {
@@ -242,7 +238,6 @@
 						nextAnimationIndex(false);
 					}
 				}}
-				
 			>
 				<VisualUnit vu={stableHost} {flipped} />
 			</div>
@@ -258,13 +253,13 @@
 				on:introend={async () => {
 					if ($currentAnimation != undefined && !$animationCancelled) {
 						stableHost.displayHp -= $currentAnimation?.damage;
-						if($dGuest && $dGuest.aggro){
-							let dg = $dGuest
-							dg.aggro = 0
-							$enemiesVisualUnitProps = $enemiesVisualUnitProps
-							await tick()
+						if ($dGuest && $dGuest.aggro) {
+							let dg = $dGuest;
+							dg.aggro = 0;
+							$enemiesVisualUnitProps = $enemiesVisualUnitProps;
+							await tick();
 						}
-						
+
 						console.log('sending guest home');
 						$subAnimationStage = 'sentHome';
 					}
@@ -275,14 +270,14 @@
 		{/if}
 		{#if $missileSource}
 			<div
-				class="projSourceHolder"
+				class="projHolder"
 				out:sendProj={{ key: $animationCancelled ? 7 : 'proj' }}
 				class:startAlignSelf={!flipped}
 				class:endAlignSelf={flipped}
-				in:fade={{duration:1}}
-				on:introstart={()=>{
-					if(stableHost.aggro){
-						stableHost.aggro = 0
+				in:fade={{ duration: 1 }}
+				on:introstart={() => {
+					if (stableHost.aggro) {
+						stableHost.aggro = 0;
 					}
 				}}
 			>
@@ -296,19 +291,19 @@
 		{/if}
 		{#if $centerSource}
 			<div
-				class="noTargetSourceHolder"
+				class="projHolder"
 				class:startAlignSelf={!flipped}
 				class:endAlignSelf={flipped}
-				in:fade={{duration:1}}
-				on:introstart={()=>{
-					if(stableHost.aggro){
-						stableHost.aggro = 0
+				in:fade={{ duration: 1 }}
+				on:introstart={() => {
+					if (stableHost.aggro) {
+						stableHost.aggro = 0;
 					}
 				}}
 				out:sendCenter={{ key: $animationCancelled ? 11 : 'cen' }}
 			>
 				<img
-					class="noTargetImg"
+					class="projectile"
 					class:flipped
 					src={$centerSource.projectileImg}
 					alt="a projectile"
@@ -324,24 +319,30 @@
 				on:introend={() => {
 					if ($currentAnimation != undefined && !$animationCancelled && $lastMsgFromServer) {
 						stableHost.displayHp -= $currentAnimation.damage;
-						if($currentAnimation.alsoDamages){
-							for (const other of $currentAnimation.alsoDamages){
-								let otherProps = findVisualUnitProps(other.target,$lastMsgFromServer, $heroVisualUnitProps, $enemiesVisualUnitProps, $alliesVisualUnitProps)
-								if(otherProps){
-									console.log('hitting other')
-									otherProps.displayHp -= other.amount
+						if ($currentAnimation.alsoDamages) {
+							for (const other of $currentAnimation.alsoDamages) {
+								let otherProps = findVisualUnitProps(
+									other.target,
+									$lastMsgFromServer,
+									$heroVisualUnitProps,
+									$enemiesVisualUnitProps,
+									$alliesVisualUnitProps
+								);
+								if (otherProps) {
+									console.log('hitting other');
+									otherProps.displayHp -= other.amount;
 								}
 							}
-							$enemiesVisualUnitProps = $enemiesVisualUnitProps
-							$alliesVisualUnitProps = $alliesVisualUnitProps
-							$heroVisualUnitProps = $heroVisualUnitProps
+							$enemiesVisualUnitProps = $enemiesVisualUnitProps;
+							$alliesVisualUnitProps = $alliesVisualUnitProps;
+							$heroVisualUnitProps = $heroVisualUnitProps;
 						}
 						// if (
 						// 	$currentAnimation.target.name == stableHost.name &&
 						// 	$currentAnimation.target.side == side
 						// ) {
-							console.log(`target ${stableHost.name} reached, nexting`)
-							nextAnimationIndex(false);
+						console.log(`target ${stableHost.name} reached, nexting`);
+						nextAnimationIndex(false);
 						// }
 					}
 				}}
@@ -374,47 +375,33 @@
 	.flipped {
 		transform: scaleX(-1);
 	}
-	.home{
+	.home {
 		order: 1;
-		background-color: aqua;
-		
+		/* background-color: aqua; */
 	}
 	.placeHolder {
 		border: 3px groove transparent;
 		width: 61px;
-		height:99px;
+		height: 99px;
 		display: flex;
+		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 	}
 	.clickable {
-		border: 3px groove yellow
+		border: 3px groove yellow;
 	}
 	.projHolder {
 		/* background-color: aquamarine; */
 		/* display: none; */
 		/* opacity: 0; */
-		height: 20px;
-		width: 20px;
-	}
-	.projSourceHolder {
-		/* background-color: aquamarine; */
-		/* display: none; */
-		/* opacity: 0; */
-		height: 20px;
-		width: 20px;
+		height: 30px;
+		width: 30px;
 	}
 	.projectile {
-		height: 20px;
-		width: 20px;
-	}
-	.noTargetSourceHolder{
-		height:60px;
-		width:60px;
-	}
-	.noTargetImg{
-		height:100%;
-		width:100%;
+		/* background-color: aqua; */
+		height: 100%;
+		width: 100%;
 	}
 	.endAlignSelf {
 		align-self: flex-end;

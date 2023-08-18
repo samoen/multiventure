@@ -47,15 +47,9 @@
 		wepSlotActions,
 		utilitySlotActions,
 		bodySlotActions,
-
 		latestSlotButtonInput,
-
 		waitButtonAction,
-
 		waitingForMyAnimation
-
-
-
 	} from '$lib/client/ui';
 	import type { EnemyTemplateId } from '$lib/server/enemies.js';
 	import { crossfade } from 'svelte/transition';
@@ -209,8 +203,8 @@
 			return;
 		}
 
-		if(latest.animations.length && latest.triggeredBy == latest.yourName){
-			$waitingForMyAnimation = true
+		if (latest.animations.length && latest.triggeredBy == latest.yourName) {
+			$waitingForMyAnimation = true;
 		}
 
 		// my message with no animations
@@ -412,28 +406,19 @@
 		</div>
 	{/if}
 	<!-- <button on:click={() => {}}>debug something</button> -->
-	<div
-		class="visual"
-		role="button"
-		tabindex="0"
-		on:keydown
-		on:click={() => {
-			console.log('visual clicked');
-			$latestSlotButtonInput = 'none'
-			// resetClickableUnits();
-			// reactUnitProps();
-		}}
-	>
-		<div class="units">
-			<!-- acts={$lastMsgFromServer.itemActions.filter(
-				(ia) =>
-					ia &&
-					ia.target &&
-					((ia.target.kind == 'friendly' &&
-						ia.target.targetName == $lastMsgFromServer?.yourName) ||
-						ia.target.kind == 'onlySelf')
-			)} -->
-			<!-- clicky={() => {
+	<div class="wrapGameField">
+		<span class="yourSceneLabel">{$lastMsgFromServer.yourScene}</span>
+		<div class="visual"
+			role="button"
+			tabindex="0"
+			on:keydown
+			on:click={() => {
+				console.log('visual clicked');
+				$latestSlotButtonInput = 'none';
+			}}
+		>
+			<div class="units">
+				<!-- clicky={() => {
 						if ($lastMsgFromServer) {
 							$selectedDetail = {
 								kind: 'me',
@@ -445,76 +430,82 @@
 							};
 						}
 					}} -->
-			{#if $heroVisualUnitProps}
-				<Unit side={'hero'} stableHost={$heroVisualUnitProps} />
-			{/if}
+				{#if $heroVisualUnitProps}
+					<Unit side={'hero'} stableHost={$heroVisualUnitProps} />
+				{/if}
 
-			{#each $alliesVisualUnitProps as p}
-				<!-- acts={$lastMsgFromServer.itemActions.filter(
+				{#each $alliesVisualUnitProps as p}
+					<!-- acts={$lastMsgFromServer.itemActions.filter(
 						(ia) =>
 							ia && ia.target && ia.target.kind == 'friendly' && ia.target.targetName == p.name
 					)} -->
-				<!-- clicky={() => {
+					<!-- clicky={() => {
 					}} -->
-				<Unit side={'hero'} stableHost={p} />
-			{/each}
-		</div>
-		{#if $centerFieldTarget}
-			<div
-				class="centerField"
-				in:receiveCenter={{ key: $animationCancelled ? 10 : 'cen' }}
-				on:introend={() => {
-					if ($currentAnimation != undefined && !$animationCancelled && $lastMsgFromServer) {
-						if ($currentAnimation.alsoDamages) {
-							for (const other of $currentAnimation.alsoDamages) {
-								let otherProps = findVisualUnitProps(
-									other.target,
-									$lastMsgFromServer,
-									$heroVisualUnitProps,
-									$enemiesVisualUnitProps,
-									$alliesVisualUnitProps
-								);
-								if (otherProps) {
-									otherProps.displayHp -= other.amount;
-								}
-							}
-							$enemiesVisualUnitProps = $enemiesVisualUnitProps;
-							$alliesVisualUnitProps = $alliesVisualUnitProps;
-							$heroVisualUnitProps = $heroVisualUnitProps;
-						}
-						// if (
-						// 	$currentAnimation.target.name == stableHost.name &&
-						// 	$currentAnimation.target.side == side
-						// ) {
-						console.log(`center reached, nexting`);
-						nextAnimationIndex(false);
-						// }
-					}
-				}}
-			>
-				<img class="centerImg" src={$centerFieldTarget.projectileImg} alt="a center target" />
+					<Unit side={'hero'} stableHost={p} />
+				{/each}
 			</div>
-		{/if}
-		<div class="units">
-			{#each $enemiesVisualUnitProps as e}
-				<Unit side={'enemy'} stableHost={e} flipped={true} />
-			{/each}
+			<div class="centerPlaceHolder">
+				{#if $centerFieldTarget}
+					<div
+						class="centerField"
+						in:receiveCenter={{ key: $animationCancelled ? 10 : 'cen' }}
+						on:introend={() => {
+							if ($currentAnimation != undefined && !$animationCancelled && $lastMsgFromServer) {
+								if ($currentAnimation.alsoDamages) {
+									for (const other of $currentAnimation.alsoDamages) {
+										let otherProps = findVisualUnitProps(
+											other.target,
+											$lastMsgFromServer,
+											$heroVisualUnitProps,
+											$enemiesVisualUnitProps,
+											$alliesVisualUnitProps
+										);
+										if (otherProps) {
+											otherProps.displayHp -= other.amount;
+										}
+									}
+									$enemiesVisualUnitProps = $enemiesVisualUnitProps;
+									$alliesVisualUnitProps = $alliesVisualUnitProps;
+									$heroVisualUnitProps = $heroVisualUnitProps;
+								}
+								// if (
+								// 	$currentAnimation.target.name == stableHost.name &&
+								// 	$currentAnimation.target.side == side
+								// ) {
+								console.log(`center reached, nexting`);
+								nextAnimationIndex(false);
+								// }
+							}
+						}}
+					>
+						<img class="centerImg" src={$centerFieldTarget.projectileImg} alt="a center target" />
+					</div>
+				{/if}
+			</div>
+			<div class="units">
+				{#each $enemiesVisualUnitProps as e}
+					<Unit side={'enemy'} stableHost={e} flipped={true} />
+				{/each}
+			</div>
 		</div>
 	</div>
 	<div class="slotButtons">
 		<button
 			class="wepSlotButton"
 			type="button"
-			disabled={!$wepSlotActions || !$wepSlotActions.length || $waitingForMyAnimation || $clientState.waitingForMyEvent}
+			disabled={!$wepSlotActions ||
+				!$wepSlotActions.length ||
+				$waitingForMyAnimation ||
+				$clientState.waitingForMyEvent}
 			on:click={() => {
 				if (!$wepSlotActions || !$wepSlotActions.length) return;
 				let onlyAction = $wepSlotActions.at(0);
 				if (onlyAction && !onlyAction.target) {
 					choose(onlyAction);
-					$latestSlotButtonInput = 'none'
+					$latestSlotButtonInput = 'none';
 					return;
 				}
-				$latestSlotButtonInput = 'weapon'
+				$latestSlotButtonInput = 'weapon';
 			}}
 			>{$lastMsgFromServer.yourWeapon.itemId}
 		</button>
@@ -522,40 +513,50 @@
 		<button
 			class="utilitySlotButton"
 			type="button"
-			disabled={!$utilitySlotActions || !$utilitySlotActions.length || $waitingForMyAnimation || $clientState.waitingForMyEvent}
+			disabled={!$utilitySlotActions ||
+				!$utilitySlotActions.length ||
+				$waitingForMyAnimation ||
+				$clientState.waitingForMyEvent}
 			on:click={() => {
 				if (!$utilitySlotActions || !$utilitySlotActions.length) return;
 				let onlyAction = $utilitySlotActions.at(0);
 				if (onlyAction && !onlyAction.target) {
 					choose(onlyAction);
-					$latestSlotButtonInput = 'none'
+					$latestSlotButtonInput = 'none';
 					return;
 				}
-				$latestSlotButtonInput = 'utility'
+				$latestSlotButtonInput = 'utility';
 			}}
 			>{$lastMsgFromServer.yourUtility.itemId}
 		</button>
 		<button
 			class="bodySlotButton"
 			type="button"
-			disabled={!$bodySlotActions || !$bodySlotActions.length || $waitingForMyAnimation || $clientState.waitingForMyEvent}
+			disabled={!$bodySlotActions ||
+				!$bodySlotActions.length ||
+				$waitingForMyAnimation ||
+				$clientState.waitingForMyEvent}
 			on:click={() => {
 				if (!$bodySlotActions || !$bodySlotActions.length) return;
 				let onlyAction = $bodySlotActions.at(0);
 				if (onlyAction && !onlyAction.target) {
 					choose(onlyAction);
-					$latestSlotButtonInput = 'none'
+					$latestSlotButtonInput = 'none';
 					return;
 				}
-				$latestSlotButtonInput = 'body'
+				$latestSlotButtonInput = 'body';
 			}}
 			>{$lastMsgFromServer.yourBody.itemId}
 		</button>
-		<button class="waitButton" disabled={!$waitButtonAction || $waitingForMyAnimation || $clientState.waitingForMyEvent} on:click={()=>{
-			if($waitButtonAction){
-				choose($waitButtonAction)
-			}
-		}}>Wait</button>
+		<button
+			class="waitButton"
+			disabled={!$waitButtonAction || $waitingForMyAnimation || $clientState.waitingForMyEvent}
+			on:click={() => {
+				if ($waitButtonAction) {
+					choose($waitButtonAction);
+				}
+			}}>Wait</button
+		>
 	</div>
 	<div class="selectedDetails">
 		<div class="selectedPortrait">
@@ -641,8 +642,10 @@
 	:global(body) {
 		background-color: aliceblue;
 	}
-	:global(*){
+	:global(*) {
 		box-sizing: border-box;
+		margin: 0;
+		padding: 0;
 	}
 	h3 {
 		margin-top: 15px;
@@ -692,31 +695,68 @@
 		border: 1px solid black;
 	}
 
-	.units {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		/* gap: 10px; */
-	}
-	.centerField {
-		/* background-color: aqua; */
-		height: 60px;
-		width: 60px;
-		justify-self: center;
-		align-self: center;
-		display: flex;
-		justify-content: center;
-		align-content: center;
-	}
-	.centerImg {
-		height: 100%;
-		width: 100%;
+	.wrapGameField {
+		overflow: auto;
+		height: 30vh;
+		position: relative;
+		margin-block: 5px;
 	}
 	.visual {
 		background-color: burlywood;
 		display: flex;
-		justify-content: space-between;
-		padding: 50px;
+		justify-content: space-evenly;
+		/* align-items: safe center; */
+		align-items: center;
+		min-height: 100%;
+	}
+	.yourSceneLabel {
+		position:absolute;
+		left: 0;
+		top: 0;
+		float: left;
+		padding-inline: 6px;
+		font-weight: bold;
+		border-bottom-right-radius: 15px;
+		/* border-bottom: 5px solid brown; */
+		border: 3px solid bisque;
+		border-top-width: 1px;
+		border-left-width: 1px;
+		color: brown;
+		background-color: beige;
+	}
+
+	.units {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		margin-block: auto;
+		/* min-height: min-content; */
+		/* flex-wrap: wrap; */
+		/* margin-block:20px; */
+		/* gap: 10px; */
+		/* background-color: bisque; */
+	}
+	.centerPlaceHolder {
+		height: 30px;
+		width: 30px;
+		/* background-color: aqua; */
+		/* position:absolute;
+		left:50%;
+		top:50%; */
+	}
+	.centerField {
+		height: 100%;
+		width: 100%;
+		justify-self: center;
+		align-self: center;
+		/* display: flex;
+		justify-content: center;
+		align-content: center; */
+	}
+	.centerImg {
+		height: 100%;
+		width: 100%;
 	}
 	.selectedDetails {
 		background-color: beige;
