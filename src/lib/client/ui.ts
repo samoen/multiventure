@@ -35,8 +35,10 @@ type UnitDetails = {
     portrait: string
     other: OtherPlayerInfo
 } | {
-    kind: 'me', portrait: string,
-    me: { myHealth: number, myName: HeroName }
+    kind: 'me', 
+    portrait: string,
+    me: { myHealth: number, 
+        myName: HeroName }
 };
 
 export let clientState = writable({
@@ -48,10 +50,11 @@ export let waitingForMyAnimation = writable(false)
 export type VisualUnitProps = {
     name: string;
     src: string;
-    hp: number;
+    // hp: number;
     displayHp: number
     maxHp: number;
     aggro?:number;
+    // actual:
 }
 
 export const enemySprites = {
@@ -72,7 +75,6 @@ export type Projectile = undefined | ProjectileProps
 
 export const lastMsgFromServer: Writable<MessageFromServer | undefined> = writable();
 export const previousMsgFromServer: Writable<MessageFromServer | undefined> = writable();
-export const selectedDetail: Writable<UnitDetails | undefined> = writable()
 export const heroVisualUnitProps: Writable<VisualUnitProps|undefined> = writable()
 export let enemiesVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 export let alliesVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
@@ -98,6 +100,11 @@ export let waitButtonAction = derived(lastMsgFromServer,($lastMsgFromServer)=>{
     return $lastMsgFromServer?.itemActions.find(ia=>ia.wait)
 })
 
+// export const selectedDetail: Writable<UnitDetails | undefined> = writable()
+export const lastUnitClicked = writable()
+// export const selectedDetail: derived([lastMsgFromServer, lastUnitClicked],()=>{
+
+// })
 
 
 export let latestSlotButtonInput : Writable<EquipmentSlot | 'none'> = writable('none')
@@ -145,7 +152,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer) {
             {
                 name: lastMsg.yourName,
                 src: heroSprites[heroSprite(lastMsg.yourWeapon?.itemId)],
-                hp: lastMsg.yourHp,
+                // hp: lastMsg.yourHp,
                 maxHp: lastMsg.yourMaxHp,
                 displayHp: lastMsg.yourHp
             }
@@ -259,24 +266,24 @@ export async function nextAnimationIndex(start:boolean){
     // currentAnimation.set()
 }
 
-lastMsgFromServer.subscribe((l) => {
-    if (l) {
-        selectedDetail.update(u => {
-            if (u == null) {
-                return {
-                    portrait: peasantPortrait,
-                    me: {
-                        myName: l.yourName,
-                        myHealth: l.yourHp,
-                    },
-                    // maxHealth : l.yourMaxHp,
-                    kind: 'me',
-                }
-            }
-            return u
-        })
-    }
-})
+// lastMsgFromServer.subscribe((l) => {
+//     if (l) {
+//         selectedDetail.update(u => {
+//             if (u == null) {
+//                 return {
+//                     portrait: peasantPortrait,
+//                     me: {
+//                         myName: l.yourName,
+//                         myHealth: l.yourHp,
+//                     },
+//                     // maxHealth : l.yourMaxHp,
+//                     kind: 'me',
+//                 }
+//             }
+//             return u
+//         })
+//     }
+// })
 
 export function heroSprite(weapon: ItemIdForSlot<'weapon'>) {
     if (weapon == 'club') return 'ruffian';

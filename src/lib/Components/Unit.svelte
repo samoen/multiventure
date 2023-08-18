@@ -31,7 +31,10 @@
 		latestSlotButtonInput,
 		wepSlotActions,
 		utilitySlotActions,
-		bodySlotActions
+		bodySlotActions,
+
+		lastUnitClicked
+
 	} from '$lib/client/ui';
 	import arrow from '$lib/assets/arrow.png';
 	import bomb from '$lib/assets/bomb.png';
@@ -217,6 +220,7 @@
 				choose($highlightedForAct);
 				$latestSlotButtonInput = 'none';
 			}
+			$lastUnitClicked = stableHost
 			// selected = !selected
 			// if (acts.length) {
 			// 	$activeId = componentId;
@@ -415,7 +419,6 @@
 		display: flex;
 		flex-direction: row;
 		/* height: 100px; */
-		/* background-color: brown; */
 	}
 	.guestArea {
 		/* background-color: brown; */

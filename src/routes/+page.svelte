@@ -35,7 +35,6 @@
 		heroVisualUnitProps,
 		lastMsgFromServer,
 		previousMsgFromServer,
-		selectedDetail,
 		syncVisualsToMsg,
 		type VisualUnitProps,
 		nextAnimationIndex,
@@ -162,27 +161,27 @@
 	}
 
 	async function startAnimating(previous: MessageFromServer, latest: MessageFromServer) {
-		latest.enemiesInScene.forEach((e) => {
-			let findInPrevious = $enemiesVisualUnitProps.find((pe) => pe.name == e.name);
-			if (!findInPrevious) {
-				$enemiesVisualUnitProps.push({
-					name: e.name,
-					src: enemySprites[e.templateId],
-					hp: e.health,
-					displayHp: e.health,
-					maxHp: e.maxHealth
-				});
-			}
-		});
+		// latest.enemiesInScene.forEach((e) => {
+		// 	let findInPrevious = $enemiesVisualUnitProps.find((pe) => pe.name == e.name);
+		// 	if (!findInPrevious) {
+		// 		$enemiesVisualUnitProps.push({
+		// 			name: e.name,
+		// 			src: enemySprites[e.templateId],
+		// 			// hp: e.health,
+		// 			displayHp: e.health,
+		// 			maxHp: e.maxHealth
+		// 		});
+		// 	}
+		// });
 
-		for (const enemyProps of $enemiesVisualUnitProps) {
-			let findInNew = $lastMsgFromServer?.enemiesInScene.find((ne) => ne.name == enemyProps.name);
-			if (!findInNew) {
-				enemyProps.hp = 0;
-			} else {
-				enemyProps.hp = findInNew.health;
-			}
-		}
+		// for (const enemyProps of $enemiesVisualUnitProps) {
+		// 	let findInNew = $lastMsgFromServer?.enemiesInScene.find((ne) => ne.name == enemyProps.name);
+		// 	if (!findInNew) {
+		// 		enemyProps.hp = 0;
+		// 	} else {
+		// 		enemyProps.hp = findInNew.health;
+		// 	}
+		// }
 		console.log('starting anims');
 		await nextAnimationIndex(true);
 		// $currentAnimationIndex = 0
@@ -558,7 +557,7 @@
 			}}>Wait</button
 		>
 	</div>
-	<div class="selectedDetails">
+	<!-- <div class="selectedDetails">
 		<div class="selectedPortrait">
 			<img class="portrait" src={$selectedDetail?.portrait} alt="portrait" />
 		</div>
@@ -578,7 +577,7 @@
 				stuff
 			{/if}
 		</div>
-	</div>
+	</div> -->
 	<h3>{$lastMsgFromServer.yourName}:</h3>
 	<p>
 		Health: {$lastMsgFromServer.yourHp}hp
@@ -711,32 +710,36 @@
 		background-color: beige;
 	}
 	.wrapGameField {
-		overflow: auto;
+		overflow-y: auto;
+		overscroll-behavior: contain;
 		height: 30vh;
 		position: relative;
 		margin-block: 5px;
-		padding:5px;
-		/* background-color: aqua; */
-		/* display: flex; */
+		padding:3px;
+		background-color: brown;
 	}
 	.visual {
 		background-color: burlywood;
 		display:grid;
-		grid-template-columns: minmax(120px,1fr) auto minmax(120px,1fr);
-		grid-template-rows: auto;
+		grid-template-columns: 1fr auto 1fr;
+		/* gap:4px; */
+		/* justify-content: center; */
 		align-items: center;
-		height: fit-content;
+		/* justify-items:; */
+		/* height: fit-content; */
 		min-height: 100%;
 	}
 
 	.units {
-		/* flex-grow:1; */
-
 		display: grid;
+		/* direction: rtl; */
 		/* background-color: beige; */
-		grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+		/* grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); */
+		grid-template-columns: repeat(auto-fit, 120px);
+		justify-content: center;
 		justify-items: center;
-		/* gap:1px; */
+		align-items: center;
+		/* gap:2px; */
 	}
 	.centerPlaceHolder {
 		height: 30px;
