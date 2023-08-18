@@ -48,7 +48,7 @@
 	// console.log('stablehost: ' + JSON.stringify(stableHost))
 	export let flipped: boolean = false;
 	// export let acts: GameActionSentToClient[];
-	export let clicky: () => void;
+	// export let clicky: () => void;
 
 	const hostHome = derived(
 		[currentAnimation, subAnimationStage],
@@ -170,18 +170,24 @@
 
 	// const componentId = ++id;
 </script>
-
+<!-- {#if stableHost.clickableAction}
+	<p>CLICK ME!</p>
+{/if} -->
 <div class="unitAndArea">
 	<div
 		class="placeHolder"
-		on:click={() => {
-			clicky();
+		on:click|preventDefault|stopPropagation={() => {
+			// clicky();
+			if(stableHost.clickableAction){
+				choose(stableHost.clickableAction)
+			}
 			// selected = !selected
 			// if (acts.length) {
 			// 	$activeId = componentId;
 			// }
 			// $clientState.selectedUnit =`${flip}${name}`
 		}}
+		class:clickable={stableHost.clickableAction}
 		role="button"
 		tabindex="0"
 		on:keydown
@@ -197,27 +203,6 @@
 					}
 				}}
 				
-				on:outrostart={async()=>{
-					if(stableHost.aggro){
-						// console.log('outstart')
-						// stableHost.aggro = 0
-						// stableHost = stableHost
-						// let found = $enemiesVisualUnitProps.find(e=>e === stableHost)
-						// if(found){
-						// 	console.log('FOUNDDDY' + found.aggro)
-						// 	found.aggro = 0
-						// }
-						// enemiesVisualUnitProps.update((es)=>{
-						// 	return es.map(e=>{
-						// 		e.aggro = 0
-						// 		return e
-						// 	})
-						// })
-						// stableHost.aggro = 0
-						// await tick()
-					}
-					// $enemiesVisualUnitProps = $enemiesVisualUnitProps
-				}}
 			>
 				<VisualUnit vu={stableHost} {flipped} />
 			</div>
@@ -350,9 +335,13 @@
 		transform: scaleX(-1);
 	}
 	.placeHolder {
-		/* border: 3px solid black; */
+		border: 3px groove transparent;
 		order: 1;
 		width: 60px;
+		padding:3px;
+	}
+	.clickable {
+		border: 3px groove yellow
 	}
 	.projHolder {
 		/* background-color: aquamarine; */
@@ -409,7 +398,7 @@
 	.unitAndArea {
 		display: flex;
 		flex-direction: row;
-		height: 100px;
+		/* height: 100px; */
 		/* background-color: brown; */
 	}
 	.area {

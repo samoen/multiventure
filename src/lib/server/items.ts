@@ -56,7 +56,8 @@ const dagger: Item = {
 					buttonText: `Attack ${enemy.name} with Dagger`,
 					provoke: 7,
 					speed: 8,
-					// target:{kind:'targetEnemy',targetName:enemy.name},
+					slot:'weapon',
+					target:{name:enemy.name,side:'enemy'},
 					performAction() {
 						let r = damageEnemy(player, enemy, 7, 3)
 						if (r.dmgDone > 0) {
@@ -87,7 +88,8 @@ const club: Item = {
 					buttonText: `Hit ${enemy.name} with Club`,
 					provoke: 40,
 					speed: 2,
-					// target:{kind:'targetEnemy',targetName:enemy.name},
+					slot:'weapon',
+					target:{name:enemy.name,side:'enemy'},
 					performAction() {
 						let r = damageEnemy(player, enemy, 25)
 						if (r.dmgDone > 0) {
@@ -118,7 +120,8 @@ const fireStaff: Item = {
 					buttonText: `Blast ${enemy.name} with Firebolt`,
 					provoke: 60,
 					speed: 1,
-					// target:{kind:'targetEnemy',targetName:enemy.name},
+					slot:'weapon',
+					target:{name:enemy.name,side:'enemy'},
 					performAction() {
 						let r = damageEnemy(player, enemy, 10)
 						if (r.dmgDone > 0) {
@@ -153,6 +156,8 @@ const bandage: Item = {
 						// target:{kind:'friendly',targetName:friend.heroName},
 						grantsImmunity: true,
 						provoke: 1,
+						slot:'utility',
+						target:{name:friend.heroName,side:'hero'},
 						performAction: () => {
 							let r = healPlayer(friend, 90)
 							if (friend.heroName != player.heroName && r.healed > 0) {
@@ -186,7 +191,7 @@ const bomb: Item = {
 				buttonText: 'Throw Powderbomb',
 				speed: 12,
 				provoke:5,
-				// target:{kind:'anyEnemy'},
+				slot:'utility',
 				performAction() {
 					let dmgs : {target:AnimationTarget,amount:number}[]= []
 					for (const enemy of enemiesInScene(player.currentScene)) {
@@ -230,7 +235,8 @@ const poisonDart: Item = {
 				{
 					buttonText: `Throw poison dart at ${enemy.name}`,
 					provoke: 100,
-					// target:{kind:'targetEnemy',targetName:enemy.name},
+					slot:'utility',
+					target:{name:enemy.name, side:'enemy'},
 					performAction() {
 						let found = enemy.statuses.find(s => s.status == 'poison')
 						if (found != undefined && found.counter) {
@@ -266,6 +272,7 @@ const plateMail: Item = {
 			player.itemActions.push({
 				provoke: 100,
 				buttonText: 'Taunt',
+				slot:'body',
 				performAction() {
 					player.inventory.body.cooldown = 2
 					pushHappening(`${player.heroName} infuriates enemies!`)
@@ -287,7 +294,7 @@ const theifCloak: Item = {
 			player.itemActions.push({
 				buttonText: 'Hide in shadows',
 				grantsImmunity: true,
-				// target:{kind:'onlySelf'},
+				slot:'body',
 				performAction() {
 					// for (const enemy of enemiesInScene(player.currentScene)) {
 					// 	enemy.aggros.delete(player.heroName)

@@ -1,4 +1,4 @@
-import type { MessageFromServer, OtherPlayerInfo } from '$lib/utils';
+import type { GameActionSentToClient, MessageFromServer, OtherPlayerInfo } from '$lib/utils';
 import { activeEnemies, addAggro, damagePlayer, enemiesInScene, getAggroForPlayer, takePoisonDamage } from './enemies';
 import { items } from './items';
 import { scenes } from './scenes';
@@ -54,8 +54,9 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 		itemActions: forPlayer.itemActions.map((gameAction) => {
 			return {
 				buttonText: gameAction.buttonText,
-				// target:gameAction.target,
-			};
+				slot:gameAction.slot,
+				target:gameAction.target,
+			} satisfies GameActionSentToClient;
 		}),
 		happenings: recentHappenings,
 		animations: forPlayer.animations,

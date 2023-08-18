@@ -19,6 +19,8 @@
 			<div class="aggrobar">
 				<div class="aggro" style:width="{vu.aggro}%" />
 			</div>
+			{:else}
+			<div class="spacer"></div>
 		{/if}
 
 	</div>
@@ -40,7 +42,7 @@
 		flex-direction: column;
 		gap: 5px;
 		align-items: center;
-		width: 60px;
+		/* width: 60px; */
 		/* height:100px; */
 		/* background-color: aqua; */
 	}
@@ -83,8 +85,8 @@
 		/* align-self: stretch; */
 		height: 7px;
 		border: 1px solid black;
-		width: 50px;
-		margin-block: 1px;
+		width: 40px;
+		/* margin-block: 1px; */
 	}
 	.healthbar_health {
 		background-color: green;
@@ -92,12 +94,16 @@
 		height: 100%;
 	}
 	.aggrobar {
-		margin-block: 1px;
+		margin-top: 2px;
 		/* width:80px; */
 		/* align-self: stretch; */
-		height: 3px;
+		height: 4px;
 		border: 1px solid black;
-		width: 50px;
+		width: 40px;
+	}
+	.spacer{
+		margin-top: 2px;
+		height:4px;
 	}
 	.aggro {
 		background-color: purple;

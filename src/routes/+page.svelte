@@ -38,24 +38,15 @@
 		selectedDetail,
 		syncVisualsToMsg,
 		type VisualUnitProps,
-
 		nextAnimationIndex,
-
 		subAnimationStage,
-
 		receiveProj,
-
 		centerFieldTarget,
-
 		findVisualUnitProps,
-
-		receiveCenter
-
-
-
-
-
-
+		receiveCenter,
+		wepSlotActions,
+		utilitySlotActions,
+		bodySlotActions
 	} from '$lib/client/ui';
 	import type { EnemyTemplateId } from '$lib/server/enemies.js';
 	import { crossfade } from 'svelte/transition';
@@ -138,11 +129,11 @@
 				$clientState.waitingForMyEvent = false;
 				loading = false;
 			}
-			console.log(`gotworld`)
+			console.log(`gotworld`);
 			await handleAnimationsOnMessage(prevMsg, sMsg);
 
 			// wait for dom elements to be populated
-			console.log('tick')
+			console.log('tick');
 			await tick();
 			if (happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
 			if (sceneTexts) sceneTexts.scroll({ top: sceneTexts.scrollHeight, behavior: 'smooth' });
@@ -161,7 +152,7 @@
 		$animationCancelled = true;
 		$currentAnimationIndex = 999;
 		// $currentAnimation = undefined;
-		console.log('tick')
+		console.log('tick');
 		await tick();
 		// await new Promise((r) => setTimeout(r, 100));
 		$animationCancelled = false;
@@ -189,11 +180,10 @@
 				enemyProps.hp = findInNew.health;
 			}
 		}
-		console.log('starting anims')
-		await nextAnimationIndex(true)
+		console.log('starting anims');
+		await nextAnimationIndex(true);
 		// $currentAnimationIndex = 0
 		// subAnimationStage.set('start')
-		
 	}
 
 	async function handleAnimationsOnMessage(
@@ -213,23 +203,22 @@
 
 		// our message with no animations
 		if (latest.triggeredBy == latest.yourName && !latest.animations.length) {
-			console.log('ours with no')
+			console.log('ours with no');
 			await cancelAnimations();
 			syncVisualsToMsg(latest);
 			return;
 		}
-		
+
 		// someone else's message and we are animating
 		if (latest.triggeredBy != latest.yourName && $currentAnimation != undefined) {
-			console.log(`someone else and animating ${JSON.stringify($currentAnimation)}`)
+			console.log(`someone else and animating ${JSON.stringify($currentAnimation)}`);
 			return;
 		}
-		
 
 		// anyone's message with no animations and not animating
 		if ($currentAnimation == undefined && !latest.animations.length) {
 			// await cancelAnimations();
-			console.log('anyones and nono')
+			console.log('anyones and nono');
 			syncVisualsToMsg(latest);
 			return;
 		}
@@ -240,7 +229,7 @@
 			$currentAnimation != undefined &&
 			latest.triggeredBy == latest.yourName
 		) {
-			console.log('ours with anims but in prog')
+			console.log('ours with anims but in prog');
 			await cancelAnimations();
 			syncVisualsToMsg(previous);
 			await startAnimating(previous, latest);
@@ -251,17 +240,31 @@
 
 		// new animations and we aren't animating, start animating
 		if (latest.animations.length && $currentAnimation == undefined) {
-			console.log('anyones message, we not animating. starting')
+			console.log('anyones message, we not animating. starting');
 			// await cancelAnimations();
 			syncVisualsToMsg(previous);
 			await startAnimating(previous, latest);
 			return;
 		}
-		console.log('no specific anim handling')
-		syncVisualsToMsg(latest)
+		console.log('no specific anim handling');
+		syncVisualsToMsg(latest);
 	}
 
+	function allUnitProps(): VisualUnitProps[] {
+		if (!$heroVisualUnitProps) return [];
+		return [$heroVisualUnitProps, ...$alliesVisualUnitProps, ...$enemiesVisualUnitProps];
+	}
 
+	function resetClickableUnits() {
+		for (const prop of allUnitProps()) {
+			prop.clickableAction = undefined;
+		}
+	}
+	function reactUnitProps() {
+		$enemiesVisualUnitProps = $enemiesVisualUnitProps;
+		$heroVisualUnitProps = $heroVisualUnitProps;
+		$alliesVisualUnitProps = $alliesVisualUnitProps;
+	}
 
 	async function deleteHero() {
 		loading = true;
@@ -401,8 +404,18 @@
 			{/each}
 		</div>
 	{/if}
-	<button on:click={() => {}}>start animating</button>
-	<div class="visual">
+	<!-- <button on:click={() => {}}>debug something</button> -->
+	<div
+		class="visual"
+		role="button"
+		tabindex="0"
+		on:keydown
+		on:click={() => {
+			console.log('visual clicked');
+			resetClickableUnits();
+			reactUnitProps();
+		}}
+	>
 		<div class="units">
 			<!-- acts={$lastMsgFromServer.itemActions.filter(
 				(ia) =>
@@ -412,11 +425,7 @@
 						ia.target.targetName == $lastMsgFromServer?.yourName) ||
 						ia.target.kind == 'onlySelf')
 			)} -->
-			{#if $heroVisualUnitProps}
-				<Unit
-					side={'hero'}
-					stableHost={$heroVisualUnitProps}
-					clicky={() => {
+			<!-- clicky={() => {
 						if ($lastMsgFromServer) {
 							$selectedDetail = {
 								kind: 'me',
@@ -427,8 +436,9 @@
 								}
 							};
 						}
-					}}
-				/>
+					}} -->
+			{#if $heroVisualUnitProps}
+				<Unit side={'hero'} stableHost={$heroVisualUnitProps} />
 			{/if}
 
 			{#each $alliesVisualUnitProps as p}
@@ -436,79 +446,147 @@
 						(ia) =>
 							ia && ia.target && ia.target.kind == 'friendly' && ia.target.targetName == p.name
 					)} -->
-				<Unit
-					side={'hero'}
-					stableHost={p}
-					clicky={() => {
-						// if ($lastMsgFromServer) {
-						// 	$selectedDetail = {
-						// 		portrait: peasantPortrait,
-						// 		other: p,
-						// 		kind: 'otherPlayer'
-						// 	};
-						// }
-					}}
-				/>
+				<!-- clicky={() => {
+					}} -->
+				<Unit side={'hero'} stableHost={p} />
 			{/each}
 		</div>
 		{#if $centerFieldTarget}
-			<div 
-			class="centerField"
-			in:receiveCenter={{ key: $animationCancelled ? 10 : 'cen' }}
-			on:introend={() => {
-				if ($currentAnimation != undefined && !$animationCancelled && $lastMsgFromServer) {
-					if($currentAnimation.alsoDamages){
-						for (const other of $currentAnimation.alsoDamages){
-							let otherProps = findVisualUnitProps(other.target, $lastMsgFromServer, $heroVisualUnitProps, $enemiesVisualUnitProps, $alliesVisualUnitProps)
-							if(otherProps){
-								otherProps.displayHp -= other.amount
+			<div
+				class="centerField"
+				in:receiveCenter={{ key: $animationCancelled ? 10 : 'cen' }}
+				on:introend={() => {
+					if ($currentAnimation != undefined && !$animationCancelled && $lastMsgFromServer) {
+						if ($currentAnimation.alsoDamages) {
+							for (const other of $currentAnimation.alsoDamages) {
+								let otherProps = findVisualUnitProps(
+									other.target,
+									$lastMsgFromServer,
+									$heroVisualUnitProps,
+									$enemiesVisualUnitProps,
+									$alliesVisualUnitProps
+								);
+								if (otherProps) {
+									otherProps.displayHp -= other.amount;
+								}
 							}
+							$enemiesVisualUnitProps = $enemiesVisualUnitProps;
+							$alliesVisualUnitProps = $alliesVisualUnitProps;
+							$heroVisualUnitProps = $heroVisualUnitProps;
 						}
-						$enemiesVisualUnitProps = $enemiesVisualUnitProps
-						$alliesVisualUnitProps = $alliesVisualUnitProps
-						$heroVisualUnitProps = $heroVisualUnitProps
-					}
-					// if (
-					// 	$currentAnimation.target.name == stableHost.name &&
-					// 	$currentAnimation.target.side == side
-					// ) {
-						console.log(`center reached, nexting`)
+						// if (
+						// 	$currentAnimation.target.name == stableHost.name &&
+						// 	$currentAnimation.target.side == side
+						// ) {
+						console.log(`center reached, nexting`);
 						nextAnimationIndex(false);
-					// }
-				}
-			}}
+						// }
+					}
+				}}
 			>
-			<img
-					class="centerImg"
-					src={$centerFieldTarget.projectileImg}
-					alt="a center target"
-				/>
+				<img class="centerImg" src={$centerFieldTarget.projectileImg} alt="a center target" />
 			</div>
-			
 		{/if}
 		<div class="units">
-			<!-- acts={$lastMsgFromServer.itemActions.filter(
-						(ia) =>
-							ia &&
-							ia.target &&
-							((ia.target.kind == 'targetEnemy' && ia.target.targetName == e.name) ||
-								ia.target.kind == 'anyEnemy')
-					)} -->
 			{#each $enemiesVisualUnitProps as e}
-				<Unit
-					side={'enemy'}
-					stableHost={e}
-					flipped={true}
-					clicky={() => {
-						// $selectedDetail = {
-						// 	kind: 'enemy',
-						// 	enemy: e,
-						// 	portrait: enemyPortraits[e.templateId]
-						// };
-					}}
-				/>
+				<Unit side={'enemy'} stableHost={e} flipped={true} />
 			{/each}
 		</div>
+	</div>
+	<div class="slotButtons">
+		<button
+			class="wepSlotButton"
+			type="button"
+			disabled={!$wepSlotActions || !$wepSlotActions.length}
+			on:click={() => {
+				if (!$wepSlotActions || !$wepSlotActions.length) return;
+				let onlyAction = $wepSlotActions.at(0);
+				if (onlyAction && !onlyAction.target) {
+					choose(onlyAction);
+					return;
+				}
+				resetClickableUnits();
+				// console.log(JSON.stringify(wepActions))
+				for (const wepAct of $wepSlotActions) {
+					if (wepAct.target) {
+						let prop = findVisualUnitProps(
+							wepAct.target,
+							$lastMsgFromServer,
+							$heroVisualUnitProps,
+							$enemiesVisualUnitProps,
+							$alliesVisualUnitProps
+						);
+						if (prop) {
+							prop.clickableAction = wepAct;
+						}
+					}
+				}
+				reactUnitProps();
+			}}
+			>{$lastMsgFromServer.yourWeapon.itemId}
+		</button>
+
+		<button
+			class="utilitySlotButton"
+			type="button"
+			disabled={!$utilitySlotActions || !$utilitySlotActions.length}
+			on:click={() => {
+				if (!$utilitySlotActions || !$utilitySlotActions.length) return;
+				let onlyAction = $utilitySlotActions.at(0);
+				if (onlyAction && !onlyAction.target) {
+					choose(onlyAction);
+					return;
+				}
+				resetClickableUnits();
+				// console.log(JSON.stringify(wepActions))
+				for (const act of $utilitySlotActions) {
+					if (act.target) {
+						let prop = findVisualUnitProps(
+							act.target,
+							$lastMsgFromServer,
+							$heroVisualUnitProps,
+							$enemiesVisualUnitProps,
+							$alliesVisualUnitProps
+						);
+						if (prop) {
+							prop.clickableAction = act;
+						}
+					}
+				}
+				reactUnitProps();
+			}}
+			>{$lastMsgFromServer.yourUtility.itemId}
+		</button>
+		<button
+			class="bodySlotButton"
+			type="button"
+			disabled={!$bodySlotActions || !$bodySlotActions.length}
+			on:click={() => {
+				if (!$bodySlotActions || !$bodySlotActions.length) return;
+				let onlyAction = $bodySlotActions.at(0);
+				if (onlyAction && !onlyAction.target) {
+					choose(onlyAction);
+					return;
+				}
+				resetClickableUnits();
+				for (const act of $bodySlotActions) {
+					if (act.target) {
+						let prop = findVisualUnitProps(
+							act.target,
+							$lastMsgFromServer,
+							$heroVisualUnitProps,
+							$enemiesVisualUnitProps,
+							$alliesVisualUnitProps
+						);
+						if (prop) {
+							prop.clickableAction = act;
+						}
+					}
+				}
+				reactUnitProps();
+			}}
+			>{$lastMsgFromServer.yourBody.itemId}
+		</button>
 	</div>
 	<div class="selectedDetails">
 		<div class="selectedPortrait">
@@ -594,6 +672,9 @@
 	:global(body) {
 		background-color: aliceblue;
 	}
+	:global(*){
+		box-sizing: border-box;
+	}
 	h3 {
 		margin-top: 15px;
 		margin-bottom: 1px;
@@ -646,21 +727,21 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
-		gap: 10px;
+		/* gap: 10px; */
 	}
-	.centerField{
+	.centerField {
 		/* background-color: aqua; */
-		height:60px;
-		width:60px;
+		height: 60px;
+		width: 60px;
 		justify-self: center;
 		align-self: center;
 		display: flex;
 		justify-content: center;
 		align-content: center;
 	}
-	.centerImg{
-		height:100%;
-		width:100%;
+	.centerImg {
+		height: 100%;
+		width: 100%;
 	}
 	.visual {
 		background-color: burlywood;

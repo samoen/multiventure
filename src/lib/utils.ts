@@ -1,7 +1,7 @@
 // This file is for stuff available to both the server and browser
 
 import type { EnemyTemplateId } from './server/enemies';
-import type { ItemState, ItemStateForSlot } from './server/items';
+import type { EquipmentSlot, ItemState, ItemStateForSlot } from './server/items';
 import type { SceneId } from './server/scenes';
 import type { Flag, GlobalFlag, HeroName } from './server/users';
 
@@ -82,7 +82,8 @@ export function isGameActionSelected(msg: object): msg is GameActionSelected {
 
 export type GameActionSentToClient = {
 	buttonText: string;
-	// target?: ActionTarget
+	slot?:EquipmentSlot
+	target?: AnimationTarget
 };
 
 // export type ActionTarget =

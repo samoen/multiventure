@@ -50,6 +50,7 @@ export type VisualUnitProps = {
     displayHp: number
     maxHp: number;
     aggro?:number;
+    clickableAction?:GameActionSentToClient
 }
 
 export const enemySprites = {
@@ -82,6 +83,16 @@ export let currentAnimation = derived([currentAnimationIndex],([$currentAnimatio
 })
 export const animationCancelled = writable(false)
 export const subAnimationStage :Writable<'start'|'fire'|'sentHome'> = writable('start')
+
+export let wepSlotActions = derived(lastMsgFromServer,($lastMsgFromServer)=>{
+    return $lastMsgFromServer?.itemActions.filter(ia=>ia.slot == 'weapon')
+})
+export let utilitySlotActions = derived(lastMsgFromServer,($lastMsgFromServer)=>{
+    return $lastMsgFromServer?.itemActions.filter(ia=>ia.slot == 'utility')
+})
+export let bodySlotActions = derived(lastMsgFromServer,($lastMsgFromServer)=>{
+    return $lastMsgFromServer?.itemActions.filter(ia=>ia.slot == 'body')
+})
 
 export const [sendMelee, receiveMelee] = crossfade({
     duration: (d) => Math.sqrt(d * 900),
