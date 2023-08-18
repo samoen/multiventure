@@ -15,7 +15,7 @@ import theif from '$lib/assets/thief.png';
 import mage from '$lib/assets/mage.png';
 import arrow from '$lib/assets/arrow.png';
 import bomb from '$lib/assets/bomb.png';
-import type { ItemId, ItemIdForSlot } from '$lib/server/items.js';
+import type { EquipmentSlot, ItemId, ItemIdForSlot } from '$lib/server/items.js';
 import { crossfade } from "svelte/transition";
 import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easing";
 import { tick } from "svelte";
@@ -43,6 +43,7 @@ export let clientState = writable({
     waitingForMyEvent: true,
     status: 'starting up',
 })
+
 export type VisualUnitProps = {
     name: string;
     src: string;
@@ -50,7 +51,6 @@ export type VisualUnitProps = {
     displayHp: number
     maxHp: number;
     aggro?:number;
-    clickableAction?:GameActionSentToClient
 }
 
 export const enemySprites = {
@@ -93,6 +93,8 @@ export let utilitySlotActions = derived(lastMsgFromServer,($lastMsgFromServer)=>
 export let bodySlotActions = derived(lastMsgFromServer,($lastMsgFromServer)=>{
     return $lastMsgFromServer?.itemActions.filter(ia=>ia.slot == 'body')
 })
+
+export let latestSlotButtonInput : Writable<EquipmentSlot | 'none'> = writable('none')
 
 export const [sendMelee, receiveMelee] = crossfade({
     duration: (d) => Math.sqrt(d * 900),

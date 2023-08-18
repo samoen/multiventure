@@ -30,7 +30,19 @@
 
 		findVisualUnitProps,
 
-		sendCenter
+		sendCenter,
+
+		latestSlotButtonInput,
+
+		wepSlotActions,
+
+		utilitySlotActions,
+
+		bodySlotActions
+
+
+
+
 
 
 
@@ -45,10 +57,46 @@
 
 	export let side: 'hero' | 'enemy';
 	export let stableHost: VisualUnitProps;
+
 	// console.log('stablehost: ' + JSON.stringify(stableHost))
 	export let flipped: boolean = false;
 	// export let acts: GameActionSentToClient[];
 	// export let clicky: () => void;
+
+	const highlightedForAct = derived([latestSlotButtonInput,wepSlotActions, utilitySlotActions,bodySlotActions],([$latestSlotButtonInput,$wepSlotActions, $utilitySlotActions,$bodySlotActions])=>{
+		if($latestSlotButtonInput == 'none') return undefined
+		if($latestSlotButtonInput == 'weapon'){
+			if(!$wepSlotActions) return undefined
+				for (const wepAct of $wepSlotActions) {
+					if (wepAct.target) {
+						if(wepAct.target.name == stableHost.name && wepAct.target.side == side){
+							return wepAct
+						}
+					}
+				}
+		}
+		if($latestSlotButtonInput == 'utility'){
+			if(!$utilitySlotActions) return undefined
+				for (const act of $utilitySlotActions) {
+					if (act.target) {
+						if(act.target.name == stableHost.name && act.target.side == side){
+							return act
+						}
+					}
+				}
+		}
+		if($latestSlotButtonInput == 'body'){
+			if(!$bodySlotActions) return undefined
+				for (const act of $bodySlotActions) {
+					if (act.target) {
+						if(act.target.name == stableHost.name && act.target.side == side){
+							return act
+						}
+					}
+				}
+		}
+
+	})
 
 	const hostHome = derived(
 		[currentAnimation, subAnimationStage],
@@ -170,16 +218,15 @@
 
 	// const componentId = ++id;
 </script>
-<!-- {#if stableHost.clickableAction}
-	<p>CLICK ME!</p>
-{/if} -->
 <div class="unitAndArea">
+	<!-- class:clickable={stableHost.clickableAction} -->
 	<div
 		class="placeHolder"
 		on:click|preventDefault|stopPropagation={() => {
 			// clicky();
-			if(stableHost.clickableAction){
-				choose(stableHost.clickableAction)
+			if($highlightedForAct){
+				choose($highlightedForAct)
+				$latestSlotButtonInput = 'none'
 			}
 			// selected = !selected
 			// if (acts.length) {
@@ -187,7 +234,7 @@
 			// }
 			// $clientState.selectedUnit =`${flip}${name}`
 		}}
-		class:clickable={stableHost.clickableAction}
+		class:clickable={$highlightedForAct}
 		role="button"
 		tabindex="0"
 		on:keydown

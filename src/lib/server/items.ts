@@ -61,7 +61,6 @@ const dagger: Item = {
 					performAction() {
 						let r = damageEnemy(player, enemy, 7, 3)
 						if (r.dmgDone > 0) {
-
 							pushAnimation(
 								{
 									sceneId: player.currentScene,
@@ -273,6 +272,7 @@ const plateMail: Item = {
 				provoke: 100,
 				buttonText: 'Taunt',
 				slot:'body',
+				// speed:100,
 				performAction() {
 					player.inventory.body.cooldown = 2
 					pushHappening(`${player.heroName} infuriates enemies!`)

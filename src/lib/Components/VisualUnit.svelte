@@ -31,7 +31,9 @@
 	.bars{
 		display:flex;
 		flex-direction: column;
-		align-items: center;
+		/* align-items: center; */
+		margin-top:5px;
+		width:40px;
 	}
 	.flipped {
 		transform: scaleX(-1);
@@ -40,7 +42,7 @@
 		display: flex;
 		/* order: 2; */
 		flex-direction: column;
-		gap: 5px;
+		/* gap: 5px; */
 		align-items: center;
 		/* width: 60px; */
 		/* height:100px; */
@@ -85,7 +87,7 @@
 		/* align-self: stretch; */
 		height: 7px;
 		border: 1px solid black;
-		width: 40px;
+		/* width: 40px; */
 		/* margin-block: 1px; */
 	}
 	.healthbar_health {
@@ -99,7 +101,7 @@
 		/* align-self: stretch; */
 		height: 4px;
 		border: 1px solid black;
-		width: 40px;
+		/* width: 40px; */
 	}
 	.spacer{
 		margin-top: 2px;

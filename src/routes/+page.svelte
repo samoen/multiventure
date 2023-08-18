@@ -46,7 +46,10 @@
 		receiveCenter,
 		wepSlotActions,
 		utilitySlotActions,
-		bodySlotActions
+		bodySlotActions,
+
+		latestSlotButtonInput
+
 	} from '$lib/client/ui';
 	import type { EnemyTemplateId } from '$lib/server/enemies.js';
 	import { crossfade } from 'svelte/transition';
@@ -255,11 +258,6 @@
 		return [$heroVisualUnitProps, ...$alliesVisualUnitProps, ...$enemiesVisualUnitProps];
 	}
 
-	function resetClickableUnits() {
-		for (const prop of allUnitProps()) {
-			prop.clickableAction = undefined;
-		}
-	}
 	function reactUnitProps() {
 		$enemiesVisualUnitProps = $enemiesVisualUnitProps;
 		$heroVisualUnitProps = $heroVisualUnitProps;
@@ -412,8 +410,9 @@
 		on:keydown
 		on:click={() => {
 			console.log('visual clicked');
-			resetClickableUnits();
-			reactUnitProps();
+			$latestSlotButtonInput = 'none'
+			// resetClickableUnits();
+			// reactUnitProps();
 		}}
 	>
 		<div class="units">
@@ -503,25 +502,10 @@
 				let onlyAction = $wepSlotActions.at(0);
 				if (onlyAction && !onlyAction.target) {
 					choose(onlyAction);
+					$latestSlotButtonInput = 'none'
 					return;
 				}
-				resetClickableUnits();
-				// console.log(JSON.stringify(wepActions))
-				for (const wepAct of $wepSlotActions) {
-					if (wepAct.target) {
-						let prop = findVisualUnitProps(
-							wepAct.target,
-							$lastMsgFromServer,
-							$heroVisualUnitProps,
-							$enemiesVisualUnitProps,
-							$alliesVisualUnitProps
-						);
-						if (prop) {
-							prop.clickableAction = wepAct;
-						}
-					}
-				}
-				reactUnitProps();
+				$latestSlotButtonInput = 'weapon'
 			}}
 			>{$lastMsgFromServer.yourWeapon.itemId}
 		</button>
@@ -535,25 +519,10 @@
 				let onlyAction = $utilitySlotActions.at(0);
 				if (onlyAction && !onlyAction.target) {
 					choose(onlyAction);
+					$latestSlotButtonInput = 'none'
 					return;
 				}
-				resetClickableUnits();
-				// console.log(JSON.stringify(wepActions))
-				for (const act of $utilitySlotActions) {
-					if (act.target) {
-						let prop = findVisualUnitProps(
-							act.target,
-							$lastMsgFromServer,
-							$heroVisualUnitProps,
-							$enemiesVisualUnitProps,
-							$alliesVisualUnitProps
-						);
-						if (prop) {
-							prop.clickableAction = act;
-						}
-					}
-				}
-				reactUnitProps();
+				$latestSlotButtonInput = 'utility'
 			}}
 			>{$lastMsgFromServer.yourUtility.itemId}
 		</button>
@@ -566,24 +535,10 @@
 				let onlyAction = $bodySlotActions.at(0);
 				if (onlyAction && !onlyAction.target) {
 					choose(onlyAction);
+					$latestSlotButtonInput = 'none'
 					return;
 				}
-				resetClickableUnits();
-				for (const act of $bodySlotActions) {
-					if (act.target) {
-						let prop = findVisualUnitProps(
-							act.target,
-							$lastMsgFromServer,
-							$heroVisualUnitProps,
-							$enemiesVisualUnitProps,
-							$alliesVisualUnitProps
-						);
-						if (prop) {
-							prop.clickableAction = act;
-						}
-					}
-				}
-				reactUnitProps();
+				$latestSlotButtonInput = 'body'
 			}}
 			>{$lastMsgFromServer.yourBody.itemId}
 		</button>
