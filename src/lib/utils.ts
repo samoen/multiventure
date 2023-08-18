@@ -35,7 +35,7 @@ export type AnimationTarget = {
 
 export type BattleAnimation = {
 	source: AnimationTarget,
-	target: AnimationTarget,
+	target?: AnimationTarget,
 	damage: number,
 	behavior: AnimationBehavior,
 	extraSprite?: ExtraSprite,
@@ -44,7 +44,7 @@ export type BattleAnimation = {
 
 export type ExtraSprite = 'arrow' | 'bomb' | 'flame'
 
-export type AnimationBehavior = 'missile' | 'melee' | 'noTarget'
+export type AnimationBehavior = 'missile' | 'melee' | 'center'
 
 export type EnemyStatusEffect = {
 	status: 'poison' | 'rage';
@@ -82,8 +82,9 @@ export function isGameActionSelected(msg: object): msg is GameActionSelected {
 
 export type GameActionSentToClient = {
 	buttonText: string;
-	slot?:EquipmentSlot
-	target?: AnimationTarget
+	slot?:EquipmentSlot;
+	target?: AnimationTarget;
+	wait?:boolean;
 };
 
 // export type ActionTarget =

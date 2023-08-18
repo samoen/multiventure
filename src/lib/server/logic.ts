@@ -36,6 +36,7 @@ export function updatePlayerActions(player: Player) {
 		player.itemActions.push(
 			{
 				buttonText: 'wait',
+				wait:true,
                 // target:{kind:'onlySelf'},
 				provoke: 1,
 				performAction() {

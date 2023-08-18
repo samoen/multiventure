@@ -2,15 +2,15 @@
 	import type { VisualUnitProps } from '$lib/client/ui';
 
 	export let vu: VisualUnitProps;
-    export let flipped: boolean
+	export let flipped: boolean;
 	$: hpBar = vu.displayHp > 0 ? 100 * (vu.displayHp / vu.maxHp) : 0;
 </script>
 
-<div class="visualHero">
-    <p>{vu.name}</p>
-    <div class="outerHeroSprite">
-        <img class="heroSprite" class:flipped={flipped} alt="you" src={vu.src} />
-    </div>
+<div class="top">
+	<p>{vu.name}</p>
+	<div class="outerHeroSprite">
+		<img class="heroSprite" class:flipped alt="you" src={vu.src} />
+	</div>
 	<div class="bars">
 		<div class="healthbar">
 			<div class="healthbar_health" style:width="{hpBar}%" />
@@ -19,44 +19,33 @@
 			<div class="aggrobar">
 				<div class="aggro" style:width="{vu.aggro}%" />
 			</div>
-			{:else}
-			<div class="spacer"></div>
 		{/if}
-
 	</div>
-
 </div>
 
 <style>
-	.bars{
-		display:flex;
+	.bars {
+		display: flex;
 		flex-direction: column;
 		/* align-items: center; */
-		margin-top:5px;
-		width:40px;
+		margin-top: 5px;
+		width: 40px;
 	}
 	.flipped {
 		transform: scaleX(-1);
 	}
-    .visualHero {
+	.top {
 		display: flex;
-		/* order: 2; */
 		flex-direction: column;
-		/* gap: 5px; */
 		align-items: center;
 		/* width: 60px; */
 		/* height:100px; */
 		/* background-color: aqua; */
 	}
-	.visualHero > p {
-		/* height:10px; */
+	.top > p {
 		/* text-wrap:balance;
         word-wrap: break-word;
         line-break: anywhere; */
-		/* display: flex;
-        flex-direction: column;
-        align-items: center; */
-		/* max-width: 70px; */
 		/* text-align: center; */
 		/* line-height:65%; */
 		/* background-color: bisque; */
@@ -70,17 +59,9 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-
-		/* place-items:; */
 	}
 	.heroSprite {
-		/* background-color: blue; */
-		/* transform: translateX(-10px) translateY(-15px); */
 		object-fit: cover;
-		/* height:50px; */
-		/* width:50px; */
-		/* height:auto; */
-		/* width: 100%; */
 	}
 	.healthbar {
 		/* width:80px; */
@@ -102,10 +83,6 @@
 		height: 4px;
 		border: 1px solid black;
 		/* width: 40px; */
-	}
-	.spacer{
-		margin-top: 2px;
-		height:4px;
 	}
 	.aggro {
 		background-color: purple;

@@ -48,7 +48,13 @@
 		utilitySlotActions,
 		bodySlotActions,
 
-		latestSlotButtonInput
+		latestSlotButtonInput,
+
+		waitButtonAction,
+
+		waitingForMyAnimation
+
+
 
 	} from '$lib/client/ui';
 	import type { EnemyTemplateId } from '$lib/server/enemies.js';
@@ -193,8 +199,7 @@
 		previous: MessageFromServer | undefined,
 		latest: MessageFromServer
 	) {
-		console.log(`got animations: ${JSON.stringify(latest.animations)}`);
-		// console.log(`current when got ${JSON.stringify($currentAnimation)}`)
+		// console.log(`got animations: ${JSON.stringify(latest.animations)}`);
 
 		// first message just sync instant
 		if (!previous) {
@@ -204,7 +209,11 @@
 			return;
 		}
 
-		// our message with no animations
+		if(latest.animations.length && latest.triggeredBy == latest.yourName){
+			$waitingForMyAnimation = true
+		}
+
+		// my message with no animations
 		if (latest.triggeredBy == latest.yourName && !latest.animations.length) {
 			console.log('ours with no');
 			await cancelAnimations();
@@ -496,7 +505,7 @@
 		<button
 			class="wepSlotButton"
 			type="button"
-			disabled={!$wepSlotActions || !$wepSlotActions.length}
+			disabled={!$wepSlotActions || !$wepSlotActions.length || $waitingForMyAnimation || $clientState.waitingForMyEvent}
 			on:click={() => {
 				if (!$wepSlotActions || !$wepSlotActions.length) return;
 				let onlyAction = $wepSlotActions.at(0);
@@ -513,7 +522,7 @@
 		<button
 			class="utilitySlotButton"
 			type="button"
-			disabled={!$utilitySlotActions || !$utilitySlotActions.length}
+			disabled={!$utilitySlotActions || !$utilitySlotActions.length || $waitingForMyAnimation || $clientState.waitingForMyEvent}
 			on:click={() => {
 				if (!$utilitySlotActions || !$utilitySlotActions.length) return;
 				let onlyAction = $utilitySlotActions.at(0);
@@ -529,7 +538,7 @@
 		<button
 			class="bodySlotButton"
 			type="button"
-			disabled={!$bodySlotActions || !$bodySlotActions.length}
+			disabled={!$bodySlotActions || !$bodySlotActions.length || $waitingForMyAnimation || $clientState.waitingForMyEvent}
 			on:click={() => {
 				if (!$bodySlotActions || !$bodySlotActions.length) return;
 				let onlyAction = $bodySlotActions.at(0);
@@ -542,6 +551,11 @@
 			}}
 			>{$lastMsgFromServer.yourBody.itemId}
 		</button>
+		<button class="waitButton" disabled={!$waitButtonAction || $waitingForMyAnimation || $clientState.waitingForMyEvent} on:click={()=>{
+			if($waitButtonAction){
+				choose($waitButtonAction)
+			}
+		}}>Wait</button>
 	</div>
 	<div class="selectedDetails">
 		<div class="selectedPortrait">

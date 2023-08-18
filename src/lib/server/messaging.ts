@@ -56,6 +56,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				buttonText: gameAction.buttonText,
 				slot:gameAction.slot,
 				target:gameAction.target,
+				wait:gameAction.wait,
 			} satisfies GameActionSentToClient;
 		}),
 		happenings: recentHappenings,

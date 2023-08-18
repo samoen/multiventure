@@ -43,6 +43,7 @@ export let clientState = writable({
     waitingForMyEvent: true,
     status: 'starting up',
 })
+export let waitingForMyAnimation = writable(false)
 
 export type VisualUnitProps = {
     name: string;
@@ -93,6 +94,11 @@ export let utilitySlotActions = derived(lastMsgFromServer,($lastMsgFromServer)=>
 export let bodySlotActions = derived(lastMsgFromServer,($lastMsgFromServer)=>{
     return $lastMsgFromServer?.itemActions.filter(ia=>ia.slot == 'body')
 })
+export let waitButtonAction = derived(lastMsgFromServer,($lastMsgFromServer)=>{
+    return $lastMsgFromServer?.itemActions.find(ia=>ia.wait)
+})
+
+
 
 export let latestSlotButtonInput : Writable<EquipmentSlot | 'none'> = writable('none')
 
@@ -199,7 +205,7 @@ export const centerFieldTarget = derived(
         if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
         // console.log(`calc target proj ${stableHost.name}`)
         if (
-            $currentAnimation.behavior == 'noTarget' &&
+            $currentAnimation.behavior == 'center' &&
             $subAnimationStage == 'fire'
         ) {
             return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
@@ -224,6 +230,7 @@ export async function nextAnimationIndex(start:boolean){
     if(!lm)return
     if(cai > lm.animations.length - 1){
         console.log('animations done, sync to recent')
+        waitingForMyAnimation.set(false)
         syncVisualsToMsg(lm)
         return
     }

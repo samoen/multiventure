@@ -211,9 +211,8 @@ const bomb: Item = {
 							sceneId: player.currentScene,
 							battleAnimation: {
 								source: { name: player.heroName, side: 'hero' },
-								target: { name: player.heroName, side: 'hero' },
 								damage: 0,
-								behavior: 'noTarget',
+								behavior: 'center',
 								alsoDamages:dmgs,
 								extraSprite:'bomb'
 							}

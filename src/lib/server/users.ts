@@ -50,6 +50,7 @@ export type GameAction = {
 	grantsImmunity?:boolean;
 	slot?:EquipmentSlot
 	target?: AnimationTarget;
+	wait?:boolean;
 };
 
 export function playerEquipped(player:Player) : Item[]{

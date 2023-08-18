@@ -101,14 +101,7 @@
 	const hostHome = derived(
 		[currentAnimation, subAnimationStage],
 		([$currentAnim, $subAnimationStage]) => {
-			// let currentAnim = $lastMsgFromServer?.animations.at($i)
-			// console.log(`current animation is ${$i}`)
-			// if(!stableHost) {
-			// 	console.log('calced host not home because stablehost undefined');
-			// 	return false
-			// };
 			if (!$currentAnim) {
-				// console.log('calc host but anim undefined')
 				return true;
 			}
 			if (
@@ -131,7 +124,7 @@
 			if (!$currentAnimation) return undefined;
 			if (
 				$currentAnimation.behavior == 'melee' &&
-				$currentAnimation.target.side == side &&
+				$currentAnimation.target && $currentAnimation.target.side == side &&
 				$currentAnimation.target.name == stableHost.name &&
 				$subAnimationStage == 'fire'
 			) {
@@ -145,12 +138,12 @@
 		}
 	);
 
-	const dNoTargetSource = derived(
+	const centerSource = derived(
 		[currentAnimation, subAnimationStage],
 		([$currentAnimation, $subAnimationStage]) => {
 			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
 			if (
-				$currentAnimation.behavior == 'noTarget' &&
+				$currentAnimation.behavior == 'center' &&
 				$currentAnimation.source.name == stableHost.name &&
 				$currentAnimation.source.side == side &&
 				$subAnimationStage == 'start'
@@ -166,7 +159,7 @@
 			return undefined;
 		}
 	);
-	const dProjectileSource = derived(
+	const missileSource = derived(
 		[currentAnimation, subAnimationStage],
 		([$currentAnimation, $subAnimationStage]) => {
 			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
@@ -195,7 +188,7 @@
 			// console.log(`calc target proj ${stableHost.name}`)
 			if (
 				$currentAnimation.behavior == 'missile' &&
-				(($currentAnimation.target.side == side &&
+				(($currentAnimation.target && $currentAnimation.target.side == side &&
 					stableHost.name == $currentAnimation.target.name) 
 					// ||
 					// $currentAnimation.alsoDamages?.some(
@@ -221,7 +214,7 @@
 <div class="unitAndArea">
 	<!-- class:clickable={stableHost.clickableAction} -->
 	<div
-		class="placeHolder"
+		class="home placeHolder"
 		on:click|preventDefault|stopPropagation={() => {
 			// clicky();
 			if($highlightedForAct){
@@ -255,7 +248,7 @@
 			</div>
 		{/if}
 	</div>
-	<div class="area" style:order={flipped ? 0 : 2}>
+	<div class="guestArea placeHolder" style:order={flipped ? 0 : 2}>
 		<!-- {#if guest?.animating} -->
 		{#if $dGuest}
 			<div
@@ -280,7 +273,7 @@
 				<VisualUnit vu={$dGuest} flipped={!flipped} />
 			</div>
 		{/if}
-		{#if $dProjectileSource}
+		{#if $missileSource}
 			<div
 				class="projSourceHolder"
 				out:sendProj={{ key: $animationCancelled ? 7 : 'proj' }}
@@ -296,12 +289,12 @@
 				<img
 					class="projectile"
 					class:flipped
-					src={$dProjectileSource.projectileImg}
+					src={$missileSource.projectileImg}
 					alt="a projectile"
 				/>
 			</div>
 		{/if}
-		{#if $dNoTargetSource}
+		{#if $centerSource}
 			<div
 				class="noTargetSourceHolder"
 				class:startAlignSelf={!flipped}
@@ -317,7 +310,7 @@
 				<img
 					class="noTargetImg"
 					class:flipped
-					src={$dNoTargetSource.projectileImg}
+					src={$centerSource.projectileImg}
 					alt="a projectile"
 				/>
 			</div>
@@ -381,11 +374,18 @@
 	.flipped {
 		transform: scaleX(-1);
 	}
+	.home{
+		order: 1;
+		background-color: aqua;
+		
+	}
 	.placeHolder {
 		border: 3px groove transparent;
-		order: 1;
-		width: 60px;
-		padding:3px;
+		width: 61px;
+		height:99px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 	.clickable {
 		border: 3px groove yellow
@@ -416,26 +416,6 @@
 		height:100%;
 		width:100%;
 	}
-	/* .guest {
-		background-color: red;
-		height: 40px;
-		width: 40px;
-	} */
-
-	/* .action {
-		white-space: nowrap;
-	}
-	.actions {
-		display: flex;
-		margin-top: 20px;
-		flex-direction: column;
-	}
-	.endAligned {
-		align-items: flex-end;
-	}
-	.startAligned {
-		align-items: flex-start;
-	} */
 	.endAlignSelf {
 		align-self: flex-end;
 	}
@@ -448,10 +428,7 @@
 		/* height: 100px; */
 		/* background-color: brown; */
 	}
-	.area {
-		width: 60px;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
+	.guestArea {
+		/* background-color: brown; */
 	}
 </style>
