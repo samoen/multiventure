@@ -3,28 +3,38 @@
 	import Unit from '$lib/Components/Unit.svelte';
 	import gruntPortrait from '$lib/assets/portraits/grunt.webp';
 	import {
-		alliesVisualUnitProps,
+		allVisualUnitProps,
 		animationCancelled,
-		bodySlotActions,
 		centerFieldTarget,
 		choose,
 		clientState,
 		currentAnimation,
 		currentAnimationIndex,
 		currentAnimationsWithData,
-		enemiesVisualUnitProps,
-		heroVisualUnitProps,
 		lastMsgFromServer,
 		latestSlotButtonInput,
 		nextAnimationIndex,
 		receiveCenter,
 		syncVisualsToMsg,
-		utilitySlotActions,
 		waitButtonAction,
 		waitingForMyAnimation,
-		wepSlotActions,
 		type AnimationWithData,
-		type VisualUnitProps
+		type VisualUnitProps,
+
+		lastUnitClicked,
+
+		selectedDetail,
+
+		wepSlotActions,
+
+		utilitySlotActions,
+
+		bodySlotActions
+
+
+
+
+
 	} from '$lib/client/ui';
 	import type { EnemyTemplateId } from '$lib/server/enemies.js';
 	import {
@@ -48,13 +58,7 @@
 	let sceneTexts: HTMLElement;
 	let autoSignup: boolean = true;
 
-	let enemyPortraits = {
-		hobGoblin: gruntPortrait,
-		rat: gruntPortrait,
-		goblin: gruntPortrait,
-		fireGremlin: gruntPortrait,
-		troll: gruntPortrait
-	} satisfies Record<EnemyTemplateId, string>;
+	
 
 	onMount(() => {
 		console.log('mounted with ssr data ' + JSON.stringify(data));
@@ -140,16 +144,17 @@
 
 	function findPropFromAnimationTarget(at: AnimationTarget): VisualUnitProps | undefined {
 		if (at.side == 'hero' && at.name == $lastMsgFromServer?.yourName) {
-			return $heroVisualUnitProps;
+			// return $heroVisualUnitProps;
+			$allVisualUnitProps.at(0)
 		}
-		if (at.side == 'enemy') {
-			let en = $enemiesVisualUnitProps.find((e) => at.name == e.name);
-			if (en) return en;
-		}
-		if (at.side == 'hero') {
-			let ally = $alliesVisualUnitProps.find((e) => at.name == e.name);
+		// if (at.side == 'enemy') {
+			// let en = $enemiesVisualUnitProps.find((e) => at.name == e.name);
+			// if (en) return en;
+		// }
+		// if (at.side == 'hero') {
+			let ally = $allVisualUnitProps.find((e) => at.name == e.name && at.side == e.side);
 			if (ally) return ally;
-		}
+		// }
 		return undefined;
 	}
 
@@ -181,31 +186,8 @@
 
 		}
 		$currentAnimationsWithData = newAnimationsWithData
-		// latest.enemiesInScene.forEach((e) => {
-		// 	let findInPrevious = $enemiesVisualUnitProps.find((pe) => pe.name == e.name);
-		// 	if (!findInPrevious) {
-		// 		$enemiesVisualUnitProps.push({
-		// 			name: e.name,
-		// 			src: enemySprites[e.templateId],
-		// 			// hp: e.health,
-		// 			displayHp: e.health,
-		// 			maxHp: e.maxHealth
-		// 		});
-		// 	}
-		// });
-
-		// for (const enemyProps of $enemiesVisualUnitProps) {
-		// 	let findInNew = $lastMsgFromServer?.enemiesInScene.find((ne) => ne.name == enemyProps.name);
-		// 	if (!findInNew) {
-		// 		enemyProps.hp = 0;
-		// 	} else {
-		// 		enemyProps.hp = findInNew.health;
-		// 	}
-		// }
-		console.log('starting anims');
+		// console.log('starting anims');
 		await nextAnimationIndex(true);
-		// $currentAnimationIndex = 0
-		// subAnimationStage.set('start')
 	}
 
 	async function handleAnimationsOnMessage(
@@ -273,17 +255,6 @@
 		}
 		console.log('no specific anim handling');
 		syncVisualsToMsg(latest);
-	}
-
-	function allUnitProps(): VisualUnitProps[] {
-		if (!$heroVisualUnitProps) return [];
-		return [$heroVisualUnitProps, ...$alliesVisualUnitProps, ...$enemiesVisualUnitProps];
-	}
-
-	function reactUnitProps() {
-		$enemiesVisualUnitProps = $enemiesVisualUnitProps;
-		$heroVisualUnitProps = $heroVisualUnitProps;
-		$alliesVisualUnitProps = $alliesVisualUnitProps;
 	}
 
 	async function deleteHero() {
@@ -426,7 +397,7 @@
 	{/if}
 	<!-- <button on:click={() => {}}>debug something</button> -->
 	<div class="wrapGameField">
-		<span class="yourSceneLabel">{$lastMsgFromServer.yourScene}</span>
+			<span class="yourSceneLabel">{$lastMsgFromServer.yourScene}</span>
 		<div
 			class="visual"
 			role="button"
@@ -450,12 +421,12 @@
 							};
 						}
 					}} -->
-				{#if $heroVisualUnitProps}
-					<Unit side={'hero'} stableHost={$heroVisualUnitProps} />
+				{#if $allVisualUnitProps.length}
+					<Unit side={'hero'} hostIndex={0} stableHost={$allVisualUnitProps.at(0)} />
 				{/if}
 
-				{#each $alliesVisualUnitProps as p}
-					<Unit side={'hero'} stableHost={p} />
+				{#each $allVisualUnitProps.filter( v=> v.side == 'hero' && v.index != 0)  as p}
+					<Unit side={'hero'} hostIndex={p.index} stableHost={p} />
 				{/each}
 			</div>
 			<div class="centerPlaceHolder">
@@ -468,12 +439,16 @@
 								if ($currentAnimation.alsoDamages) {
 									for (const other of $currentAnimation.alsoDmgsProps) {
 										if (other.target) {
-											other.target.displayHp -= other.amount;
+											let tar = $allVisualUnitProps.at(other.target.index)
+											if(tar){
+												tar.displayHp -= other.amount
+											}
+											// other.target.displayHp -= other.amount;
 										}
 									}
-									$enemiesVisualUnitProps = $enemiesVisualUnitProps;
-									$alliesVisualUnitProps = $alliesVisualUnitProps;
-									$heroVisualUnitProps = $heroVisualUnitProps;
+									// $enemiesVisualUnitProps = $enemiesVisualUnitProps;
+									$allVisualUnitProps = $allVisualUnitProps;
+									// $heroVisualUnitProps = $heroVisualUnitProps;
 								}
 								nextAnimationIndex(false);
 							}
@@ -484,8 +459,8 @@
 				{/if}
 			</div>
 			<div class="units">
-				{#each $enemiesVisualUnitProps as e}
-					<Unit side={'enemy'} stableHost={e} flipped={true} />
+				{#each $allVisualUnitProps.filter(p=>p.side=='enemy') as e}
+					<Unit side={'enemy'} hostIndex={e.index} stableHost={e} flipped={true} />
 				{/each}
 			</div>
 		</div>
@@ -559,27 +534,27 @@
 			}}>Wait</button
 		>
 	</div>
-	<!-- <div class="selectedDetails">
+	{#if $selectedDetail}
+	<div class="selectedDetails">
 		<div class="selectedPortrait">
-			<img class="portrait" src={$selectedDetail?.portrait} alt="portrait" />
+			<img class="portrait" src={$selectedDetail.actual.portrait} alt="portrait" />
 		</div>
 		<div class="selectedStats">
-			{#if $selectedDetail?.kind == 'me'}
 				<p>
-					name: {$selectedDetail?.me.myName ?? ''}
+					name: {$selectedDetail.name}
 				</p>
 				<p>
-					health : {$selectedDetail?.me.myHealth}/{$lastMsgFromServer.yourMaxHp}
+					health : {$selectedDetail.displayHp}/{$selectedDetail.maxHp}
 				</p>
-			{/if}
-			{#if $selectedDetail?.kind == 'otherPlayer'}
-				other
-			{/if}
-			{#if $selectedDetail?.kind == 'enemy'}
-				stuff
-			{/if}
-		</div>
-	</div> -->
+				<!-- {#if $lastUnitClicked.actual.kind == 'otherPlayer'}
+					other
+					{/if}
+					{#if $lastUnitClicked.actual.kind == 'enemy'}
+					stuff
+					{/if} -->
+				</div>
+			</div>
+		{/if}
 	<h3>{$lastMsgFromServer.yourName}:</h3>
 	<p>
 		Health: {$lastMsgFromServer.yourHp}hp
@@ -695,12 +670,11 @@
 		background-color: beige;
 		border: 1px solid black;
 	}
-
 	.yourSceneLabel {
 		position: absolute;
-		left: 0;
-		top: 0;
-		float: left;
+		/* position: sticky; */
+		/* left: 0; */
+		/* top: 0; */
 		padding-inline: 6px;
 		font-weight: bold;
 		border-bottom-right-radius: 15px;
@@ -712,8 +686,6 @@
 		background-color: beige;
 	}
 	.wrapGameField {
-		overflow-y: auto;
-		overscroll-behavior: contain;
 		height: 30vh;
 		position: relative;
 		margin-block: 5px;
@@ -721,6 +693,8 @@
 		background-color: brown;
 	}
 	.visual {
+		overflow-y: auto;
+		overscroll-behavior: contain;
 		background-color: burlywood;
 		display: grid;
 		grid-template-columns: 1fr auto 1fr;
@@ -729,7 +703,7 @@
 		align-items: center;
 		/* justify-items:; */
 		/* height: fit-content; */
-		min-height: 100%;
+		height: 100%;
 	}
 
 	.units {

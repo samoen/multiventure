@@ -87,12 +87,6 @@ export type GameActionSentToClient = {
 	wait?:boolean;
 };
 
-// export type ActionTarget =
-// 	| { kind: 'friendly', targetName: HeroName } 
-// 	| { kind: 'targetEnemy', targetName: EnemyName } 
-// 	| { kind: 'anyEnemy' } 
-// 	| { kind: 'onlySelf' }
-
 export type EnemyName = string
 
 

@@ -19,6 +19,7 @@ import type { EquipmentSlot, ItemId, ItemIdForSlot } from '$lib/server/items.js'
 import { crossfade } from "svelte/transition";
 import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easing";
 import { tick } from "svelte";
+import type { EnemyTemplateId } from "$lib/server/enemies";
 
 
 // export let waitingForMyEvent = true;
@@ -35,10 +36,10 @@ type UnitDetails = {
     portrait: string
     other: OtherPlayerInfo
 } | {
-    kind: 'me', 
+    kind: 'me',
     portrait: string,
-    me: { myHealth: number, 
-        myName: HeroName }
+    // me: { myHealth: number, 
+    // myName: HeroName }
 };
 
 export let clientState = writable({
@@ -53,8 +54,11 @@ export type VisualUnitProps = {
     // hp: number;
     displayHp: number
     maxHp: number;
-    aggro?:number;
-    // actual:
+    aggro?: number;
+    side: 'hero' | 'enemy'
+    index: number;
+    actual: UnitDetails;
+    actionsThatCanTargetMe: GameActionSentToClient[]
 }
 
 export const enemySprites = {
@@ -65,8 +69,8 @@ export const enemySprites = {
     fireGremlin: fireghost
 };
 
-export type ProjectileProps ={
-    projectileImg:string
+export type ProjectileProps = {
+    projectileImg: string
 }
 
 export type Guest = VisualUnitProps | undefined
@@ -75,53 +79,62 @@ export type Projectile = undefined | ProjectileProps
 
 export const lastMsgFromServer: Writable<MessageFromServer | undefined> = writable();
 export const previousMsgFromServer: Writable<MessageFromServer | undefined> = writable();
-export const heroVisualUnitProps: Writable<VisualUnitProps|undefined> = writable()
-export let enemiesVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
-export let alliesVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
-// export let pAnimations : Writable<{ba:BattleAnimation, sourceProps:VisualUnitProps, targetProps:VisualUnitProps}>
-export let currentAnimationIndex: Writable<number> = writable(0)
-// export let currentAnimation: Writable<BattleAnimation | undefined> = writable(undefined)
+export let allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 
-export type AnimationWithData = BattleAnimation &{
+export let currentAnimationIndex: Writable<number> = writable(0)
+
+export type AnimationWithData = BattleAnimation & {
     sourceProp: VisualUnitProps,
     targetProp: VisualUnitProps | undefined,
-    alsoDmgsProps: {target:VisualUnitProps,amount:number}[]
+    alsoDmgsProps: { target: VisualUnitProps, amount: number }[]
 }
 
-export const currentAnimationsWithData : Writable<AnimationWithData[] | undefined> = writable()
+export const currentAnimationsWithData: Writable<AnimationWithData[] | undefined> = writable()
 
-export let currentAnimation = derived([currentAnimationIndex,currentAnimationsWithData],([$currentAnimationIndex,$currentAnimationsWithData])=>{
+export let currentAnimation = derived([currentAnimationIndex, currentAnimationsWithData], ([$currentAnimationIndex, $currentAnimationsWithData]) => {
     return $currentAnimationsWithData?.at($currentAnimationIndex)
 })
 
 export const animationCancelled = writable(false)
-export const subAnimationStage :Writable<'start'|'fire'|'sentHome'> = writable('start')
+export const subAnimationStage: Writable<'start' | 'fire' | 'sentHome'> = writable('start')
 
-export let wepSlotActions = derived(lastMsgFromServer,($lastMsgFromServer)=>{
-    return $lastMsgFromServer?.itemActions.filter(ia=>ia.slot == 'weapon')
-})
-export let utilitySlotActions = derived(lastMsgFromServer,($lastMsgFromServer)=>{
-    return $lastMsgFromServer?.itemActions.filter(ia=>ia.slot == 'utility')
-})
-export let bodySlotActions = derived(lastMsgFromServer,($lastMsgFromServer)=>{
-    return $lastMsgFromServer?.itemActions.filter(ia=>ia.slot == 'body')
-})
-export let waitButtonAction = derived(lastMsgFromServer,($lastMsgFromServer)=>{
-    return $lastMsgFromServer?.itemActions.find(ia=>ia.wait)
+
+export let wepSlotActions = derived(lastMsgFromServer, ($lastMsgFromServer) => {
+    return $lastMsgFromServer?.itemActions.filter(ia => ia.slot == 'weapon')
 })
 
-// export const selectedDetail: Writable<UnitDetails | undefined> = writable()
-export const lastUnitClicked = writable()
-// export const selectedDetail: derived([lastMsgFromServer, lastUnitClicked],()=>{
+export let utilitySlotActions = derived(lastMsgFromServer, ($lastMsgFromServer) => {
+    return $lastMsgFromServer?.itemActions.filter(ia => ia.slot == 'utility')
+})
+export let bodySlotActions = derived(lastMsgFromServer, ($lastMsgFromServer) => {
+    return $lastMsgFromServer?.itemActions.filter(ia => ia.slot == 'body')
+})
+export let waitButtonAction = derived(lastMsgFromServer, ($lastMsgFromServer) => {
+    return $lastMsgFromServer?.itemActions.find(ia => ia.wait)
+})
 
-// })
+// export const lastUnitClicked: Writable<VisualUnitProps | undefined> = writable()
+export const lastUnitClicked: Writable<number> = writable(0)
 
+export const selectedDetail = derived([lastUnitClicked
+    , allVisualUnitProps
+], ([$lastUnitClicked
+    , $alliesVisualUnitProps
+]) => {
 
-export let latestSlotButtonInput : Writable<EquipmentSlot | 'none'> = writable('none')
+    let props = $alliesVisualUnitProps
+
+    let vupAt = props.at($lastUnitClicked)
+    if (!vupAt) {
+    }
+    return vupAt
+})
+
+export let latestSlotButtonInput: Writable<EquipmentSlot | 'none'> = writable('none')
 
 export const [sendMelee, receiveMelee] = crossfade({
     duration: (d) => Math.sqrt(d * 900),
-    easing:quintInOut,
+    easing: quintInOut,
     fallback(node, params) {
         return {
             duration: 0,
@@ -129,8 +142,8 @@ export const [sendMelee, receiveMelee] = crossfade({
     }
 });
 export const [sendProj, receiveProj] = crossfade({
-    duration: (d) => Math.sqrt(d * 600),
-    easing:linear,
+    duration: 600,
+    easing: linear,
     fallback(node, params) {
         return {
             duration: 0,
@@ -139,7 +152,7 @@ export const [sendProj, receiveProj] = crossfade({
 });
 export const [sendCenter, receiveCenter] = crossfade({
     duration: (d) => Math.sqrt(d * 1900),
-    easing:quintOut,
+    easing: quintOut,
     fallback(node, params) {
         return {
             duration: 0,
@@ -152,53 +165,142 @@ export const [sendCenter, receiveCenter] = crossfade({
 // BattleAnimation[]
 // &{done:boolean})
 // > = writable([])
+
+let enemyPortraits = {
+    hobGoblin: gruntPortrait,
+    rat: gruntPortrait,
+    goblin: gruntPortrait,
+    fireGremlin: gruntPortrait,
+    troll: gruntPortrait
+} satisfies Record<EnemyTemplateId, string>;
+
 export function syncVisualsToMsg(lastMsg: MessageFromServer) {
     // let lastMsg = get(lastMsgFromServer)
-    if(!lastMsg){
+    if (!lastMsg) {
         console.log('tried to sync with bad msg')
     }
     if (lastMsg) {
-        heroVisualUnitProps.set(
-            {
-                name: lastMsg.yourName,
-                src: heroSprites[heroSprite(lastMsg.yourWeapon?.itemId)],
-                // hp: lastMsg.yourHp,
-                maxHp: lastMsg.yourMaxHp,
-                displayHp: lastMsg.yourHp
-            }
-        )
+        // let actsWithIs: ClientGameActionWithIndex[] = lastMsg.itemActions.map((cga) => {
+        //     return {
+        //         cga: cga,
+        //         targetIndex: 999
+        //     }
+        // })
 
-        enemiesVisualUnitProps.set(lastMsg.enemiesInScene.map(e => {
-            return {
-                name: e.name,
-                src: enemySprites[e.templateId],
-                hp: e.health,
-                displayHp: e.health,
-                maxHp: e.maxHealth,
-                aggro:e.myAggro,
-            }
-        }))
-        alliesVisualUnitProps.set(
-            lastMsg.otherPlayers
-                .filter(p => p.currentScene == lastMsg.yourScene)
-                .map(p => {
-                    return {
+
+        let newVups: VisualUnitProps[] = []
+        let i = 0
+        // heroVisualUnitProps.set(
+        newVups.push({
+            name: lastMsg.yourName,
+            src: heroSprites[heroSprite(lastMsg.yourWeapon?.itemId)],
+            maxHp: lastMsg.yourMaxHp,
+            displayHp: lastMsg.yourHp,
+            side: 'hero',
+            index: i,
+            actual: {
+                kind: 'me',
+                portrait: peasantPortrait,
+            },
+            actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target && a.target.name == lastMsg.yourName && a.target.side == 'hero')
+        } satisfies VisualUnitProps
+        )
+        // actsWithIs
+        //     .filter(a => { a.cga.target && a.cga.target.name == lastMsg.yourName && a.cga.target.side == 'hero' })
+        //     .forEach(a => {
+        //         a.targetIndex = 0
+        //     })
+        // if(myActs)myActs.targetIndex = 0
+
+        for (const e of lastMsg.enemiesInScene) {
+            i++
+            newVups.push(
+                // enemiesVisualUnitProps.set(lastMsg.enemiesInScene.map((e,i) => {
+                // return 
+                {
+                    name: e.name,
+                    src: enemySprites[e.templateId],
+                    displayHp: e.health,
+                    maxHp: e.maxHealth,
+                    aggro: e.myAggro,
+                    side: 'enemy',
+                    index: i,
+                    actual: {
+                        kind: 'enemy',
+                        portrait: enemyPortraits[e.templateId],
+                        enemy: e
+                    },
+                    actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target && a.target.name == e.name && a.target.side == 'enemy')
+                } satisfies VisualUnitProps
+                // })
+                // )
+            )
+            // actsWithIs
+            //     .filter(a => { a.cga.target && a.cga.target.name == e.name && a.cga.target.side == 'enemy' })
+            //     .forEach(a => {
+            //         a.targetIndex = i
+            //     })
+        }
+        for (const p of lastMsg.otherPlayers) {
+            if (p.currentScene == lastMsg.yourScene) {
+                i++
+                newVups.push(
+                    // alliesVisualUnitProps.set(
+                    // lastMsg.otherPlayers
+                    // .filter(p => p.currentScene == lastMsg.yourScene)
+                    // .map((p,i) => {
+                    // return 
+                    {
                         name: p.heroName,
                         src: heroSprites[heroSprite(p.weapon.itemId)],
-                        hp: p.health,
                         displayHp: p.health,
                         maxHp: p.maxHealth,
+                        side: 'hero',
+                        index: i,
+                        actual: {
+                            kind: 'otherPlayer',
+                            portrait: peasantPortrait,
+                            other: p,
+                        },
+                        actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target && a.target.name == p.heroName && a.target.side == 'hero')
                     }
-                }))
+                    // }))
 
-                // console.log('synced visuals with allies '+JSON.stringify(get(alliesVisualUnitProps)))
+                )
+                // actsWithIs
+                // .filter(a => { a.cga.target && a.cga.target.name == p.heroName && a.cga.target.side == 'hero' })
+                // .forEach(a => {
+                //     a.targetIndex = i
+                // })
+            }
+
+        }
+        let sel = get(selectedDetail)
+
+        console.log('syncing, setting new props and selected index')
+        allVisualUnitProps.set(newVups)
+
+        // find the previous selected detail in new units, set last index clicked
+        if (sel) {
+            let sel2 = sel
+            let indexOfPrevDetail = newVups.findIndex(v => v.name == sel2.name && v.side == sel2.side)
+            if (indexOfPrevDetail == -1) {
+                lastUnitClicked.set(0)
+                console.log('old detail not in new list')
+            } else {
+                lastUnitClicked.set(indexOfPrevDetail)
+            }
+        } else {
+            console.log('old detail was undefined')
+            lastUnitClicked.set(0)
+        }
     }
 }
 
-export const extraSprites : Record<ExtraSprite,string> = {
-    arrow:arrow,
-    bomb:bomb,
-    flame:arrow,
+export const extraSprites: Record<ExtraSprite, string> = {
+    arrow: arrow,
+    bomb: bomb,
+    flame: arrow,
 }
 
 
@@ -217,21 +319,21 @@ export const centerFieldTarget = derived(
     }
 );
 
-export async function nextAnimationIndex(start:boolean){
-    if(start){
+export async function nextAnimationIndex(start: boolean) {
+    if (start) {
         currentAnimationIndex.set(0)
-        
-    }else{
-        currentAnimationIndex.update(o=>{
-            return o+1
+
+    } else {
+        currentAnimationIndex.update(o => {
+            return o + 1
         })
 
     }
-    
+
     let lm = get(lastMsgFromServer)
     let cai = get(currentAnimationIndex)
-    if(!lm)return
-    if(cai > lm.animations.length - 1){
+    if (!lm) return
+    if (cai > lm.animations.length - 1) {
         console.log('animations done, sync to recent')
         waitingForMyAnimation.set(false)
         syncVisualsToMsg(lm)
@@ -243,43 +345,10 @@ export async function nextAnimationIndex(start:boolean){
     await tick()
 
 
-    
-    // $currentAnimationIndex = 0;
-		// $currentAnimation = latest.animations.at($currentAnimationIndex);
-		// await tick();
-		// if (get(currentAnimation)) {
-            console.log('firing substage')
-            subAnimationStage.set('fire')
-		// }else{
-            // subAnimationStage.set('start')
-            // let lm = get(lastMsgFromServer)
-            // if(lm){
-                
-                // console.log('animations done, sync to recent')
-                // syncVisualsToMsg(lm)
-            // }
-		// }
-    // currentAnimation.set()
+
+    subAnimationStage.set('fire')
 }
 
-// lastMsgFromServer.subscribe((l) => {
-//     if (l) {
-//         selectedDetail.update(u => {
-//             if (u == null) {
-//                 return {
-//                     portrait: peasantPortrait,
-//                     me: {
-//                         myName: l.yourName,
-//                         myHealth: l.yourHp,
-//                     },
-//                     // maxHealth : l.yourMaxHp,
-//                     kind: 'me',
-//                 }
-//             }
-//             return u
-//         })
-//     }
-// })
 
 export function heroSprite(weapon: ItemIdForSlot<'weapon'>) {
     if (weapon == 'club') return 'ruffian';
