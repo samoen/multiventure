@@ -29,7 +29,10 @@
 
 		utilitySlotActions,
 
-		bodySlotActions
+		bodySlotActions,
+
+		updateUnit
+
 
 
 
@@ -142,35 +145,44 @@
 		$animationCancelled = false;
 	}
 
-	function findPropFromAnimationTarget(at: AnimationTarget): VisualUnitProps | undefined {
-		if (at.side == 'hero' && at.name == $lastMsgFromServer?.yourName) {
-			// return $heroVisualUnitProps;
-			$allVisualUnitProps.at(0)
-		}
-		// if (at.side == 'enemy') {
-			// let en = $enemiesVisualUnitProps.find((e) => at.name == e.name);
-			// if (en) return en;
+	function findPropFromAnimationTarget(at: AnimationTarget): number | undefined {
+		let found = $allVisualUnitProps.findIndex(v=>v.name == at.name && v.side == at.side)
+		console.log(`found ${found}`)
+		if(found != -1)return found
+		return undefined
+		// if (at.side == 'hero' && at.name == $lastMsgFromServer?.yourName) {
+		// 	// return $heroVisualUnitProps;
+		// 	$allVisualUnitProps.at(0)
 		// }
-		// if (at.side == 'hero') {
-			let ally = $allVisualUnitProps.find((e) => at.name == e.name && at.side == e.side);
-			if (ally) return ally;
-		// }
-		return undefined;
+		// // if (at.side == 'enemy') {
+		// 	// let en = $enemiesVisualUnitProps.find((e) => at.name == e.name);
+		// 	// if (en) return en;
+		// // }
+		// // if (at.side == 'hero') {
+		// 	let ally = $allVisualUnitProps.find((e) => at.name == e.name && at.side == e.side);
+		// 	if (ally) return ally;
+		// // }
+		// return undefined;
 	}
 
 	async function startAnimating(previous: MessageFromServer, latest: MessageFromServer) {
 		let newAnimationsWithData : AnimationWithData[] = []
+		console.log(`raw anims ${JSON.stringify(latest.animations)}`);
 		for(const a of latest.animations){
+
 			let sourceProp = findPropFromAnimationTarget(a.source);
-			if(!sourceProp) continue
+			if(sourceProp == undefined) {
+				console.log('anim source not found!')
+				continue
+			}
 			let targetProp = a.target ? findPropFromAnimationTarget(a.target) : undefined;
-			let alsoDmgsProps: { target: VisualUnitProps; amount: number }[] = [];
+			let alsoDmgsProps: { targetIndex: number; amount: number }[] = [];
 			if (a.alsoDamages) {
 				for (const alsoDmged of a.alsoDamages) {
 					let dmged = findPropFromAnimationTarget(alsoDmged.target);
 					if (dmged) {
 						alsoDmgsProps.push({
-							target: dmged,
+							targetIndex: dmged,
 							amount: alsoDmged.amount
 						});
 					}
@@ -178,15 +190,15 @@
 			}
 			let animWithData : AnimationWithData = {
 				...a,
-				sourceProp: sourceProp,
-				targetProp: targetProp,
+				sourceIndex: sourceProp,
+				targetIndex: targetProp,
 				alsoDmgsProps: alsoDmgsProps
 			};
 			newAnimationsWithData.push(animWithData)
 
 		}
 		$currentAnimationsWithData = newAnimationsWithData
-		// console.log('starting anims');
+		console.log(`starting anims ${JSON.stringify(newAnimationsWithData)}`);
 		await nextAnimationIndex(true);
 	}
 
@@ -409,24 +421,12 @@
 			}}
 		>
 			<div class="units">
-				<!-- clicky={() => {
-						if ($lastMsgFromServer) {
-							$selectedDetail = {
-								kind: 'me',
-								portrait: peasantPortrait,
-								me: {
-									myName: $lastMsgFromServer.yourName,
-									myHealth: $lastMsgFromServer.yourHp
-								}
-							};
-						}
-					}} -->
 				{#if $allVisualUnitProps.length}
-					<Unit side={'hero'} hostIndex={0} stableHost={$allVisualUnitProps.at(0)} />
+					<Unit hostIndex={0} />
 				{/if}
 
 				{#each $allVisualUnitProps.filter( v=> v.side == 'hero' && v.index != 0)  as p}
-					<Unit side={'hero'} hostIndex={p.index} stableHost={p} />
+					<Unit hostIndex={p.index} />
 				{/each}
 			</div>
 			<div class="centerPlaceHolder">
@@ -438,17 +438,11 @@
 							if ($currentAnimation != undefined && !$animationCancelled && $lastMsgFromServer) {
 								if ($currentAnimation.alsoDamages) {
 									for (const other of $currentAnimation.alsoDmgsProps) {
-										if (other.target) {
-											let tar = $allVisualUnitProps.at(other.target.index)
-											if(tar){
-												tar.displayHp -= other.amount
-											}
-											// other.target.displayHp -= other.amount;
-										}
+										updateUnit(other.targetIndex,(vup)=>{
+											vup.displayHp -= other.amount
+										})
+
 									}
-									// $enemiesVisualUnitProps = $enemiesVisualUnitProps;
-									$allVisualUnitProps = $allVisualUnitProps;
-									// $heroVisualUnitProps = $heroVisualUnitProps;
 								}
 								nextAnimationIndex(false);
 							}
@@ -460,7 +454,7 @@
 			</div>
 			<div class="units">
 				{#each $allVisualUnitProps.filter(p=>p.side=='enemy') as e}
-					<Unit side={'enemy'} hostIndex={e.index} stableHost={e} flipped={true} />
+					<Unit hostIndex={e.index} flipped={true} />
 				{/each}
 			</div>
 		</div>

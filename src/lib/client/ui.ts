@@ -84,9 +84,9 @@ export let allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 export let currentAnimationIndex: Writable<number> = writable(0)
 
 export type AnimationWithData = BattleAnimation & {
-    sourceProp: VisualUnitProps,
-    targetProp: VisualUnitProps | undefined,
-    alsoDmgsProps: { target: VisualUnitProps, amount: number }[]
+    sourceIndex:number,
+    targetIndex?:number,
+    alsoDmgsProps: { targetIndex: number, amount: number }[]
 }
 
 export const currentAnimationsWithData: Writable<AnimationWithData[] | undefined> = writable()
@@ -173,6 +173,17 @@ let enemyPortraits = {
     fireGremlin: gruntPortrait,
     troll: gruntPortrait
 } satisfies Record<EnemyTemplateId, string>;
+
+export function updateUnit(index: number, run: (vup: VisualUnitProps) => void) {
+    allVisualUnitProps.update((old) => {
+        return old.map((p, j) => {
+            if (index == j) {
+                run(p);
+            }
+            return p;
+        });
+    });
+}
 
 export function syncVisualsToMsg(lastMsg: MessageFromServer) {
     // let lastMsg = get(lastMsgFromServer)

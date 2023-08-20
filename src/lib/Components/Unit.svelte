@@ -21,10 +21,9 @@
 		sendProj,
 		subAnimationStage,
 		type VisualUnitProps,
-
 		selectedDetail,
 
-
+		updateUnit
 
 	} from '$lib/client/ui';
 	import { tick } from 'svelte';
@@ -32,57 +31,50 @@
 	import { fade } from 'svelte/transition';
 	import VisualUnit from './VisualUnit.svelte';
 
-	export let side: 'hero' | 'enemy';
-	export let stableHost: VisualUnitProps | undefined;
-	export let hostIndex : number;
-
+	export let hostIndex: number;
 
 	export let flipped: boolean = false;
 
-	const highlightedForAct = derived(
-		[latestSlotButtonInput],
-		([$latestSlotButtonInput]) => {
-			
-			if ($latestSlotButtonInput == 'none') return undefined;
-				let found = stableHost?.actionsThatCanTargetMe.find(a=>a.slot == $latestSlotButtonInput)
-				return found
-		}
-	);
+	
+
+	const highlightedForAct = derived([latestSlotButtonInput], ([$latestSlotButtonInput]) => {
+		if ($latestSlotButtonInput == 'none') return undefined;
+		$allVisualUnitProps.at(hostIndex);
+		let found = $allVisualUnitProps
+			.at(hostIndex)
+			?.actionsThatCanTargetMe.find((a) => a.slot == $latestSlotButtonInput);
+		return found;
+	});
 
 	const hostHome = derived(
 		[currentAnimation, subAnimationStage],
 		([$currentAnim, $subAnimationStage]) => {
-			if(!stableHost)return false
 			if (!$currentAnim) {
 				return true;
 			}
 			if (
 				$currentAnim.behavior == 'melee' &&
-				$currentAnim.source.side == side &&
-				$currentAnim.source.name == stableHost.name &&
+				$currentAnim.sourceIndex == hostIndex &&
 				$subAnimationStage == 'fire'
 			) {
-				console.log(`host ${stableHost.name} not home`);
 				return false;
 			}
-			// console.log(`host ${stableHost.name} must be home`)
+			if($subAnimationStage == 'sentHome')console.log('sent home')
 			return true;
 		}
 	);
 
-	const dGuest = derived(
+	const guestIndex = derived(
 		[currentAnimation, subAnimationStage, allVisualUnitProps],
 		([$currentAnimation, $subAnimationStage]) => {
-			if(!stableHost)return undefined
 			if (!$currentAnimation) return undefined;
 			if (
 				$currentAnimation.behavior == 'melee' &&
-				$currentAnimation.target &&
-				$currentAnimation.target.side == side &&
-				$currentAnimation.target.name == stableHost.name &&
+				$currentAnimation.targetIndex == hostIndex &&
 				$subAnimationStage == 'fire'
-			) {
-				return $currentAnimation.sourceProp
+				) {
+				console.log(`new guest ${$currentAnimation.sourceIndex}`)
+				return $currentAnimation.sourceIndex;
 			}
 			return undefined;
 		}
@@ -91,44 +83,28 @@
 	const centerSource = derived(
 		[currentAnimation, subAnimationStage],
 		([$currentAnimation, $subAnimationStage]) => {
-			if(!stableHost)return undefined
 			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
 			if (
 				$currentAnimation.behavior == 'center' &&
-				$currentAnimation.source.name == stableHost.name &&
-				$currentAnimation.source.side == side &&
+				$currentAnimation.sourceIndex == hostIndex &&
 				$subAnimationStage == 'start'
 			) {
-				// if(stableHost.name.startsWith('fireGrem')){
-				// 	console.log(`SOURCE ${stableHost.name} source proj`);
-				// }
 				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
 			}
-			// if(stableHost.name.startsWith('fireGrem')){
-			// 	console.log(`${stableHost.name} not source proj`);
-			// }
 			return undefined;
 		}
 	);
 	const missileSource = derived(
 		[currentAnimation, subAnimationStage],
 		([$currentAnimation, $subAnimationStage]) => {
-			if(!stableHost)return undefined
 			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
 			if (
 				$currentAnimation.behavior == 'missile' &&
-				$currentAnimation.source.name == stableHost.name &&
-				$currentAnimation.source.side == side &&
+				$currentAnimation.sourceIndex == hostIndex &&
 				$subAnimationStage == 'start'
 			) {
-				// if(stableHost.name.startsWith('fireGrem')){
-				// 	console.log(`SOURCE ${stableHost.name} source proj`);
-				// }
 				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
 			}
-			// if(stableHost.name.startsWith('fireGrem')){
-			// 	console.log(`${stableHost.name} not source proj`);
-			// }
 			return undefined;
 		}
 	);
@@ -136,22 +112,17 @@
 	const dProjectileTarget = derived(
 		[currentAnimation, subAnimationStage],
 		([$currentAnimation, $subAnimationStage]) => {
-			if(!stableHost)return undefined
 			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
 			if (
 				$currentAnimation.behavior == 'missile' &&
-				$currentAnimation.target &&
-				$currentAnimation.target.side == side &&
-				stableHost.name == $currentAnimation.target.name &&
+				$currentAnimation.targetIndex == hostIndex &&
 				$subAnimationStage == 'fire'
 			) {
-				// console.log(`ONTARGET ${stableHost.name} is target proj`);
 				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
 			}
 			return undefined;
 		}
 	);
-
 </script>
 
 <div class="unitAndArea">
@@ -162,14 +133,14 @@
 				choose($highlightedForAct);
 				$latestSlotButtonInput = 'none';
 			}
-			$lastUnitClicked = hostIndex
+			$lastUnitClicked = hostIndex;
 		}}
 		class:clickable={$highlightedForAct}
 		role="button"
 		tabindex="0"
 		on:keydown
 	>
-		{#if $hostHome && stableHost}
+		{#if $hostHome}
 			<!-- {#if host && !host.animating} -->
 			<div
 				out:sendMelee={{ key: $animationCancelled ? 0 : 'movehero' }}
@@ -180,37 +151,32 @@
 					}
 				}}
 			>
-				<VisualUnit vu={stableHost} {flipped} />
+				<VisualUnit {hostIndex} {flipped} />
 			</div>
 		{/if}
 	</div>
 	<div class="guestArea placeHolder" style:order={flipped ? 0 : 2}>
-		<!-- {#if guest?.animating} -->
-		{#if $dGuest}
+		{#if $guestIndex != undefined}
 			<div
 				class="placeHolder"
 				in:receiveMelee={{ key: $animationCancelled ? 3 : 'movehero' }}
 				out:sendMelee={{ key: $animationCancelled ? 4 : 'movehero' }}
-				on:introend={async () => {
-					if(!stableHost)return
+				on:introend={() => {
 					if ($currentAnimation != undefined && !$animationCancelled) {
-						stableHost.displayHp -= $currentAnimation?.damage;
-						if ($dGuest && $dGuest.aggro) {
-							let i = $dGuest.index
-							let guest = $allVisualUnitProps.at(i)
-							if(guest)guest.aggro=0
-							// let dg = $dGuest;
-							// dg.aggro = 0;
-							$allVisualUnitProps = $allVisualUnitProps;
-							await tick();
-						}
-
-						console.log('sending guest home');
+						let cu = $currentAnimation
+						updateUnit(hostIndex,(vup)=>{
+							vup.displayHp -= cu.damage
+						})
+						if($guestIndex == undefined)return
+						updateUnit($guestIndex,(vup)=>{
+							vup.aggro = 0
+						})
+						
 						$subAnimationStage = 'sentHome';
 					}
 				}}
 			>
-				<VisualUnit vu={$dGuest} flipped={!flipped} />
+				<VisualUnit hostIndex={$guestIndex} flipped={!flipped} />
 			</div>
 		{/if}
 		{#if $missileSource}
@@ -221,10 +187,9 @@
 				class:endAlignSelf={flipped}
 				in:fade={{ duration: 1 }}
 				on:introstart={() => {
-					if(!stableHost)return
-					if (stableHost.aggro) {
-						stableHost.aggro = 0;
-					}
+					updateUnit(hostIndex,(vup)=>{
+						vup.aggro = 0
+					})
 				}}
 			>
 				<img
@@ -242,10 +207,9 @@
 				class:endAlignSelf={flipped}
 				in:fade={{ duration: 1 }}
 				on:introstart={() => {
-					if(!stableHost)return
-					if (stableHost.aggro) {
-						stableHost.aggro = 0;
-					}
+					updateUnit(hostIndex,(vup)=>{
+						vup.aggro = 0
+					})
 				}}
 				out:sendCenter={{ key: $animationCancelled ? 11 : 'cen' }}
 			>
@@ -264,36 +228,20 @@
 				class:endAlignSelf={flipped}
 				in:receiveProj={{ key: $animationCancelled ? 8 : 'proj' }}
 				on:introend={async () => {
-					if(!stableHost)return false
 					if ($currentAnimation != undefined && !$animationCancelled) {
-						
-						// stableHost.displayHp -= $currentAnimation.damage;
-						let host = $allVisualUnitProps.at(hostIndex)
-						if(host){
-							host.displayHp -= $currentAnimation.damage
-						}
-						
+						let anim = $currentAnimation
+						updateUnit(hostIndex,(vup)=>{
+							vup.displayHp -= anim.damage;
+						})
+
 						if ($currentAnimation.alsoDamages) {
 							for (const other of $currentAnimation.alsoDmgsProps) {
-								if (other.target) {
-									let toDmg = $allVisualUnitProps.at(other.target.index)
-									if(toDmg){
-										toDmg.displayHp -= other.amount
-									}
-									// other.target.displayHp -= other.amount;
-									
-								}
+									updateUnit(other.targetIndex,(vup)=>{
+										vup.displayHp -= other.amount
+									})
 							}
-							// needs this for some reason
-							// $enemiesVisualUnitProps = $enemiesVisualUnitProps;
-							$allVisualUnitProps = $allVisualUnitProps;
-							// $heroVisualUnitProps = $heroVisualUnitProps;
 						}
-						// $lastUnitClicked = $lastUnitClicked
-						// await tick()
-						// console.log(`target ${stableHost.name} reached, nexting`);
 						nextAnimationIndex(false);
-						// }
 					}
 				}}
 			>
@@ -355,6 +303,6 @@
 	}
 	.guestArea {
 		/* background-color: brown; */
-		z-index:2;
+		z-index: 2;
 	}
 </style>
