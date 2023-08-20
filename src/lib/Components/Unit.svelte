@@ -34,11 +34,21 @@
 	import { fade } from 'svelte/transition';
 	import VisualUnit from './VisualUnit.svelte';
 
-	export let pHostIndex : number;
-	$: hostIndex = pHostIndex;
+	// export let pHostIndex : number;
+	// $: hostIndex = pHostIndex;
+	export let hostIndex:number;
 	
 
-	export let flipped: boolean = false;	
+
+	const host = derived([allVisualUnitProps],([$allVisualUnitProps])=>{
+		let nex = $allVisualUnitProps.at(hostIndex)
+		return nex
+	})
+
+	const hostIsNotHero = derived(host,($host)=>{
+		if(!$host)return true
+		return $host.side != 'hero'
+	})
 
 	const highlightedForAct = derived([latestSlotButtonInput], ([$latestSlotButtonInput]) => {
 		if ($latestSlotButtonInput == 'none') return undefined;
@@ -83,26 +93,12 @@
 		}
 	);
 
-	const centerSource = derived(
+	const projectileSource = derived(
 		[currentAnimation, subAnimationStage],
 		([$currentAnimation, $subAnimationStage]) => {
 			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
 			if (
-				$currentAnimation.behavior == 'center' &&
-				$currentAnimation.sourceIndex == hostIndex &&
-				$subAnimationStage == 'start'
-			) {
-				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
-			}
-			return undefined;
-		}
-	);
-	const missileSource = derived(
-		[currentAnimation, subAnimationStage],
-		([$currentAnimation, $subAnimationStage]) => {
-			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
-			if (
-				$currentAnimation.behavior == 'missile' &&
+				($currentAnimation.behavior == 'missile' || $currentAnimation.behavior == 'center') &&
 				$currentAnimation.sourceIndex == hostIndex &&
 				$subAnimationStage == 'start'
 			) {
@@ -112,7 +108,15 @@
 		}
 	);
 
-	const dProjectileTarget = derived(
+	const projectileSend = derived([animationCancelled,currentAnimation],([$animationCancelled,$currentAnimation])=>{
+		if($animationCancelled) return {key:'cancelSend',transition:sendProj}
+		if($currentAnimation?.behavior == 'missile') return {key:'missile', transition:sendProj}
+		if($currentAnimation?.behavior == 'center') return {key:'center', transition:sendCenter}
+		return {key:'cancelSend', transition:sendProj}
+	})
+	$: projectileSendTransition = $projectileSend.transition
+
+	const missileTarget = derived(
 		[currentAnimation, subAnimationStage],
 		([$currentAnimation, $subAnimationStage]) => {
 			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
@@ -144,7 +148,6 @@
 		on:keydown
 	>
 		{#if $hostHome}
-			<!-- {#if host && !host.animating} -->
 			<div
 				out:sendMelee={{ key: $animationCancelled ? 0 : 'movehero' }}
 				in:receiveMelee={{ key: $animationCancelled ? 1 : 'movehero' }}
@@ -154,11 +157,11 @@
 					}
 				}}
 			>
-				<VisualUnit pHostIndex={hostIndex} flipped={flipped} />
+				<VisualUnit hostIndex={hostIndex} />
 			</div>
 		{/if}
 	</div>
-	<div class="guestArea placeHolder" style:order={flipped ? 0 : 2}>
+	<div class="guestArea placeHolder" style:order={$hostIsNotHero ? 0 : 2}>
 		{#if $guestIndex != undefined}
 			<div
 				class="placeHolder"
@@ -179,15 +182,15 @@
 					}
 				}}
 			>
-				<VisualUnit pHostIndex={$guestIndex} flipped={!flipped} />
+				<VisualUnit hostIndex={$guestIndex} />
 			</div>
 		{/if}
-		{#if $missileSource}
+		{#if $projectileSource}
 			<div
 				class="projHolder"
-				out:sendProj={{ key: $animationCancelled ? 7 : 'proj' }}
-				class:startAlignSelf={!flipped}
-				class:endAlignSelf={flipped}
+				out:projectileSendTransition={{ key: $projectileSend.key }}
+				class:startAlignSelf={!$hostIsNotHero}
+				class:endAlignSelf={$hostIsNotHero}
 				in:fade={{ duration: 1 }}
 				on:introstart={() => {
 					updateUnit(hostIndex,(vup)=>{
@@ -197,39 +200,18 @@
 			>
 				<img
 					class="projectile"
-					class:flipped
-					src={$missileSource.projectileImg}
+					class:flipped={$hostIsNotHero}
+					src={$projectileSource.projectileImg}
 					alt="a projectile"
 				/>
 			</div>
 		{/if}
-		{#if $centerSource}
+		{#if $missileTarget}
 			<div
 				class="projHolder"
-				class:startAlignSelf={!flipped}
-				class:endAlignSelf={flipped}
-				in:fade={{ duration: 1 }}
-				on:introstart={() => {
-					updateUnit(hostIndex,(vup)=>{
-						vup.aggro = 0
-					})
-				}}
-				out:sendCenter={{ key: $animationCancelled ? 11 : 'cen' }}
-			>
-				<img
-					class="projectile"
-					class:flipped
-					src={$centerSource.projectileImg}
-					alt="a projectile"
-				/>
-			</div>
-		{/if}
-		{#if $dProjectileTarget}
-			<div
-				class="projHolder"
-				class:startAlignSelf={!flipped}
-				class:endAlignSelf={flipped}
-				in:receiveProj={{ key: $animationCancelled ? 8 : 'proj' }}
+				class:startAlignSelf={!$hostIsNotHero}
+				class:endAlignSelf={$hostIsNotHero}
+				in:receiveProj={{ key: $animationCancelled ? 8 : 'missile' }}
 				on:introend={async () => {
 					if ($currentAnimation != undefined && !$animationCancelled) {
 						let anim = $currentAnimation
@@ -264,8 +246,8 @@
 			>
 				<img
 					class="projectile"
-					class:flipped={!flipped}
-					src={$dProjectileTarget.projectileImg}
+					class:flipped={!$hostIsNotHero}
+					src={$missileTarget.projectileImg}
 					alt="a projectile"
 				/>
 			</div>

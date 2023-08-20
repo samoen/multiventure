@@ -449,18 +449,18 @@
 		>
 			<div class="units">
 				{#if $allVisualUnitProps.length}
-					<Unit pHostIndex={0} />
+					<Unit hostIndex={0} />
 				{/if}
 
-				{#each $allies as p}
-					<Unit pHostIndex={p.index} />
+				{#each $allies as p(p.index)}
+					<Unit hostIndex={p.index} />
 				{/each}
 			</div>
 			<div class="centerPlaceHolder">
 				{#if $centerFieldTarget}
 					<div
 						class="centerField"
-						in:receiveCenter={{ key: $animationCancelled ? 10 : 'cen' }}
+						in:receiveCenter={{ key: $animationCancelled ? 10 : 'center' }}
 						on:introend={() => {
 							if ($currentAnimation != undefined && !$animationCancelled) {
 								if ($currentAnimation.alsoDamages) {
@@ -496,8 +496,8 @@
 				{/if}
 			</div>
 			<div class="units">
-				{#each $allVisualUnitProps.filter(p=>p.side=='enemy') as e}
-					<Unit pHostIndex={e.index} flipped={true} />
+				{#each $allVisualUnitProps.filter(p=>p.side=='enemy') as e(e.index)}
+					<Unit hostIndex={e.index} />
 				{/each}
 			</div>
 		</div>
