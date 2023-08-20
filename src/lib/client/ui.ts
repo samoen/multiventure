@@ -81,7 +81,7 @@ export const lastMsgFromServer: Writable<MessageFromServer | undefined> = writab
 export const previousMsgFromServer: Writable<MessageFromServer | undefined> = writable();
 export let allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 
-export let currentAnimationIndex: Writable<number> = writable(0)
+export const currentAnimationIndex: Writable<number> = writable(0)
 
 export type AnimationWithData = BattleAnimation & {
     sourceIndex:number,
@@ -90,7 +90,7 @@ export type AnimationWithData = BattleAnimation & {
     alsoModifiesAggros: { targetIndex: number, amount?: number, setTo?:number, showFor:'onlyme'|'all' }[]
 }
 
-export const currentAnimationsWithData: Writable<AnimationWithData[] | undefined> = writable()
+export const currentAnimationsWithData: Writable<AnimationWithData[]> = writable()
 
 export let currentAnimation = derived([currentAnimationIndex, currentAnimationsWithData], ([$currentAnimationIndex, $currentAnimationsWithData]) => {
     return $currentAnimationsWithData?.at($currentAnimationIndex)
@@ -161,11 +161,6 @@ export const [sendCenter, receiveCenter] = crossfade({
     }
 });
 
-// export let animationQueue: Writable<
-// (
-// BattleAnimation[]
-// &{done:boolean})
-// > = writable([])
 
 let enemyPortraits = {
     hobGoblin: gruntPortrait,
@@ -186,16 +181,13 @@ export function updateUnit(index: number, run: (vup: VisualUnitProps) => void) {
     });
 }
 
-export function syncVisualsToMsg(lastMsg: MessageFromServer) {
-    // let lastMsg = get(lastMsgFromServer)
+export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined, sel:VisualUnitProps | undefined) {
     if (!lastMsg) {
         console.log('tried to sync with bad msg')
     }
     if (lastMsg) {
-
         let newVups: VisualUnitProps[] = []
         let i = 0
-        // heroVisualUnitProps.set(
         newVups.push({
             name: lastMsg.yourName,
             src: heroSprites[heroSprite(lastMsg.yourWeapon?.itemId)],
@@ -214,8 +206,6 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer) {
         for (const e of lastMsg.enemiesInScene) {
             i++
             newVups.push(
-                // enemiesVisualUnitProps.set(lastMsg.enemiesInScene.map((e,i) => {
-                // return 
                 {
                     name: e.name,
                     src: enemySprites[e.templateId],
@@ -232,11 +222,6 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer) {
                     actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target && a.target.name == e.name && a.target.side == 'enemy')
                 } satisfies VisualUnitProps
             )
-            // actsWithIs
-            //     .filter(a => { a.cga.target && a.cga.target.name == e.name && a.cga.target.side == 'enemy' })
-            //     .forEach(a => {
-            //         a.targetIndex = i
-            //     })
         }
         for (const p of lastMsg.otherPlayers) {
             if (p.currentScene == lastMsg.yourScene) {
@@ -260,7 +245,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer) {
             }
 
         }
-        let sel = get(selectedDetail)
+        // let sel = get(selectedDetail)
 
         console.log('syncing, setting new props and selected index')
         allVisualUnitProps.set(newVups)
@@ -304,32 +289,27 @@ export const centerFieldTarget = derived(
     }
 );
 
-export async function nextAnimationIndex(start: boolean) {
+export async function nextAnimationIndex(start: boolean, curAnimIndex:number, curAnimations:AnimationWithData[], latest:MessageFromServer|undefined, sel:VisualUnitProps|undefined) {
+    let cai = 0
     if (start) {
         currentAnimationIndex.set(0)
-
     } else {
         currentAnimationIndex.update(o => {
             return o + 1
         })
-
+        cai = curAnimIndex+1
     }
 
-    let lm = get(lastMsgFromServer)
-    let cai = get(currentAnimationIndex)
-    if (!lm) return
-    if (cai > lm.animations.length - 1) {
+    if (cai > curAnimations.length - 1) {
         console.log('animations done, sync to recent')
         waitingForMyAnimation.set(false)
-        syncVisualsToMsg(lm)
+        syncVisualsToMsg(latest, sel)
         return
     }
-
+    
     subAnimationStage.set('start')
     // console.log('tick')
     await tick()
-
-
 
     subAnimationStage.set('fire')
 }

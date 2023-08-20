@@ -23,19 +23,22 @@
 		type VisualUnitProps,
 		selectedDetail,
 
-		updateUnit
+		updateUnit,
+		currentAnimationIndex,
+		currentAnimationsWithData
+
 
 	} from '$lib/client/ui';
 	import { tick } from 'svelte';
-	import { derived } from 'svelte/store';
+	import { derived, writable, type Writable } from 'svelte/store';
 	import { fade } from 'svelte/transition';
 	import VisualUnit from './VisualUnit.svelte';
 
-	export let hostIndex: number;
-
-	export let flipped: boolean = false;
-
+	export let pHostIndex : number;
+	$: hostIndex = pHostIndex;
 	
+
+	export let flipped: boolean = false;	
 
 	const highlightedForAct = derived([latestSlotButtonInput], ([$latestSlotButtonInput]) => {
 		if ($latestSlotButtonInput == 'none') return undefined;
@@ -146,12 +149,12 @@
 				out:sendMelee={{ key: $animationCancelled ? 0 : 'movehero' }}
 				in:receiveMelee={{ key: $animationCancelled ? 1 : 'movehero' }}
 				on:introend={() => {
-					if (currentAnimation != undefined && !$animationCancelled && $lastMsgFromServer) {
-						nextAnimationIndex(false);
+					if ($currentAnimation != undefined && !$animationCancelled && $lastMsgFromServer) {
+						nextAnimationIndex(false, $currentAnimationIndex, $currentAnimationsWithData, $lastMsgFromServer, $selectedDetail);
 					}
 				}}
 			>
-				<VisualUnit {hostIndex} {flipped} />
+				<VisualUnit pHostIndex={hostIndex} flipped={flipped} />
 			</div>
 		{/if}
 	</div>
@@ -176,7 +179,7 @@
 					}
 				}}
 			>
-				<VisualUnit hostIndex={$guestIndex} flipped={!flipped} />
+				<VisualUnit pHostIndex={$guestIndex} flipped={!flipped} />
 			</div>
 		{/if}
 		{#if $missileSource}
@@ -255,7 +258,7 @@
 									})
 								}
 							}
-						nextAnimationIndex(false);
+						nextAnimationIndex(false,$currentAnimationIndex,$currentAnimationsWithData,$lastMsgFromServer, $selectedDetail);
 					}
 				}}
 			>

@@ -2,20 +2,23 @@
 	import { allVisualUnitProps, type VisualUnitProps } from '$lib/client/ui';
 	import { derived, writable, type Writable } from 'svelte/store';
 
-	export let hostIndex: number;
-	let actualHostIndex : Writable<number> = writable()
-
+	export let pHostIndex : number
+	let hostIndex = writable(pHostIndex)
 	$:{
-		$actualHostIndex = hostIndex
-	}
+		$hostIndex = pHostIndex;
+	} 
+	// let actualHostIndex : Writable<number> = writable()
+	// $:{
+	// 	$actualHostIndex = hostIndex
+	// }
 
-
+	// let hostIndex2 = $$props['hostIndex']
 	// $: vup = $allVisualUnitProps.at(hostIndex)
 
-	let vu = derived([allVisualUnitProps, actualHostIndex],([$allVisualUnitProps, $actualHostIndex])=>{
-		let nex = $allVisualUnitProps.at($actualHostIndex)
-		console.log(`calc image for ${hostIndex} ${nex?.src}`)
-		return $allVisualUnitProps.at(hostIndex)
+	let vu = derived([allVisualUnitProps, hostIndex ],([$allVisualUnitProps, $hostIndex])=>{
+		let nex = $allVisualUnitProps.at($hostIndex)
+		// console.log(`calc image for ${$hostIndex} ${nex?.src}`)
+		return nex
 	})
 
 	let hpBar = derived(vu,($vu)=>{

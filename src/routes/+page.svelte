@@ -46,7 +46,7 @@
 		type MessageFromServer
 	} from '$lib/utils';
 	import { onMount, tick } from 'svelte';
-	import { derived } from 'svelte/store';
+	import { derived, writable } from 'svelte/store';
 
 	export let data;
 	let signupInput: string;
@@ -136,7 +136,7 @@
 	}
 
 	async function cancelAnimations() {
-		// console.log(`cancelling animations`)
+		console.log(`cancelling animations`)
 		$animationCancelled = true;
 		$currentAnimationIndex = 999;
 		// $currentAnimation = undefined;
@@ -215,7 +215,7 @@
 		}
 		$currentAnimationsWithData = newAnimationsWithData
 		console.log(`starting anims ${JSON.stringify(newAnimationsWithData)}`);
-		await nextAnimationIndex(true);
+		nextAnimationIndex(true,$currentAnimationIndex,$currentAnimationsWithData,$lastMsgFromServer, $selectedDetail);
 	}
 
 	async function handleAnimationsOnMessage(
@@ -227,20 +227,25 @@
 		// first message just sync instant
 		if (!previous) {
 			console.log('first message');
-			await cancelAnimations();
-			syncVisualsToMsg(latest);
+			if($currentAnimation){
+				await cancelAnimations();
+			}
+			syncVisualsToMsg(latest, $selectedDetail);
 			return;
 		}
 
 		if (latest.animations.length && latest.triggeredBy == latest.yourName) {
+			console.log('start waiting my anim')
 			$waitingForMyAnimation = true;
 		}
 
 		// my message with no animations
 		if (latest.triggeredBy == latest.yourName && !latest.animations.length) {
 			console.log('ours with no');
-			await cancelAnimations();
-			syncVisualsToMsg(latest);
+			if($currentAnimation){
+				await cancelAnimations();
+			}
+			syncVisualsToMsg(latest, $selectedDetail);
 			return;
 		}
 
@@ -254,7 +259,7 @@
 		if ($currentAnimation == undefined && !latest.animations.length) {
 			// await cancelAnimations();
 			console.log('anyones and nono');
-			syncVisualsToMsg(latest);
+			syncVisualsToMsg(latest, $selectedDetail);
 			return;
 		}
 
@@ -266,7 +271,7 @@
 		) {
 			console.log('ours with anims but in prog');
 			await cancelAnimations();
-			syncVisualsToMsg(previous);
+			syncVisualsToMsg(previous, $selectedDetail);
 			await startAnimating(previous, latest);
 			return;
 		}
@@ -277,12 +282,12 @@
 		if (latest.animations.length && $currentAnimation == undefined) {
 			console.log('anyones message, we not animating. starting');
 			// await cancelAnimations();
-			syncVisualsToMsg(previous);
+			syncVisualsToMsg(previous, $selectedDetail);
 			await startAnimating(previous, latest);
 			return;
 		}
 		console.log('no specific anim handling');
-		syncVisualsToMsg(latest);
+		syncVisualsToMsg(latest, $selectedDetail);
 	}
 
 	async function deleteHero() {
@@ -374,7 +379,7 @@
 
 	let allies = derived(allVisualUnitProps,($allVisualUnitProps)=>{
 		let calAllies = $allVisualUnitProps.filter( v=> v.side == 'hero' && v.index != 0)
-		console.log(`allies: ${JSON.stringify(calAllies)}`)
+		// console.log(`allies: ${JSON.stringify(calAllies)}`)
 		return calAllies
 	})
 </script>
@@ -444,11 +449,11 @@
 		>
 			<div class="units">
 				{#if $allVisualUnitProps.length}
-					<Unit hostIndex={0} />
+					<Unit pHostIndex={0} />
 				{/if}
 
-				{#each $allies  as p}
-					<Unit hostIndex={p.index} />
+				{#each $allies as p}
+					<Unit pHostIndex={p.index} />
 				{/each}
 			</div>
 			<div class="centerPlaceHolder">
@@ -482,7 +487,7 @@
 										}
 									}
 								}
-								nextAnimationIndex(false);
+								nextAnimationIndex(false,$currentAnimationIndex,$currentAnimationsWithData,$lastMsgFromServer, $selectedDetail);
 							}
 						}}
 					>
@@ -492,7 +497,7 @@
 			</div>
 			<div class="units">
 				{#each $allVisualUnitProps.filter(p=>p.side=='enemy') as e}
-					<Unit hostIndex={e.index} flipped={true} />
+					<Unit pHostIndex={e.index} flipped={true} />
 				{/each}
 			</div>
 		</div>
@@ -776,7 +781,7 @@
 		height: 100%;
 		width: 100%;
 	}
-	.selectedStats {
+	/* .selectedStats { */
 		/* background-color: aquamarine; */
-	}
+	/* } */
 </style>
