@@ -194,7 +194,10 @@ const bomb: Item = {
 				performAction() {
 					let dmgs : {target:AnimationTarget,amount:number}[]= []
 					for (const enemy of enemiesInScene(player.currentScene)) {
-						// enemy.aggros.clear()
+			
+						// for (const key of enemy.aggros.keys()) {
+						// 	enemy.aggros.set(key, 0);
+						// }
 						let r = damageEnemy(player, enemy, 5)
 						if(r.dmgDone>0){
 							dmgs.push({
@@ -232,7 +235,7 @@ const poisonDart: Item = {
 			player.itemActions.push(
 				{
 					buttonText: `Throw poison dart at ${enemy.name}`,
-					provoke: 100,
+					provoke: 40,
 					slot:'utility',
 					target:{name:enemy.name, side:'enemy'},
 					performAction() {
@@ -268,12 +271,31 @@ const plateMail: Item = {
 	actions(player) {
 		if (enemiesInScene(player.currentScene).length) {
 			player.itemActions.push({
-				provoke: 100,
+				provoke: 5,
 				buttonText: 'Taunt',
 				slot:'body',
-				// speed:100,
+				speed: 999,
 				performAction() {
 					player.inventory.body.cooldown = 2
+					for (const enemy of enemiesInScene(player.currentScene)) {
+						enemy.aggros.set(player.heroName,100)
+					}
+					pushAnimation({
+						sceneId:player.currentScene,
+						battleAnimation:{
+							behavior:'center',
+							damage:0,
+							source:{name:player.heroName,side:'hero'},
+							extraSprite:'bomb',
+							alsoModifiesAggro:enemiesInScene(player.currentScene).map((e)=>{
+								return {
+									target:{name:e.name,side:'enemy'},
+									setTo:100,
+									showFor:'onlyme'
+								}
+							})
+						}
+					})				
 					pushHappening(`${player.heroName} infuriates enemies!`)
 				},
 			})
@@ -295,9 +317,9 @@ const theifCloak: Item = {
 				grantsImmunity: true,
 				slot:'body',
 				performAction() {
-					// for (const enemy of enemiesInScene(player.currentScene)) {
-					// 	enemy.aggros.delete(player.heroName)
-					// }
+					for (const enemy of enemiesInScene(player.currentScene)) {
+						enemy.aggros.set(player.heroName,0)
+					}
 					player.inventory.body.cooldown = 3
 					pushHappening(`${player.heroName} hid in shadows`)
 				},

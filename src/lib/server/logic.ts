@@ -31,7 +31,6 @@ export function updatePlayerActions(player: Player) {
 		}
 	}
 
-	// if (activeEnemies.some(e => e.currentScene == player.currentScene)) {
 	if (enemiesInScene(player.currentScene).length) {
 		player.itemActions.push(
 			{

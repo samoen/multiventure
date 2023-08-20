@@ -1,11 +1,20 @@
 <script lang="ts">
 	import { allVisualUnitProps, type VisualUnitProps } from '$lib/client/ui';
-	import { derived } from 'svelte/store';
+	import { derived, writable, type Writable } from 'svelte/store';
 
 	export let hostIndex: number;
-	// let vu = $allVisualUnitProps.at(hostIndex)
+	let actualHostIndex : Writable<number> = writable()
 
-	let vu = derived([allVisualUnitProps],([$allVisualUnitProps])=>{
+	$:{
+		$actualHostIndex = hostIndex
+	}
+
+
+	// $: vup = $allVisualUnitProps.at(hostIndex)
+
+	let vu = derived([allVisualUnitProps, actualHostIndex],([$allVisualUnitProps, $actualHostIndex])=>{
+		let nex = $allVisualUnitProps.at($actualHostIndex)
+		console.log(`calc image for ${hostIndex} ${nex?.src}`)
 		return $allVisualUnitProps.at(hostIndex)
 	})
 
@@ -18,7 +27,8 @@
 </script>
 {#if $vu}
 	<div class="top">
-		<p>{$allVisualUnitProps.at(hostIndex)?.name}</p>
+		<!-- <p>{$allVisualUnitProps.at(hostIndex)?.name}</p> -->
+		<p>{$vu.name}</p>
 		<div class="outerHeroSprite">
 			<img class="heroSprite" class:flipped alt="you" src={$vu.src} />
 		</div>

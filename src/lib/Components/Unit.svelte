@@ -234,13 +234,27 @@
 							vup.displayHp -= anim.damage;
 						})
 
-						if ($currentAnimation.alsoDamages) {
+						// if ($currentAnimation.alsoDamages) {
 							for (const other of $currentAnimation.alsoDmgsProps) {
 									updateUnit(other.targetIndex,(vup)=>{
 										vup.displayHp -= other.amount
 									})
 							}
-						}
+						// }
+							for (const other of $currentAnimation.alsoModifiesAggros) {
+								if(other.showFor == 'all' || $lastMsgFromServer?.yourName == $currentAnimation.source.name){
+									updateUnit(other.targetIndex,(vup)=>{
+										if(vup.aggro != undefined){
+											if(other.amount != undefined){
+												vup.aggro -= other.amount
+											}
+											if(other.setTo != undefined){
+												vup.aggro = other.setTo
+											}
+										}
+									})
+								}
+							}
 						nextAnimationIndex(false);
 					}
 				}}

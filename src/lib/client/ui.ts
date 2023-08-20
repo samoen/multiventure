@@ -87,6 +87,7 @@ export type AnimationWithData = BattleAnimation & {
     sourceIndex:number,
     targetIndex?:number,
     alsoDmgsProps: { targetIndex: number, amount: number }[]
+    alsoModifiesAggros: { targetIndex: number, amount?: number, setTo?:number, showFor:'onlyme'|'all' }[]
 }
 
 export const currentAnimationsWithData: Writable<AnimationWithData[] | undefined> = writable()
@@ -191,13 +192,6 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer) {
         console.log('tried to sync with bad msg')
     }
     if (lastMsg) {
-        // let actsWithIs: ClientGameActionWithIndex[] = lastMsg.itemActions.map((cga) => {
-        //     return {
-        //         cga: cga,
-        //         targetIndex: 999
-        //     }
-        // })
-
 
         let newVups: VisualUnitProps[] = []
         let i = 0
@@ -216,12 +210,6 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer) {
             actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target && a.target.name == lastMsg.yourName && a.target.side == 'hero')
         } satisfies VisualUnitProps
         )
-        // actsWithIs
-        //     .filter(a => { a.cga.target && a.cga.target.name == lastMsg.yourName && a.cga.target.side == 'hero' })
-        //     .forEach(a => {
-        //         a.targetIndex = 0
-        //     })
-        // if(myActs)myActs.targetIndex = 0
 
         for (const e of lastMsg.enemiesInScene) {
             i++
@@ -243,8 +231,6 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer) {
                     },
                     actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target && a.target.name == e.name && a.target.side == 'enemy')
                 } satisfies VisualUnitProps
-                // })
-                // )
             )
             // actsWithIs
             //     .filter(a => { a.cga.target && a.cga.target.name == e.name && a.cga.target.side == 'enemy' })
@@ -256,11 +242,6 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer) {
             if (p.currentScene == lastMsg.yourScene) {
                 i++
                 newVups.push(
-                    // alliesVisualUnitProps.set(
-                    // lastMsg.otherPlayers
-                    // .filter(p => p.currentScene == lastMsg.yourScene)
-                    // .map((p,i) => {
-                    // return 
                     {
                         name: p.heroName,
                         src: heroSprites[heroSprite(p.weapon.itemId)],
@@ -275,14 +256,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer) {
                         },
                         actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target && a.target.name == p.heroName && a.target.side == 'hero')
                     }
-                    // }))
-
                 )
-                // actsWithIs
-                // .filter(a => { a.cga.target && a.cga.target.name == p.heroName && a.cga.target.side == 'hero' })
-                // .forEach(a => {
-                //     a.targetIndex = i
-                // })
             }
 
         }

@@ -40,6 +40,12 @@ export type BattleAnimation = {
 	behavior: AnimationBehavior,
 	extraSprite?: ExtraSprite,
 	alsoDamages?:{target:AnimationTarget,amount:number}[],
+	alsoModifiesAggro?:{
+		target:AnimationTarget,
+		amount?:number,
+		setTo?:number,
+		showFor:'onlyme' | 'all'
+	}[],
 }
 
 export type ExtraSprite = 'arrow' | 'bomb' | 'flame'

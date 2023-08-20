@@ -46,6 +46,7 @@
 		type MessageFromServer
 	} from '$lib/utils';
 	import { onMount, tick } from 'svelte';
+	import { derived } from 'svelte/store';
 
 	export let data;
 	let signupInput: string;
@@ -188,11 +189,26 @@
 					}
 				}
 			}
+			let alsoModifiedAggrosProps: { targetIndex: number; amount?: number; setTo?:number; showFor:'onlyme'|'all' }[] = [];
+			if (a.alsoModifiesAggro) {
+				for (const alsoModified of a.alsoModifiesAggro) {
+					let affected = findPropFromAnimationTarget(alsoModified.target);
+					if (affected) {
+						alsoModifiedAggrosProps.push({
+							targetIndex: affected,
+							amount: alsoModified.amount,
+							setTo: alsoModified.setTo,
+							showFor:alsoModified.showFor,
+						});
+					}
+				}
+			}
 			let animWithData : AnimationWithData = {
 				...a,
 				sourceIndex: sourceProp,
 				targetIndex: targetProp,
-				alsoDmgsProps: alsoDmgsProps
+				alsoDmgsProps: alsoDmgsProps,
+				alsoModifiesAggros: alsoModifiedAggrosProps
 			};
 			newAnimationsWithData.push(animWithData)
 
@@ -355,6 +371,12 @@
 		$clientState.status = 'waiting for first event';
 		subscribeEventsIfNotAlready();
 	}
+
+	let allies = derived(allVisualUnitProps,($allVisualUnitProps)=>{
+		let calAllies = $allVisualUnitProps.filter( v=> v.side == 'hero' && v.index != 0)
+		console.log(`allies: ${JSON.stringify(calAllies)}`)
+		return calAllies
+	})
 </script>
 
 <!-- <h3>Status: {clientState.status}</h3> -->
@@ -425,7 +447,7 @@
 					<Unit hostIndex={0} />
 				{/if}
 
-				{#each $allVisualUnitProps.filter( v=> v.side == 'hero' && v.index != 0)  as p}
+				{#each $allies  as p}
 					<Unit hostIndex={p.index} />
 				{/each}
 			</div>
@@ -435,13 +457,29 @@
 						class="centerField"
 						in:receiveCenter={{ key: $animationCancelled ? 10 : 'cen' }}
 						on:introend={() => {
-							if ($currentAnimation != undefined && !$animationCancelled && $lastMsgFromServer) {
+							if ($currentAnimation != undefined && !$animationCancelled) {
 								if ($currentAnimation.alsoDamages) {
 									for (const other of $currentAnimation.alsoDmgsProps) {
 										updateUnit(other.targetIndex,(vup)=>{
 											vup.displayHp -= other.amount
 										})
 
+									}
+								}
+								if ($currentAnimation.alsoModifiesAggro) {
+									for (const other of $currentAnimation.alsoModifiesAggros) {
+										if(other.showFor == 'all' || $lastMsgFromServer?.yourName == $currentAnimation.source.name){
+											updateUnit(other.targetIndex,(vup)=>{
+												if(vup.aggro != undefined){
+													if(other.amount != undefined){
+														vup.aggro -= other.amount
+													}
+													if(other.setTo != undefined){
+														vup.aggro = other.setTo
+													}
+												}
+											})
+										}
 									}
 								}
 								nextAnimationIndex(false);
@@ -688,6 +726,7 @@
 	}
 	.visual {
 		overflow-y: auto;
+		overflow-x: hidden;
 		overscroll-behavior: contain;
 		background-color: burlywood;
 		display: grid;
