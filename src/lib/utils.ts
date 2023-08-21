@@ -52,8 +52,10 @@ export type ExtraSprite = 'arrow' | 'bomb' | 'flame'
 
 export type AnimationBehavior = 'missile' | 'melee' | 'center'
 
-export type EnemyStatusEffect = {
-	status: 'poison' | 'rage';
+export type StatusId = 'poison' | 'rage'
+
+export type StatusEffect = {
+	status: StatusId;
 	counter?: number;
 }
 
@@ -63,7 +65,7 @@ export type EnemyInClient = {
 	health: number
 	maxHealth: number
 	myAggro: number
-	statuses: EnemyStatusEffect[]
+	statuses: StatusEffect[]
 }
 
 export function isMsgFromServer(msg: object): msg is MessageFromServer {

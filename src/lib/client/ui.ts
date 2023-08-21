@@ -279,9 +279,13 @@ export async function nextAnimationIndex(start: boolean, curAnimIndex:number, cu
         })
         cai = curAnimIndex+1
     }
-
+    
     if (cai > curAnimations.length - 1) {
-        console.log('animations done, sync to recent')
+        // give some time for slain enemies to fade out. 
+        // can we detect enemy was killed in last animation?
+        await new Promise(r=>setTimeout(r,500))
+        
+        // console.log('animations done, sync to recent')
         waitingForMyAnimation.set(false)
         syncVisualsToMsg(latest)
         return

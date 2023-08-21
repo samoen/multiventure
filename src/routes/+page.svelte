@@ -742,7 +742,7 @@
 	.units {
 		display: grid;
 		/* direction: rtl; */
-		background-color: beige;
+		/* background-color: beige; */
 		/* grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); */
 		grid-template-columns: repeat(auto-fit, 120px);
 		justify-content: center;

@@ -1,4 +1,4 @@
-import type { AnimationBehavior, AnimationTarget, BattleAnimation, EnemyName, EnemyStatusEffect } from "$lib/utils";
+import type { AnimationBehavior, AnimationTarget, BattleAnimation, EnemyName, StatusEffect } from "$lib/utils";
 import { pushHappening } from "./messaging";
 import { scenes, type SceneId } from "./scenes";
 import { playerEquipped, type HeroName, type Player, activePlayers, activePlayersInScene } from "./users";
@@ -15,7 +15,7 @@ export type ActiveEnemy = {
 	damage: number
 	aggros: Map<HeroName, number>
 	template: EnemyTemplate
-	statuses: EnemyStatusEffect[]
+	statuses: StatusEffect[]
 }
 
 export function getAggroForPlayer(enemy:ActiveEnemy, player:Player):number{
@@ -121,7 +121,7 @@ export function modifiedEnemyHealth(h: number): number {
 	return h + ((activePlayers().length - 1) * PERCENT_OF_BASE_ADDED_PER_PLAYER * h)
 }
 
-export function spawnEnemy(name: string, template: EnemyTemplateId, where: SceneId, statuses: EnemyStatusEffect[] = []) {
+export function spawnEnemy(name: string, template: EnemyTemplateId, where: SceneId, statuses: StatusEffect[] = []) {
 	const baseHealth = enemyTemplates[template].baseHealth
 	let modifiedBaseHealth = scenes.get(where)?.solo ? baseHealth : modifiedEnemyHealth(baseHealth)
 	activeEnemies.push({

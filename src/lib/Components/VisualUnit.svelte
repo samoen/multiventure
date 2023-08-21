@@ -1,17 +1,37 @@
 <script lang="ts">
 	import { allVisualUnitProps, type VisualUnitProps } from '$lib/client/ui';
 	import { fade } from 'svelte/transition';
+	import rage from '$lib/assets/rage.png'
+	import greenDrip from '$lib/assets/green-drip.png'
+	import type { StatusEffect, StatusId } from '$lib/utils';
 
 	export let hostId:string;
 	$: vu = $allVisualUnitProps.find(v=>v.id == hostId)
 	$: hpBar = vu ? (vu.displayHp > 0 ? 100 * (vu.displayHp / vu.maxHp) : 0) : 0
 	export let flip:boolean
+	let statuses : StatusId[] = []
+	$: {
+		if(vu?.actual.kind == 'enemy'){
+			statuses = vu.actual.enemy.statuses.map(s=>s.status)
+		}
+
+	}
+
+	const statusImages : Record<StatusId,string>={
+		poison:greenDrip,
+		rage:rage,
+	}
 
 </script>
-{#if vu && (vu.displayHp>0 || vu.side=="hero")}
-	<div class="top" out:fade>
+{#if vu && !(vu.displayHp<1 && vu.side=="enemy")}
+	<div class="top" out:fade|local={{duration:400}}>
 		<p>{vu.name}</p>
 		<div class="outerHeroSprite">
+			<div class="statuses">
+				{#each statuses as s}
+					<img class="status" alt="status" src={statusImages[s]}>
+				{/each}
+			</div>
 			<img class="heroSprite" class:flipped={flip} alt="you" src={vu.src} />
 		</div>
 		<div class="bars">
@@ -29,6 +49,17 @@
 {/if}
 
 <style>
+	.statuses {
+		position: absolute;
+		top:0;
+		left:0;
+		z-index: 2;
+	}
+	.status{
+		display: flex;
+		height:10px;
+		width:10px;
+	}
 	.bars {
 		display: flex;
 		flex-direction: column;
@@ -58,6 +89,7 @@
 		margin: 0;
 	}
 	.outerHeroSprite {
+		position:relative;
 		overflow: hidden;
 		height: 50px;
 		width: 50px;

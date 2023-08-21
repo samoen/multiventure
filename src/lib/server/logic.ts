@@ -137,6 +137,19 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	// if (!actionFromId.grantsImmunity) pushHappening('----');
     pushHappening('----');
 	
+	
+	handleRetaliations(player, false, actionFromId)
+	
+	if (player.health > 1) {
+		if (actionFromId.performAction) {
+			actionFromId.performAction();
+		}
+	}
+	
+	if (player.health > 1) {
+		handleRetaliations(player, true, actionFromId)
+	}
+	
 	for (const enemy of enemiesInScene(player.currentScene)) {
 		for (const s of enemy.statuses) {
 			if (s.status == 'poison') {
@@ -151,21 +164,10 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		enemy.statuses = enemy.statuses.filter(s => (s.counter != undefined && s.counter > 0) || s.counter == undefined)
 	}
 	
-	handleRetaliations(player, false, actionFromId)
-	
-	if (player.health > 1) {
-		if (actionFromId.performAction) {
-			actionFromId.performAction();
-		}
-	}
-	
-	if (player.health > 1) {
-		handleRetaliations(player, true, actionFromId)
-	}
-	
 	if (actionFromId.provoke) {
 		addAggro(player, actionFromId.provoke)
 	}
+	
 
 	const playerScene = scenes.get(player.currentScene);
 	const postReactionEnemies = enemiesInScene(player.currentScene)
