@@ -1,35 +1,26 @@
 <script lang="ts">
 	import { allVisualUnitProps, type VisualUnitProps } from '$lib/client/ui';
-	import { derived, writable, type Writable } from 'svelte/store';
+	import { fade } from 'svelte/transition';
 
-	export let hostIndex:number;
-
-	let vu = derived([allVisualUnitProps ],([$allVisualUnitProps])=>{
-		let nex = $allVisualUnitProps.at(hostIndex)
-		// console.log(`calc image for ${$hostIndex} ${nex?.src}`)
-		return nex
-	})
-
-	let hpBar = derived(vu,($vu)=>{
-		if(!$vu)return undefined
-		return $vu.displayHp > 0 ? 100 * ($vu.displayHp / $vu.maxHp) : 0
-	})
+	export let hostId:string;
+	$: vu = $allVisualUnitProps.find(v=>v.id == hostId)
+	$: hpBar = vu ? (vu.displayHp > 0 ? 100 * (vu.displayHp / vu.maxHp) : 0) : 0
+	export let flip:boolean
 
 </script>
-{#if $vu}
-	<div class="top">
-		<!-- <p>{$allVisualUnitProps.at(hostIndex)?.name}</p> -->
-		<p>{$vu.name}</p>
+{#if vu && (vu.displayHp>0 || vu.side=="hero")}
+	<div class="top" out:fade>
+		<p>{vu.name}</p>
 		<div class="outerHeroSprite">
-			<img class="heroSprite" class:flipped={$vu.side!='hero'} alt="you" src={$vu.src} />
+			<img class="heroSprite" class:flipped={flip} alt="you" src={vu.src} />
 		</div>
 		<div class="bars">
 			<div class="healthbar">
-				<div class="healthbar_health" style:width="{$hpBar}%" />
+				<div class="healthbar_health" style:width="{hpBar}%" />
 			</div>
-			{#if $vu.side == 'enemy' && $vu.aggro != undefined}
+			{#if vu.side == 'enemy' && vu.aggro != undefined}
 				<div class="aggrobar">
-					<div class="aggro" style:width="{$vu.aggro}%" />
+					<div class="aggro" style:width="{vu.aggro}%" />
 				</div>
 			{/if}
 		</div>

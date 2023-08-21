@@ -49,14 +49,13 @@ export let clientState = writable({
 export let waitingForMyAnimation = writable(false)
 
 export type VisualUnitProps = {
+    id: string;
     name: string;
     src: string;
-    // hp: number;
     displayHp: number
     maxHp: number;
     aggro?: number;
     side: 'hero' | 'enemy'
-    index: number;
     actual: UnitDetails;
     actionsThatCanTargetMe: GameActionSentToClient[]
 }
@@ -84,10 +83,10 @@ export let allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 export const currentAnimationIndex: Writable<number> = writable(0)
 
 export type AnimationWithData = BattleAnimation & {
-    sourceIndex:number,
-    targetIndex?:number,
-    alsoDmgsProps: { targetIndex: number, amount: number }[]
-    alsoModifiesAggros: { targetIndex: number, amount?: number, setTo?:number, showFor:'onlyme'|'all' }[]
+    sourceIndex:string,
+    targetIndex?:string,
+    alsoDmgsProps: { targetIndex: string, amount: number }[]
+    alsoModifiesAggros: { targetIndex: string, amount?: number, setTo?:number, showFor:'onlyme'|'all' }[]
 }
 
 export const currentAnimationsWithData: Writable<AnimationWithData[]> = writable()
@@ -115,18 +114,19 @@ export let waitButtonAction = derived(lastMsgFromServer, ($lastMsgFromServer) =>
 })
 
 // export const lastUnitClicked: Writable<VisualUnitProps | undefined> = writable()
-export const lastUnitClicked: Writable<number> = writable(0)
+export const lastUnitClicked: Writable<string> = writable()
 
 export const selectedDetail = derived([lastUnitClicked
     , allVisualUnitProps
 ], ([$lastUnitClicked
-    , $alliesVisualUnitProps
+    , $allVisualUnitProps
 ]) => {
 
-    let props = $alliesVisualUnitProps
+    let props = $allVisualUnitProps
 
-    let vupAt = props.at($lastUnitClicked)
+    let vupAt = props.find(v=>v.id == $lastUnitClicked)
     if (!vupAt) {
+        return $allVisualUnitProps.at(0)
     }
     return vupAt
 })
@@ -170,31 +170,31 @@ let enemyPortraits = {
     troll: gruntPortrait
 } satisfies Record<EnemyTemplateId, string>;
 
-export function updateUnit(index: number, run: (vup: VisualUnitProps) => void) {
-    allVisualUnitProps.update((old) => {
-        return old.map((p, j) => {
-            if (index == j) {
-                run(p);
-            }
-            return p;
-        });
-    });
+export function updateUnit(index: string, run: (vup: VisualUnitProps) => void) {
+    allVisualUnitProps.update((old)=>{
+            return old.map((p, j) => {
+                if (index == p.id) {
+                    run(p);
+                }
+                return p;
+            });
+
+    })
 }
 
-export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined, sel:VisualUnitProps | undefined) {
+export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
     if (!lastMsg) {
         console.log('tried to sync with bad msg')
     }
     if (lastMsg) {
         let newVups: VisualUnitProps[] = []
-        let i = 0
         newVups.push({
+            id:`hero${lastMsg.yourName}`,
             name: lastMsg.yourName,
             src: heroSprites[heroSprite(lastMsg.yourWeapon?.itemId)],
             maxHp: lastMsg.yourMaxHp,
             displayHp: lastMsg.yourHp,
             side: 'hero',
-            index: i,
             actual: {
                 kind: 'me',
                 portrait: peasantPortrait,
@@ -204,16 +204,15 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined, sel:Vis
         )
 
         for (const e of lastMsg.enemiesInScene) {
-            i++
             newVups.push(
                 {
+                    id:`enemy${e.name}`,
                     name: e.name,
                     src: enemySprites[e.templateId],
                     displayHp: e.health,
                     maxHp: e.maxHealth,
                     aggro: e.myAggro,
                     side: 'enemy',
-                    index: i,
                     actual: {
                         kind: 'enemy',
                         portrait: enemyPortraits[e.templateId],
@@ -221,19 +220,18 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined, sel:Vis
                     },
                     actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target && a.target.name == e.name && a.target.side == 'enemy')
                 } satisfies VisualUnitProps
-            )
-        }
-        for (const p of lastMsg.otherPlayers) {
-            if (p.currentScene == lastMsg.yourScene) {
-                i++
-                newVups.push(
-                    {
+                )
+            }
+            for (const p of lastMsg.otherPlayers) {
+                if (p.currentScene == lastMsg.yourScene) {
+                    newVups.push(
+                        {
+                        id:`hero${p.heroName}`,
                         name: p.heroName,
                         src: heroSprites[heroSprite(p.weapon.itemId)],
                         displayHp: p.health,
                         maxHp: p.maxHealth,
                         side: 'hero',
-                        index: i,
                         actual: {
                             kind: 'otherPlayer',
                             portrait: peasantPortrait,
@@ -245,25 +243,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined, sel:Vis
             }
 
         }
-        // let sel = get(selectedDetail)
-
-        console.log('syncing, setting new props and selected index')
         allVisualUnitProps.set(newVups)
-
-        // find the previous selected detail in new units, set last index clicked
-        if (sel) {
-            let sel2 = sel
-            let indexOfPrevDetail = newVups.findIndex(v => v.name == sel2.name && v.side == sel2.side)
-            if (indexOfPrevDetail == -1) {
-                lastUnitClicked.set(0)
-                console.log('old detail not in new list')
-            } else {
-                lastUnitClicked.set(indexOfPrevDetail)
-            }
-        } else {
-            console.log('old detail was undefined')
-            lastUnitClicked.set(0)
-        }
     }
 }
 
@@ -289,7 +269,7 @@ export const centerFieldTarget = derived(
     }
 );
 
-export async function nextAnimationIndex(start: boolean, curAnimIndex:number, curAnimations:AnimationWithData[], latest:MessageFromServer|undefined, sel:VisualUnitProps|undefined) {
+export async function nextAnimationIndex(start: boolean, curAnimIndex:number, curAnimations:AnimationWithData[], latest:MessageFromServer|undefined) {
     let cai = 0
     if (start) {
         currentAnimationIndex.set(0)
@@ -303,7 +283,7 @@ export async function nextAnimationIndex(start: boolean, curAnimIndex:number, cu
     if (cai > curAnimations.length - 1) {
         console.log('animations done, sync to recent')
         waitingForMyAnimation.set(false)
-        syncVisualsToMsg(latest, sel)
+        syncVisualsToMsg(latest)
         return
     }
     

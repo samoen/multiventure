@@ -46,7 +46,9 @@
 		type MessageFromServer
 	} from '$lib/utils';
 	import { onMount, tick } from 'svelte';
+	import { flip } from 'svelte/animate';
 	import { derived, writable } from 'svelte/store';
+	import { fade } from 'svelte/transition';
 
 	export let data;
 	let signupInput: string;
@@ -146,24 +148,12 @@
 		$animationCancelled = false;
 	}
 
-	function findPropFromAnimationTarget(at: AnimationTarget): number | undefined {
-		let found = $allVisualUnitProps.findIndex(v=>v.name == at.name && v.side == at.side)
-		console.log(`found ${found}`)
-		if(found != -1)return found
-		return undefined
-		// if (at.side == 'hero' && at.name == $lastMsgFromServer?.yourName) {
-		// 	// return $heroVisualUnitProps;
-		// 	$allVisualUnitProps.at(0)
-		// }
-		// // if (at.side == 'enemy') {
-		// 	// let en = $enemiesVisualUnitProps.find((e) => at.name == e.name);
-		// 	// if (en) return en;
-		// // }
-		// // if (at.side == 'hero') {
-		// 	let ally = $allVisualUnitProps.find((e) => at.name == e.name && at.side == e.side);
-		// 	if (ally) return ally;
-		// // }
-		// return undefined;
+	function findPropFromAnimationTarget(at: AnimationTarget): string {
+		// let found = $allVisualUnitProps.findIndex(v=>v.name == at.name && v.side == at.side)
+		// console.log(`found ${found}`)
+		// if(found != -1)return found
+		// return undefined
+		return `${at.side}${at.name}`
 	}
 
 	async function startAnimating(previous: MessageFromServer, latest: MessageFromServer) {
@@ -177,7 +167,7 @@
 				continue
 			}
 			let targetProp = a.target ? findPropFromAnimationTarget(a.target) : undefined;
-			let alsoDmgsProps: { targetIndex: number; amount: number }[] = [];
+			let alsoDmgsProps: { targetIndex: string; amount: number }[] = [];
 			if (a.alsoDamages) {
 				for (const alsoDmged of a.alsoDamages) {
 					let dmged = findPropFromAnimationTarget(alsoDmged.target);
@@ -189,7 +179,7 @@
 					}
 				}
 			}
-			let alsoModifiedAggrosProps: { targetIndex: number; amount?: number; setTo?:number; showFor:'onlyme'|'all' }[] = [];
+			let alsoModifiedAggrosProps: { targetIndex: string; amount?: number; setTo?:number; showFor:'onlyme'|'all' }[] = [];
 			if (a.alsoModifiesAggro) {
 				for (const alsoModified of a.alsoModifiesAggro) {
 					let affected = findPropFromAnimationTarget(alsoModified.target);
@@ -215,7 +205,7 @@
 		}
 		$currentAnimationsWithData = newAnimationsWithData
 		console.log(`starting anims ${JSON.stringify(newAnimationsWithData)}`);
-		nextAnimationIndex(true,$currentAnimationIndex,$currentAnimationsWithData,$lastMsgFromServer, $selectedDetail);
+		nextAnimationIndex(true,$currentAnimationIndex,$currentAnimationsWithData,$lastMsgFromServer);
 	}
 
 	async function handleAnimationsOnMessage(
@@ -230,7 +220,7 @@
 			if($currentAnimation){
 				await cancelAnimations();
 			}
-			syncVisualsToMsg(latest, $selectedDetail);
+			syncVisualsToMsg(latest);
 			return;
 		}
 
@@ -245,7 +235,7 @@
 			if($currentAnimation){
 				await cancelAnimations();
 			}
-			syncVisualsToMsg(latest, $selectedDetail);
+			syncVisualsToMsg(latest);
 			return;
 		}
 
@@ -259,7 +249,7 @@
 		if ($currentAnimation == undefined && !latest.animations.length) {
 			// await cancelAnimations();
 			console.log('anyones and nono');
-			syncVisualsToMsg(latest, $selectedDetail);
+			syncVisualsToMsg(latest);
 			return;
 		}
 
@@ -271,7 +261,7 @@
 		) {
 			console.log('ours with anims but in prog');
 			await cancelAnimations();
-			syncVisualsToMsg(previous, $selectedDetail);
+			syncVisualsToMsg(previous);
 			await startAnimating(previous, latest);
 			return;
 		}
@@ -282,12 +272,12 @@
 		if (latest.animations.length && $currentAnimation == undefined) {
 			console.log('anyones message, we not animating. starting');
 			// await cancelAnimations();
-			syncVisualsToMsg(previous, $selectedDetail);
+			syncVisualsToMsg(previous);
 			await startAnimating(previous, latest);
 			return;
 		}
 		console.log('no specific anim handling');
-		syncVisualsToMsg(latest, $selectedDetail);
+		syncVisualsToMsg(latest);
 	}
 
 	async function deleteHero() {
@@ -378,10 +368,14 @@
 	}
 
 	let allies = derived(allVisualUnitProps,($allVisualUnitProps)=>{
-		let calAllies = $allVisualUnitProps.filter( v=> v.side == 'hero' && v.index != 0)
+		let calAllies = $allVisualUnitProps.filter( (v,i)=> v.side == 'hero' && v.name)
 		// console.log(`allies: ${JSON.stringify(calAllies)}`)
 		return calAllies
 	})
+	let enemies = derived(allVisualUnitProps,($allVisualUnitProps)=>{
+		return $allVisualUnitProps.filter(p=>p.side=='enemy')
+	})
+
 </script>
 
 <!-- <h3>Status: {clientState.status}</h3> -->
@@ -448,12 +442,10 @@
 			}}
 		>
 			<div class="units">
-				{#if $allVisualUnitProps.length}
-					<Unit hostIndex={0} />
-				{/if}
-
-				{#each $allies as p(p.index)}
-					<Unit hostIndex={p.index} />
+				{#each $allies as p(p.id)}
+						<div animate:flip>
+						<Unit hostId={p.id} />
+					</div>
 				{/each}
 			</div>
 			<div class="centerPlaceHolder">
@@ -487,7 +479,7 @@
 										}
 									}
 								}
-								nextAnimationIndex(false,$currentAnimationIndex,$currentAnimationsWithData,$lastMsgFromServer, $selectedDetail);
+								nextAnimationIndex(false,$currentAnimationIndex,$currentAnimationsWithData,$lastMsgFromServer);
 							}
 						}}
 					>
@@ -496,8 +488,11 @@
 				{/if}
 			</div>
 			<div class="units">
-				{#each $allVisualUnitProps.filter(p=>p.side=='enemy') as e(e.index)}
-					<Unit hostIndex={e.index} />
+				
+				{#each $enemies as e(e.id)}
+				<div animate:flip>
+					<Unit hostId={e.id} />
+				</div>
 				{/each}
 			</div>
 		</div>
@@ -747,7 +742,7 @@
 	.units {
 		display: grid;
 		/* direction: rtl; */
-		/* background-color: beige; */
+		background-color: beige;
 		/* grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); */
 		grid-template-columns: repeat(auto-fit, 120px);
 		justify-content: center;
@@ -769,7 +764,7 @@
 		width: 100%;
 	}
 	.selectedDetails {
-		background-color: beige;
+		/* background-color: beige; */
 		display: inline-flex;
 	}
 	.selectedPortrait {

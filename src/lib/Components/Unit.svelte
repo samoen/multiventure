@@ -34,28 +34,21 @@
 	import { fade } from 'svelte/transition';
 	import VisualUnit from './VisualUnit.svelte';
 
-	// export let pHostIndex : number;
-	// $: hostIndex = pHostIndex;
-	export let hostIndex:number;
-	
-
+	export let hostId:string;
 
 	const host = derived([allVisualUnitProps],([$allVisualUnitProps])=>{
-		let nex = $allVisualUnitProps.at(hostIndex)
+		let nex = $allVisualUnitProps.find(p=>p.id == hostId)
 		return nex
 	})
 
 	const hostIsNotHero = derived(host,($host)=>{
-		if(!$host)return true
+		if(!$host)return undefined
 		return $host.side != 'hero'
 	})
 
 	const highlightedForAct = derived([latestSlotButtonInput], ([$latestSlotButtonInput]) => {
-		if ($latestSlotButtonInput == 'none') return undefined;
-		$allVisualUnitProps.at(hostIndex);
-		let found = $allVisualUnitProps
-			.at(hostIndex)
-			?.actionsThatCanTargetMe.find((a) => a.slot == $latestSlotButtonInput);
+		if ($latestSlotButtonInput == 'none') return undefined;		
+		let found = $host?.actionsThatCanTargetMe.find((a) => a.slot == $latestSlotButtonInput);
 		return found;
 	});
 
@@ -67,7 +60,7 @@
 			}
 			if (
 				$currentAnim.behavior == 'melee' &&
-				$currentAnim.sourceIndex == hostIndex &&
+				$currentAnim.sourceIndex == hostId &&
 				$subAnimationStage == 'fire'
 			) {
 				return false;
@@ -83,7 +76,7 @@
 			if (!$currentAnimation) return undefined;
 			if (
 				$currentAnimation.behavior == 'melee' &&
-				$currentAnimation.targetIndex == hostIndex &&
+				$currentAnimation.targetIndex == hostId &&
 				$subAnimationStage == 'fire'
 				) {
 				console.log(`new guest ${$currentAnimation.sourceIndex}`)
@@ -99,7 +92,7 @@
 			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
 			if (
 				($currentAnimation.behavior == 'missile' || $currentAnimation.behavior == 'center') &&
-				$currentAnimation.sourceIndex == hostIndex &&
+				$currentAnimation.sourceIndex == hostId &&
 				$subAnimationStage == 'start'
 			) {
 				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
@@ -122,7 +115,7 @@
 			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
 			if (
 				$currentAnimation.behavior == 'missile' &&
-				$currentAnimation.targetIndex == hostIndex &&
+				$currentAnimation.targetIndex == hostId &&
 				$subAnimationStage == 'fire'
 			) {
 				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
@@ -140,7 +133,7 @@
 				choose($highlightedForAct);
 				$latestSlotButtonInput = 'none';
 			}
-			$lastUnitClicked = hostIndex;
+			$lastUnitClicked = hostId;
 		}}
 		class:clickable={$highlightedForAct}
 		role="button"
@@ -153,11 +146,11 @@
 				in:receiveMelee={{ key: $animationCancelled ? 1 : 'movehero' }}
 				on:introend={() => {
 					if ($currentAnimation != undefined && !$animationCancelled && $lastMsgFromServer) {
-						nextAnimationIndex(false, $currentAnimationIndex, $currentAnimationsWithData, $lastMsgFromServer, $selectedDetail);
+						nextAnimationIndex(false, $currentAnimationIndex, $currentAnimationsWithData, $lastMsgFromServer);
 					}
 				}}
 			>
-				<VisualUnit hostIndex={hostIndex} />
+				<VisualUnit hostId={hostId} flip={$hostIsNotHero??false} />
 			</div>
 		{/if}
 	</div>
@@ -170,7 +163,7 @@
 				on:introend={() => {
 					if ($currentAnimation != undefined && !$animationCancelled) {
 						let cu = $currentAnimation
-						updateUnit(hostIndex,(vup)=>{
+						updateUnit(hostId,(vup)=>{
 							vup.displayHp -= cu.damage
 						})
 						if($guestIndex == undefined)return
@@ -182,7 +175,7 @@
 					}
 				}}
 			>
-				<VisualUnit hostIndex={$guestIndex} />
+				<VisualUnit hostId={$guestIndex} flip={!$hostIsNotHero} />
 			</div>
 		{/if}
 		{#if $projectileSource}
@@ -191,9 +184,9 @@
 				out:projectileSendTransition={{ key: $projectileSend.key }}
 				class:startAlignSelf={!$hostIsNotHero}
 				class:endAlignSelf={$hostIsNotHero}
-				in:fade={{ duration: 1 }}
+				in:fade|local={{ duration: 1 }}
 				on:introstart={() => {
-					updateUnit(hostIndex,(vup)=>{
+					updateUnit(hostId,(vup)=>{
 						vup.aggro = 0
 					})
 				}}
@@ -215,7 +208,7 @@
 				on:introend={async () => {
 					if ($currentAnimation != undefined && !$animationCancelled) {
 						let anim = $currentAnimation
-						updateUnit(hostIndex,(vup)=>{
+						updateUnit(hostId,(vup)=>{
 							vup.displayHp -= anim.damage;
 						})
 
@@ -240,7 +233,7 @@
 									})
 								}
 							}
-						nextAnimationIndex(false,$currentAnimationIndex,$currentAnimationsWithData,$lastMsgFromServer, $selectedDetail);
+						nextAnimationIndex(false,$currentAnimationIndex,$currentAnimationsWithData,$lastMsgFromServer);
 					}
 				}}
 			>
