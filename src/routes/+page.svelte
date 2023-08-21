@@ -114,7 +114,7 @@
 
 			let prevMsg = structuredClone($lastMsgFromServer);
 			$lastMsgFromServer = sMsg;
-			if ($clientState.waitingForMyEvent && sMsg.triggeredBy == sMsg.yourName) {
+			if ($clientState.waitingForMyEvent && sMsg.triggeredBy == sMsg.yourInfo.heroName) {
 				$clientState.status = 'playing';
 				$clientState.waitingForMyEvent = false;
 				loading = false;
@@ -158,9 +158,7 @@
 
 	async function startAnimating(previous: MessageFromServer, latest: MessageFromServer) {
 		let newAnimationsWithData : AnimationWithData[] = []
-		console.log(`raw anims ${JSON.stringify(latest.animations)}`);
 		for(const a of latest.animations){
-
 			let sourceProp = findPropFromAnimationTarget(a.source);
 			if(sourceProp == undefined) {
 				console.log('anim source not found!')
@@ -224,13 +222,13 @@
 			return;
 		}
 
-		if (latest.animations.length && latest.triggeredBy == latest.yourName) {
+		if (latest.animations.length && latest.triggeredBy == latest.yourInfo.heroName) {
 			console.log('start waiting my anim')
 			$waitingForMyAnimation = true;
 		}
 
 		// my message with no animations
-		if (latest.triggeredBy == latest.yourName && !latest.animations.length) {
+		if (latest.triggeredBy == latest.yourInfo.heroName && !latest.animations.length) {
 			console.log('ours with no');
 			if($currentAnimation){
 				await cancelAnimations();
@@ -240,7 +238,7 @@
 		}
 
 		// someone else's message and we are animating
-		if (latest.triggeredBy != latest.yourName && $currentAnimation != undefined) {
+		if (latest.triggeredBy != latest.yourInfo.heroName && $currentAnimation != undefined) {
 			console.log(`someone else and animating ${JSON.stringify($currentAnimation)}`);
 			return;
 		}
@@ -257,7 +255,7 @@
 		if (
 			latest.animations.length &&
 			$currentAnimation != undefined &&
-			latest.triggeredBy == latest.yourName
+			latest.triggeredBy == latest.yourInfo.heroName
 		) {
 			console.log('ours with anims but in prog');
 			await cancelAnimations();
@@ -430,7 +428,7 @@
 	{/if}
 	<!-- <button on:click={() => {}}>debug something</button> -->
 	<div class="wrapGameField">
-			<span class="yourSceneLabel">{$lastMsgFromServer.yourScene}</span>
+			<span class="yourSceneLabel">{$lastMsgFromServer.yourInfo.currentScene}</span>
 		<div
 			class="visual"
 			role="button"
@@ -465,7 +463,7 @@
 								}
 								if ($currentAnimation.alsoModifiesAggro) {
 									for (const other of $currentAnimation.alsoModifiesAggros) {
-										if(other.showFor == 'all' || $lastMsgFromServer?.yourName == $currentAnimation.source.name){
+										if(other.showFor == 'all' || $lastMsgFromServer?.yourInfo.heroName == $currentAnimation.source.name){
 											updateUnit(other.targetIndex,(vup)=>{
 												if(vup.aggro != undefined){
 													if(other.amount != undefined){
@@ -515,7 +513,7 @@
 				}
 				$latestSlotButtonInput = 'weapon';
 			}}
-			>{$lastMsgFromServer.yourWeapon.itemId}
+			>{$lastMsgFromServer.yourInfo.weapon.itemId}
 		</button>
 
 		<button
@@ -535,7 +533,7 @@
 				}
 				$latestSlotButtonInput = 'utility';
 			}}
-			>{$lastMsgFromServer.yourUtility.itemId}
+			>{$lastMsgFromServer.yourInfo.utility.itemId}
 		</button>
 		<button
 			class="bodySlotButton"
@@ -554,7 +552,7 @@
 				}
 				$latestSlotButtonInput = 'body';
 			}}
-			>{$lastMsgFromServer.yourBody.itemId}
+			>{$lastMsgFromServer.yourInfo.body.itemId}
 		</button>
 		<button
 			class="waitButton"
@@ -587,30 +585,30 @@
 				</div>
 			</div>
 		{/if}
-	<h3>{$lastMsgFromServer.yourName}:</h3>
+	<h3>{$lastMsgFromServer.yourInfo.heroName}:</h3>
 	<p>
-		Health: {$lastMsgFromServer.yourHp}hp
+		Health: {$lastMsgFromServer.yourInfo.health}hp
 	</p>
 	<p>
 		Weapon:
-		{$lastMsgFromServer.yourWeapon.itemId}
-		{$lastMsgFromServer.yourWeapon.cooldown
-			? `cooldown: ${$lastMsgFromServer.yourWeapon.cooldown}`
+		{$lastMsgFromServer.yourInfo.weapon.itemId}
+		{$lastMsgFromServer.yourInfo.weapon.cooldown
+			? `cooldown: ${$lastMsgFromServer.yourInfo.weapon.cooldown}`
 			: ''}
-		{$lastMsgFromServer.yourWeapon.warmup ? `warmup:${$lastMsgFromServer.yourWeapon.warmup}` : ''}
+		{$lastMsgFromServer.yourInfo.weapon.warmup ? `warmup:${$lastMsgFromServer.yourInfo.weapon.warmup}` : ''}
 	</p>
 	<p>
-		Utility: {$lastMsgFromServer.yourUtility.itemId +
+		Utility: {$lastMsgFromServer.yourInfo.utility.itemId +
 			', stock: ' +
-			$lastMsgFromServer.yourUtility.stock}
+			$lastMsgFromServer.yourInfo.utility.stock}
 	</p>
 	<p>
-		Armor: {$lastMsgFromServer.yourBody.itemId}
-		{$lastMsgFromServer.yourBody.cooldown ? `cooldown:${$lastMsgFromServer.yourBody.cooldown}` : ''}
-		{$lastMsgFromServer.yourBody.warmup ? `warmup:${$lastMsgFromServer.yourBody.warmup}` : ''}
+		Armor: {$lastMsgFromServer.yourInfo.body.itemId}
+		{$lastMsgFromServer.yourInfo.body.cooldown ? `cooldown:${$lastMsgFromServer.yourInfo.body.cooldown}` : ''}
+		{$lastMsgFromServer.yourInfo.body.warmup ? `warmup:${$lastMsgFromServer.yourInfo.body.warmup}` : ''}
 	</p>
 	<p>
-		Location: {$lastMsgFromServer.yourScene}
+		Location: {$lastMsgFromServer.yourInfo.currentScene}
 	</p>
 	<!-- <p>{$lastMsgFromServer.playerFlags} {$lastMsgFromServer.globalFlags}</p> -->
 	<h3>Nearby Enemies:</h3>
@@ -635,7 +633,7 @@
 		<p />
 	{/each}
 	<p>
-		Logged in as {$lastMsgFromServer.yourName} uid: {data.userId}
+		Logged in as {$lastMsgFromServer.yourInfo.heroName} uid: {data.userId}
 		<button
 			on:click={() => {
 				$lastMsgFromServer = undefined;

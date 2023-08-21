@@ -37,6 +37,7 @@ export const POST: RequestHandler = async (r) => {
 		// startflags.add('killedGoblins')
 		
 		let startScene: SceneId = `tutorial_${msg.join}`
+		// startScene = `trainingRoom3_${msg.join}`
 		// startScene = `forest`
 		// startScene = 'forestPassage'
 		// startScene = 'goblinCamp'
@@ -78,6 +79,7 @@ export const POST: RequestHandler = async (r) => {
 			sceneTexts: [],
 			flags: startflags,
 			animations:[],
+			statuses:[],
 		} satisfies Player
 		
 		addSoloScenes(msg.join)

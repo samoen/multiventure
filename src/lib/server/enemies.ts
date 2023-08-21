@@ -42,6 +42,7 @@ export type EnemyTemplate = {
 export type EnemyTemplateId =
 	| 'rat'
 	| 'goblin'
+	| 'darter'
 	| 'hobGoblin'
 	| 'fireGremlin'
 	| 'troll';
@@ -53,7 +54,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		baseDamage: 10,
 		aggroGain: 10,
 		startAggro: 50,
-		speed: 3
+		speed: 3,
 	},
 	goblin: {
 		baseHealth: 50,
@@ -61,6 +62,34 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		aggroGain: 10,
 		startAggro:10,
 		speed: 4,
+	},
+	darter:{
+		baseHealth: 50,
+		baseDamage: 2,
+		aggroGain: 10,
+		startAggro:10,
+		speed: 4,
+		specialAttack(me, player) {
+			let r = damagePlayer(me, player)
+			let found = player.statuses.find(s => s.status == 'poison')
+			if (found != undefined && found.counter) {
+				found.counter += 3
+			} else {
+				player.statuses.push({ status: 'poison', counter: 3 })
+			}
+			pushAnimation(
+				{
+					sceneId: player.currentScene,
+					battleAnimation: {
+						source: { name: me.name, side: 'enemy' },
+						target: { name: player.heroName, side: 'hero' },
+						damage: r.dmgDone,
+						behavior: 'missile',
+						extraSprite:'arrow',
+					}
+				})
+		},
+
 	},
 	hobGoblin: {
 		baseHealth: 50,

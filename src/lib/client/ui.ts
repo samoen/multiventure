@@ -1,5 +1,5 @@
 import type { HeroName } from "$lib/server/users";
-import type { AnimationTarget, BattleAnimation, EnemyInClient, EnemyName, ExtraSprite, GameActionSentToClient, MessageFromServer, OtherPlayerInfo } from "$lib/utils";
+import type { AnimationTarget, BattleAnimation, EnemyInClient, EnemyName, ExtraSprite, GameActionSentToClient, MessageFromServer, PlayerInClient } from "$lib/utils";
 import { derived, get, writable, type Writable } from "svelte/store";
 import peasantPortrait from '$lib/assets/portraits/peasant.webp';
 import peasant from '$lib/assets/peasant.png';
@@ -22,24 +22,18 @@ import { tick } from "svelte";
 import type { EnemyTemplateId } from "$lib/server/enemies";
 
 
-// export let waitingForMyEvent = true;
-// export let status = 'starting up';
 type UnitDetails = {
-    // unitName: HeroName | EnemyName
-    // health: number
-    // maxHealth: number
     portrait: string
     kind: 'enemy'
     enemy: EnemyInClient
 } | {
     kind: 'otherPlayer',
     portrait: string
-    other: OtherPlayerInfo
+    info: PlayerInClient
 } | {
     kind: 'me',
     portrait: string,
-    // me: { myHealth: number, 
-    // myName: HeroName }
+    info:PlayerInClient
 };
 
 export let clientState = writable({
@@ -60,9 +54,10 @@ export type VisualUnitProps = {
     actionsThatCanTargetMe: GameActionSentToClient[]
 }
 
-export const enemySprites = {
+export const enemySprites : Record<EnemyTemplateId,string> = {
     goblin: spearman,
     rat: rat,
+    darter:spearman,
     hobGoblin: grunt,
     troll: troll,
     fireGremlin: fireghost
@@ -166,6 +161,7 @@ let enemyPortraits = {
     hobGoblin: gruntPortrait,
     rat: gruntPortrait,
     goblin: gruntPortrait,
+    darter: gruntPortrait,
     fireGremlin: gruntPortrait,
     troll: gruntPortrait
 } satisfies Record<EnemyTemplateId, string>;
@@ -189,17 +185,18 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
     if (lastMsg) {
         let newVups: VisualUnitProps[] = []
         newVups.push({
-            id:`hero${lastMsg.yourName}`,
-            name: lastMsg.yourName,
-            src: heroSprites[heroSprite(lastMsg.yourWeapon?.itemId)],
-            maxHp: lastMsg.yourMaxHp,
-            displayHp: lastMsg.yourHp,
+            id:`hero${lastMsg.yourInfo.heroName}`,
+            name: lastMsg.yourInfo.heroName,
+            src: heroSprites[heroSprite(lastMsg.yourInfo.weapon?.itemId)],
+            maxHp: lastMsg.yourInfo.maxHealth,
+            displayHp: lastMsg.yourInfo.health,
             side: 'hero',
             actual: {
                 kind: 'me',
                 portrait: peasantPortrait,
+                info:lastMsg.yourInfo,
             },
-            actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target && a.target.name == lastMsg.yourName && a.target.side == 'hero')
+            actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target && a.target.name == lastMsg.yourInfo.heroName && a.target.side == 'hero')
         } satisfies VisualUnitProps
         )
 
@@ -223,7 +220,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                 )
             }
             for (const p of lastMsg.otherPlayers) {
-                if (p.currentScene == lastMsg.yourScene) {
+                if (p.currentScene == lastMsg.yourInfo.currentScene) {
                     newVups.push(
                         {
                         id:`hero${p.heroName}`,
@@ -235,7 +232,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                         actual: {
                             kind: 'otherPlayer',
                             portrait: peasantPortrait,
-                            other: p,
+                            info: p,
                         },
                         actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target && a.target.name == p.heroName && a.target.side == 'hero')
                     }

@@ -14,6 +14,9 @@
 		if(vu?.actual.kind == 'enemy'){
 			statuses = vu.actual.enemy.statuses.map(s=>s.status)
 		}
+		if(vu?.actual.kind == 'me' || vu?.actual.kind == 'otherPlayer'){
+			statuses = vu.actual.info.statuses.map(s=>s.status)
+		}
 
 	}
 

@@ -1,4 +1,4 @@
-import type { GameActionSentToClient, MessageFromServer, OtherPlayerInfo } from '$lib/utils';
+import type { GameActionSentToClient, MessageFromServer, PlayerInClient } from '$lib/utils';
 import { activeEnemies, addAggro, damagePlayer, enemiesInScene, getAggroForPlayer, takePoisonDamage } from './enemies';
 import { items } from './items';
 import { scenes } from './scenes';
@@ -26,13 +26,16 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 	
 	const nextMsg: MessageFromServer = {
 		triggeredBy: triggeredBy,
-		yourName: forPlayer.heroName,
-		yourHp: forPlayer.health,
-		yourMaxHp: forPlayer.maxHealth,
-		yourWeapon: forPlayer.inventory.weapon,
-		yourUtility: forPlayer.inventory.utility,
-		yourBody: forPlayer.inventory.body,
-		yourScene: forPlayer.currentScene,
+		yourInfo:{
+			heroName: forPlayer.heroName,
+			health: forPlayer.health,
+			maxHealth: forPlayer.maxHealth,
+			weapon: forPlayer.inventory.weapon,
+			utility: forPlayer.inventory.utility,
+			body: forPlayer.inventory.body,
+			currentScene: forPlayer.currentScene,
+			statuses:forPlayer.statuses,
+		},
 		otherPlayers: activePlayers()
 			.filter((u) => u.heroName != forPlayer.heroName)
 			.map((u) => {
@@ -41,8 +44,11 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 					health: u.health,
 					maxHealth: u.maxHealth,
 					weapon: u.inventory.weapon,
-					currentScene: u.currentScene
-				} satisfies OtherPlayerInfo;
+					utility: u.inventory.utility,
+					body: u.inventory.body,
+					currentScene: u.currentScene,
+					statuses:u.statuses,
+				} satisfies PlayerInClient;
 			}),
 			sceneTexts: forPlayer.sceneTexts,
 			sceneActions: forPlayer.sceneActions.map((gameAction) => {

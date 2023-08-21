@@ -245,8 +245,9 @@ const poisonDart: Item = {
 						} else {
 							enemy.statuses.push({ status: 'poison', counter: 3 })
 						}
-						let r = takePoisonDamage(enemy)
-						if (r.dmgDone > 0) {
+						let r = damageEnemy(player,enemy,1)
+						// takePoisonDamage(enemy)
+						// if (r.dmgDone > 0) {
 							pushAnimation(
 								{
 									sceneId: player.currentScene,
@@ -258,7 +259,7 @@ const poisonDart: Item = {
 										extraSprite:'arrow',
 									}
 								})
-						}
+						// }
 						player.inventory.utility.itemId = 'empty'
 					},
 				}

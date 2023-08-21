@@ -220,7 +220,7 @@
 							}
 						// }
 							for (const other of $currentAnimation.alsoModifiesAggros) {
-								if(other.showFor == 'all' || $lastMsgFromServer?.yourName == $currentAnimation.source.name){
+								if(other.showFor == 'all' || $lastMsgFromServer?.yourInfo.heroName == $currentAnimation.source.name){
 									updateUnit(other.targetIndex,(vup)=>{
 										if(vup.aggro != undefined){
 											if(other.amount != undefined){

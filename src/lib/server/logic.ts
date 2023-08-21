@@ -1,3 +1,4 @@
+import type { StatusEffect } from "$lib/utils"
 import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer } from "./enemies"
 import { items } from "./items"
 import { pushHappening } from "./messaging"
@@ -49,9 +50,13 @@ export function updatePlayerActions(player: Player) {
 
 	scenes.get(player.currentScene)?.actions(player)
 }
+
 export function enterSceneOrWakeup(player: Player) {
 
-    // player.animations = []
+	const enteringScene = scenes.get(player.currentScene);
+	if (!enteringScene) {
+		return
+	}
 
 	// If no players except me in there, remove all enemies
 	if (!activePlayersInScene(player.currentScene).filter(p => p.heroName != player.heroName).length) {
@@ -64,19 +69,15 @@ export function enterSceneOrWakeup(player: Player) {
 		scenes.get(player.currentScene)?.hasEntered?.clear()
 	}
 
-	const enteringScene = scenes.get(player.currentScene);
-	if (!enteringScene) {
-		return
-	}
-
 	if (!enteringScene.hasEntered) {
 		enteringScene.hasEntered = new Set()
 	}
 
+
 	// scene texts will be repopulated
 	player.sceneTexts = [];
 
-	const wasEnemiesPreEnter = enemiesInScene('goblinCamp').length
+	const wasEnemiesPreEnter = enemiesInScene(player.currentScene).length
 
 	// Always call main enter scene hook
 	if (enteringScene.onEnterScene) {
@@ -117,6 +118,8 @@ export function handleAction(player: Player, actionFromId: GameAction) {
                 }
             }
 		}
+
+		player.statuses = []
 
 		enterSceneOrWakeup(player)
 		return
@@ -163,6 +166,22 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		}
 		enemy.statuses = enemy.statuses.filter(s => (s.counter != undefined && s.counter > 0) || s.counter == undefined)
 	}
+	
+	if(player.health > 1){
+		for (const s of player.statuses) {
+			if (s.status == 'poison') {
+				let dmg = Math.floor(player.maxHealth * 0.25)
+				player.health -= dmg
+				if(s.counter) s.counter--
+			}
+			if(s.status == 'rage'){
+				player.speed += 10
+				pushHappening(`${player.heroName}'s rage grows!`)
+			}
+		}
+		player.statuses = player.statuses.filter(s => (s.counter != undefined && s.counter > 0) || s.counter == undefined)
+	}
+
 	
 	if (actionFromId.provoke) {
 		addAggro(player, actionFromId.provoke)

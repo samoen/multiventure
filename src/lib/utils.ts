@@ -7,14 +7,8 @@ import type { Flag, GlobalFlag, HeroName } from './server/users';
 
 export type MessageFromServer = {
 	triggeredBy: HeroName;
-	yourName: HeroName;
-	yourScene: SceneId;
-	yourHp: number;
-	yourMaxHp: number;
-	yourWeapon: ItemStateForSlot<'weapon'>;
-	yourUtility: ItemStateForSlot<'utility'>;
-	yourBody: ItemStateForSlot<'body'>;
-	otherPlayers: OtherPlayerInfo[];
+	yourInfo:PlayerInClient;
+	otherPlayers: PlayerInClient[];
 	sceneTexts: string[];
 	sceneActions: GameActionSentToClient[];
 	itemActions: GameActionSentToClient[];
@@ -69,16 +63,19 @@ export type EnemyInClient = {
 }
 
 export function isMsgFromServer(msg: object): msg is MessageFromServer {
-	return 'yourName' in msg;
+	return 'triggeredBy' in msg;
 }
 
 // Information a player receives about other players
-export type OtherPlayerInfo = {
+export type PlayerInClient = {
 	heroName: HeroName;
 	currentScene: SceneId;
 	health: number;
 	maxHealth: number;
 	weapon: ItemStateForSlot<'weapon'>
+	utility: ItemStateForSlot<'utility'>
+	body: ItemStateForSlot<'body'>
+	statuses:StatusEffect[]
 };
 
 export type GameActionSelected = {
