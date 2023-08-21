@@ -152,23 +152,24 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	if (player.health > 1) {
 		handleRetaliations(player, true, actionFromId)
 	}
-	
-	for (const enemy of enemiesInScene(player.currentScene)) {
-		for (const s of enemy.statuses) {
-			if (s.status == 'poison') {
-				takePoisonDamage(enemy)
-				if(s.counter) s.counter--
-				
+	if(actionFromId.provoke){
+		for (const enemy of enemiesInScene(player.currentScene)) {
+			for (const s of enemy.statuses) {
+				if (s.status == 'poison') {
+					takePoisonDamage(enemy)
+					if(s.counter) s.counter--
+					
+				}
+				if(s.status == 'rage'){
+					enemy.damage += 10
+					pushHappening(`${enemy.name}'s rage grows!`)
+				}
 			}
-			if(s.status == 'rage'){
-				enemy.damage += 10
-				pushHappening(`${enemy.name}'s rage grows!`)
-			}
+			enemy.statuses = enemy.statuses.filter(s => (s.counter != undefined && s.counter > 0) || s.counter == undefined)
 		}
-		enemy.statuses = enemy.statuses.filter(s => (s.counter != undefined && s.counter > 0) || s.counter == undefined)
 	}
 	
-	if(player.health > 1){
+	if(player.health > 1 && actionFromId.provoke){
 		for (const s of player.statuses) {
 			if (s.status == 'poison') {
 				let dmg = Math.floor(player.maxHealth * 0.25)

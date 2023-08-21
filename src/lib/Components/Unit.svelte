@@ -28,7 +28,7 @@
 	} from '$lib/client/ui';
 	import { tick } from 'svelte';
 	import { derived, writable, type Writable } from 'svelte/store';
-	import { fade } from 'svelte/transition';
+	import { blur, fade, fly, scale, slide } from 'svelte/transition';
 	import VisualUnit from './VisualUnit.svelte';
 
 	export let hostId: string;
@@ -62,7 +62,6 @@
 			) {
 				return false;
 			}
-			if ($subAnimationStage == 'sentHome') console.log('sent home');
 			return true;
 		}
 	);
@@ -137,20 +136,6 @@
 			return undefined;
 		}
 	);
-	const selfInflictTarget = derived(
-		[currentAnimation, subAnimationStage],
-		([$currentAnimation, $subAnimationStage]) => {
-			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
-			if (
-				$currentAnimation.behavior == 'selfInflicted' &&
-				$currentAnimation.sourceIndex == hostId &&
-				$subAnimationStage == 'fire'
-			) {
-				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
-			}
-			return undefined;
-		}
-	);
 </script>
 
 <div class="unitAndArea">
@@ -179,7 +164,7 @@
 							$currentAnimationIndex,
 							$currentAnimationsWithData,
 							$lastMsgFromServer,
-							false,
+							false
 						);
 					}
 				}}
@@ -213,13 +198,13 @@
 			</div>
 		{/if}
 		{#if $projectileSource}
+			<!-- in:fade|local={{ duration: 1 }} -->
 			<div
 				class="projHolder"
 				out:projectileSendTransition={{ key: $projectileSend.key }}
 				class:startAlignSelf={!$hostIsNotHero}
 				class:endAlignSelf={$hostIsNotHero}
-				in:fade|local={{ duration: 1 }}
-				on:introstart={() => {
+				on:outrostart={() => {
 					updateUnit(hostId, (vup) => {
 						vup.aggro = 0;
 					});
@@ -234,43 +219,21 @@
 			</div>
 		{/if}
 		{#if $selfInflictSource}
-		<div
-		class="projHolder selfInflictSource"
-		class:startAlignSelf={!$hostIsNotHero}
-		class:endAlignSelf={$hostIsNotHero}
-		out:sendProj={{ key: $animationCancelled ? 16 :'selfInflict' }}
-				in:fade|local={{ duration: 1 }}
-				on:introstart={() => {
-					// updateUnit(hostId, (vup) => {
-						// 	vup.aggro = 0;
-						// });
-				}}
-			>
-			<img
-					class="projectile"
-					class:flipped={$hostIsNotHero}
-					src={$selfInflictSource.projectileImg}
-					alt="a projectile"
-					/>
-				</div>
-				{/if}
-				{#if $selfInflictTarget}
-				<div
-				class="projHolder selfInflictTarget"
+			<div
+				class="projHolder selfInflictSource"
 				class:startAlignSelf={!$hostIsNotHero}
 				class:endAlignSelf={$hostIsNotHero}
-				in:receiveProj={{ key: $animationCancelled ? 14 : 'selfInflict' }}
-				on:introend={async () => {
+				out:fly|local={{ delay: 0, duration: 400, x: 0, y: 20 }}
+				on:outrostart={() => {
+					let someoneDied = false;
 					if ($currentAnimation != undefined && !$animationCancelled) {
-						let anim = $currentAnimation;
-						let someoneDied = false;
+						const anim = $currentAnimation;
 						updateUnit(hostId, (vup) => {
 							vup.displayHp -= anim.damage;
 							if (vup.displayHp < 1) {
 								someoneDied = true;
 							}
 						});
-
 						nextAnimationIndex(
 							false,
 							$currentAnimationIndex,
@@ -283,8 +246,8 @@
 			>
 				<img
 					class="projectile"
-					class:flipped={!$hostIsNotHero}
-					src={$selfInflictTarget.projectileImg}
+					class:flipped={$hostIsNotHero}
+					src={$selfInflictSource.projectileImg}
 					alt="a projectile"
 				/>
 			</div>
@@ -301,6 +264,9 @@
 						let someoneDied = false;
 						updateUnit(hostId, (vup) => {
 							vup.displayHp -= anim.damage;
+							if(anim.putsStatusOnTarget){
+								
+							}
 							if (vup.displayHp < 1) {
 								someoneDied = true;
 							}
@@ -382,10 +348,10 @@
 		height: 30px;
 		width: 30px;
 	}
-	.selfInflictSource{
+	.selfInflictSource {
 		justify-self: flex-start;
 	}
-	.selfInflictTarget{
+	.selfInflictTarget {
 		justify-self: flex-end;
 	}
 	.projectile {

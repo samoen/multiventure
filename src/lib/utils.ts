@@ -30,6 +30,7 @@ export type AnimationTarget = {
 export type BattleAnimation = {
 	source: AnimationTarget,
 	target?: AnimationTarget,
+	putsStatusOnTarget?:StatusId,
 	damage: number,
 	behavior: AnimationBehavior,
 	extraSprite?: ExtraSprite,
