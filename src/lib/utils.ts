@@ -42,9 +42,9 @@ export type BattleAnimation = {
 	}[],
 }
 
-export type ExtraSprite = 'arrow' | 'bomb' | 'flame'
+export type ExtraSprite = 'arrow' | 'bomb' | 'flame' | 'poison'
 
-export type AnimationBehavior = 'missile' | 'melee' | 'center'
+export type AnimationBehavior = 'missile' | 'melee' | 'center' | 'selfInflicted'
 
 export type StatusId = 'poison' | 'rage'
 

@@ -158,6 +158,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 			if (s.status == 'poison') {
 				takePoisonDamage(enemy)
 				if(s.counter) s.counter--
+				
 			}
 			if(s.status == 'rage'){
 				enemy.damage += 10
@@ -172,7 +173,20 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 			if (s.status == 'poison') {
 				let dmg = Math.floor(player.maxHealth * 0.25)
 				player.health -= dmg
+				pushHappening(`${player.heroName} took ${dmg} damage from poison`)
+				pushAnimation(
+					{
+						sceneId:player.currentScene,
+						battleAnimation:{
+							source:{name:player.heroName,side:"hero"},
+							behavior:"selfInflicted",
+							extraSprite:'poison',
+							damage:dmg,
+						}
+					}
+				)
 				if(s.counter) s.counter--
+
 			}
 			if(s.status == 'rage'){
 				player.speed += 10

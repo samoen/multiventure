@@ -203,7 +203,7 @@
 		}
 		$currentAnimationsWithData = newAnimationsWithData
 		console.log(`starting anims ${JSON.stringify(newAnimationsWithData)}`);
-		nextAnimationIndex(true,$currentAnimationIndex,$currentAnimationsWithData,$lastMsgFromServer);
+		nextAnimationIndex(true,$currentAnimationIndex,$currentAnimationsWithData,$lastMsgFromServer,false);
 	}
 
 	async function handleAnimationsOnMessage(
@@ -453,10 +453,14 @@
 						in:receiveCenter={{ key: $animationCancelled ? 10 : 'center' }}
 						on:introend={() => {
 							if ($currentAnimation != undefined && !$animationCancelled) {
+								let someoneDied = false
 								if ($currentAnimation.alsoDamages) {
 									for (const other of $currentAnimation.alsoDmgsProps) {
 										updateUnit(other.targetIndex,(vup)=>{
 											vup.displayHp -= other.amount
+											if(vup.displayHp < 1){
+												someoneDied = true
+											}
 										})
 
 									}
@@ -477,7 +481,7 @@
 										}
 									}
 								}
-								nextAnimationIndex(false,$currentAnimationIndex,$currentAnimationsWithData,$lastMsgFromServer);
+								nextAnimationIndex(false,$currentAnimationIndex,$currentAnimationsWithData,$lastMsgFromServer,someoneDied);
 							}
 						}}
 					>

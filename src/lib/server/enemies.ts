@@ -246,11 +246,22 @@ export function takePoisonDamage(enemy: ActiveEnemy) : {dmgDone:number} {
 	if(enemy.currentHealth < 1) return {dmgDone:0}
 	let dmg = Math.floor(enemy.maxHealth * 0.25)
 	enemy.currentHealth -= dmg
-	pushHappening(`${enemy.name} took ${dmg}damage from poison`)
+	pushHappening(`${enemy.name} took ${dmg} damage from poison`)
 	let result = checkEnemyDeath(enemy)
 	if (result.killed) {
 		pushHappening(`${enemy.name} died from poison`)
 	}
+	pushAnimation(
+		{
+			sceneId:enemy.currentScene,
+			battleAnimation:{
+				source:{name:enemy.name,side:"enemy"},
+				behavior:'selfInflicted',
+				damage:dmg,
+				extraSprite:'poison',
+			}
+		}
+	)
 	return {dmgDone:dmg}
 }
 

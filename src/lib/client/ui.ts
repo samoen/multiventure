@@ -8,6 +8,7 @@ import spearman from '$lib/assets/spearman.png';
 import rat from '$lib/assets/giant-rat.png';
 import grunt from '$lib/assets/grunt.png';
 import troll from '$lib/assets/young-ogre.png';
+import greenDrip from '$lib/assets/green-drip.png';
 import ruffian from '$lib/assets/ruffian.png';
 import rogue from '$lib/assets/rogue.png';
 import fireghost from '$lib/assets/fireghost.png';
@@ -248,6 +249,7 @@ export const extraSprites: Record<ExtraSprite, string> = {
     arrow: arrow,
     bomb: bomb,
     flame: arrow,
+    poison: greenDrip,
 }
 
 
@@ -265,8 +267,7 @@ export const centerFieldTarget = derived(
         return undefined;
     }
 );
-
-export async function nextAnimationIndex(start: boolean, curAnimIndex:number, curAnimations:AnimationWithData[], latest:MessageFromServer|undefined) {
+export async function nextAnimationIndex(start: boolean, curAnimIndex:number, curAnimations:AnimationWithData[], latest:MessageFromServer|undefined, someoneDied:boolean) {
     let cai = 0
     if (start) {
         currentAnimationIndex.set(0)
@@ -278,15 +279,18 @@ export async function nextAnimationIndex(start: boolean, curAnimIndex:number, cu
     }
     
     if (cai > curAnimations.length - 1) {
-        // give some time for slain enemies to fade out. 
-        // can we detect enemy was killed in last animation?
-        await new Promise(r=>setTimeout(r,500))
-        
+        // give some time for enemies slain on the last animation to fade out. 
+        if(someoneDied){
+            await new Promise(r=>setTimeout(r,500))
+        }
         // console.log('animations done, sync to recent')
         waitingForMyAnimation.set(false)
         syncVisualsToMsg(latest)
         return
     }
+
+
+
     
     subAnimationStage.set('start')
     // console.log('tick')

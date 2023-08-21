@@ -122,7 +122,7 @@ const fireStaff: Item = {
 					slot:'weapon',
 					target:{name:enemy.name,side:'enemy'},
 					performAction() {
-						let r = damageEnemy(player, enemy, 10)
+						let r = damageEnemy(player, enemy, 999)
 						if (r.dmgDone > 0) {
 							pushAnimation(
 								{
