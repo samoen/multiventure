@@ -26,8 +26,10 @@ export function updatePlayerActions(player: Player) {
 	for (const cd of playerItemStates(player)) {
 		const i = items[cd.itemId]
 		if (i.actions) {
-			if (cd.cooldown < 1 && cd.warmup < 1 && (cd.stock == undefined || cd.stock > 0)) {
-				i.actions(player)
+			if(i.useableOutOfBattle || enemiesInScene(player.currentScene).length){
+				if (cd.cooldown < 1 && cd.warmup < 1 && (cd.stock == undefined || cd.stock > 0)) {
+					i.actions(player)
+				}
 			}
 		}
 	}
@@ -144,14 +146,23 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 
     pushHappening('----');
 	
+	if(actionFromId.provoke && actionFromId.provoke > 0 && player.statuses.hidden > 0){
+		player.statuses.hidden = 0
+		pushAnimation({
+			sceneId:player.currentScene,
+			battleAnimation:{
+				source:player.unitId,
+				behavior:'selfInflicted',
+				extraSprite:'smoke',
+				putsStatuses:[{status:'hidden',target:player.unitId,remove:true}]
+			}
+		})
+	}
 	
 	handleRetaliations(player, false, actionFromId)
 	
 	if (player.health > 0) {
 		if (actionFromId.performAction) {
-			// if(actionFromId.provoke && actionFromId.provoke > 0){
-			// 	player.statuses.hidden = 0
-			// }
 			actionFromId.performAction();
 			
 		}

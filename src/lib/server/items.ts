@@ -46,6 +46,7 @@ export type Item = {
 	onTakeDamage?: (incoming: number) => number
 	warmup?: number
 	startStock?: number
+	useableOutOfBattle?:boolean
 }
 
 const dagger: Item = {
@@ -146,6 +147,7 @@ const fireStaff: Item = {
 
 const bandage: Item = {
 	startStock: 2,
+	useableOutOfBattle:true,
 	actions(player) {
 		for (const friend of activePlayersInScene(player.currentScene)) {
 			if (friend.health < friend.maxHealth && friend.health > 0) {
@@ -200,7 +202,6 @@ const bandage: Item = {
 const bomb: Item = {
 	startStock: 1,
 	actions(player) {
-		if (enemiesInScene(player.currentScene).length) {
 			player.itemActions.push({
 				buttonText: 'Throw Powderbomb',
 				speed: 12,
@@ -247,7 +248,6 @@ const bomb: Item = {
 					}
 				},
 			})
-		}
 	},
 }
 
@@ -290,20 +290,19 @@ const poisonDart: Item = {
 										extraSprite:'arrow',
 									}
 								})
-						// }
-						if (player.inventory.utility.stock) {
+								// }
+								if (player.inventory.utility.stock) {
 							player.inventory.utility.stock--
 						}
 					},
 				}
-			)
-		}
-	},
+				)
+			}
+		},
 }
 
 const plateMail: Item = {
 	actions(player) {
-		if (enemiesInScene(player.currentScene).length) {
 			player.itemActions.push({
 				provoke: 5,
 				buttonText: 'Taunt',
@@ -332,7 +331,6 @@ const plateMail: Item = {
 					pushHappening(`${player.heroName} infuriates enemies!`)
 				},
 			})
-		}
 	},
 	onTakeDamage(incoming) {
 		if (incoming > 20) {
@@ -344,10 +342,8 @@ const plateMail: Item = {
 
 const theifCloak: Item = {
 	actions(player) {
-		if (enemiesInScene(player.currentScene).length) {
 			player.itemActions.push({
 				buttonText: 'Hide in shadows',
-				// grantsImmunity: true,
 				speed:999,
 				slot:'body',
 				provoke:30,
@@ -366,17 +362,62 @@ const theifCloak: Item = {
 					})
 				},
 			})
-		}
-	},
-}
-
+		},
+	}
+	
 const leatherArmor: Item = {
+	useableOutOfBattle:true,
 	onTakeDamage(incoming) {
 		if (incoming < 6) {
 			return 1
 		}
 		return incoming - 5
 	},
+	actions(player){
+		for (const friend of activePlayersInScene(player.currentScene)) {
+			if (friend.statuses.poison > 0) {
+				player.itemActions.push(
+					{
+						buttonText: `Cure ${friend.heroName == player.heroName ? 'myself' : friend.heroName} with ranger's herbs`,
+						grantsImmunity: true,
+						speed:5,
+						provoke: 0,
+						slot:'body',
+						target:friend.unitId,
+						performAction: () => {
+							friend.statuses.poison = 0
+								if(friend.heroName != player.heroName){
+									pushAnimation(
+										{
+											sceneId: player.currentScene,
+											battleAnimation: {
+												source: player.unitId,
+												target: friend.unitId,
+												behavior: 'melee',
+												putsStatuses:[{target:friend.unitId,status:'poison',remove:true}]
+											}
+										}
+									)
+								}else{
+									pushAnimation(
+										{
+											sceneId: player.currentScene,
+											battleAnimation: {
+												source: player.unitId,
+												behavior: 'selfInflicted',
+												extraSprite:'bomb',
+												putsStatuses:[{target:player.unitId,status:'poison',remove:true}]
+											}
+										}
+									)
+								}
+						},
+					}
+				)
+			}
+		}
+		
+	}
 }
 
 export const weapons: Record<ItemIdForSlot<'weapon'>, Item> = {

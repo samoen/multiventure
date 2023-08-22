@@ -13,14 +13,14 @@ export type BattleAnimation = {
 	damageToSource?: number,
 	target?: UnitId,
 	damageToTarget?: number,
-	// putsStatusOnTarget?:StatusId,
-	putsStatuses?:{target:UnitId, status:StatusId}[]
+	putsStatuses?:StatusModifier[]
 	behavior: AnimationBehavior,
 	extraSprite?: ExtraSprite,
 	alsoDamages?:HealthModifier[],
 	alsoModifiesAggro?:AggroModifier[],
 }
 
+export type StatusModifier = {target:UnitId, status:StatusId, remove?:boolean}
 export type HealthModifier = {target:UnitId,amount:number}
 export type AggroModifier = {
 	target:UnitId,

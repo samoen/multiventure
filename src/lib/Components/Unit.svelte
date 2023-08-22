@@ -26,7 +26,7 @@
 		currentAnimationIndex,
 		currentAnimationsWithData,
 
-		handlePutsStatusOnTarget
+		handlePutsStatuses
 
 	} from '$lib/client/ui';
 	import { tick } from 'svelte';
@@ -192,7 +192,7 @@
 						updateUnit(hostId, (vup) => {
 							vup.displayHp -= anim.damageToTarget ?? 0;
 						});
-						handlePutsStatusOnTarget(anim)
+						handlePutsStatuses(anim)
 						if ($guestId == undefined) return;
 						updateUnit($guestId, (vup) => {
 							if(vup.side == 'enemy'){
@@ -240,7 +240,7 @@
 						updateUnit(hostId, (vup) => {
 							vup.displayHp -= anim.damageToSource ?? 0;
 						});
-						handlePutsStatusOnTarget(anim)
+						handlePutsStatuses(anim)
 					}
 				}}
 				on:outroend={()=>{
@@ -277,7 +277,7 @@
 								someoneDied = true;
 							}
 						});
-						handlePutsStatusOnTarget(anim)
+						handlePutsStatuses(anim)
 
 						if ($currentAnimation.alsoDamages) {
 							for (const other of $currentAnimation.alsoDamages) {

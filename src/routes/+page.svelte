@@ -11,7 +11,7 @@
 		currentAnimation,
 		currentAnimationIndex,
 		currentAnimationsWithData,
-		handlePutsStatusOnTarget,
+		handlePutsStatuses,
 		lastMsgFromServer,
 		latestSlotButtonInput,
 		nextAnimationIndex,
@@ -400,7 +400,7 @@
 									}
 								}
 								
-								handlePutsStatusOnTarget(anim);
+								handlePutsStatuses(anim);
 								if ($currentAnimation.alsoModifiesAggro) {
 									for (const other of $currentAnimation.alsoModifiesAggro) {
 										if (

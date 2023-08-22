@@ -262,20 +262,30 @@ export const extraSprites: Record<ExtraSprite, string> = {
     poison: greenDrip,
 }
 
-export function handlePutsStatusOnTarget(anim: BattleAnimation) {
+export function handlePutsStatuses(anim: BattleAnimation) {
     if (anim.putsStatuses) {
         for(const ps of anim.putsStatuses){
             updateUnit(ps.target,(vup)=>{
-                if (vup.actual.kind == 'enemy') {
-                    // console.log(`putting poison on enemy ${JSON.stringify(vup.actual.enemy.statuses)}`);
-                    let existingStatusesForSource = vup.actual.enemy.statuses[anim.source];
-                    if (!existingStatusesForSource) {
-                        vup.actual.enemy.statuses[anim.source] = { poison: 0, rage: 0, hidden:0 };
+                if(ps.remove){
+                    if (vup.actual.kind == 'enemy') {
+                        // remove enemy status for all sources
+                        for(const sourceId in vup.actual.enemy.statuses){
+                            const tSourceId = sourceId as UnitId
+                            vup.actual.enemy.statuses[tSourceId][ps.status] = 0
+                        }
+                    } else if (vup.actual.kind == 'player') {
+                        vup.actual.info.statuses[ps.status] = 0;
                     }
-                    vup.actual.enemy.statuses[anim.source][ps.status] = 1;
-                } else if (vup.actual.kind == 'player') {
-                    console.log('putting player status '+ps.status)
-                    vup.actual.info.statuses[ps.status] = 1;
+                }else{
+                    if (vup.actual.kind == 'enemy') {
+                        let existingStatusesForSource = vup.actual.enemy.statuses[anim.source];
+                        if (!existingStatusesForSource) {
+                            vup.actual.enemy.statuses[anim.source] = { poison: 0, rage: 0, hidden:0 };
+                        }
+                        vup.actual.enemy.statuses[anim.source][ps.status] = 1;
+                    } else if (vup.actual.kind == 'player') {
+                        vup.actual.info.statuses[ps.status] = 1;
+                    }
                 }
             })
         }
