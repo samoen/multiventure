@@ -1,5 +1,5 @@
-import type { HeroName } from "$lib/server/users";
-import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, ExtraSprite, GameActionSentToClient, MessageFromServer, PlayerInClient } from "$lib/utils";
+import type { HeroName, PlayerInClient } from "$lib/server/users";
+import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, ExtraSprite, GameActionSentToClient } from "$lib/utils";
 import { derived, get, writable, type Writable } from "svelte/store";
 import peasantPortrait from '$lib/assets/portraits/peasant.webp';
 import peasant from '$lib/assets/peasant.png';
@@ -16,11 +16,12 @@ import theif from '$lib/assets/thief.png';
 import mage from '$lib/assets/mage.png';
 import arrow from '$lib/assets/arrow.png';
 import bomb from '$lib/assets/bomb.png';
-import type { EquipmentSlot, ItemId, ItemIdForSlot, ItemState, ItemStateForSlot } from '$lib/server/items.js';
+import type { EquipmentSlot, ItemId, ItemIdForSlot, ItemState, ItemStateForSlot } from '$lib/server/items';
 import { crossfade } from "svelte/transition";
 import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easing";
 import { tick } from "svelte";
 import type { EnemyTemplateId } from "$lib/server/enemies";
+import type { MessageFromServer } from "$lib/server/messaging";
 
 
 type UnitDetails = {
@@ -195,7 +196,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         newVups.push({
             id:`hero${lastMsg.yourInfo.heroName}`,
             name: lastMsg.yourInfo.heroName,
-            src: heroSprites[heroSprite(lastMsg.yourInfo.weapon?.itemId)],
+            src: heroSprites[heroSprite(lastMsg.yourInfo.inventory.weapon?.itemId)],
             maxHp: lastMsg.yourInfo.maxHealth,
             displayHp: lastMsg.yourInfo.health,
             side: 'hero',
@@ -233,7 +234,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                         {
                         id:`hero${p.heroName}`,
                         name: p.heroName,
-                        src: heroSprites[heroSprite(p.weapon.itemId)],
+                        src: heroSprites[heroSprite(p.inventory.weapon.itemId)],
                         displayHp: p.health,
                         maxHp: p.maxHealth,
                         side: 'hero',

@@ -48,7 +48,7 @@
 		return $host.side != 'hero';
 	});
 
-	const highlightedForAct = derived([latestSlotButtonInput], ([$latestSlotButtonInput]) => {
+	const highlightedForAct = derived([latestSlotButtonInput, host], ([$latestSlotButtonInput, $host]) => {
 		if ($latestSlotButtonInput == 'none') return undefined;
 		let found = $host?.actionsThatCanTargetMe.find((a) => a.slot == $latestSlotButtonInput);
 		return found;
@@ -347,7 +347,7 @@
 		justify-content: center;
 	}
 	.clickable {
-		border: 3px groove yellow;
+		border: 3px dotted yellow;
 	}
 	.projHolder {
 		/* background-color: aquamarine; */

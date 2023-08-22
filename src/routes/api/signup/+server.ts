@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { isJoin, type MessageFromServer } from '$lib/utils';
+import { isJoin } from '$lib/utils';
 import { FAKE_LATENCY } from '$lib/server/messaging';
 import { users, type Player, type Flag, globalFlags } from '$lib/server/users';
 import { scenes, type SceneId, addSoloScenes } from '$lib/server/scenes';
@@ -62,7 +62,7 @@ export const POST: RequestHandler = async (r) => {
 			}
 		}
 		
-		let player = {
+		let player : Player = {
 			unitId:`hero${msg.join}`,
 			connectionState: null,
 			heroName: msg.join,
@@ -81,7 +81,7 @@ export const POST: RequestHandler = async (r) => {
 				poison:0,
 				rage:0,
 			},
-		} satisfies Player
+		}
 		
 		addSoloScenes(msg.join)
 		scenes.get(player.currentScene)?.onEnterScene(player)

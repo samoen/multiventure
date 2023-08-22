@@ -1,65 +1,35 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import Unit from '$lib/Components/Unit.svelte';
-	import gruntPortrait from '$lib/assets/portraits/grunt.webp';
 	import {
 		allVisualUnitProps,
 		animationCancelled,
+		bodySlotActions,
 		centerFieldTarget,
 		choose,
 		clientState,
 		currentAnimation,
 		currentAnimationIndex,
 		currentAnimationsWithData,
+		handlePutsStatusOnTarget,
 		lastMsgFromServer,
 		latestSlotButtonInput,
 		nextAnimationIndex,
+		numberShownOnSlot,
 		receiveCenter,
+		selectedDetail,
+		stockDotsOnSlotButton,
 		syncVisualsToMsg,
+		updateUnit,
+		utilitySlotActions,
 		waitButtonAction,
 		waitingForMyAnimation,
-		type VisualUnitProps,
-
-		lastUnitClicked,
-
-		selectedDetail,
-
-		wepSlotActions,
-
-		utilitySlotActions,
-
-		bodySlotActions,
-
-		updateUnit,
-
-		handlePutsStatusOnTarget,
-
-		numberShownOnSlot,
-
-		stockDotsOnSlotButton
-
-
-
-
-
-
-
-
-
+		wepSlotActions
 	} from '$lib/client/ui';
-	import type { EnemyTemplateId } from '$lib/server/enemies.js';
-	import {
-		isMsgFromServer,
-		type UnitId,
-		type MessageFromServer,
-
-		type BattleAnimation
-
-	} from '$lib/utils';
+	import type { MessageFromServer } from '$lib/server/messaging';
 	import { onMount, tick } from 'svelte';
 	import { flip } from 'svelte/animate';
-	import { derived, writable } from 'svelte/store';
-	import { fade } from 'svelte/transition';
+	import { derived } from 'svelte/store';
 
 	export let data;
 	let signupInput: string;
@@ -74,8 +44,6 @@
 	let happenings: HTMLElement;
 	let sceneTexts: HTMLElement;
 	let autoSignup: boolean = true;
-
-	
 
 	onMount(() => {
 		console.log('mounted with ssr data ' + JSON.stringify(data));
@@ -93,7 +61,9 @@
 			loading = false;
 		}
 	});
-
+	export function isMsgFromServer(msg: object): msg is MessageFromServer {
+		return 'triggeredBy' in msg;
+	}
 	function subscribeEventsIfNotAlready() {
 		if (source != null && source.readyState != EventSource.CLOSED) {
 			console.log('no need to subscribe');
@@ -149,7 +119,7 @@
 	}
 
 	async function cancelAnimations() {
-		console.log(`cancelling animations`)
+		console.log(`cancelling animations`);
 		$animationCancelled = true;
 		$currentAnimationIndex = 999;
 		// $currentAnimation = undefined;
@@ -160,9 +130,15 @@
 	}
 
 	async function startAnimating(previous: MessageFromServer, latest: MessageFromServer) {
-		$currentAnimationsWithData = latest.animations
+		$currentAnimationsWithData = latest.animations;
 		console.log(`starting anims ${JSON.stringify($currentAnimationsWithData)}`);
-		nextAnimationIndex(true,$currentAnimationIndex,$currentAnimationsWithData,$lastMsgFromServer,false);
+		nextAnimationIndex(
+			true,
+			$currentAnimationIndex,
+			$currentAnimationsWithData,
+			$lastMsgFromServer,
+			false
+		);
 	}
 
 	async function handleAnimationsOnMessage(
@@ -174,7 +150,7 @@
 		// first message just sync instant
 		if (!previous) {
 			console.log('first message');
-			if($currentAnimation){
+			if ($currentAnimation) {
 				await cancelAnimations();
 			}
 			syncVisualsToMsg(latest);
@@ -182,14 +158,14 @@
 		}
 
 		if (latest.animations.length && latest.triggeredBy == latest.yourInfo.heroName) {
-			console.log('start waiting my anim')
+			console.log('start waiting my anim');
 			$waitingForMyAnimation = true;
 		}
 
 		// my message with no animations
 		if (latest.triggeredBy == latest.yourInfo.heroName && !latest.animations.length) {
 			console.log('ours with no');
-			if($currentAnimation){
+			if ($currentAnimation) {
 				await cancelAnimations();
 			}
 			syncVisualsToMsg(latest);
@@ -324,15 +300,14 @@
 		subscribeEventsIfNotAlready();
 	}
 
-	let allies = derived(allVisualUnitProps,($allVisualUnitProps)=>{
-		let calAllies = $allVisualUnitProps.filter( (v,i)=> v.side == 'hero' && v.name)
+	let allies = derived(allVisualUnitProps, ($allVisualUnitProps) => {
+		let calAllies = $allVisualUnitProps.filter((v, i) => v.side == 'hero' && v.name);
 		// console.log(`allies: ${JSON.stringify(calAllies)}`)
-		return calAllies
-	})
-	let enemies = derived(allVisualUnitProps,($allVisualUnitProps)=>{
-		return $allVisualUnitProps.filter(p=>p.side=='enemy')
-	})
-
+		return calAllies;
+	});
+	let enemies = derived(allVisualUnitProps, ($allVisualUnitProps) => {
+		return $allVisualUnitProps.filter((p) => p.side == 'enemy');
+	});
 </script>
 
 <!-- <h3>Status: {clientState.status}</h3> -->
@@ -387,7 +362,7 @@
 	{/if}
 	<!-- <button on:click={() => {}}>debug something</button> -->
 	<div class="wrapGameField">
-			<span class="yourSceneLabel">{$lastMsgFromServer.yourInfo.currentScene}</span>
+		<span class="yourSceneLabel">{$lastMsgFromServer.yourInfo.currentScene}</span>
 		<div
 			class="visual"
 			role="button"
@@ -399,8 +374,8 @@
 			}}
 		>
 			<div class="units">
-				{#each $allies as p(p.id)}
-						<div animate:flip>
+				{#each $allies as p (p.id)}
+					<div animate:flip>
 						<Unit hostId={p.id} />
 					</div>
 				{/each}
@@ -412,37 +387,45 @@
 						in:receiveCenter={{ key: $animationCancelled ? 10 : 'center' }}
 						on:introend={() => {
 							if ($currentAnimation != undefined && !$animationCancelled) {
-								let anim = $currentAnimation
-								let someoneDied = false
+								let anim = $currentAnimation;
+								let someoneDied = false;
 								if ($currentAnimation.alsoDamages) {
 									for (const other of $currentAnimation.alsoDamages) {
-										updateUnit(other.target,(vup)=>{
-											handlePutsStatusOnTarget(vup,anim)
-											vup.displayHp -= other.amount
-											if(vup.displayHp < 1){
-												someoneDied = true
+										updateUnit(other.target, (vup) => {
+											handlePutsStatusOnTarget(vup, anim);
+											vup.displayHp -= other.amount;
+											if (vup.displayHp < 1) {
+												someoneDied = true;
 											}
-										})
-
+										});
 									}
 								}
 								if ($currentAnimation.alsoModifiesAggro) {
 									for (const other of $currentAnimation.alsoModifiesAggro) {
-										if(other.showFor == 'all' || $lastMsgFromServer?.yourInfo.unitId == $currentAnimation.source){
-											updateUnit(other.target,(vup)=>{
-												if(vup.aggro != undefined){
-													if(other.amount != undefined){
-														vup.aggro -= other.amount
+										if (
+											other.showFor == 'all' ||
+											$lastMsgFromServer?.yourInfo.unitId == $currentAnimation.source
+										) {
+											updateUnit(other.target, (vup) => {
+												if (vup.aggro != undefined) {
+													if (other.amount != undefined) {
+														vup.aggro -= other.amount;
 													}
-													if(other.setTo != undefined){
-														vup.aggro = other.setTo
+													if (other.setTo != undefined) {
+														vup.aggro = other.setTo;
 													}
 												}
-											})
+											});
 										}
 									}
 								}
-								nextAnimationIndex(false,$currentAnimationIndex,$currentAnimationsWithData,$lastMsgFromServer,someoneDied);
+								nextAnimationIndex(
+									false,
+									$currentAnimationIndex,
+									$currentAnimationsWithData,
+									$lastMsgFromServer,
+									someoneDied
+								);
 							}
 						}}
 					>
@@ -451,18 +434,18 @@
 				{/if}
 			</div>
 			<div class="units">
-				
-				{#each $enemies as e(e.id)}
-				<div animate:flip>
-					<Unit hostId={e.id} />
-				</div>
+				{#each $enemies as e (e.id)}
+					<div animate:flip>
+						<Unit hostId={e.id} />
+					</div>
 				{/each}
 			</div>
 		</div>
 	</div>
 	<div class="slotButtons">
 		<button
-			class="wepSlotButton"
+			class="slotButton"
+			class:activeSlotButton={$latestSlotButtonInput == 'weapon'}
 			type="button"
 			disabled={!$wepSlotActions ||
 				!$wepSlotActions.length ||
@@ -478,11 +461,14 @@
 				}
 				$latestSlotButtonInput = 'weapon';
 			}}
-			>{$lastMsgFromServer.yourInfo.weapon.itemId} {numberShownOnSlot($lastMsgFromServer.yourInfo.weapon) ??  ''} {stockDotsOnSlotButton($lastMsgFromServer.yourInfo.weapon)}
+			>{$lastMsgFromServer.yourInfo.inventory.weapon.itemId}
+			{numberShownOnSlot($lastMsgFromServer.yourInfo.inventory.weapon) ?? ''}
+			{stockDotsOnSlotButton($lastMsgFromServer.yourInfo.inventory.weapon)}
 		</button>
 
 		<button
-			class="utilitySlotButton"
+			class="slotButton"
+			class:activeSlotButton={$latestSlotButtonInput == 'utility'}
 			type="button"
 			disabled={!$utilitySlotActions ||
 				!$utilitySlotActions.length ||
@@ -498,10 +484,13 @@
 				}
 				$latestSlotButtonInput = 'utility';
 			}}
-			>{$lastMsgFromServer.yourInfo.utility.itemId} {numberShownOnSlot($lastMsgFromServer.yourInfo.utility) ??  ''} {stockDotsOnSlotButton($lastMsgFromServer.yourInfo.utility)}
+			>{$lastMsgFromServer.yourInfo.inventory.utility.itemId}
+			{numberShownOnSlot($lastMsgFromServer.yourInfo.inventory.utility) ?? ''}
+			{stockDotsOnSlotButton($lastMsgFromServer.yourInfo.inventory.utility)}
 		</button>
 		<button
-			class="bodySlotButton"
+			class="slotButton"
+			class:activeSlotButton={$latestSlotButtonInput == 'body'}
 			type="button"
 			disabled={!$bodySlotActions ||
 				!$bodySlotActions.length ||
@@ -517,10 +506,12 @@
 				}
 				$latestSlotButtonInput = 'body';
 			}}
-			>{$lastMsgFromServer.yourInfo.body.itemId} {numberShownOnSlot($lastMsgFromServer.yourInfo.body)??''} {stockDotsOnSlotButton($lastMsgFromServer.yourInfo.body)}
+			>{$lastMsgFromServer.yourInfo.inventory.body.itemId}
+			{numberShownOnSlot($lastMsgFromServer.yourInfo.inventory.body) ?? ''}
+			{stockDotsOnSlotButton($lastMsgFromServer.yourInfo.inventory.body)}
 		</button>
 		<button
-			class="waitButton"
+			class="slotButton"
 			disabled={!$waitButtonAction || $waitingForMyAnimation || $clientState.waitingForMyEvent}
 			on:click={() => {
 				if ($waitButtonAction) {
@@ -530,52 +521,45 @@
 		>
 	</div>
 	{#if $selectedDetail}
-	<div class="selectedDetails">
-		<div class="selectedPortrait">
-			<img class="portrait" src={$selectedDetail.actual.portrait} alt="portrait" />
-		</div>
-		<div class="selectedStats">
-				<p>
-					name: {$selectedDetail.name}
-				</p>
-				<p>
-					health : {$selectedDetail.displayHp}/{$selectedDetail.maxHp}
-				</p>
-				<!-- {#if $lastUnitClicked.actual.kind == 'otherPlayer'}
-					other
-					{/if}
-					{#if $lastUnitClicked.actual.kind == 'enemy'}
-					stuff
-					{/if} -->
-				</div>
+		<div class="selectedDetails">
+			<div class="selectedPortrait">
+				<img class="portrait" src={$selectedDetail.actual.portrait} alt="portrait" />
 			</div>
-		{/if}
-	<h3>{$lastMsgFromServer.yourInfo.heroName}:</h3>
-	<p>
-		Health: {$lastMsgFromServer.yourInfo.health}hp
-	</p>
-	<p>
-		Weapon:
-		{$lastMsgFromServer.yourInfo.weapon.itemId}
-		{$lastMsgFromServer.yourInfo.weapon.cooldown
-			? `cooldown: ${$lastMsgFromServer.yourInfo.weapon.cooldown}`
-			: ''}
-		{$lastMsgFromServer.yourInfo.weapon.warmup ? `warmup:${$lastMsgFromServer.yourInfo.weapon.warmup}` : ''}
-	</p>
-	<p>
-		Utility: {$lastMsgFromServer.yourInfo.utility.itemId +
-			', stock: ' +
-			$lastMsgFromServer.yourInfo.utility.stock}
-	</p>
-	<p>
-		Armor: {$lastMsgFromServer.yourInfo.body.itemId}
-		{$lastMsgFromServer.yourInfo.body.cooldown ? `cooldown:${$lastMsgFromServer.yourInfo.body.cooldown}` : ''}
-		{$lastMsgFromServer.yourInfo.body.warmup ? `warmup:${$lastMsgFromServer.yourInfo.body.warmup}` : ''}
-	</p>
-	<p>
-		Location: {$lastMsgFromServer.yourInfo.currentScene}
-	</p>
-	<!-- <p>{$lastMsgFromServer.playerFlags} {$lastMsgFromServer.globalFlags}</p> -->
+			<div class="selectedStats">
+				<div>
+					<strong>
+						{$selectedDetail.name}
+					</strong>
+				</div>
+				<div>
+					{$selectedDetail.displayHp}/{$selectedDetail.maxHp} hp
+				</div>
+				{#if $selectedDetail.actual.kind == 'player'}
+					<div>
+						Statuses : {JSON.stringify($selectedDetail.actual.info.statuses)}
+					</div>
+					<!-- <div> -->
+						<!-- Agility: {$selectedDetail.actual.info.} -->
+					<!-- </div> -->
+					<div>
+						<button type="button">show gear</button>
+					</div>
+				{/if}
+				{#if $selectedDetail.actual.kind == 'enemy'}
+					<div>
+						Template: {$selectedDetail.actual.enemy.templateId}
+					</div>
+					<div>
+						Statuses : {JSON.stringify($selectedDetail.actual.enemy.statuses)}
+					</div>
+					<div>
+						Aggro: {JSON.stringify($selectedDetail.actual.enemy.myAggro)}
+					</div>
+				{/if}
+			</div>
+		</div>
+	{/if}
+	<p>{$lastMsgFromServer.playerFlags} {$lastMsgFromServer.globalFlags}</p>
 	<h3>Nearby Enemies:</h3>
 	{#each $lastMsgFromServer.enemiesInScene as e}
 		<p>
@@ -665,6 +649,12 @@
 		background-color: beige;
 		border: 1px solid black;
 	}
+	.slotButton {
+		padding: 10px;
+	}
+	.activeSlotButton {
+		border: 5px dotted yellow;
+	}
 	.yourSceneLabel {
 		position: absolute;
 		/* position: sticky; */
@@ -740,6 +730,6 @@
 		width: 100%;
 	}
 	/* .selectedStats { */
-		/* background-color: aquamarine; */
+	/* background-color: aquamarine; */
 	/* } */
 </style>

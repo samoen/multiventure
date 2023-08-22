@@ -1,12 +1,26 @@
-import type { GameActionSentToClient, MessageFromServer, PlayerInClient } from '$lib/utils';
+import type { BattleAnimation, EnemyInClient, GameActionSentToClient } from '$lib/utils';
 import { activeEnemies, addAggro, damagePlayer, enemiesInScene, getAggroForPlayer, takePoisonDamage } from './enemies';
 import { items } from './items';
 import { scenes } from './scenes';
-import { activePlayers, globalFlags, playerItemStates, users, type HeroName, type Player, type GameAction, activePlayersInScene } from './users';
+import { activePlayers, globalFlags, playerItemStates, users, type HeroName, type Player, type GameAction, activePlayersInScene, type PlayerInClient, type Flag, type GlobalFlag } from './users';
 
 export const FAKE_LATENCY = 1;
 
 export const recentHappenings: string[] = [];
+
+export type MessageFromServer = {
+	triggeredBy: HeroName;
+	yourInfo:PlayerInClient;
+	otherPlayers: PlayerInClient[];
+	sceneTexts: string[];
+	sceneActions: GameActionSentToClient[];
+	itemActions: GameActionSentToClient[];
+	happenings: string[];
+	animations: BattleAnimation[];
+	enemiesInScene: EnemyInClient[];
+	playerFlags: Flag[];
+	globalFlags: GlobalFlag[];
+};
 
 
 export async function sendEveryoneWorld(triggeredBy: HeroName) {
@@ -31,9 +45,11 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 			heroName: forPlayer.heroName,
 			health: forPlayer.health,
 			maxHealth: forPlayer.maxHealth,
-			weapon: forPlayer.inventory.weapon,
-			utility: forPlayer.inventory.utility,
-			body: forPlayer.inventory.body,
+			inventory:{
+				weapon: forPlayer.inventory.weapon,
+				utility: forPlayer.inventory.utility,
+				body: forPlayer.inventory.body,
+			},
 			currentScene: forPlayer.currentScene,
 			statuses:forPlayer.statuses,
 		},
@@ -45,9 +61,11 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 					heroName: u.heroName,
 					health: u.health,
 					maxHealth: u.maxHealth,
-					weapon: u.inventory.weapon,
-					utility: u.inventory.utility,
-					body: u.inventory.body,
+					inventory:{
+						weapon: u.inventory.weapon,
+						utility: u.inventory.utility,
+						body: u.inventory.body,
+					},
 					currentScene: u.currentScene,
 					statuses:u.statuses,
 				} satisfies PlayerInClient;

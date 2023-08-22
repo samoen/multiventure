@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { allVisualUnitProps, type VisualUnitProps } from '$lib/client/ui';
+	import { allVisualUnitProps, lastMsgFromServer, type VisualUnitProps } from '$lib/client/ui';
 	import { fade } from 'svelte/transition';
 	import rage from '$lib/assets/rage.png'
 	import greenDrip from '$lib/assets/green-drip.png'
@@ -46,7 +46,9 @@
 </script>
 {#if vu && !(vu.displayHp<1 && vu.side=="enemy")}
 	<div class="top" out:fade|local={{duration:400}}>
-		<p>{vu.name}</p>
+		<p 
+		class:bold={vu.name == $lastMsgFromServer?.yourInfo.heroName}
+		>{vu.name}</p>
 		<div class="outerHeroSprite">
 			<div class="statuses">
 				{#each statuses as s}
@@ -70,6 +72,9 @@
 {/if}
 
 <style>
+	.bold{
+		font-weight: bold;
+	}
 	.statuses {
 		position: absolute;
 		top:0;

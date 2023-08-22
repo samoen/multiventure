@@ -5,19 +5,6 @@ import type { EquipmentSlot, ItemState, ItemStateForSlot } from './server/items'
 import type { SceneId } from './server/scenes';
 import type { Flag, GlobalFlag, HeroName } from './server/users';
 
-export type MessageFromServer = {
-	triggeredBy: HeroName;
-	yourInfo:PlayerInClient;
-	otherPlayers: PlayerInClient[];
-	sceneTexts: string[];
-	sceneActions: GameActionSentToClient[];
-	itemActions: GameActionSentToClient[];
-	happenings: string[];
-	animations: BattleAnimation[];
-	enemiesInScene: EnemyInClient[];
-	playerFlags: Flag[];
-	globalFlags: GlobalFlag[];
-};
 
 export type UnitId = `hero${string}` | `enemy${string}`
 
@@ -63,22 +50,8 @@ export type EnemyInClient = {
 	statuses: Record<UnitId,Record<StatusId,number>>
 }
 
-export function isMsgFromServer(msg: object): msg is MessageFromServer {
-	return 'triggeredBy' in msg;
-}
 
-// Information a player receives about other players
-export type PlayerInClient = {
-	unitId:UnitId;
-	heroName: HeroName;
-	currentScene: SceneId;
-	health: number;
-	maxHealth: number;
-	weapon: ItemStateForSlot<'weapon'>
-	utility: ItemStateForSlot<'utility'>
-	body: ItemStateForSlot<'body'>
-	statuses:Record<StatusId,number>
-};
+
 
 export type GameActionSelected = {
 	buttonText: string;

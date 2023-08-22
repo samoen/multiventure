@@ -1,5 +1,5 @@
 import type { UnitId, BattleAnimation, StatusEffect, StatusId } from '$lib/utils';
-import { items, type Inventory, type Item, type ItemState, type EquipmentSlot } from './items';
+import { items, type Inventory, type Item, type ItemState, type EquipmentSlot, type ItemStateForSlot } from './items';
 import { pushHappening } from './messaging';
 import type { SceneId } from './scenes';
 
@@ -21,18 +21,18 @@ export type GlobalFlag =
 
 
 export type Player = {
-	unitId:UnitId
+	// unitId:UnitId
 	connectionState: {
 		ip: string | null;
 		con: ReadableStreamController<unknown> | null;
 		stream: ReadableStream | null;
 	} | null;
-	heroName: HeroName;
-	health: number;
-	maxHealth: number;
+	// heroName: HeroName;
+	// health: number;
+	// maxHealth: number;
 	speed:number;
-	inventory:Inventory;
-	currentScene: SceneId;
+	// inventory:Inventory;
+	// currentScene: SceneId;
 	previousScene: SceneId;
 	lastCheckpoint?: SceneId;
 	itemActions: GameAction[];
@@ -40,7 +40,20 @@ export type Player = {
 	sceneTexts: string[];
 	flags: Set<Flag>;
 	animations: BattleAnimation[];
-	statuses: Record<StatusId,number>
+	// statuses: Record<StatusId,number>
+} & PlayerInClient;
+
+export type PlayerInClient = {
+	unitId:UnitId;
+	heroName: HeroName;
+	currentScene: SceneId;
+	health: number;
+	maxHealth: number;
+	inventory:Inventory;
+	// weapon: ItemStateForSlot<'weapon'>
+	// utility: ItemStateForSlot<'utility'>
+	// body: ItemStateForSlot<'body'>
+	statuses:Record<StatusId,number>
 };
 
 export type GameAction = {

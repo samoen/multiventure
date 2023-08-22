@@ -146,7 +146,7 @@ export const PERCENT_OF_BASE_ADDED_PER_PLAYER = 0.5
 
 export function modifiedEnemyHealth(h: number): number {
 	if (activePlayers().length < 2) return h
-	return h + ((activePlayers().length - 1) * PERCENT_OF_BASE_ADDED_PER_PLAYER * h)
+	return h + Math.floor(((activePlayers().length - 1) * PERCENT_OF_BASE_ADDED_PER_PLAYER * h))
 }
 
 export function spawnEnemy(name: string, template: EnemyTemplateId, where: SceneId, statuses: Map<HeroName,Record<StatusId,number>> = new Map()) {
