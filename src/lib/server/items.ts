@@ -159,17 +159,32 @@ const bandage: Item = {
 						target:friend.unitId,
 						performAction: () => {
 							let r = healPlayer(friend, 90)
-							if (friend.heroName != player.heroName && r.healed > 0) {
-								pushAnimation(
-									{
-										sceneId: player.currentScene,
-										battleAnimation: {
-											source: player.unitId,
-											target: friend.unitId,
-											damage: r.healed*-1,
-											behavior: 'melee',
+							if (r.healed > 0) {
+								if(friend.heroName != player.heroName){
+									pushAnimation(
+										{
+											sceneId: player.currentScene,
+											battleAnimation: {
+												source: player.unitId,
+												target: friend.unitId,
+												damage: r.healed*-1,
+												behavior: 'melee',
+											}
 										}
-									})
+									)
+								}else{
+									pushAnimation(
+										{
+											sceneId: player.currentScene,
+											battleAnimation: {
+												source: player.unitId,
+												damage: r.healed*-1,
+												behavior: 'selfInflicted',
+												extraSprite:'flame'
+											}
+										}
+									)
+								}
 							}
 							if (player.inventory.utility.stock) {
 								player.inventory.utility.stock--

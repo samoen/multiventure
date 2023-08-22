@@ -235,23 +235,21 @@
 				class:endAlignSelf={$hostIsNotHero}
 				out:fly|local={{ delay: 0, duration: 400, x: 0, y: 20 }}
 				on:outrostart={() => {
-					let someoneDied = false;
 					if ($currentAnimation != undefined && !$animationCancelled) {
 						const anim = $currentAnimation;
 						updateUnit(hostId, (vup) => {
 							vup.displayHp -= anim.damage;
-							if (vup.displayHp < 1) {
-								someoneDied = true;
-							}
 						});
-						nextAnimationIndex(
-							false,
-							$currentAnimationIndex,
-							$currentAnimationsWithData,
-							$lastMsgFromServer,
-							someoneDied
-						);
 					}
+				}}
+				on:outroend={()=>{
+					nextAnimationIndex(
+						false,
+						$currentAnimationIndex,
+						$currentAnimationsWithData,
+						$lastMsgFromServer,
+						false
+					);
 				}}
 			>
 				<img

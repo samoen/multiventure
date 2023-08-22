@@ -74,12 +74,6 @@ export let allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 
 export const currentAnimationIndex: Writable<number> = writable(0)
 
-// export type AnimationWithData = BattleAnimation & {
-//     sourceId:UnitId,
-//     targetId?:UnitId,
-//     alsoDmgsProps: { targetId: string, amount: number }[]
-//     alsoModifiesAggros: { targetId: string, amount?: number, setTo?:number, showFor:'onlyme'|'all' }[]
-// }
 
 export const currentAnimationsWithData: Writable<BattleAnimation[]> = writable()
 
