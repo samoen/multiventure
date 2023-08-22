@@ -23,10 +23,11 @@ export async function sendEveryoneWorld(triggeredBy: HeroName) {
 }
 
 export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): MessageFromServer {
-	
+	console.log(`sending anims ${JSON.stringify(forPlayer.animations)}`)
 	const nextMsg: MessageFromServer = {
 		triggeredBy: triggeredBy,
 		yourInfo:{
+			unitId:forPlayer.unitId,
 			heroName: forPlayer.heroName,
 			health: forPlayer.health,
 			maxHealth: forPlayer.maxHealth,
@@ -40,6 +41,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 			.filter((u) => u.heroName != forPlayer.heroName)
 			.map((u) => {
 				return {
+					unitId:u.unitId,
 					heroName: u.heroName,
 					health: u.health,
 					maxHealth: u.maxHealth,
@@ -70,6 +72,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 		enemiesInScene: enemiesInScene(forPlayer.currentScene).map((e) => {
 			// console.log(`sending ${e.name} statuses ${JSON.stringify(e.statuses)}`)
 			return {
+				unitId:e.unitId,
 				health: e.currentHealth,
 				maxHealth: e.maxHealth,
 				name: e.name,

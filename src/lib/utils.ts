@@ -19,24 +19,18 @@ export type MessageFromServer = {
 	globalFlags: GlobalFlag[];
 };
 
-export type AnimationTarget = {
-	name: HeroName,
-	side: 'hero'
-} | {
-	name: EnemyName,
-	side: 'enemy'
-}
+export type UnitId = `hero${string}` | `enemy${string}`
 
 export type BattleAnimation = {
-	source: AnimationTarget,
-	target?: AnimationTarget,
+	source: UnitId,
+	target?: UnitId,
 	putsStatusOnTarget?:StatusId,
 	damage: number,
 	behavior: AnimationBehavior,
 	extraSprite?: ExtraSprite,
-	alsoDamages?:{target:AnimationTarget,amount:number}[],
+	alsoDamages?:{target:UnitId,amount:number}[],
 	alsoModifiesAggro?:{
-		target:AnimationTarget,
+		target:UnitId,
 		amount?:number,
 		setTo?:number,
 		showFor:'onlyme' | 'all'
@@ -55,13 +49,14 @@ export type StatusEffect = {
 }
 
 export type EnemyInClient = {
+	unitId:UnitId
 	name: EnemyName
 	templateId: EnemyTemplateId
 	health: number
 	maxHealth: number
 	myAggro: number
 	// statuses: Map<HeroName,Record<StatusId,number>>
-	statuses: Record<HeroName,Record<StatusId,number>>
+	statuses: Record<UnitId,Record<StatusId,number>>
 }
 
 export function isMsgFromServer(msg: object): msg is MessageFromServer {
@@ -70,6 +65,7 @@ export function isMsgFromServer(msg: object): msg is MessageFromServer {
 
 // Information a player receives about other players
 export type PlayerInClient = {
+	unitId:UnitId;
 	heroName: HeroName;
 	currentScene: SceneId;
 	health: number;
@@ -90,7 +86,7 @@ export function isGameActionSelected(msg: object): msg is GameActionSelected {
 export type GameActionSentToClient = {
 	buttonText: string;
 	slot?:EquipmentSlot;
-	target?: AnimationTarget;
+	target?: UnitId;
 	wait?:boolean;
 };
 

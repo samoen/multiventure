@@ -1,4 +1,4 @@
-import type { AnimationTarget, BattleAnimation, StatusEffect, StatusId } from '$lib/utils';
+import type { UnitId, BattleAnimation, StatusEffect, StatusId } from '$lib/utils';
 import { items, type Inventory, type Item, type ItemState, type EquipmentSlot } from './items';
 import { pushHappening } from './messaging';
 import type { SceneId } from './scenes';
@@ -21,6 +21,7 @@ export type GlobalFlag =
 
 
 export type Player = {
+	unitId:UnitId
 	connectionState: {
 		ip: string | null;
 		con: ReadableStreamController<unknown> | null;
@@ -50,7 +51,7 @@ export type GameAction = {
 	provoke?:number;
 	grantsImmunity?:boolean;
 	slot?:EquipmentSlot
-	target?: AnimationTarget;
+	target?: UnitId;
 	wait?:boolean;
 };
 

@@ -181,7 +181,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				{
 					sceneId:player.currentScene,
 					battleAnimation:{
-						source:{name:player.heroName,side:"hero"},
+						source:player.unitId,
 						behavior:"selfInflicted",
 						extraSprite:'poison',
 						damage:dmg,
@@ -240,8 +240,8 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 									{
 										sceneId: player.currentScene,
 										battleAnimation: {
-											source: { name: enemyInScene.name, side: 'enemy' },
-											target: { name: player.heroName, side: 'hero' },
+											source: enemyInScene.unitId,
+											target: player.unitId,
 											damage: r.dmgDone,
 											behavior: enemyInScene.template.behavior ?? 'melee',
 										}

@@ -1,4 +1,4 @@
-import type { AnimationBehavior, AnimationTarget, BattleAnimation, EnemyName, StatusEffect, StatusId } from "$lib/utils";
+import type { AnimationBehavior, UnitId, BattleAnimation, EnemyName, StatusEffect, StatusId } from "$lib/utils";
 import { pushHappening } from "./messaging";
 import { scenes, type SceneId } from "./scenes";
 import { playerEquipped, type HeroName, type Player, activePlayers, activePlayersInScene } from "./users";
@@ -7,6 +7,7 @@ import { playerEquipped, type HeroName, type Player, activePlayers, activePlayer
 export const activeEnemies: ActiveEnemy[] = []
 
 export type ActiveEnemy = {
+	unitId:UnitId
 	name: EnemyName
 	templateId:EnemyTemplateId
 	currentScene: SceneId
@@ -78,8 +79,8 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 				{
 					sceneId: player.currentScene,
 					battleAnimation: {
-						source: { name: me.name, side: 'enemy' },
-						target: { name: player.heroName, side: 'hero' },
+						source: me.unitId,
+						target: player.unitId,
 						putsStatusOnTarget:'poison',
 						damage: r.dmgDone,
 						behavior: 'missile',
@@ -107,11 +108,11 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		startAggro:100,
 		speed: 10,
 		specialAttack(me: ActiveEnemy, player:Player) {
-			let dmged:({target:AnimationTarget, amount:number})[] = []
+			let dmged:({target:UnitId, amount:number})[] = []
 			for (const enemy of enemiesInScene(me.currentScene)) {
 				if (enemy.name != me.name) {
 					let r = infightDamage(me, enemy)
-					if(r.dmgDone > 0)dmged.push({target:{name:enemy.name,side:'enemy'},amount:r.dmgDone})
+					if(r.dmgDone > 0)dmged.push({target:enemy.unitId,amount:r.dmgDone})
 				}
 			}
 			// for (const player of activePlayersInScene(me.currentScene)) {
@@ -120,8 +121,8 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 					pushAnimation({
 						sceneId:player.currentScene,
 						battleAnimation:{
-							source:{name:me.name,side:'enemy'},
-							target: {name:player.heroName,side:'hero'},
+							source:me.unitId,
+							target: player.unitId,
 							damage:r.dmgDone,
 							behavior:'missile',
 							extraSprite:'flame',
@@ -152,6 +153,7 @@ export function spawnEnemy(name: string, template: EnemyTemplateId, where: Scene
 	const baseHealth = enemyTemplates[template].baseHealth
 	let modifiedBaseHealth = scenes.get(where)?.solo ? baseHealth : modifiedEnemyHealth(baseHealth)
 	activeEnemies.push({
+		unitId:`enemy${name}`,
 		name: name,
 		templateId:template,
 		currentScene: where,
@@ -253,7 +255,7 @@ export function takePoisonDamage(enemy: ActiveEnemy) : {dmgDone:number} {
 		{
 			sceneId:enemy.currentScene,
 			battleAnimation:{
-				source:{name:enemy.name,side:"enemy"},
+				source:enemy.unitId,
 				behavior:'selfInflicted',
 				damage:dmg,
 				extraSprite:'poison',

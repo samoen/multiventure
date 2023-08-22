@@ -34,9 +34,9 @@
 	import { blur, fade, fly, scale, slide } from 'svelte/transition';
 	import VisualUnit from './VisualUnit.svelte';
 	import { stringify } from 'uuid';
-	import type { BattleAnimation } from '$lib/utils';
+	import type { BattleAnimation, UnitId } from '$lib/utils';
 
-	export let hostId: string;
+	export let hostId: UnitId;
 
 	const host = derived([allVisualUnitProps], ([$allVisualUnitProps]) => {
 		let nex = $allVisualUnitProps.find((p) => p.id == hostId);
@@ -62,7 +62,7 @@
 			}
 			if (
 				$currentAnim.behavior == 'melee' &&
-				$currentAnim.sourceId == hostId &&
+				$currentAnim.source == hostId &&
 				$subAnimationStage == 'fire'
 			) {
 				return false;
@@ -77,11 +77,11 @@
 			if (!$currentAnimation) return undefined;
 			if (
 				$currentAnimation.behavior == 'melee' &&
-				$currentAnimation.targetId == hostId &&
+				$currentAnimation.target == hostId &&
 				$subAnimationStage == 'fire'
 			) {
-				console.log(`new guest ${$currentAnimation.sourceId}`);
-				return $currentAnimation.sourceId;
+				console.log(`new guest ${$currentAnimation.source}`);
+				return $currentAnimation.source;
 			}
 			return undefined;
 		}
@@ -93,7 +93,7 @@
 			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
 			if (
 				($currentAnimation.behavior == 'missile' || $currentAnimation.behavior == 'center') &&
-				$currentAnimation.sourceId == hostId &&
+				$currentAnimation.source == hostId &&
 				$subAnimationStage == 'start'
 			) {
 				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
@@ -119,7 +119,7 @@
 			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
 			if (
 				$currentAnimation.behavior == 'missile' &&
-				$currentAnimation.targetId == hostId &&
+				$currentAnimation.target == hostId &&
 				$subAnimationStage == 'fire'
 			) {
 				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
@@ -133,7 +133,7 @@
 			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
 			if (
 				$currentAnimation.behavior == 'selfInflicted' &&
-				$currentAnimation.sourceId == hostId &&
+				$currentAnimation.source == hostId &&
 				$subAnimationStage == 'start'
 			) {
 				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
@@ -280,32 +280,35 @@
 							}
 						});
 
-						// if ($currentAnimation.alsoDamages) {
-						for (const other of $currentAnimation.alsoDmgsProps) {
-							updateUnit(other.targetId, (vup) => {
-								vup.displayHp -= other.amount;
-								if (vup.displayHp < 1) {
-									someoneDied = true;
-								}
-							});
-						}
-						// }
-						for (const other of $currentAnimation.alsoModifiesAggros) {
-							if (
-								other.showFor == 'all' ||
-								$lastMsgFromServer?.yourInfo.heroName == $currentAnimation.source.name
-							) {
-								updateUnit(other.targetId, (vup) => {
-									if (vup.aggro != undefined) {
-										if (other.amount != undefined) {
-											vup.aggro -= other.amount;
-										}
-										if (other.setTo != undefined) {
-											vup.aggro = other.setTo;
-										}
+						if ($currentAnimation.alsoDamages) {
+							for (const other of $currentAnimation.alsoDamages) {
+								updateUnit(other.target, (vup) => {
+									vup.displayHp -= other.amount;
+									if (vup.displayHp < 1) {
+										someoneDied = true;
 									}
 								});
 							}
+						}
+						if($currentAnimation.alsoModifiesAggro){
+							for (const other of $currentAnimation.alsoModifiesAggro) {
+								if (
+									other.showFor == 'all' ||
+									$lastMsgFromServer?.yourInfo.unitId == $currentAnimation.source
+								) {
+									updateUnit(other.target, (vup) => {
+										if (vup.aggro != undefined) {
+											if (other.amount != undefined) {
+												vup.aggro -= other.amount;
+											}
+											if (other.setTo != undefined) {
+												vup.aggro = other.setTo;
+											}
+										}
+									});
+								}
+							}
+
 						}
 						nextAnimationIndex(
 							false,

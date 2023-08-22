@@ -3,9 +3,9 @@
 	import { fade } from 'svelte/transition';
 	import rage from '$lib/assets/rage.png'
 	import greenDrip from '$lib/assets/green-drip.png'
-	import type { StatusEffect, StatusId } from '$lib/utils';
+	import type { StatusEffect, StatusId, UnitId } from '$lib/utils';
 
-	export let hostId:string;
+	export let hostId:UnitId;
 	$: vu = $allVisualUnitProps.find(v=>v.id == hostId)
 	$: hpBar = vu ? (vu.displayHp > 0 ? 100 * (vu.displayHp / vu.maxHp) : 0) : 0
 	export let flip:boolean

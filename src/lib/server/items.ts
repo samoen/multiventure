@@ -1,4 +1,4 @@
-import type { AnimationTarget } from '$lib/utils';
+import type { UnitId } from '$lib/utils';
 import { damageEnemy, enemiesInScene, pushAnimation, takePoisonDamage } from './enemies';
 import { pushHappening } from './messaging';
 import { activePlayersInScene, healPlayer, type Player } from './users';
@@ -57,7 +57,7 @@ const dagger: Item = {
 					provoke: 7,
 					speed: 8,
 					slot:'weapon',
-					target:{name:enemy.name,side:'enemy'},
+					target:enemy.unitId,
 					performAction() {
 						let r = damageEnemy(player, enemy, 7, 3)
 						if (r.dmgDone > 0) {
@@ -65,8 +65,8 @@ const dagger: Item = {
 								{
 									sceneId: player.currentScene,
 									battleAnimation: {
-										source: { name: player.heroName, side: 'hero' },
-										target: { name: enemy.name, side: 'enemy' },
+										source: player.unitId,
+										target: enemy.unitId,
 										damage: r.dmgDone,
 										behavior: 'melee',
 									}
@@ -88,7 +88,7 @@ const club: Item = {
 					provoke: 40,
 					speed: 2,
 					slot:'weapon',
-					target:{name:enemy.name,side:'enemy'},
+					target:enemy.unitId,
 					performAction() {
 						let r = damageEnemy(player, enemy, 25)
 						if (r.dmgDone > 0) {
@@ -96,8 +96,8 @@ const club: Item = {
 								{
 									sceneId: player.currentScene,
 									battleAnimation: {
-										source: { name: player.heroName, side: 'hero' },
-										target: { name: enemy.name, side: 'enemy' },
+										source: player.unitId,
+										target: enemy.unitId,
 										damage: r.dmgDone,
 										behavior: 'melee',
 									}
@@ -120,7 +120,7 @@ const fireStaff: Item = {
 					provoke: 60,
 					speed: 1,
 					slot:'weapon',
-					target:{name:enemy.name,side:'enemy'},
+					target:enemy.unitId,
 					performAction() {
 						let r = damageEnemy(player, enemy, 999)
 						if (r.dmgDone > 0) {
@@ -128,8 +128,8 @@ const fireStaff: Item = {
 								{
 									sceneId: player.currentScene,
 									battleAnimation: {
-										source: { name: player.heroName, side: 'hero' },
-										target: { name: enemy.name, side: 'enemy' },
+										source: player.unitId,
+										target: enemy.unitId,
 										damage: r.dmgDone,
 										behavior: 'missile',
 										extraSprite:'flame',
@@ -156,7 +156,7 @@ const bandage: Item = {
 						grantsImmunity: true,
 						provoke: 1,
 						slot:'utility',
-						target:{name:friend.heroName,side:'hero'},
+						target:friend.unitId,
 						performAction: () => {
 							let r = healPlayer(friend, 90)
 							if (friend.heroName != player.heroName && r.healed > 0) {
@@ -164,8 +164,8 @@ const bandage: Item = {
 									{
 										sceneId: player.currentScene,
 										battleAnimation: {
-											source: { name: player.heroName, side: 'hero' },
-											target: { name: friend.heroName, side: 'hero' },
+											source: player.unitId,
+											target: friend.unitId,
 											damage: r.healed*-1,
 											behavior: 'melee',
 										}
@@ -192,7 +192,7 @@ const bomb: Item = {
 				provoke:5,
 				slot:'utility',
 				performAction() {
-					let dmgs : {target:AnimationTarget,amount:number}[]= []
+					let dmgs : {target:UnitId,amount:number}[]= []
 					for (const enemy of enemiesInScene(player.currentScene)) {
 			
 						// for (const key of enemy.aggros.keys()) {
@@ -202,10 +202,7 @@ const bomb: Item = {
 						if(r.dmgDone>0){
 							dmgs.push({
 								amount:r.dmgDone,
-								target:{
-									name:enemy.name,
-									side:'enemy',
-								}
+								target:enemy.unitId
 							})
 						}
 					}
@@ -213,7 +210,7 @@ const bomb: Item = {
 						{
 							sceneId: player.currentScene,
 							battleAnimation: {
-								source: { name: player.heroName, side: 'hero' },
+								source: player.unitId,
 								damage: 0,
 								behavior: 'center',
 								alsoDamages:dmgs,
@@ -238,7 +235,7 @@ const poisonDart: Item = {
 					provoke: 40,
 					speed:20,
 					slot:'utility',
-					target:{name:enemy.name, side:'enemy'},
+					target:enemy.unitId,
 					performAction() {
 						let found = enemy.statuses.get(player.heroName)
 						if(!found){
@@ -258,8 +255,8 @@ const poisonDart: Item = {
 								{
 									sceneId: player.currentScene,
 									battleAnimation: {
-										source: { name: player.heroName, side: 'hero' },
-										target: { name: enemy.name, side: 'enemy' },
+										source: player.unitId,
+										target: enemy.unitId,
 										putsStatusOnTarget:'poison',
 										damage: r.dmgDone,
 										behavior: 'missile',
@@ -293,11 +290,11 @@ const plateMail: Item = {
 						battleAnimation:{
 							behavior:'center',
 							damage:0,
-							source:{name:player.heroName,side:'hero'},
+							source:player.unitId,
 							extraSprite:'bomb',
 							alsoModifiesAggro:enemiesInScene(player.currentScene).map((e)=>{
 								return {
-									target:{name:e.name,side:'enemy'},
+									target:e.unitId,
 									setTo:100,
 									showFor:'onlyme'
 								}

@@ -66,6 +66,7 @@ export const POST: RequestHandler = async (r) => {
 		}
 		
 		let player = {
+			unitId:`hero${msg.join}`,
 			connectionState: null,
 			heroName: msg.join,
 			previousScene: 'dead',

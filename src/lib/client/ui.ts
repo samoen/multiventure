@@ -1,5 +1,5 @@
 import type { HeroName } from "$lib/server/users";
-import type { AnimationTarget, BattleAnimation, EnemyInClient, EnemyName, ExtraSprite, GameActionSentToClient, MessageFromServer, PlayerInClient } from "$lib/utils";
+import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, ExtraSprite, GameActionSentToClient, MessageFromServer, PlayerInClient } from "$lib/utils";
 import { derived, get, writable, type Writable } from "svelte/store";
 import peasantPortrait from '$lib/assets/portraits/peasant.webp';
 import peasant from '$lib/assets/peasant.png';
@@ -40,7 +40,7 @@ export let clientState = writable({
 export let waitingForMyAnimation = writable(false)
 
 export type VisualUnitProps = {
-    id: string;
+    id: UnitId;
     name: string;
     src: string;
     displayHp: number
@@ -74,14 +74,14 @@ export let allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 
 export const currentAnimationIndex: Writable<number> = writable(0)
 
-export type AnimationWithData = BattleAnimation & {
-    sourceId:string,
-    targetId?:string,
-    alsoDmgsProps: { targetId: string, amount: number }[]
-    alsoModifiesAggros: { targetId: string, amount?: number, setTo?:number, showFor:'onlyme'|'all' }[]
-}
+// export type AnimationWithData = BattleAnimation & {
+//     sourceId:UnitId,
+//     targetId?:UnitId,
+//     alsoDmgsProps: { targetId: string, amount: number }[]
+//     alsoModifiesAggros: { targetId: string, amount?: number, setTo?:number, showFor:'onlyme'|'all' }[]
+// }
 
-export const currentAnimationsWithData: Writable<AnimationWithData[]> = writable()
+export const currentAnimationsWithData: Writable<BattleAnimation[]> = writable()
 
 export let currentAnimation = derived([currentAnimationIndex, currentAnimationsWithData], ([$currentAnimationIndex, $currentAnimationsWithData]) => {
     return $currentAnimationsWithData?.at($currentAnimationIndex)
@@ -163,7 +163,7 @@ let enemyPortraits = {
     troll: gruntPortrait
 } satisfies Record<EnemyTemplateId, string>;
 
-export function updateUnit(index: string, run: (vup: VisualUnitProps) => void) {
+export function updateUnit(index: UnitId, run: (vup: VisualUnitProps) => void) {
     allVisualUnitProps.update((old)=>{
             return old.map((p, j) => {
                 if (index == p.id) {
@@ -194,7 +194,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                 portrait: peasantPortrait,
                 info:lastMsg.yourInfo,
             },
-            actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target && a.target.name == lastMsg.yourInfo.heroName && a.target.side == 'hero')
+            actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == lastMsg.yourInfo.unitId)
         } satisfies VisualUnitProps
         )
 
@@ -213,7 +213,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                         portrait: enemyPortraits[e.templateId],
                         enemy: e
                     },
-                    actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target && a.target.name == e.name && a.target.side == 'enemy')
+                    actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == e.unitId)
                 } satisfies VisualUnitProps
                 )
             }
@@ -232,7 +232,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                             portrait: peasantPortrait,
                             info: p,
                         },
-                        actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target && a.target.name == p.heroName && a.target.side == 'hero')
+                        actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == p.unitId)
                     }
                 )
             }
@@ -253,11 +253,11 @@ export function handlePutsStatusOnTarget(vup: VisualUnitProps, anim: BattleAnima
     if (anim.putsStatusOnTarget) {
         if (vup.actual.kind == 'enemy') {
             console.log(`putting poison on enemy ${JSON.stringify(vup.actual.enemy.statuses)}`);
-            let existingStatusesForSource = vup.actual.enemy.statuses[anim.source.name];
+            let existingStatusesForSource = vup.actual.enemy.statuses[anim.source];
             if (!existingStatusesForSource) {
-                vup.actual.enemy.statuses[anim.source.name] = { poison: 0, rage: 0 };
+                vup.actual.enemy.statuses[anim.source] = { poison: 0, rage: 0 };
             }
-            vup.actual.enemy.statuses[anim.source.name].poison = 1;
+            vup.actual.enemy.statuses[anim.source].poison = 1;
         } else if (vup.actual.kind == 'player') {
             vup.actual.info.statuses['poison'] = 1;
         }
@@ -278,7 +278,7 @@ export const centerFieldTarget = derived(
         return undefined;
     }
 );
-export async function nextAnimationIndex(start: boolean, curAnimIndex:number, curAnimations:AnimationWithData[], latest:MessageFromServer|undefined, someoneDied:boolean) {
+export async function nextAnimationIndex(start: boolean, curAnimIndex:number, curAnimations:BattleAnimation[], latest:MessageFromServer|undefined, someoneDied:boolean) {
     let cai = 0
     if (start) {
         currentAnimationIndex.set(0)
