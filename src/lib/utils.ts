@@ -23,18 +23,22 @@ export type UnitId = `hero${string}` | `enemy${string}`
 
 export type BattleAnimation = {
 	source: UnitId,
+	damageToSource?: number,
 	target?: UnitId,
+	damageToTarget?: number,
 	putsStatusOnTarget?:StatusId,
-	damage: number,
 	behavior: AnimationBehavior,
 	extraSprite?: ExtraSprite,
-	alsoDamages?:{target:UnitId,amount:number}[],
-	alsoModifiesAggro?:{
-		target:UnitId,
-		amount?:number,
-		setTo?:number,
-		showFor:'onlyme' | 'all'
-	}[],
+	alsoDamages?:HealthModifier[],
+	alsoModifiesAggro?:AggroModifier[],
+}
+
+export type HealthModifier = {target:UnitId,amount:number}
+export type AggroModifier = {
+	target:UnitId,
+	amount?:number,
+	setTo?:number,
+	showFor:'onlyme' | 'all'
 }
 
 export type ExtraSprite = 'arrow' | 'bomb' | 'flame' | 'poison'

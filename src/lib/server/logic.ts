@@ -146,13 +146,13 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	
 	handleRetaliations(player, false, actionFromId)
 	
-	if (player.health > 1) {
+	if (player.health > 0) {
 		if (actionFromId.performAction) {
 			actionFromId.performAction();
 		}
 	}
 	
-	if (player.health > 1) {
+	if (player.health > 0) {
 		handleRetaliations(player, true, actionFromId)
 	}
 	if(actionFromId.provoke){
@@ -172,7 +172,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		}
 	}
 	
-	if(player.health > 1 && actionFromId.provoke){
+	if(player.health > 0 && actionFromId.provoke){
 		if(player.statuses.poison > 0){
 			let dmg = Math.floor(player.maxHealth * 0.1)
 			player.health -= dmg
@@ -182,9 +182,9 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 					sceneId:player.currentScene,
 					battleAnimation:{
 						source:player.unitId,
-						behavior:"selfInflicted",
+						damageToSource:dmg,
+						behavior:'selfInflicted',
 						extraSprite:'poison',
-						damage:dmg,
 					}
 				}
 			)
@@ -198,7 +198,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 
 	
-	if (actionFromId.provoke) {
+	if (actionFromId.provoke && player.health > 0) {
 		addAggro(player, actionFromId.provoke)
 	}
 	
@@ -242,7 +242,7 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 										battleAnimation: {
 											source: enemyInScene.unitId,
 											target: player.unitId,
-											damage: r.dmgDone,
+											damageToTarget: r.dmgDone,
 											behavior: enemyInScene.template.behavior ?? 'melee',
 										}
 									})

@@ -82,7 +82,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 						source: me.unitId,
 						target: player.unitId,
 						putsStatusOnTarget:'poison',
-						damage: r.dmgDone,
+						damageToTarget: r.dmgDone,
 						behavior: 'missile',
 						extraSprite:'arrow',
 					}
@@ -123,7 +123,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 						battleAnimation:{
 							source:me.unitId,
 							target: player.unitId,
-							damage:r.dmgDone,
+							damageToTarget:r.dmgDone,
 							behavior:'missile',
 							extraSprite:'flame',
 							alsoDamages: dmged,
@@ -256,8 +256,8 @@ export function takePoisonDamage(enemy: ActiveEnemy) : {dmgDone:number} {
 			sceneId:enemy.currentScene,
 			battleAnimation:{
 				source:enemy.unitId,
+				damageToSource:dmg,
 				behavior:'selfInflicted',
-				damage:dmg,
 				extraSprite:'poison',
 			}
 		}

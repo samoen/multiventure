@@ -190,7 +190,7 @@
 					if ($currentAnimation != undefined && !$animationCancelled) {
 						let anim = $currentAnimation;
 						updateUnit(hostId, (vup) => {
-							vup.displayHp -= anim.damage;
+							vup.displayHp -= anim.damageToTarget ?? 0;
 							handlePutsStatusOnTarget(vup,anim)
 						});
 						if ($guestId == undefined) return;
@@ -238,7 +238,7 @@
 					if ($currentAnimation != undefined && !$animationCancelled) {
 						const anim = $currentAnimation;
 						updateUnit(hostId, (vup) => {
-							vup.displayHp -= anim.damage;
+							vup.displayHp -= anim.damageToSource ?? 0;
 						});
 					}
 				}}
@@ -271,7 +271,7 @@
 						let anim = $currentAnimation;
 						let someoneDied = false;
 						updateUnit(hostId, (vup) => {
-							vup.displayHp -= anim.damage;
+							vup.displayHp -= anim.damageToTarget ?? 0;
 							handlePutsStatusOnTarget(vup,anim)
 							if (vup.displayHp < 1) {
 								someoneDied = true;

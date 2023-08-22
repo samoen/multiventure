@@ -1,4 +1,4 @@
-import type { UnitId } from '$lib/utils';
+import type { AggroModifier, HealthModifier, UnitId } from '$lib/utils';
 import { damageEnemy, enemiesInScene, pushAnimation, takePoisonDamage } from './enemies';
 import { pushHappening } from './messaging';
 import { activePlayersInScene, healPlayer, type Player } from './users';
@@ -67,7 +67,7 @@ const dagger: Item = {
 									battleAnimation: {
 										source: player.unitId,
 										target: enemy.unitId,
-										damage: r.dmgDone,
+										damageToTarget: r.dmgDone,
 										behavior: 'melee',
 									}
 								})
@@ -98,7 +98,7 @@ const club: Item = {
 									battleAnimation: {
 										source: player.unitId,
 										target: enemy.unitId,
-										damage: r.dmgDone,
+										damageToTarget: r.dmgDone,
 										behavior: 'melee',
 									}
 								})
@@ -130,7 +130,7 @@ const fireStaff: Item = {
 									battleAnimation: {
 										source: player.unitId,
 										target: enemy.unitId,
-										damage: r.dmgDone,
+										damageToTarget: r.dmgDone,
 										behavior: 'missile',
 										extraSprite:'flame',
 									}
@@ -152,7 +152,6 @@ const bandage: Item = {
 				player.itemActions.push(
 					{
 						buttonText: `Heal ${friend.heroName == player.heroName ? 'myself' : friend.heroName} with bandage`,
-						// target:{kind:'friendly',targetName:friend.heroName},
 						grantsImmunity: true,
 						provoke: 1,
 						slot:'utility',
@@ -167,7 +166,7 @@ const bandage: Item = {
 											battleAnimation: {
 												source: player.unitId,
 												target: friend.unitId,
-												damage: r.healed*-1,
+												damageToTarget: r.healed*-1,
 												behavior: 'melee',
 											}
 										}
@@ -178,7 +177,7 @@ const bandage: Item = {
 											sceneId: player.currentScene,
 											battleAnimation: {
 												source: player.unitId,
-												damage: r.healed*-1,
+												damageToSource: r.healed*-1,
 												behavior: 'selfInflicted',
 												extraSprite:'flame'
 											}
@@ -207,12 +206,22 @@ const bomb: Item = {
 				provoke:5,
 				slot:'utility',
 				performAction() {
-					let dmgs : {target:UnitId,amount:number}[]= []
-					for (const enemy of enemiesInScene(player.currentScene)) {
-			
-						// for (const key of enemy.aggros.keys()) {
-						// 	enemy.aggros.set(key, 0);
-						// }
+					let dmgs : HealthModifier[]= []
+					let aggroAffected : AggroModifier[]= []
+					for (const enemy of enemiesInScene(player.currentScene)) {			
+						for (const key of enemy.aggros.keys()) {
+							let prevAggro = enemy.aggros.get(key)
+							if(prevAggro != undefined){
+								let newAggro = prevAggro - 20
+								if(newAggro < 1)newAggro = 0
+								enemy.aggros.set(key, newAggro);
+								aggroAffected.push({
+									target:enemy.unitId,
+									amount:20,
+									showFor:'all',
+								})
+							}
+						}
 						let r = damageEnemy(player, enemy, 5)
 						if(r.dmgDone>0){
 							dmgs.push({
@@ -226,10 +235,10 @@ const bomb: Item = {
 							sceneId: player.currentScene,
 							battleAnimation: {
 								source: player.unitId,
-								damage: 0,
 								behavior: 'center',
+								extraSprite:'bomb',
 								alsoDamages:dmgs,
-								extraSprite:'bomb'
+								alsoModifiesAggro:aggroAffected
 							}
 						})
 					if (player.inventory.utility.stock) {
@@ -273,7 +282,7 @@ const poisonDart: Item = {
 										source: player.unitId,
 										target: enemy.unitId,
 										putsStatusOnTarget:'poison',
-										damage: r.dmgDone,
+										damageToTarget: r.dmgDone,
 										behavior: 'missile',
 										extraSprite:'arrow',
 									}
@@ -304,7 +313,7 @@ const plateMail: Item = {
 						sceneId:player.currentScene,
 						battleAnimation:{
 							behavior:'center',
-							damage:0,
+							damageToTarget:0,
 							source:player.unitId,
 							extraSprite:'bomb',
 							alsoModifiesAggro:enemiesInScene(player.currentScene).map((e)=>{
