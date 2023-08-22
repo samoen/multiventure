@@ -119,11 +119,11 @@
 				$clientState.waitingForMyEvent = false;
 				loading = false;
 			}
-			console.log(`gotworld`);
+			// console.log(`gotworld`);
 			await handleAnimationsOnMessage(prevMsg, sMsg);
 
 			// wait for dom elements to be populated
-			console.log('tick');
+			// console.log('tick');
 			await tick();
 			if (happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
 			if (sceneTexts) sceneTexts.scroll({ top: sceneTexts.scrollHeight, behavior: 'smooth' });
@@ -142,7 +142,7 @@
 		$animationCancelled = true;
 		$currentAnimationIndex = 999;
 		// $currentAnimation = undefined;
-		console.log('tick');
+		// console.log('tick');
 		await tick();
 		// await new Promise((r) => setTimeout(r, 100));
 		$animationCancelled = false;
@@ -246,7 +246,7 @@
 		// anyone's message with no animations and not animating
 		if ($currentAnimation == undefined && !latest.animations.length) {
 			// await cancelAnimations();
-			console.log('anyones and nono');
+			console.log('anyones message with no animations and not animating');
 			syncVisualsToMsg(latest);
 			return;
 		}

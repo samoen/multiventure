@@ -1,4 +1,4 @@
-import type { AnimationBehavior, AnimationTarget, BattleAnimation, EnemyName, StatusEffect } from "$lib/utils";
+import type { AnimationBehavior, AnimationTarget, BattleAnimation, EnemyName, StatusEffect, StatusId } from "$lib/utils";
 import { pushHappening } from "./messaging";
 import { scenes, type SceneId } from "./scenes";
 import { playerEquipped, type HeroName, type Player, activePlayers, activePlayersInScene } from "./users";
@@ -15,7 +15,7 @@ export type ActiveEnemy = {
 	damage: number
 	aggros: Map<HeroName, number>
 	template: EnemyTemplate
-	statuses: StatusEffect[]
+	statuses: Map<HeroName, Record<StatusId,number>>
 }
 
 export function getAggroForPlayer(enemy:ActiveEnemy, player:Player):number{
@@ -71,11 +71,8 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		speed: 4,
 		specialAttack(me, player) {
 			let r = damagePlayer(me, player)
-			let found = player.statuses.find(s => s.status == 'poison')
-			if (found != undefined && found.counter) {
-				found.counter += 3
-			} else {
-				player.statuses.push({ status: 'poison', counter: 3 })
+			if(player.statuses.poison < 3){
+				player.statuses.poison = 3
 			}
 			pushAnimation(
 				{
@@ -83,6 +80,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 					battleAnimation: {
 						source: { name: me.name, side: 'enemy' },
 						target: { name: player.heroName, side: 'hero' },
+						putsStatusOnTarget:'poison',
 						damage: r.dmgDone,
 						behavior: 'missile',
 						extraSprite:'arrow',
@@ -150,7 +148,7 @@ export function modifiedEnemyHealth(h: number): number {
 	return h + ((activePlayers().length - 1) * PERCENT_OF_BASE_ADDED_PER_PLAYER * h)
 }
 
-export function spawnEnemy(name: string, template: EnemyTemplateId, where: SceneId, statuses: StatusEffect[] = []) {
+export function spawnEnemy(name: string, template: EnemyTemplateId, where: SceneId, statuses: Map<HeroName,Record<StatusId,number>> = new Map()) {
 	const baseHealth = enemyTemplates[template].baseHealth
 	let modifiedBaseHealth = scenes.get(where)?.solo ? baseHealth : modifiedEnemyHealth(baseHealth)
 	activeEnemies.push({

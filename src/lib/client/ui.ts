@@ -28,14 +28,10 @@ type UnitDetails = {
     kind: 'enemy'
     enemy: EnemyInClient
 } | {
-    kind: 'otherPlayer',
+    kind: 'player',
     portrait: string
     info: PlayerInClient
-} | {
-    kind: 'me',
-    portrait: string,
-    info:PlayerInClient
-};
+}
 
 export let clientState = writable({
     waitingForMyEvent: true,
@@ -185,6 +181,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
     }
     if (lastMsg) {
         let newVups: VisualUnitProps[] = []
+        // console.log(`syncing hero with poison ${lastMsg.yourInfo.statuses.poison}`)
         newVups.push({
             id:`hero${lastMsg.yourInfo.heroName}`,
             name: lastMsg.yourInfo.heroName,
@@ -193,7 +190,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
             displayHp: lastMsg.yourInfo.health,
             side: 'hero',
             actual: {
-                kind: 'me',
+                kind: 'player',
                 portrait: peasantPortrait,
                 info:lastMsg.yourInfo,
             },
@@ -231,7 +228,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                         maxHp: p.maxHealth,
                         side: 'hero',
                         actual: {
-                            kind: 'otherPlayer',
+                            kind: 'player',
                             portrait: peasantPortrait,
                             info: p,
                         },

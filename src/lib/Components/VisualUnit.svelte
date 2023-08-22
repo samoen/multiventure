@@ -12,12 +12,30 @@
 	let statuses : StatusId[] = []
 	$: {
 		if(vu?.actual.kind == 'enemy'){
-			statuses = vu.actual.enemy.statuses.map(s=>s.status)
+			// statuses = vu.actual.enemy.statuses.map(s=>s.status)
+			statuses = []
+			if(vu.actual.enemy.statuses){
+				// console.log(JSON.stringify(vu.actual.enemy.statuses))
+				let arrayOfStatuses = Array.from(Object.values(vu.actual.enemy.statuses))
+				// console.log(JSON.stringify(arrayOfStatuses))
+				if(arrayOfStatuses.find(s=>s.poison>0)){
+					statuses.push('poison')
+				}
+				if(arrayOfStatuses.find(s=>s.rage>0)){
+					statuses.push('rage')
+				}
+			}
 		}
-		if(vu?.actual.kind == 'me' || vu?.actual.kind == 'otherPlayer'){
-			statuses = vu.actual.info.statuses.map(s=>s.status)
+		if(vu?.actual.kind == 'player'){
+			statuses = []
+			if(vu.actual.info.statuses.poison > 0){
+				// console.log('pushing poison visual on player')
+				statuses.push('poison')
+			}
+			if(vu.actual.info.statuses.rage > 0){
+				statuses.push('rage')
+			}	
 		}
-
 	}
 
 	const statusImages : Record<StatusId,string>={

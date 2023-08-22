@@ -119,7 +119,10 @@ export function handleAction(player: Player, actionFromId: GameAction) {
             }
 		}
 
-		player.statuses = []
+		player.statuses = {
+			poison:0,
+			rage:0,
+		}
 
 		enterSceneOrWakeup(player)
 		return
@@ -154,47 +157,44 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 	if(actionFromId.provoke){
 		for (const enemy of enemiesInScene(player.currentScene)) {
-			for (const s of enemy.statuses) {
-				if (s.status == 'poison') {
-					takePoisonDamage(enemy)
-					if(s.counter) s.counter--
-					
-				}
-				if(s.status == 'rage'){
-					enemy.damage += 10
-					pushHappening(`${enemy.name}'s rage grows!`)
-				}
+			let statusForPlayer = enemy.statuses.get(player.heroName)
+			if(!statusForPlayer)continue
+			if(statusForPlayer.poison > 0){
+				console.log(`${enemy.name} takes poison ${JSON.stringify(enemy.statuses)}`)
+				takePoisonDamage(enemy)
+				statusForPlayer.poison --
 			}
-			enemy.statuses = enemy.statuses.filter(s => (s.counter != undefined && s.counter > 0) || s.counter == undefined)
+			if(statusForPlayer.rage > 0){
+				enemy.damage += 10
+				pushHappening(`${enemy.name}'s rage grows!`)
+				statusForPlayer.rage--
+			}
 		}
 	}
 	
 	if(player.health > 1 && actionFromId.provoke){
-		for (const s of player.statuses) {
-			if (s.status == 'poison') {
-				let dmg = Math.floor(player.maxHealth * 0.25)
-				player.health -= dmg
-				pushHappening(`${player.heroName} took ${dmg} damage from poison`)
-				pushAnimation(
-					{
-						sceneId:player.currentScene,
-						battleAnimation:{
-							source:{name:player.heroName,side:"hero"},
-							behavior:"selfInflicted",
-							extraSprite:'poison',
-							damage:dmg,
-						}
+		if(player.statuses.poison > 0){
+			let dmg = Math.floor(player.maxHealth * 0.1)
+			player.health -= dmg
+			pushHappening(`${player.heroName} took ${dmg} damage from poison`)
+			pushAnimation(
+				{
+					sceneId:player.currentScene,
+					battleAnimation:{
+						source:{name:player.heroName,side:"hero"},
+						behavior:"selfInflicted",
+						extraSprite:'poison',
+						damage:dmg,
 					}
-				)
-				if(s.counter) s.counter--
-
-			}
-			if(s.status == 'rage'){
-				player.speed += 10
-				pushHappening(`${player.heroName}'s rage grows!`)
-			}
+				}
+			)
+			player.statuses.poison--
 		}
-		player.statuses = player.statuses.filter(s => (s.counter != undefined && s.counter > 0) || s.counter == undefined)
+		if(player.statuses.rage > 0){
+			player.speed += 10
+			pushHappening(`${player.heroName}'s rage grows!`)
+			player.statuses.rage--
+		}
 	}
 
 	

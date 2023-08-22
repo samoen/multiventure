@@ -68,13 +68,14 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 		happenings: recentHappenings,
 		animations: forPlayer.animations,
 		enemiesInScene: enemiesInScene(forPlayer.currentScene).map((e) => {
+			// console.log(`sending ${e.name} statuses ${JSON.stringify(e.statuses)}`)
 			return {
 				health: e.currentHealth,
 				maxHealth: e.maxHealth,
 				name: e.name,
 				templateId: e.templateId,
 				myAggro: getAggroForPlayer(e,forPlayer),
-				statuses: e.statuses,
+				statuses: Object.fromEntries(e.statuses),
 			}
 		}),
 		playerFlags: Array.from(forPlayer.flags),

@@ -60,7 +60,8 @@ export type EnemyInClient = {
 	health: number
 	maxHealth: number
 	myAggro: number
-	statuses: StatusEffect[]
+	// statuses: Map<HeroName,Record<StatusId,number>>
+	statuses: Record<HeroName,Record<StatusId,number>>
 }
 
 export function isMsgFromServer(msg: object): msg is MessageFromServer {
@@ -76,7 +77,7 @@ export type PlayerInClient = {
 	weapon: ItemStateForSlot<'weapon'>
 	utility: ItemStateForSlot<'utility'>
 	body: ItemStateForSlot<'body'>
-	statuses:StatusEffect[]
+	statuses:Record<StatusId,number>
 };
 
 export type GameActionSelected = {

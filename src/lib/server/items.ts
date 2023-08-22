@@ -236,24 +236,31 @@ const poisonDart: Item = {
 				{
 					buttonText: `Throw poison dart at ${enemy.name}`,
 					provoke: 40,
+					speed:20,
 					slot:'utility',
 					target:{name:enemy.name, side:'enemy'},
 					performAction() {
-						let found = enemy.statuses.find(s => s.status == 'poison')
-						if (found != undefined && found.counter) {
-							found.counter += 3
-						} else {
-							enemy.statuses.push({ status: 'poison', counter: 3 })
+						let found = enemy.statuses.get(player.heroName)
+						if(!found){
+							found = {
+								poison:0,
+								rage:0,
+							}
 						}
+						// found = enemy.statuses.get(player.heroName)
+						if(found.poison < 3){
+							found.poison = 3
+						}
+						enemy.statuses.set(player.heroName,found)
+						
 						let r = damageEnemy(player,enemy,1)
-						// takePoisonDamage(enemy)
-						// if (r.dmgDone > 0) {
 							pushAnimation(
 								{
 									sceneId: player.currentScene,
 									battleAnimation: {
 										source: { name: player.heroName, side: 'hero' },
 										target: { name: enemy.name, side: 'enemy' },
+										putsStatusOnTarget:'poison',
 										damage: r.dmgDone,
 										behavior: 'missile',
 										extraSprite:'arrow',

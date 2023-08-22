@@ -30,6 +30,7 @@
 	import { derived, writable, type Writable } from 'svelte/store';
 	import { blur, fade, fly, scale, slide } from 'svelte/transition';
 	import VisualUnit from './VisualUnit.svelte';
+	import { stringify } from 'uuid';
 
 	export let hostId: string;
 
@@ -265,7 +266,16 @@
 						updateUnit(hostId, (vup) => {
 							vup.displayHp -= anim.damage;
 							if(anim.putsStatusOnTarget){
-								
+								if(vup.actual.kind == 'enemy'){
+									console.log(`putting poison on enemy ${JSON.stringify( vup.actual.enemy.statuses)}`)
+									let existingStatusesForSource = vup.actual.enemy.statuses[anim.source.name]
+									if(!existingStatusesForSource){
+										vup.actual.enemy.statuses[anim.source.name] = {poison:0,rage:0}
+									}
+									vup.actual.enemy.statuses[anim.source.name].poison = 1
+								}else if(vup.actual.kind == 'player'){
+									vup.actual.info.statuses['poison'] = 1
+								}
 							}
 							if (vup.displayHp < 1) {
 								someoneDied = true;
@@ -350,9 +360,6 @@
 	}
 	.selfInflictSource {
 		justify-self: flex-start;
-	}
-	.selfInflictTarget {
-		justify-self: flex-end;
 	}
 	.projectile {
 		/* background-color: aqua; */

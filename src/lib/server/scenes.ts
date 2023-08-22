@@ -209,11 +209,13 @@ const trainingRoom2: Scene = {
 			this.onVictory && this.onVictory(player)
 			return
 		}
+		let borgusStatuses = new Map()
+		borgusStatuses.set(player.heroName,{poison:0,rage:5}) 
 		player.sceneTexts.push("Borgus: 'Raaargh! What are you hob-doing in MY hob-training room?! How is Glornak by the way? We used to work in the same room but they split us up.'")
 		player.sceneTexts.push("Florgus: 'There you go again Morgus, talking about Glornak like I'm not standing right here. And it's OUR training room now remember? Oh Great, another recruit equipped with a dagger..'")
 		player.sceneTexts.push("Scortchy: 'Burn! I burn you! REEEE HEEE HEEE'")
 		player.sceneTexts.push("Florgus: 'Remember Scortchy, aim for the recruit! Not us!'")
-		spawnEnemy('Borgus', 'hobGoblin', `trainingRoom2_${player.heroName}`, [{ status: 'rage' }])
+		spawnEnemy('Borgus', 'hobGoblin', `trainingRoom2_${player.heroName}`, borgusStatuses)
 		spawnEnemy('Florgus', 'hobGoblin', `trainingRoom2_${player.heroName}`)
 		spawnEnemy('Scorchy', 'fireGremlin', `trainingRoom2_${player.heroName}`)
 	},
@@ -533,7 +535,9 @@ const goblinCamp: Scene = {
 				playerInScene.sceneTexts.push(`Suddendly, A pair of goblins rush out of a tent.. "Hey Gorlak, looks like lunch!" "Right you are Murk. Let's eat!"`)
 			}
 			spawnEnemy('Gorlak', 'goblin', 'goblinCamp')
-			spawnEnemy('Murk', 'goblin', 'goblinCamp', [{ status: 'rage' }])
+			let murkStatuses = new Map()
+			murkStatuses.set(player.heroName,{poison:0,rage:5}) 
+			spawnEnemy('Murk', 'goblin', 'goblinCamp', murkStatuses)
 		}
 	},
 	onBattleJoin(player) {
