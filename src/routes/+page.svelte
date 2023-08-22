@@ -31,7 +31,10 @@
 
 		bodySlotActions,
 
-		updateUnit
+		updateUnit,
+
+		handlePutsStatusOnTarget
+
 
 
 
@@ -165,25 +168,25 @@
 				continue
 			}
 			let targetProp = a.target ? findPropFromAnimationTarget(a.target) : undefined;
-			let alsoDmgsProps: { targetIndex: string; amount: number }[] = [];
+			let alsoDmgsProps: { targetId: string; amount: number }[] = [];
 			if (a.alsoDamages) {
 				for (const alsoDmged of a.alsoDamages) {
 					let dmged = findPropFromAnimationTarget(alsoDmged.target);
 					if (dmged) {
 						alsoDmgsProps.push({
-							targetIndex: dmged,
+							targetId: dmged,
 							amount: alsoDmged.amount
 						});
 					}
 				}
 			}
-			let alsoModifiedAggrosProps: { targetIndex: string; amount?: number; setTo?:number; showFor:'onlyme'|'all' }[] = [];
+			let alsoModifiedAggrosProps: { targetId: string; amount?: number; setTo?:number; showFor:'onlyme'|'all' }[] = [];
 			if (a.alsoModifiesAggro) {
 				for (const alsoModified of a.alsoModifiesAggro) {
 					let affected = findPropFromAnimationTarget(alsoModified.target);
 					if (affected) {
 						alsoModifiedAggrosProps.push({
-							targetIndex: affected,
+							targetId: affected,
 							amount: alsoModified.amount,
 							setTo: alsoModified.setTo,
 							showFor:alsoModified.showFor,
@@ -193,8 +196,8 @@
 			}
 			let animWithData : AnimationWithData = {
 				...a,
-				sourceIndex: sourceProp,
-				targetIndex: targetProp,
+				sourceId: sourceProp,
+				targetId: targetProp,
 				alsoDmgsProps: alsoDmgsProps,
 				alsoModifiesAggros: alsoModifiedAggrosProps
 			};
@@ -453,10 +456,12 @@
 						in:receiveCenter={{ key: $animationCancelled ? 10 : 'center' }}
 						on:introend={() => {
 							if ($currentAnimation != undefined && !$animationCancelled) {
+								let anim = $currentAnimation
 								let someoneDied = false
 								if ($currentAnimation.alsoDamages) {
 									for (const other of $currentAnimation.alsoDmgsProps) {
-										updateUnit(other.targetIndex,(vup)=>{
+										updateUnit(other.targetId,(vup)=>{
+											handlePutsStatusOnTarget(vup,anim)
 											vup.displayHp -= other.amount
 											if(vup.displayHp < 1){
 												someoneDied = true
@@ -468,7 +473,7 @@
 								if ($currentAnimation.alsoModifiesAggro) {
 									for (const other of $currentAnimation.alsoModifiesAggros) {
 										if(other.showFor == 'all' || $lastMsgFromServer?.yourInfo.heroName == $currentAnimation.source.name){
-											updateUnit(other.targetIndex,(vup)=>{
+											updateUnit(other.targetId,(vup)=>{
 												if(vup.aggro != undefined){
 													if(other.amount != undefined){
 														vup.aggro -= other.amount

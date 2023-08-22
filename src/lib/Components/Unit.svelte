@@ -24,13 +24,17 @@
 		selectedDetail,
 		updateUnit,
 		currentAnimationIndex,
-		currentAnimationsWithData
+		currentAnimationsWithData,
+
+		handlePutsStatusOnTarget
+
 	} from '$lib/client/ui';
 	import { tick } from 'svelte';
 	import { derived, writable, type Writable } from 'svelte/store';
 	import { blur, fade, fly, scale, slide } from 'svelte/transition';
 	import VisualUnit from './VisualUnit.svelte';
 	import { stringify } from 'uuid';
+	import type { BattleAnimation } from '$lib/utils';
 
 	export let hostId: string;
 
@@ -58,7 +62,7 @@
 			}
 			if (
 				$currentAnim.behavior == 'melee' &&
-				$currentAnim.sourceIndex == hostId &&
+				$currentAnim.sourceId == hostId &&
 				$subAnimationStage == 'fire'
 			) {
 				return false;
@@ -67,17 +71,17 @@
 		}
 	);
 
-	const guestIndex = derived(
+	const guestId = derived(
 		[currentAnimation, subAnimationStage, allVisualUnitProps],
 		([$currentAnimation, $subAnimationStage]) => {
 			if (!$currentAnimation) return undefined;
 			if (
 				$currentAnimation.behavior == 'melee' &&
-				$currentAnimation.targetIndex == hostId &&
+				$currentAnimation.targetId == hostId &&
 				$subAnimationStage == 'fire'
 			) {
-				console.log(`new guest ${$currentAnimation.sourceIndex}`);
-				return $currentAnimation.sourceIndex;
+				console.log(`new guest ${$currentAnimation.sourceId}`);
+				return $currentAnimation.sourceId;
 			}
 			return undefined;
 		}
@@ -89,7 +93,7 @@
 			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
 			if (
 				($currentAnimation.behavior == 'missile' || $currentAnimation.behavior == 'center') &&
-				$currentAnimation.sourceIndex == hostId &&
+				$currentAnimation.sourceId == hostId &&
 				$subAnimationStage == 'start'
 			) {
 				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
@@ -115,7 +119,7 @@
 			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
 			if (
 				$currentAnimation.behavior == 'missile' &&
-				$currentAnimation.targetIndex == hostId &&
+				$currentAnimation.targetId == hostId &&
 				$subAnimationStage == 'fire'
 			) {
 				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
@@ -129,7 +133,7 @@
 			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
 			if (
 				$currentAnimation.behavior == 'selfInflicted' &&
-				$currentAnimation.sourceIndex == hostId &&
+				$currentAnimation.sourceId == hostId &&
 				$subAnimationStage == 'start'
 			) {
 				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
@@ -137,6 +141,8 @@
 			return undefined;
 		}
 	);
+
+	
 </script>
 
 <div class="unitAndArea">
@@ -175,27 +181,30 @@
 		{/if}
 	</div>
 	<div class="guestArea placeHolder" style:order={$hostIsNotHero ? 0 : 2}>
-		{#if $guestIndex != undefined}
+		{#if $guestId != undefined}
 			<div
 				class="placeHolder"
 				in:receiveMelee={{ key: $animationCancelled ? 3 : 'movehero' }}
 				out:sendMelee={{ key: $animationCancelled ? 4 : 'movehero' }}
 				on:introend={() => {
 					if ($currentAnimation != undefined && !$animationCancelled) {
-						let cu = $currentAnimation;
+						let anim = $currentAnimation;
 						updateUnit(hostId, (vup) => {
-							vup.displayHp -= cu.damage;
+							vup.displayHp -= anim.damage;
+							handlePutsStatusOnTarget(vup,anim)
 						});
-						if ($guestIndex == undefined) return;
-						updateUnit($guestIndex, (vup) => {
-							vup.aggro = 0;
+						if ($guestId == undefined) return;
+						updateUnit($guestId, (vup) => {
+							if(vup.side == 'enemy'){
+								vup.aggro = 0;
+							}
 						});
 
 						$subAnimationStage = 'sentHome';
 					}
 				}}
 			>
-				<VisualUnit hostId={$guestIndex} flip={!$hostIsNotHero} />
+				<VisualUnit hostId={$guestId} flip={!$hostIsNotHero} />
 			</div>
 		{/if}
 		{#if $projectileSource}
@@ -265,18 +274,7 @@
 						let someoneDied = false;
 						updateUnit(hostId, (vup) => {
 							vup.displayHp -= anim.damage;
-							if(anim.putsStatusOnTarget){
-								if(vup.actual.kind == 'enemy'){
-									console.log(`putting poison on enemy ${JSON.stringify( vup.actual.enemy.statuses)}`)
-									let existingStatusesForSource = vup.actual.enemy.statuses[anim.source.name]
-									if(!existingStatusesForSource){
-										vup.actual.enemy.statuses[anim.source.name] = {poison:0,rage:0}
-									}
-									vup.actual.enemy.statuses[anim.source.name].poison = 1
-								}else if(vup.actual.kind == 'player'){
-									vup.actual.info.statuses['poison'] = 1
-								}
-							}
+							handlePutsStatusOnTarget(vup,anim)
 							if (vup.displayHp < 1) {
 								someoneDied = true;
 							}
@@ -284,7 +282,7 @@
 
 						// if ($currentAnimation.alsoDamages) {
 						for (const other of $currentAnimation.alsoDmgsProps) {
-							updateUnit(other.targetIndex, (vup) => {
+							updateUnit(other.targetId, (vup) => {
 								vup.displayHp -= other.amount;
 								if (vup.displayHp < 1) {
 									someoneDied = true;
@@ -297,7 +295,7 @@
 								other.showFor == 'all' ||
 								$lastMsgFromServer?.yourInfo.heroName == $currentAnimation.source.name
 							) {
-								updateUnit(other.targetIndex, (vup) => {
+								updateUnit(other.targetId, (vup) => {
 									if (vup.aggro != undefined) {
 										if (other.amount != undefined) {
 											vup.aggro -= other.amount;

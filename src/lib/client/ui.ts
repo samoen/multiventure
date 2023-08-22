@@ -75,10 +75,10 @@ export let allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 export const currentAnimationIndex: Writable<number> = writable(0)
 
 export type AnimationWithData = BattleAnimation & {
-    sourceIndex:string,
-    targetIndex?:string,
-    alsoDmgsProps: { targetIndex: string, amount: number }[]
-    alsoModifiesAggros: { targetIndex: string, amount?: number, setTo?:number, showFor:'onlyme'|'all' }[]
+    sourceId:string,
+    targetId?:string,
+    alsoDmgsProps: { targetId: string, amount: number }[]
+    alsoModifiesAggros: { targetId: string, amount?: number, setTo?:number, showFor:'onlyme'|'all' }[]
 }
 
 export const currentAnimationsWithData: Writable<AnimationWithData[]> = writable()
@@ -249,6 +249,20 @@ export const extraSprites: Record<ExtraSprite, string> = {
     poison: greenDrip,
 }
 
+export function handlePutsStatusOnTarget(vup: VisualUnitProps, anim: BattleAnimation) {
+    if (anim.putsStatusOnTarget) {
+        if (vup.actual.kind == 'enemy') {
+            console.log(`putting poison on enemy ${JSON.stringify(vup.actual.enemy.statuses)}`);
+            let existingStatusesForSource = vup.actual.enemy.statuses[anim.source.name];
+            if (!existingStatusesForSource) {
+                vup.actual.enemy.statuses[anim.source.name] = { poison: 0, rage: 0 };
+            }
+            vup.actual.enemy.statuses[anim.source.name].poison = 1;
+        } else if (vup.actual.kind == 'player') {
+            vup.actual.info.statuses['poison'] = 1;
+        }
+    }
+}
 
 export const centerFieldTarget = derived(
     [currentAnimation, subAnimationStage],
