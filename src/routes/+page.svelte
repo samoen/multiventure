@@ -32,7 +32,13 @@
 
 		updateUnit,
 
-		handlePutsStatusOnTarget
+		handlePutsStatusOnTarget,
+
+		numberShownOnSlot,
+
+		stockDotsOnSlotButton
+
+
 
 
 
@@ -153,54 +159,7 @@
 		$animationCancelled = false;
 	}
 
-	// function findPropFromAnimationTarget(at: UnitId): string {
-		// let found = $allVisualUnitProps.findIndex(v=>v.name == at.name && v.side == at.side)
-		// console.log(`found ${found}`)
-		// if(found != -1)return found
-		// return undefined
-		// return `${at.side}${at.name}`
-	// }
-
 	async function startAnimating(previous: MessageFromServer, latest: MessageFromServer) {
-		// let newAnimationsWithData : BattleAnimation[] = []
-		// for(const a of latest.animations){
-			// let sourceProp = a.source;
-			// let targetProp = a.target;
-			// let alsoDmgsProps: { targetId: string; amount: number }[] = [];
-			// if (a.alsoDamages) {
-			// 	for (const alsoDmged of a.alsoDamages) {
-			// 		let dmged = alsoDmged.target;
-			// 		if (dmged) {
-			// 			alsoDmgsProps.push({
-			// 				targetId: dmged,
-			// 				amount: alsoDmged.amount
-			// 			});
-			// 		}
-			// 	}
-			// }
-			// let alsoModifiedAggrosProps: { targetId: string; amount?: number; setTo?:number; showFor:'onlyme'|'all' }[] = [];
-			// if (a.alsoModifiesAggro) {
-			// 	for (const alsoModified of a.alsoModifiesAggro) {
-			// 		let affected = alsoModified.target;
-			// 		if (affected) {
-			// 			alsoModifiedAggrosProps.push({
-			// 				targetId: affected,
-			// 				amount: alsoModified.amount,
-			// 				setTo: alsoModified.setTo,
-			// 				showFor:alsoModified.showFor,
-			// 			});
-			// 		}
-			// 	}
-			// }
-			// let animWithData : AnimationWithData = {
-			// 	...a,
-			// 	sourceId: sourceProp,
-			// 	targetId: targetProp,
-			// 	alsoDmgsProps: alsoDmgsProps,
-			// 	alsoModifiesAggros: alsoModifiedAggrosProps
-			// };
-			// newAnimationsWithData.push(a)
-		// }
 		$currentAnimationsWithData = latest.animations
 		console.log(`starting anims ${JSON.stringify($currentAnimationsWithData)}`);
 		nextAnimationIndex(true,$currentAnimationIndex,$currentAnimationsWithData,$lastMsgFromServer,false);
@@ -519,7 +478,7 @@
 				}
 				$latestSlotButtonInput = 'weapon';
 			}}
-			>{$lastMsgFromServer.yourInfo.weapon.itemId}
+			>{$lastMsgFromServer.yourInfo.weapon.itemId} {numberShownOnSlot($lastMsgFromServer.yourInfo.weapon) ??  ''} {stockDotsOnSlotButton($lastMsgFromServer.yourInfo.weapon)}
 		</button>
 
 		<button
@@ -539,7 +498,7 @@
 				}
 				$latestSlotButtonInput = 'utility';
 			}}
-			>{$lastMsgFromServer.yourInfo.utility.itemId}
+			>{$lastMsgFromServer.yourInfo.utility.itemId} {numberShownOnSlot($lastMsgFromServer.yourInfo.utility) ??  ''} {stockDotsOnSlotButton($lastMsgFromServer.yourInfo.utility)}
 		</button>
 		<button
 			class="bodySlotButton"
@@ -558,7 +517,7 @@
 				}
 				$latestSlotButtonInput = 'body';
 			}}
-			>{$lastMsgFromServer.yourInfo.body.itemId}
+			>{$lastMsgFromServer.yourInfo.body.itemId} {numberShownOnSlot($lastMsgFromServer.yourInfo.body)??''} {stockDotsOnSlotButton($lastMsgFromServer.yourInfo.body)}
 		</button>
 		<button
 			class="waitButton"

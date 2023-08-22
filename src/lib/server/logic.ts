@@ -26,7 +26,7 @@ export function updatePlayerActions(player: Player) {
 	for (const cd of playerItemStates(player)) {
 		const i = items[cd.itemId]
 		if (i.actions) {
-			if (cd.cooldown < 1 && cd.warmup < 1 && (cd.stock > 0 || (!i.startStock))) {
+			if (cd.cooldown < 1 && cd.warmup < 1 && (cd.stock == undefined || cd.stock > 0)) {
 				i.actions(player)
 			}
 		}
@@ -113,7 +113,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
                 } else {
                     itemState.warmup = 0
                 }
-                if(wep.startStock){
+                if(wep.startStock != undefined){
                     itemState.stock = wep.startStock
                 }
             }
@@ -134,10 +134,11 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		}
 		return
 	}
-
-	for (const cd of playerItemStates(player)) {
-		if (cd.cooldown > 0) cd.cooldown--
-		if (cd.warmup > 0) cd.warmup--
+	if(actionFromId.provoke != undefined){
+		for (const cd of playerItemStates(player)) {
+			if (cd.cooldown > 0) cd.cooldown--
+			if (cd.warmup > 0) cd.warmup--
+		}
 	}
 
 	// if (!actionFromId.grantsImmunity) pushHappening('----');
@@ -155,7 +156,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	if (player.health > 0) {
 		handleRetaliations(player, true, actionFromId)
 	}
-	if(actionFromId.provoke){
+	if(actionFromId.provoke != undefined){
 		for (const enemy of enemiesInScene(player.currentScene)) {
 			let statusForPlayer = enemy.statuses.get(player.heroName)
 			if(!statusForPlayer)continue
@@ -172,7 +173,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		}
 	}
 	
-	if(player.health > 0 && actionFromId.provoke){
+	if(player.health > 0 && actionFromId.provoke != undefined){
 		if(player.statuses.poison > 0){
 			let dmg = Math.floor(player.maxHealth * 0.1)
 			player.health -= dmg
@@ -198,7 +199,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 
 	
-	if (actionFromId.provoke && player.health > 0) {
+	if (actionFromId.provoke !=undefined && player.health > 0) {
 		addAggro(player, actionFromId.provoke)
 	}
 	

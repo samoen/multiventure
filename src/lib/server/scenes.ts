@@ -1,5 +1,5 @@
 import { enemiesInScene, enemyTemplates, spawnEnemy, type EnemyTemplateId } from './enemies';
-import { bodyItems, utilityItems, weapons, type ItemIdForSlot } from './items';
+import { bodyItems, utilityItems, weapons, type ItemIdForSlot, items } from './items';
 import { activePlayersInScene, globalFlags, healPlayer, type HeroName, type Player } from './users';
 
 
@@ -631,7 +631,10 @@ const armory: Scene = {
 				buttonText: `Equip Weapon ${id}`,
 				grantsImmunity: true,
 				performAction() {
-					player.inventory.weapon.itemId = id as ItemIdForSlot<'weapon'>
+					const tId = id as ItemIdForSlot<'weapon'>
+					player.inventory.weapon.itemId = tId
+					player.inventory.weapon.warmup = weapons[tId].warmup ?? 0
+					player.inventory.weapon.cooldown = 0
 				},
 			})
 		}
@@ -646,7 +649,7 @@ const armory: Scene = {
 					let typedId = id as ItemIdForSlot<'utility'>
 					player.inventory.utility.itemId = typedId
 					let baseItem = utilityItems[typedId]
-					if(baseItem && baseItem.startStock) player.inventory.utility.stock = baseItem.startStock
+					if(baseItem && baseItem.startStock != undefined) player.inventory.utility.stock = baseItem.startStock
 				},
 			})
 		}

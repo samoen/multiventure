@@ -16,7 +16,7 @@ import theif from '$lib/assets/thief.png';
 import mage from '$lib/assets/mage.png';
 import arrow from '$lib/assets/arrow.png';
 import bomb from '$lib/assets/bomb.png';
-import type { EquipmentSlot, ItemId, ItemIdForSlot } from '$lib/server/items.js';
+import type { EquipmentSlot, ItemId, ItemIdForSlot, ItemState, ItemStateForSlot } from '$lib/server/items.js';
 import { crossfade } from "svelte/transition";
 import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easing";
 import { tick } from "svelte";
@@ -74,6 +74,22 @@ export let allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 
 export const currentAnimationIndex: Writable<number> = writable(0)
 
+export function numberShownOnSlot(itemState: ItemState):number|undefined{
+    // if(!$lastMsgFromServer)return undefined
+    const higherOfCooldownOrWarmup = Math.max(itemState.cooldown, itemState.warmup)
+    if(higherOfCooldownOrWarmup > 0) return higherOfCooldownOrWarmup
+    return undefined
+}
+
+export function stockDotsOnSlotButton(itemState: ItemState):string{
+    let dots = ''
+    if(itemState.stock != undefined){
+        for (const _ of Array.from({length:itemState.stock})){
+            dots=dots+'.'
+        }
+    }
+    return dots
+}
 
 export const currentAnimationsWithData: Writable<BattleAnimation[]> = writable()
 

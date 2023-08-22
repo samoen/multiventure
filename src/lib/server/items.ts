@@ -32,7 +32,7 @@ export type ItemStateForSlot<T extends EquipmentSlot> = {
 	itemId: ItemIdForSlot<T>;
 	cooldown: number;
 	warmup: number;
-	stock: number;
+	stock?: number;
 }
 
 export type ItemState = ItemStateForSlot<EquipmentSlot>
@@ -111,7 +111,7 @@ const club: Item = {
 }
 
 const fireStaff: Item = {
-	warmup: 1,
+	warmup: 2,
 	actions(player) {
 		for (const enemy of enemiesInScene(player.currentScene)) {
 			player.itemActions.push(
@@ -136,7 +136,7 @@ const fireStaff: Item = {
 									}
 								})
 						}
-						// player.inventory.weapon.cooldown = 1
+						player.inventory.weapon.cooldown = 1
 					}
 				}
 			)
@@ -251,6 +251,7 @@ const bomb: Item = {
 }
 
 const poisonDart: Item = {
+	startStock:2,
 	actions(player) {
 		for (const enemy of enemiesInScene(player.currentScene)) {
 			player.itemActions.push(
@@ -288,7 +289,9 @@ const poisonDart: Item = {
 									}
 								})
 						// }
-						player.inventory.utility.itemId = 'empty'
+						if (player.inventory.utility.stock) {
+							player.inventory.utility.stock--
+						}
 					},
 				}
 			)

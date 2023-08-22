@@ -49,19 +49,16 @@ export const POST: RequestHandler = async (r) => {
 				itemId: 'unarmed',
 				cooldown: 0,
 				warmup: 0,
-				stock:0,
 			},
 			utility: {
 				itemId: 'empty',
 				cooldown: 0,
 				warmup: 0,
-				stock:0,
 			},
 			body: {
 				itemId: 'rags',
 				cooldown: 0,
 				warmup: 0,
-				stock:0,
 			}
 		}
 		
