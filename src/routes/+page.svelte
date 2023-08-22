@@ -392,7 +392,6 @@
 								if ($currentAnimation.alsoDamages) {
 									for (const other of $currentAnimation.alsoDamages) {
 										updateUnit(other.target, (vup) => {
-											handlePutsStatusOnTarget(vup, anim);
 											vup.displayHp -= other.amount;
 											if (vup.displayHp < 1) {
 												someoneDied = true;
@@ -400,6 +399,8 @@
 										});
 									}
 								}
+								
+								handlePutsStatusOnTarget(anim);
 								if ($currentAnimation.alsoModifiesAggro) {
 									for (const other of $currentAnimation.alsoModifiesAggro) {
 										if (

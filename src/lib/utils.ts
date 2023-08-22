@@ -13,7 +13,8 @@ export type BattleAnimation = {
 	damageToSource?: number,
 	target?: UnitId,
 	damageToTarget?: number,
-	putsStatusOnTarget?:StatusId,
+	// putsStatusOnTarget?:StatusId,
+	putsStatuses?:{target:UnitId, status:StatusId}[]
 	behavior: AnimationBehavior,
 	extraSprite?: ExtraSprite,
 	alsoDamages?:HealthModifier[],
@@ -28,11 +29,11 @@ export type AggroModifier = {
 	showFor:'onlyme' | 'all'
 }
 
-export type ExtraSprite = 'arrow' | 'bomb' | 'flame' | 'poison'
+export type ExtraSprite = 'arrow' | 'bomb' | 'flame' | 'poison' | 'smoke' | 'shield'
 
 export type AnimationBehavior = 'missile' | 'melee' | 'center' | 'selfInflicted'
 
-export type StatusId = 'poison' | 'rage'
+export type StatusId = 'poison' | 'rage' | 'hidden'
 
 export type StatusEffect = {
 	status: StatusId;

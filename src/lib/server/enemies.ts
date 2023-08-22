@@ -81,7 +81,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 					battleAnimation: {
 						source: me.unitId,
 						target: player.unitId,
-						putsStatusOnTarget:'poison',
+						putsStatuses:[{target:player.unitId,status:'poison'}],
 						damageToTarget: r.dmgDone,
 						behavior: 'missile',
 						extraSprite:'arrow',

@@ -80,6 +80,7 @@ export const POST: RequestHandler = async (r) => {
 			statuses:{
 				poison:0,
 				rage:0,
+				hidden:0,
 			},
 		}
 		

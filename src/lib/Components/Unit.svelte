@@ -191,8 +191,8 @@
 						let anim = $currentAnimation;
 						updateUnit(hostId, (vup) => {
 							vup.displayHp -= anim.damageToTarget ?? 0;
-							handlePutsStatusOnTarget(vup,anim)
 						});
+						handlePutsStatusOnTarget(anim)
 						if ($guestId == undefined) return;
 						updateUnit($guestId, (vup) => {
 							if(vup.side == 'enemy'){
@@ -240,6 +240,7 @@
 						updateUnit(hostId, (vup) => {
 							vup.displayHp -= anim.damageToSource ?? 0;
 						});
+						handlePutsStatusOnTarget(anim)
 					}
 				}}
 				on:outroend={()=>{
@@ -272,11 +273,11 @@
 						let someoneDied = false;
 						updateUnit(hostId, (vup) => {
 							vup.displayHp -= anim.damageToTarget ?? 0;
-							handlePutsStatusOnTarget(vup,anim)
 							if (vup.displayHp < 1) {
 								someoneDied = true;
 							}
 						});
+						handlePutsStatusOnTarget(anim)
 
 						if ($currentAnimation.alsoDamages) {
 							for (const other of $currentAnimation.alsoDamages) {

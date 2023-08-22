@@ -152,7 +152,8 @@ const bandage: Item = {
 				player.itemActions.push(
 					{
 						buttonText: `Heal ${friend.heroName == player.heroName ? 'myself' : friend.heroName} with bandage`,
-						grantsImmunity: true,
+						// grantsImmunity: true,
+						speed:15,
 						provoke: 1,
 						slot:'utility',
 						target:friend.unitId,
@@ -267,6 +268,7 @@ const poisonDart: Item = {
 							found = {
 								poison:0,
 								rage:0,
+								hidden:0,
 							}
 						}
 						// found = enemy.statuses.get(player.heroName)
@@ -282,7 +284,7 @@ const poisonDart: Item = {
 									battleAnimation: {
 										source: player.unitId,
 										target: enemy.unitId,
-										putsStatusOnTarget:'poison',
+										putsStatuses:[{target:enemy.unitId, status:'poison'}],
 										damageToTarget: r.dmgDone,
 										behavior: 'missile',
 										extraSprite:'arrow',
@@ -316,7 +318,6 @@ const plateMail: Item = {
 						sceneId:player.currentScene,
 						battleAnimation:{
 							behavior:'center',
-							damageToTarget:0,
 							source:player.unitId,
 							extraSprite:'bomb',
 							alsoModifiesAggro:enemiesInScene(player.currentScene).map((e)=>{
@@ -327,7 +328,7 @@ const plateMail: Item = {
 								}
 							})
 						}
-					})				
+					})			
 					pushHappening(`${player.heroName} infuriates enemies!`)
 				},
 			})
@@ -346,14 +347,23 @@ const theifCloak: Item = {
 		if (enemiesInScene(player.currentScene).length) {
 			player.itemActions.push({
 				buttonText: 'Hide in shadows',
-				grantsImmunity: true,
+				// grantsImmunity: true,
+				speed:999,
 				slot:'body',
+				provoke:30,
 				performAction() {
-					for (const enemy of enemiesInScene(player.currentScene)) {
-						enemy.aggros.set(player.heroName,0)
-					}
+					player.statuses.hidden = 2
 					player.inventory.body.cooldown = 3
 					pushHappening(`${player.heroName} hid in shadows`)
+					pushAnimation({
+						sceneId:player.currentScene,
+						battleAnimation:{
+							behavior:'selfInflicted',
+							source:player.unitId,
+							extraSprite:'bomb',
+							putsStatuses:[{target:player.unitId, status:'hidden'}],
+						}
+					})
 				},
 			})
 		}

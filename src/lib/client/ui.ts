@@ -256,21 +256,28 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
 export const extraSprites: Record<ExtraSprite, string> = {
     arrow: arrow,
     bomb: bomb,
+    smoke: bomb,
+    shield: bomb,
     flame: arrow,
     poison: greenDrip,
 }
 
-export function handlePutsStatusOnTarget(vup: VisualUnitProps, anim: BattleAnimation) {
-    if (anim.putsStatusOnTarget) {
-        if (vup.actual.kind == 'enemy') {
-            console.log(`putting poison on enemy ${JSON.stringify(vup.actual.enemy.statuses)}`);
-            let existingStatusesForSource = vup.actual.enemy.statuses[anim.source];
-            if (!existingStatusesForSource) {
-                vup.actual.enemy.statuses[anim.source] = { poison: 0, rage: 0 };
-            }
-            vup.actual.enemy.statuses[anim.source].poison = 1;
-        } else if (vup.actual.kind == 'player') {
-            vup.actual.info.statuses['poison'] = 1;
+export function handlePutsStatusOnTarget(anim: BattleAnimation) {
+    if (anim.putsStatuses) {
+        for(const ps of anim.putsStatuses){
+            updateUnit(ps.target,(vup)=>{
+                if (vup.actual.kind == 'enemy') {
+                    // console.log(`putting poison on enemy ${JSON.stringify(vup.actual.enemy.statuses)}`);
+                    let existingStatusesForSource = vup.actual.enemy.statuses[anim.source];
+                    if (!existingStatusesForSource) {
+                        vup.actual.enemy.statuses[anim.source] = { poison: 0, rage: 0, hidden:0 };
+                    }
+                    vup.actual.enemy.statuses[anim.source][ps.status] = 1;
+                } else if (vup.actual.kind == 'player') {
+                    console.log('putting player status '+ps.status)
+                    vup.actual.info.statuses[ps.status] = 1;
+                }
+            })
         }
     }
 }

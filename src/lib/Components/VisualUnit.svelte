@@ -2,6 +2,7 @@
 	import { allVisualUnitProps, lastMsgFromServer, type VisualUnitProps } from '$lib/client/ui';
 	import { fade } from 'svelte/transition';
 	import rage from '$lib/assets/rage.png'
+	import bomb from '$lib/assets/bomb.png'
 	import greenDrip from '$lib/assets/green-drip.png'
 	import type { StatusEffect, StatusId, UnitId } from '$lib/utils';
 
@@ -24,6 +25,9 @@
 				if(arrayOfStatuses.find(s=>s.rage>0)){
 					statuses.push('rage')
 				}
+				if(arrayOfStatuses.find(s=>s.hidden>0)){
+					statuses.push('hidden')
+				}
 			}
 		}
 		if(vu?.actual.kind == 'player'){
@@ -34,13 +38,17 @@
 			}
 			if(vu.actual.info.statuses.rage > 0){
 				statuses.push('rage')
-			}	
+			}
+			if(vu.actual.info.statuses.hidden > 0){
+				statuses.push('hidden')
+			}
 		}
 	}
 
 	const statusImages : Record<StatusId,string>={
 		poison:greenDrip,
 		rage:rage,
+		hidden:bomb,
 	}
 
 </script>
@@ -55,7 +63,12 @@
 					<img class="status" alt="status" src={statusImages[s]}>
 				{/each}
 			</div>
-			<img class="heroSprite" class:flipped={flip} alt="you" src={vu.src} />
+			<img 
+			class="heroSprite"
+			class:flipped={flip} 
+			class:faded={statuses.includes('hidden')}
+			alt="you" 
+			src={vu.src} />
 		</div>
 		<div class="bars">
 			<div class="healthbar">
@@ -72,6 +85,9 @@
 {/if}
 
 <style>
+	.faded{
+		opacity: 0.5;
+	}
 	.bold{
 		font-weight: bold;
 	}

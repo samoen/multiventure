@@ -38,7 +38,7 @@ export function updatePlayerActions(player: Player) {
 				buttonText: 'wait',
 				wait:true,
                 // target:{kind:'onlySelf'},
-				provoke: 1,
+				provoke: 0,
 				performAction() {
 				},
 			}
@@ -122,6 +122,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		player.statuses = {
 			poison:0,
 			rage:0,
+			hidden:0,
 		}
 
 		enterSceneOrWakeup(player)
@@ -141,7 +142,6 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		}
 	}
 
-	// if (!actionFromId.grantsImmunity) pushHappening('----');
     pushHappening('----');
 	
 	
@@ -149,7 +149,11 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	
 	if (player.health > 0) {
 		if (actionFromId.performAction) {
+			// if(actionFromId.provoke && actionFromId.provoke > 0){
+			// 	player.statuses.hidden = 0
+			// }
 			actionFromId.performAction();
+			
 		}
 	}
 	
@@ -169,6 +173,9 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				enemy.damage += 10
 				pushHappening(`${enemy.name}'s rage grows!`)
 				statusForPlayer.rage--
+			}
+			if(statusForPlayer.hidden > 0){
+				statusForPlayer.hidden--
 			}
 		}
 	}
@@ -196,6 +203,9 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 			pushHappening(`${player.heroName}'s rage grows!`)
 			player.statuses.rage--
 		}
+		if(player.statuses.hidden > 0){
+			player.statuses.hidden--
+		}
 	}
 
 	
@@ -217,7 +227,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 }
 
 export function handleRetaliations(player: Player, postAction: boolean, action: GameAction) {
-	if (action.grantsImmunity) return
+	if (action.grantsImmunity || player.statuses.hidden > 0) return
 	let playerHitSpeed = player.speed
 	if (action.speed) {
 		playerHitSpeed += action.speed
