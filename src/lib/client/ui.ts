@@ -1,6 +1,6 @@
-import type { HeroName, PlayerInClient } from "$lib/server/users";
-import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, ExtraSprite, GameActionSentToClient } from "$lib/utils";
-import { derived, get, writable, type Writable } from "svelte/store";
+import type { HeroName, MiscPortrait, PlayerInClient, VisualActionSource } from "$lib/server/users";
+import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, ExtraSprite, GameActionSentToClient, ScenerySprite } from "$lib/utils";
+import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 import peasantPortrait from '$lib/assets/portraits/peasant.webp';
 import peasant from '$lib/assets/peasant.png';
 import gruntPortrait from '$lib/assets/portraits/grunt.webp';
@@ -16,6 +16,7 @@ import theif from '$lib/assets/thief.png';
 import mage from '$lib/assets/mage.png';
 import arrow from '$lib/assets/arrow.png';
 import bomb from '$lib/assets/bomb.png';
+import lighthouse from '$lib/assets/scenery/lighthouse.png';
 import type { EquipmentSlot, Inventory, ItemId, ItemIdForSlot, ItemState, ItemStateForSlot } from '$lib/server/items';
 import { crossfade } from "svelte/transition";
 import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easing";
@@ -72,6 +73,7 @@ export type Projectile = undefined | ProjectileProps
 export const lastMsgFromServer: Writable<MessageFromServer | undefined> = writable();
 export const previousMsgFromServer: Writable<MessageFromServer | undefined> = writable();
 export let allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
+export let visualActionSources: Writable<VisualActionSource[]> = writable([])
 
 export const currentAnimationIndex: Writable<number> = writable(0)
 
@@ -131,22 +133,33 @@ export let waitButtonAction = derived(lastMsgFromServer, ($lastMsgFromServer) =>
 })
 
 // export const lastUnitClicked: Writable<VisualUnitProps | undefined> = writable()
-export const lastUnitClicked: Writable<string> = writable()
+export const lastUnitClicked: Writable<UnitId | undefined> = writable()
 
-export const selectedDetail = derived([lastUnitClicked
-    , allVisualUnitProps
-], ([$lastUnitClicked
-    , $allVisualUnitProps
+export const selectedDetail = derived([
+    lastUnitClicked,
+    allVisualUnitProps,
+], ([$lastUnitClicked,
+     $allVisualUnitProps,
 ]) => {
 
     let props = $allVisualUnitProps
-
     let vupAt = props.find(v=>v.id == $lastUnitClicked)
-    if (!vupAt) {
-        return $allVisualUnitProps.at(0)
-    }
-    return vupAt
+    if(vupAt)return vupAt
+    return $allVisualUnitProps.at(0)
 })
+export const selectedVisualActionSource = derived([
+    lastUnitClicked,
+    visualActionSources,
+], ([$lastUnitClicked,
+     $visualActionSources,
+]) => {
+
+    let vasAt = $visualActionSources.find(v=>v.id==$lastUnitClicked)
+    if(vasAt)return vasAt
+    return undefined
+})
+
+
 
 export let latestSlotButtonInput: Writable<EquipmentSlot | 'none'> = writable('none')
 
@@ -187,6 +200,10 @@ let enemyPortraits = {
     fireGremlin: gruntPortrait,
     troll: gruntPortrait
 } satisfies Record<EnemyTemplateId, string>;
+
+export const miscPortraits = {
+    thing: gruntPortrait,
+} satisfies Record<MiscPortrait, string>;
 
 export function updateUnit(index: UnitId, run: (vup: VisualUnitProps) => void) {
     allVisualUnitProps.update((old)=>{
@@ -264,6 +281,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
 
         }
         allVisualUnitProps.set(newVups)
+        visualActionSources.set(lastMsg.visualActionSources)
     }
 }
 
@@ -274,6 +292,10 @@ export const extraSprites: Record<ExtraSprite, string> = {
     shield: bomb,
     flame: arrow,
     poison: greenDrip,
+}
+
+export const scenerySprites : Record<ScenerySprite,string> ={
+    castle:lighthouse,
 }
 
 export function handlePutsStatuses(anim: BattleAnimation) {

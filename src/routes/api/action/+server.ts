@@ -30,7 +30,7 @@ export const POST = (async (r) => {
 
 	// ensure action is still valid
 	updatePlayerActions(player)
-	let actionFromId = [...player.sceneActions, ...player.itemActions].find((g) => g.buttonText == msg.buttonText);
+	let actionFromId = [...player.sceneActions, ...player.itemActions, ...player.visualActionSources.flatMap(s=>s.actions)].find((g) => g.buttonText == msg.buttonText);
 	if (!actionFromId) {
 		console.log(`rejected action ${JSON.stringify(msg)} because not available`);
 		return json(`action ${msg.buttonText} not available`, { status: 400 });

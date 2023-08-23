@@ -6,9 +6,10 @@ import type { SceneId } from './server/scenes';
 import type { Flag, GlobalFlag, HeroName, Player } from './server/users';
 
 
-export type UnitId = HeroId | EnemyId
+export type UnitId = HeroId | EnemyId | VisualActionSourceId
 export type HeroId = `hero${string}`  
 export type EnemyId = `enemy${string}`
+export type VisualActionSourceId = `vas${string}`
 
 export type BattleAnimation = {
 	source: UnitId,
@@ -56,7 +57,7 @@ export type AggroModifierEvent = {
 }
 
 export type ExtraSprite = 'arrow' | 'bomb' | 'flame' | 'poison' | 'smoke' | 'shield'
-
+export type ScenerySprite = 'castle'
 export type AnimationBehavior = 'missile' | 'melee' | 'center' | 'selfInflicted'
 
 export type StatusId = 'poison' | 'rage' | 'hidden'

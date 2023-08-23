@@ -300,7 +300,7 @@ const forest: Scene = {
 			player.sceneTexts.push('You get out the passage, and stumble into the surrounding overgrowth')
 		}
 		if (!player.flags.has('heardAboutHiddenPassage')) {
-			player.sceneTexts.push(`You are surrounded by dense undergrowth. With every slight movement you feel sharp foliage digging into your flesh. The forest is green and verdent. It teems with life. The sound of insects buzzing fills the air like the distant screams of the innocent. Unseen creatures shuffle just out of sight, their eyes fixed firmly upon you: the unwanted visitor. There is something distinctly unwell about this place. In the distance you see a castle. You feel you might have seen it before. Perhaps in a dream. Or was it a nightmare?`)
+			player.sceneTexts.push(`You are surrounded by dense undergrowth. With every slight movement you feel sharp foliage digging into your flesh. The forest is green and verdent. It teems with life. The sound of insects buzzing fills the air like the distant screams of the innocent. Unseen creatures shuffle just out of sight, their eyes fixed firmly upon you: the unwanted visitor. There is something distinctly unwell about this place.`)
 		}
 	},
 	actions(player: Player) {
@@ -311,6 +311,15 @@ const forest: Scene = {
 			}
 
 		)
+		player.visualActionSources.push({
+			id:'vascastle',
+			sprite:'castle',
+			prompt:'In the distance you see a castle. You feel you might have seen it before. Perhaps in a dream. Or was it a nightmare?',
+			actions:[{
+				buttonText:'Slog it towards teh castle',
+				goTo: 'castle',
+			}]
+		})
 		if (player.flags.has('heardAboutHiddenPassage')) {
 			player.sceneActions.push(
 				{

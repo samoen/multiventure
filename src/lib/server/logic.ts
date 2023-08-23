@@ -14,6 +14,7 @@ export function updateAllPlayerActions() {
 export function updatePlayerActions(player: Player) {
 	player.sceneActions = []
 	player.itemActions = []
+	player.visualActionSources = []
 
 	if (player.health < 1) {
 		player.sceneActions.push({

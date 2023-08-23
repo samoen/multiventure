@@ -2,7 +2,7 @@ import type { BattleAnimation, EnemyInClient, GameActionSentToClient } from '$li
 import { activeEnemies, addAggro, damagePlayer, enemiesInScene, getAggroForPlayer, takePoisonDamage } from './enemies';
 import { items } from './items';
 import { scenes } from './scenes';
-import { activePlayers, globalFlags, playerItemStates, users, type HeroName, type Player, type GameAction, activePlayersInScene, type PlayerInClient, type Flag, type GlobalFlag } from './users';
+import { activePlayers, globalFlags, playerItemStates, users, type HeroName, type Player, type GameAction, activePlayersInScene, type PlayerInClient, type Flag, type GlobalFlag, type VisualActionSource } from './users';
 
 export const FAKE_LATENCY = 1;
 
@@ -20,6 +20,7 @@ export type MessageFromServer = {
 	enemiesInScene: EnemyInClient[];
 	playerFlags: Flag[];
 	globalFlags: GlobalFlag[];
+	visualActionSources: VisualActionSource[];
 };
 
 
@@ -89,6 +90,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				wait:gameAction.wait,
 			} satisfies GameActionSentToClient;
 		}),
+		visualActionSources:forPlayer.visualActionSources,
 		happenings: recentHappenings,
 		animations: forPlayer.animations,
 		enemiesInScene: enemiesInScene(forPlayer.currentScene).map((e) => {

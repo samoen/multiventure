@@ -14,16 +14,21 @@
 		currentAnimationsWithData,
 		handlePutsStatuses,
 		lastMsgFromServer,
+		lastUnitClicked,
 		latestSlotButtonInput,
+		miscPortraits,
 		nextAnimationIndex,
 		numberShownOnSlot,
 		receiveCenter,
+		scenerySprites,
 		selectedDetail,
+		selectedVisualActionSource,
 		stockDotsOnSlotButton,
 		syncVisualsToMsg,
 		typedInventory,
 		updateUnit,
 		utilitySlotActions,
+		visualActionSources,
 		waitButtonAction,
 		waitingForMyAnimation,
 		wepSlotActions
@@ -450,6 +455,18 @@
 						<Unit hostId={e.id} />
 					</div>
 				{/each}
+				{#each $visualActionSources as s (s.id)}
+					<div
+						on:click|preventDefault|stopPropagation={() => {
+							$lastUnitClicked = s.id;
+						}}
+						role="button"
+						tabindex="0"
+						on:keydown
+					>
+						<img src={scenerySprites[s.sprite]} alt="a place" />
+					</div>
+				{/each}
 			</div>
 		</div>
 	</div>
@@ -496,73 +513,88 @@
 		{/if}
 	</div>
 	{#if $selectedDetail}
-		<div class="selectedDetails">
-			<div class="selectedPortrait">
-				<img class="portrait" src={$selectedDetail.actual.portrait} alt="portrait" />
-			</div>
-			<div class="selectedStats">
-				<div>
-					<strong>
-						{$selectedDetail.name}
-					</strong>
+		{#if $selectedVisualActionSource == undefined}
+			<div class="selectedDetails">
+				<div class="selectedPortrait">
+					<img class="portrait" src={$selectedDetail.actual.portrait} alt="portrait" />
 				</div>
-				<div>
-					{$selectedDetail.displayHp}/{$selectedDetail.maxHp} hp
-				</div>
-				{#if $selectedDetail.actual.kind == 'player'}
-					<div>
-						{#each Object.entries($selectedDetail.actual.info.statuses) as [key, value]}
-							{#if value > 0}
-								{`${key} ${value}`}
-							{/if}
-						{/each}
-					</div>
-
-					<!-- <div> -->
-					{#each Object.entries($selectedDetail.actual.info.inventory) as [key, value]}
+				<div class="selectedStats">
+					{#if $selectedDetail.actual.kind == 'player'}
 						<div>
-							{`${key}: ${value.itemId}`}
+							<strong>
+								{$selectedDetail.actual.info.heroName}
+							</strong>
 						</div>
-					{/each}
-					<div>
-						Agility: {$selectedDetail.actual.info.agility}
-					</div>
-					<div>
-						Strength: {$selectedDetail.actual.info.strength}
-					</div>
-					<!-- <div>
-							<button type="button">show gear</button>
-						</div> -->
-				{/if}
-				{#if $selectedDetail.actual.kind == 'enemy'}
-					<div>
-						Template: {$selectedDetail.actual.enemy.templateId}
-					</div>
-					<div>
-						Aggro: {JSON.stringify($selectedDetail.actual.enemy.myAggro)}
-					</div>
-					<div>
-						{#each Object.entries($selectedDetail.actual.enemy.statuses) as [forHero, statuses]}
-							{#each Object.entries(statuses) as [key, value]}
+						<div>
+							{$selectedDetail.displayHp}/{$selectedDetail.maxHp} hp
+						</div>
+						<div>
+							{#each Object.entries($selectedDetail.actual.info.statuses) as [key, value]}
 								{#if value > 0}
-									{`${forHero}: ${key} ${value}, `}
+									{`${key} ${value}`}
 								{/if}
 							{/each}
+						</div>
+
+						<!-- <div> -->
+						{#each Object.entries($selectedDetail.actual.info.inventory) as [key, value]}
+							<div>
+								{`${key}: ${value.itemId}`}
+							</div>
+						{/each}
+						<div>
+							Agility: {$selectedDetail.actual.info.agility}
+						</div>
+						<div>
+							Strength: {$selectedDetail.actual.info.strength}
+						</div>
+						<!-- <div>
+						<button type="button">show gear</button>
+						</div> -->
+					{/if}
+					{#if $selectedDetail.actual.kind == 'enemy'}
+						<div>
+							Template: {$selectedDetail.actual.enemy.templateId}
+						</div>
+						<div>
+							Aggro: {JSON.stringify($selectedDetail.actual.enemy.myAggro)}
+						</div>
+						<div>
+							{#each Object.entries($selectedDetail.actual.enemy.statuses) as [forHero, statuses]}
+								{#each Object.entries(statuses) as [key, value]}
+									{#if value > 0}
+										{`${forHero}: ${key} ${value}, `}
+									{/if}
+								{/each}
+							{/each}
+						</div>
+					{/if}
+				</div>
+			</div>
+		{/if}
+	{/if}
+	{#if $selectedVisualActionSource}
+			<div class='visualActionSourceDetail'>
+				<div class="selectedPortrait">
+					<img src={$selectedVisualActionSource.portrait ? miscPortraits[$selectedVisualActionSource.portrait] : scenerySprites[$selectedVisualActionSource.sprite]} alt='place'>
+				</div>
+				<div class="vasdPromptAndButtons">
+					<div class="vasdPrompt">{$selectedVisualActionSource.prompt}</div>
+					<div class="vasdButtons">
+						{#each $selectedVisualActionSource.actions as act}
+							<button type='button' on:click={()=>{
+								$lastUnitClicked = undefined
+								choose(act)
+							}}>{act.buttonText}</button>
 						{/each}
 					</div>
-				{/if}
+				</div>
+
 			</div>
+		<div>
+
 		</div>
 	{/if}
-	<!-- <p>{$lastMsgFromServer.playerFlags} {$lastMsgFromServer.globalFlags}</p> -->
-	<!-- <h3>Nearby Enemies:</h3>
-	{#each $lastMsgFromServer.enemiesInScene as e}
-		<p>
-			<strong>{e.name}:</strong>
-			{e.templateId}, Health: {e.health}, Aggro: {e.myAggro}, statuses: {JSON.stringify(e.statuses)}
-		</p>
-		<p />
-	{/each} -->
 	<h3>Recent happenings:</h3>
 	<div class="happenings" bind:this={happenings}>
 		{#each $lastMsgFromServer.happenings as h}
@@ -751,7 +783,23 @@
 		flex-direction: column;
 		flex-wrap: wrap;
 		overflow-y: auto;
-		padding:5px;
+		padding: 5px;
 		/* background-color: aquamarine; */
 	}
+	.visualActionSourceDetail{
+		display: flex;
+		height:15vh;
+		background-color: burlywood;
+	}
+	.vasdPromptAndButtons{
+		padding:5px;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-around;
+	}
+	/* .vasdPrompt{
+	}
+	.vasdButtons{
+		display: flex;
+	} */
 </style>

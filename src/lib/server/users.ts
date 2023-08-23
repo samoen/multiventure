@@ -1,4 +1,4 @@
-import type { UnitId, BattleAnimation, StatusEffect, StatusId, BattleEvent, HeroId } from '$lib/utils';
+import type { UnitId, BattleAnimation, StatusEffect, StatusId, BattleEvent, HeroId, ScenerySprite, VisualActionSourceId } from '$lib/utils';
 import { items, type Inventory, type Item, type ItemState, type EquipmentSlot, type ItemStateForSlot } from './items';
 import { pushHappening } from './messaging';
 import type { SceneId } from './scenes';
@@ -21,17 +21,11 @@ export type GlobalFlag =
 
 
 export type Player = {
-	// unitId:UnitId
 	connectionState: {
 		ip: string | null;
 		con: ReadableStreamController<unknown> | null;
 		stream: ReadableStream | null;
 	} | null;
-	// heroName: HeroName;
-	// health: number;
-	// maxHealth: number;
-	// inventory:Inventory;
-	// currentScene: SceneId;
 	previousScene: SceneId;
 	lastCheckpoint: SceneId;
 	itemActions: GameAction[];
@@ -39,7 +33,7 @@ export type Player = {
 	sceneTexts: string[];
 	flags: Set<Flag>;
 	animations: BattleAnimation[];
-	// statuses: Record<StatusId,number>
+	visualActionSources: VisualActionSource[];
 } & PlayerInClient;
 
 export type PlayerInClient = {
@@ -51,9 +45,6 @@ export type PlayerInClient = {
 	strength:number;
 	maxHealth: number;
 	inventory:Inventory;
-	// weapon: ItemStateForSlot<'weapon'>
-	// utility: ItemStateForSlot<'utility'>
-	// body: ItemStateForSlot<'body'>
 	statuses:Record<StatusId,number>
 };
 
@@ -68,6 +59,16 @@ export type GameAction = {
 	target?: UnitId;
 	wait?:boolean;
 };
+
+export type VisualActionSource = {
+	id:VisualActionSourceId
+	sprite:ScenerySprite
+	portrait?:MiscPortrait
+	prompt:string
+	actions:GameAction[]
+}
+
+export type MiscPortrait = 'thing'
 
 export function playerEquipped(player:Player) : Item[]{
 	return [

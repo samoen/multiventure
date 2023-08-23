@@ -76,6 +76,7 @@ export const POST: RequestHandler = async (r) => {
 			strength: 0,
 			sceneActions: [],
 			itemActions: [],
+			visualActionSources: [],
 			sceneTexts: [],
 			flags: startflags,
 			animations:[],
