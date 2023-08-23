@@ -1,6 +1,6 @@
 import type { StatusEffect } from "$lib/utils"
 import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer } from "./enemies"
-import { items } from "./items"
+import { items, type Item } from "./items"
 import { pushHappening } from "./messaging"
 import { scenes } from "./scenes"
 import { users, type Player, playerItemStates, activePlayersInScene, type GameAction } from "./users"
@@ -25,19 +25,19 @@ export function updatePlayerActions(player: Player) {
 
 	for (const cd of playerItemStates(player)) {
 		const i = items[cd.itemId]
-		if(i.useableOutOfBattle || enemiesInScene(player.currentScene).length){
+		if (i.useableOutOfBattle || enemiesInScene(player.currentScene).length) {
 			if (cd.cooldown < 1 && cd.warmup < 1 && (cd.stock == undefined || cd.stock > 0)) {
 				if (i.actions) {
 					i.actions(player)
 				}
-				if(i.actionForEnemy){
+				if (i.actionForEnemy) {
 					for (const enemy of enemiesInScene(player.currentScene)) {
-						i.actionForEnemy(player,enemy)
+						i.actionForEnemy(player, enemy)
 					}
 				}
-				if(i.actionForFriendly){
+				if (i.actionForFriendly) {
 					for (const friend of activePlayersInScene(player.currentScene)) {
-						i.actionForFriendly(player,friend)
+						i.actionForFriendly(player, friend)
 					}
 				}
 			}
@@ -48,8 +48,8 @@ export function updatePlayerActions(player: Player) {
 		player.itemActions.push(
 			{
 				buttonText: 'wait',
-				wait:true,
-                // target:{kind:'onlySelf'},
+				wait: true,
+				// target:{kind:'onlySelf'},
 				provoke: 0,
 				performAction() {
 				},
@@ -113,28 +113,28 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	if (actionFromId.goTo) {
 		player.previousScene = player.currentScene
 		player.currentScene = actionFromId.goTo
-		
+
 		// When entering a new scene, state cooldowns to 0,
-        // state warmups to the item warmup, stocks to start
+		// state warmups to the item warmup, stocks to start
 		for (const itemState of playerItemStates(player)) {
 			itemState.cooldown = 0
-			let wep = items[itemState.itemId]
-			if (wep != undefined) {
-                if(wep.warmup){
-                    itemState.warmup = wep.warmup
-                } else {
-                    itemState.warmup = 0
-                }
-                if(wep.startStock != undefined){
-                    itemState.stock = wep.startStock
-                }
-            }
+			let item = items[itemState.itemId]
+			if (item != undefined) {
+				if (item.warmup) {
+					itemState.warmup = item.warmup
+				} else {
+					itemState.warmup = 0
+				}
+				if (item.startStock != undefined) {
+					itemState.stock = item.startStock
+				}
+			}
 		}
 
 		player.statuses = {
-			poison:0,
-			rage:0,
-			hidden:0,
+			poison: 0,
+			rage: 0,
+			hidden: 0,
 		}
 
 		enterSceneOrWakeup(player)
@@ -148,87 +148,87 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		return
 	}
 
-    pushHappening('----');
-	
-	if(actionFromId.provoke && actionFromId.provoke > 0 && player.statuses.hidden > 0){
+	pushHappening('----');
+
+	if (actionFromId.provoke && actionFromId.provoke > 0 && player.statuses.hidden > 0) {
 		player.statuses.hidden = 0
 		pushAnimation({
-			sceneId:player.currentScene,
-			battleAnimation:{
-				source:player.unitId,
-				behavior:'selfInflicted',
-				extraSprite:'smoke',
-				putsStatuses:[{status:'hidden',target:player.unitId,remove:true}]
+			sceneId: player.currentScene,
+			battleAnimation: {
+				source: player.unitId,
+				behavior: 'selfInflicted',
+				extraSprite: 'smoke',
+				putsStatuses: [{ status: 'hidden', target: player.unitId, remove: true }]
 			}
 		})
 	}
-	
+
 	handleRetaliations(player, false, actionFromId)
-	
+
 	if (player.health > 0) {
 		if (actionFromId.performAction) {
-			preCombatActionPerformed(player,actionFromId)
+			preCombatActionPerformed(player, actionFromId)
 			actionFromId.performAction();
-			
+
 		}
 	}
-	
+
 	if (player.health > 0) {
 		handleRetaliations(player, true, actionFromId)
 	}
-	if(actionFromId.provoke != undefined){
+	if (actionFromId.provoke != undefined) {
 		for (const enemy of enemiesInScene(player.currentScene)) {
 			let statusForPlayer = enemy.statuses.get(player.heroName)
-			if(!statusForPlayer)continue
-			if(statusForPlayer.poison > 0){
+			if (!statusForPlayer) continue
+			if (statusForPlayer.poison > 0) {
 				console.log(`${enemy.name} takes poison ${JSON.stringify(enemy.statuses)}`)
 				takePoisonDamage(enemy)
-				statusForPlayer.poison --
+				statusForPlayer.poison--
 			}
-			if(statusForPlayer.rage > 0){
+			if (statusForPlayer.rage > 0) {
 				enemy.damage += 10
 				pushHappening(`${enemy.name}'s rage grows!`)
 				statusForPlayer.rage--
 			}
-			if(statusForPlayer.hidden > 0){
+			if (statusForPlayer.hidden > 0) {
 				statusForPlayer.hidden--
 			}
 		}
 	}
-	
-	if(player.health > 0 && actionFromId.provoke != undefined){
-		if(player.statuses.poison > 0){
+
+	if (player.health > 0 && actionFromId.provoke != undefined) {
+		if (player.statuses.poison > 0) {
 			let dmg = Math.floor(player.maxHealth * 0.1)
 			player.health -= dmg
 			pushHappening(`${player.heroName} took ${dmg} damage from poison`)
 			pushAnimation(
 				{
-					sceneId:player.currentScene,
-					battleAnimation:{
-						source:player.unitId,
-						damageToSource:dmg,
-						behavior:'selfInflicted',
-						extraSprite:'poison',
+					sceneId: player.currentScene,
+					battleAnimation: {
+						source: player.unitId,
+						damageToSource: dmg,
+						behavior: 'selfInflicted',
+						extraSprite: 'poison',
 					}
 				}
 			)
 			player.statuses.poison--
 		}
-		if(player.statuses.rage > 0){
+		if (player.statuses.rage > 0) {
 			player.speed += 10
 			pushHappening(`${player.heroName}'s rage grows!`)
 			player.statuses.rage--
 		}
-		if(player.statuses.hidden > 0){
+		if (player.statuses.hidden > 0) {
 			player.statuses.hidden--
 		}
 	}
 
-	
-	if (actionFromId.provoke !=undefined && player.health > 0) {
+
+	if (actionFromId.provoke != undefined && player.health > 0) {
 		addAggro(player, actionFromId.provoke)
 	}
-	
+
 
 	const playerScene = scenes.get(player.currentScene);
 	const postReactionEnemies = enemiesInScene(player.currentScene)
@@ -242,16 +242,21 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 }
 
-function preCombatActionPerformed(player:Player, gameAction : GameAction){
-	if(gameAction.provoke != undefined){
+function preCombatActionPerformed(player: Player, gameAction: GameAction) {
+
+	if (gameAction.provoke != undefined) {
 		for (const cd of playerItemStates(player)) {
 			if (cd.cooldown > 0) cd.cooldown--
 			if (cd.warmup > 0) cd.warmup--
 		}
 	}
-	if(gameAction.slot){
-		const itemState = player.inventory[gameAction.slot]
-		if (itemState && itemState.stock) {
+	if (gameAction.slot) {
+		let itemState = player.inventory[gameAction.slot]
+		let item = items[itemState.itemId]
+		if (item.cooldown) {
+			itemState.cooldown = item.cooldown
+		}
+		if (itemState.stock) {
 			itemState.stock--
 		}
 	}
@@ -265,34 +270,34 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 		playerHitSpeed += action.speed
 	}
 	for (const enemyInScene of enemiesInScene(player.currentScene).sort((a, b) => b.template.speed - a.template.speed)) {
-		if(enemyInScene.currentHealth < 1)continue
+		if (enemyInScene.currentHealth < 1) continue
 		if (
 			(postAction && (playerHitSpeed >= enemyInScene.template.speed))
 			|| (!postAction && (playerHitSpeed < enemyInScene.template.speed))
 		) {
-			let aggroForActor = getAggroForPlayer(enemyInScene,player)
+			let aggroForActor = getAggroForPlayer(enemyInScene, player)
 			if (aggroForActor) {
 				if ((Math.random() < (aggroForActor / 100))) {
 					if (enemyInScene.template.specialAttack) {
 						enemyInScene.template.specialAttack(enemyInScene, player)
 					} else {
-                        // for(const _ of Array.from({length:enemyInScene.template.strikes ?? 1})){
-                            let r = damagePlayer(enemyInScene, player)
-							if(r.dmgDone > 0){
-								pushAnimation(
-									{
-										sceneId: player.currentScene,
-										battleAnimation: {
-											source: enemyInScene.unitId,
-											target: player.unitId,
-											damageToTarget: r.dmgDone,
-											behavior: enemyInScene.template.behavior ?? 'melee',
-										}
-									})
-							}
-                        // }
+						// for(const _ of Array.from({length:enemyInScene.template.strikes ?? 1})){
+						let r = damagePlayer(enemyInScene, player)
+						if (r.dmgDone > 0) {
+							pushAnimation(
+								{
+									sceneId: player.currentScene,
+									battleAnimation: {
+										source: enemyInScene.unitId,
+										target: player.unitId,
+										damageToTarget: r.dmgDone,
+										behavior: enemyInScene.template.behavior ?? 'melee',
+									}
+								})
+						}
+						// }
 					}
-					
+
 					// enemyInScene.aggros.clear()
 					for (const key of enemyInScene.aggros.keys()) {
 						enemyInScene.aggros.set(key, 0);

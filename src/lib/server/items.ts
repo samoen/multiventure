@@ -48,6 +48,7 @@ export type Item = {
 	actionForFriendly?: (player: Player, friend: Player) => void
 	onTakeDamage?: (incoming: number) => number
 	warmup?: number
+	cooldown?:number
 	startStock?: number
 	useableOutOfBattle?: boolean
 }
@@ -119,6 +120,7 @@ const club: Item = {
 const fireStaff: Item = {
 	itemTargeting: 'enemies',
 	warmup: 2,
+	cooldown:1,
 	actionForEnemy(player, enemy) {
 		player.itemActions.push(
 			{
@@ -128,7 +130,7 @@ const fireStaff: Item = {
 				slot: 'weapon',
 				target: enemy.unitId,
 				performAction() {
-					let r = damageEnemy(player, enemy, 999)
+					let r = damageEnemy(player, enemy, 100)
 					if (r.dmgDone > 0) {
 						pushAnimation(
 							{
@@ -142,7 +144,6 @@ const fireStaff: Item = {
 								}
 							})
 					}
-					player.inventory.weapon.cooldown = 1
 				}
 			}
 		)
@@ -295,6 +296,7 @@ const poisonDart: Item = {
 
 const plateMail: Item = {
 	itemTargeting: 'noTarget',
+	cooldown:2,
 	actions(player) {
 		player.itemActions.push({
 			provoke: 5,
@@ -302,7 +304,6 @@ const plateMail: Item = {
 			slot: 'body',
 			speed: 999,
 			performAction() {
-				player.inventory.body.cooldown = 2
 				for (const enemy of enemiesInScene(player.currentScene)) {
 					enemy.aggros.set(player.heroName, 100)
 				}
@@ -335,6 +336,7 @@ const plateMail: Item = {
 
 const theifCloak: Item = {
 	itemTargeting: 'noTarget',
+	cooldown:3,
 	actions(player) {
 		player.itemActions.push({
 			buttonText: 'Hide in shadows',
@@ -343,7 +345,6 @@ const theifCloak: Item = {
 			provoke: 30,
 			performAction() {
 				player.statuses.hidden = 2
-				player.inventory.body.cooldown = 3
 				pushHappening(`${player.heroName} hid in shadows`)
 				pushAnimation({
 					sceneId: player.currentScene,
