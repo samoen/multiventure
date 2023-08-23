@@ -456,8 +456,9 @@
 				$clientState.waitingForMyEvent}
 			on:click={() => {
 				if (!$wepSlotActions || !$wepSlotActions.length) return;
-				let onlyAction = $wepSlotActions.at(0);
-				if (onlyAction && !onlyAction.target) {
+				const oneChoice = $wepSlotActions.length == 1
+				const onlyAction = $wepSlotActions.at(0);
+				if (oneChoice && onlyAction) {
 					choose(onlyAction);
 					$latestSlotButtonInput = 'none';
 					return;
@@ -479,8 +480,9 @@
 				$clientState.waitingForMyEvent}
 			on:click={() => {
 				if (!$utilitySlotActions || !$utilitySlotActions.length) return;
+				const oneChoice = $utilitySlotActions.length == 1
 				let onlyAction = $utilitySlotActions.at(0);
-				if (onlyAction && !onlyAction.target) {
+				if (onlyAction && oneChoice) {
 					choose(onlyAction);
 					$latestSlotButtonInput = 'none';
 					return;
@@ -501,8 +503,9 @@
 				$clientState.waitingForMyEvent}
 			on:click={() => {
 				if (!$bodySlotActions || !$bodySlotActions.length) return;
+				const oneChoice = $bodySlotActions.length == 1
 				let onlyAction = $bodySlotActions.at(0);
-				if (onlyAction && !onlyAction.target) {
+				if (onlyAction && oneChoice) {
 					choose(onlyAction);
 					$latestSlotButtonInput = 'none';
 					return;
