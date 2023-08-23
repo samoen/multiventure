@@ -6,7 +6,9 @@ import type { SceneId } from './server/scenes';
 import type { Flag, GlobalFlag, HeroName, Player } from './server/users';
 
 
-export type UnitId = `hero${string}` | `enemy${string}`
+export type UnitId = HeroId | EnemyId
+export type HeroId = `hero${string}`  
+export type EnemyId = `enemy${string}`
 
 export type BattleAnimation = {
 	source: UnitId,
@@ -44,13 +46,13 @@ export type AggroModifier = {
 	target:UnitId,
 	amount?:number,
 	setTo?:number,
-	showFor:'onlyme' | 'all'
+	forHeros:HeroId[]
 }
 export type AggroModifierEvent = {
 	targetEnemy:ActiveEnemy,
 	baseAmount?:number,
 	setTo?:number,
-	showFor:'onlyme' | 'all'
+	forHeros: Player[]
 }
 
 export type ExtraSprite = 'arrow' | 'bomb' | 'flame' | 'poison' | 'smoke' | 'shield'

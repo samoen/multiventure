@@ -37,7 +37,7 @@ export async function sendEveryoneWorld(triggeredBy: HeroName) {
 }
 
 export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): MessageFromServer {
-	console.log(`sending anims ${JSON.stringify(forPlayer.animations)}`)
+	// console.log(`sending anims ${JSON.stringify(forPlayer.animations)}`)
 	const nextMsg: MessageFromServer = {
 		triggeredBy: triggeredBy,
 		yourInfo:{

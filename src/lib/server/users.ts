@@ -1,4 +1,4 @@
-import type { UnitId, BattleAnimation, StatusEffect, StatusId, BattleEvent } from '$lib/utils';
+import type { UnitId, BattleAnimation, StatusEffect, StatusId, BattleEvent, HeroId } from '$lib/utils';
 import { items, type Inventory, type Item, type ItemState, type EquipmentSlot, type ItemStateForSlot } from './items';
 import { pushHappening } from './messaging';
 import type { SceneId } from './scenes';
@@ -44,7 +44,7 @@ export type Player = {
 } & PlayerInClient;
 
 export type PlayerInClient = {
-	unitId:UnitId;
+	unitId:HeroId;
 	heroName: HeroName;
 	currentScene: SceneId;
 	health: number;

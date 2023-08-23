@@ -292,13 +292,15 @@
 						if($currentAnimation.alsoModifiesAggro){
 							for (const other of $currentAnimation.alsoModifiesAggro) {
 								if (
-									other.showFor == 'all' ||
-									$lastMsgFromServer?.yourInfo.unitId == $currentAnimation.source
+									$lastMsgFromServer &&
+									other.forHeros.includes($lastMsgFromServer.yourInfo.unitId)
 								) {
 									updateUnit(other.target, (vup) => {
 										if (vup.aggro != undefined) {
 											if (other.amount != undefined) {
-												vup.aggro -= other.amount;
+												vup.aggro += other.amount;
+												if(vup.aggro > 100)vup.aggro = 100
+												if(vup.aggro < 0)vup.aggro = 0
 											}
 											if (other.setTo != undefined) {
 												vup.aggro = other.setTo;

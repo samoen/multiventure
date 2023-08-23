@@ -1,4 +1,4 @@
-import type { AnimationBehavior, UnitId, BattleAnimation, EnemyName, StatusEffect, StatusId } from "$lib/utils";
+import type { AnimationBehavior, UnitId, BattleAnimation, EnemyName, StatusEffect, StatusId, EnemyId } from "$lib/utils";
 import { pushHappening } from "./messaging";
 import { scenes, type SceneId } from "./scenes";
 import { playerEquipped, type HeroName, type Player, activePlayers, activePlayersInScene } from "./users";
@@ -7,7 +7,7 @@ import { playerEquipped, type HeroName, type Player, activePlayers, activePlayer
 export const activeEnemies: ActiveEnemy[] = []
 
 export type ActiveEnemy = {
-	unitId:UnitId
+	unitId: EnemyId
 	name: EnemyName
 	templateId:EnemyTemplateId
 	currentScene: SceneId

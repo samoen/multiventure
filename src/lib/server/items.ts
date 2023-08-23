@@ -1,7 +1,7 @@
-import type { AggroModifier, BattleEvent, HealthModifier, HealthModifierEvent, UnitId } from '$lib/utils';
+import type { AggroModifier, AggroModifierEvent, BattleEvent, HealthModifier, HealthModifierEvent, UnitId } from '$lib/utils';
 import { damageEnemy, enemiesInScene, pushAnimation, takePoisonDamage, type ActiveEnemy } from './enemies';
 import { pushHappening } from './messaging';
-import type { Player } from './users';
+import { activePlayersInScene, type Player } from './users';
 
 export type EquipmentSlot =
 	| 'weapon'
@@ -42,7 +42,6 @@ export type Inventory = {
 }
 
 export type Item = {
-	itemTargeting?: GeneratesActionsFor
 	actions?: (player: Player) => void
 	actionForEnemy?: (player: Player, enemy: ActiveEnemy) => void
 	actionForFriendly?: (player: Player, friend: Player) => void
@@ -53,10 +52,8 @@ export type Item = {
 	useableOutOfBattle?: boolean
 }
 
-export type GeneratesActionsFor = 'enemies' | 'friendlies' | 'noTarget'
 
 const dagger: Item = {
-	itemTargeting: 'enemies',
 	actionForEnemy(player, enemy) {
 		player.itemActions.push(
 			{
@@ -80,7 +77,6 @@ const dagger: Item = {
 }
 
 const club: Item = {
-	itemTargeting: 'enemies',
 	actionForEnemy(player, enemy) {
 		player.itemActions.push(
 			{
@@ -90,19 +86,12 @@ const club: Item = {
 				slot: 'weapon',
 				target: enemy.unitId,
 				performAction() {
-					let r = damageEnemy(player, enemy, 25)
-					if (r.dmgDone > 0) {
-						pushAnimation(
-							{
-								sceneId: player.currentScene,
-								battleAnimation: {
-									source: player.unitId,
-									target: enemy.unitId,
-									damageToTarget: r.dmgDone,
-									behavior: 'melee',
-								}
-							})
-					}
+					return {
+						sourcePlayer: player,
+						targetEnemy: enemy,
+						baseDamageToTarget: 25,
+						behavior: 'melee',
+					} satisfies BattleEvent
 				}
 			}
 		)
@@ -110,7 +99,6 @@ const club: Item = {
 }
 
 const fireStaff: Item = {
-	itemTargeting: 'enemies',
 	warmup: 2,
 	cooldown: 1,
 	actionForEnemy(player, enemy) {
@@ -122,20 +110,13 @@ const fireStaff: Item = {
 				slot: 'weapon',
 				target: enemy.unitId,
 				performAction() {
-					let r = damageEnemy(player, enemy, 100)
-					if (r.dmgDone > 0) {
-						pushAnimation(
-							{
-								sceneId: player.currentScene,
-								battleAnimation: {
-									source: player.unitId,
-									target: enemy.unitId,
-									damageToTarget: r.dmgDone,
-									behavior: 'missile',
-									extraSprite: 'flame',
-								}
-							})
-					}
+					return {
+						sourcePlayer: player,
+						targetEnemy: enemy,
+						baseDamageToTarget: 100,
+						behavior: 'missile',
+						extraSprite: 'flame',
+					} satisfies BattleEvent
 				}
 			}
 		)
@@ -143,7 +124,6 @@ const fireStaff: Item = {
 }
 
 const bandage: Item = {
-	itemTargeting: 'friendlies',
 	startStock: 2,
 	useableOutOfBattle: true,
 	actionForFriendly(player, friend) {
@@ -179,7 +159,6 @@ const bandage: Item = {
 }
 
 const bomb: Item = {
-	itemTargeting: 'noTarget',
 	startStock: 1,
 	actions(player) {
 		player.itemActions.push({
@@ -188,33 +167,27 @@ const bomb: Item = {
 			provoke: 5,
 			slot: 'utility',
 			performAction() {
-				let dmgs: HealthModifierEvent[] = []
-				// let aggroAffected: AggroModifier[] = []
+				let dmgModifies: HealthModifierEvent[] = []
+				let aggroModifies: AggroModifierEvent[] = []
+				let forHeroes = activePlayersInScene(player.currentScene)
 				for (const enemy of enemiesInScene(player.currentScene)) {
-					// 	for (const key of enemy.aggros.keys()) {
-					// 		let prevAggro = enemy.aggros.get(key)
-					// 		if (prevAggro != undefined) {
-					// 			let newAggro = prevAggro - 20
-					// 			if (newAggro < 1) newAggro = 0
-					// 			enemy.aggros.set(key, newAggro);
-					// 			aggroAffected.push({
-					// 				target: enemy.unitId,
-					// 				amount: 20,
-					// 				showFor: 'all',
-					// 			})
-					// 		}
-					// 	}
-					dmgs.push({
+					dmgModifies.push({
 						baseDamage: 5,
 						targetEnemy: enemy
 					})
+					aggroModifies.push({
+						targetEnemy:enemy,
+						forHeros:forHeroes,
+						baseAmount:-20,
+					})
 				}
+
 				return {
 					sourcePlayer: player,
 					behavior: 'center',
 					extraSprite: 'bomb',
-					alsoDamages: dmgs,
-					// alsoModifiesAggro: aggroAffected
+					alsoDamages: dmgModifies,
+					alsoModifiesAggro: aggroModifies
 				} satisfies BattleEvent
 			},
 		})
@@ -222,7 +195,6 @@ const bomb: Item = {
 }
 
 const poisonDart: Item = {
-	itemTargeting: 'enemies',
 	startStock: 2,
 	actionForEnemy(player, enemy) {
 		player.itemActions.push(
@@ -248,7 +220,6 @@ const poisonDart: Item = {
 }
 
 const plateMail: Item = {
-	itemTargeting: 'noTarget',
 	cooldown: 2,
 	actions(player) {
 		player.itemActions.push({
@@ -266,8 +237,8 @@ const plateMail: Item = {
 						return {
 							targetEnemy: e,
 							setTo: 100,
-							showFor: 'onlyme'
-						}
+							forHeros: [player]
+						}satisfies AggroModifierEvent
 					})
 				} satisfies BattleEvent
 			},
@@ -282,7 +253,6 @@ const plateMail: Item = {
 }
 
 const theifCloak: Item = {
-	itemTargeting: 'noTarget',
 	cooldown: 3,
 	actions(player) {
 		player.itemActions.push({
@@ -304,7 +274,6 @@ const theifCloak: Item = {
 }
 
 const leatherArmor: Item = {
-	itemTargeting: 'noTarget',
 	useableOutOfBattle: true,
 	onTakeDamage(incoming) {
 		if (incoming < 6) {

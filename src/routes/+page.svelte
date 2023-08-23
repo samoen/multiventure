@@ -351,7 +351,7 @@
 		</div>
 	{/if}
 	<br />
-	{#if $lastMsgFromServer.itemActions.length}
+	<!-- {#if $lastMsgFromServer.itemActions.length}
 		<div class="actionButtons">
 			{#each $lastMsgFromServer.itemActions as op, i}
 				<button on:click={() => choose(op)} disabled={$clientState.waitingForMyEvent}>
@@ -359,7 +359,7 @@
 				</button>
 			{/each}
 		</div>
-	{/if}
+	{/if} -->
 	<!-- <button on:click={() => {}}>debug something</button> -->
 	<div class="wrapGameField">
 		<span class="yourSceneLabel">{$lastMsgFromServer.yourInfo.currentScene}</span>
@@ -404,13 +404,15 @@
 								if ($currentAnimation.alsoModifiesAggro) {
 									for (const other of $currentAnimation.alsoModifiesAggro) {
 										if (
-											other.showFor == 'all' ||
-											$lastMsgFromServer?.yourInfo.unitId == $currentAnimation.source
+											$lastMsgFromServer &&
+											other.forHeros.includes($lastMsgFromServer.yourInfo.unitId)
 										) {
 											updateUnit(other.target, (vup) => {
 												if (vup.aggro != undefined) {
 													if (other.amount != undefined) {
-														vup.aggro -= other.amount;
+														vup.aggro += other.amount;
+														if(vup.aggro > 100)vup.aggro = 100
+														if(vup.aggro < 0)vup.aggro = 0
 													}
 													if (other.setTo != undefined) {
 														vup.aggro = other.setTo;
@@ -647,11 +649,11 @@
 		background-color: cadetblue;
 		border: 1px solid black;
 	}
-	.actionButtons {
+	/* .actionButtons {
 		display: inline-block;
 		background-color: beige;
 		border: 1px solid black;
-	}
+	} */
 	.slotButton {
 		padding: 10px;
 	}

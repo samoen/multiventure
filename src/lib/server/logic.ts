@@ -131,6 +131,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 			}
 		}
 
+		// should status persist after battles?
 		player.statuses = {
 			poison: 0,
 			rage: 0,
@@ -141,12 +142,12 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		return
 	}
 
-	if (!enemiesInScene(player.currentScene).length) {
-		if (actionFromId.performAction) {
-			actionFromId.performAction();
-		}
-		return
-	}
+	// if (!enemiesInScene(player.currentScene).length) {
+	// 	if (actionFromId.performAction) {
+	// 		actionFromId.performAction();
+	// 	}
+	// 	return
+	// }
 
 	pushHappening('----');
 
@@ -259,36 +260,40 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				if (battleEvent.alsoModifiesAggro) {
 					for (const modifyEvent of battleEvent.alsoModifiesAggro) {
 						if (modifyEvent.setTo) {
-							if (modifyEvent.showFor == 'onlyme' && battleEvent.sourcePlayer) {
-								modifyEvent.targetEnemy.aggros.set(battleEvent.sourcePlayer?.heroName, modifyEvent.setTo)
+							for(const hero of modifyEvent.forHeros){
+								modifyEvent.targetEnemy.aggros.set(hero.heroName, modifyEvent.setTo)
 							}
-							if (modifyEvent.showFor == 'all') {
-								for (const [key, value] of modifyEvent.targetEnemy.aggros) {
-									modifyEvent.targetEnemy.aggros.set(key, modifyEvent.setTo)
-								}
-							}
-							aggroModifiedAnimations.push({
-								showFor: modifyEvent.showFor,
+							// if (modifyEvent.forHeros == 'onlyme' && battleEvent.sourcePlayer) {
+								// 	modifyEvent.targetEnemy.aggros.set(battleEvent.sourcePlayer?.heroName, modifyEvent.setTo)
+								// }
+								// if (modifyEvent.forHeros == 'all') {
+									// 	for (const [key, value] of modifyEvent.targetEnemy.aggros) {
+										// 		modifyEvent.targetEnemy.aggros.set(key, modifyEvent.setTo)
+										// 	}
+										// }
+										aggroModifiedAnimations.push({
+								forHeros: modifyEvent.forHeros.map(h=>h.unitId),
 								target: modifyEvent.targetEnemy.unitId,
 								setTo: modifyEvent.setTo,
 							})
 						}
 						if (modifyEvent.baseAmount) {
-							let increasedBy = 0
-							if (modifyEvent.showFor == 'onlyme' && battleEvent.sourcePlayer) {
-								let r = modifyAggroForPlayer(battleEvent.sourcePlayer.heroName, modifyEvent.targetEnemy, modifyEvent.baseAmount)
-								increasedBy = r.increasedBy
+							for(const hero of modifyEvent.forHeros){
+								let r = modifyAggroForPlayer(hero.heroName, modifyEvent.targetEnemy, modifyEvent.baseAmount)
 							}
-							if (modifyEvent.showFor == 'all') {
-								for (const [key, value] of modifyEvent.targetEnemy.aggros) {
-									let r = modifyAggroForPlayer(key, modifyEvent.targetEnemy, modifyEvent.baseAmount)
-									increasedBy = r.increasedBy
-								}
-							}
+
+							// if (modifyEvent.forHeros == 'onlyme' && battleEvent.sourcePlayer) {
+							// 	let r = modifyAggroForPlayer(battleEvent.sourcePlayer.heroName, modifyEvent.targetEnemy, modifyEvent.baseAmount)
+							// }
+							// if (modifyEvent.forHeros == 'all') {
+							// 	for (const [key, value] of modifyEvent.targetEnemy.aggros) {
+							// 		let r = modifyAggroForPlayer(key, modifyEvent.targetEnemy, modifyEvent.baseAmount)
+							// 	}
+							// }
 							aggroModifiedAnimations.push({
-								showFor: modifyEvent.showFor,
+								forHeros: modifyEvent.forHeros.map(h=>h.unitId),
 								target: modifyEvent.targetEnemy.unitId,
-								amount: increasedBy
+								amount: modifyEvent.baseAmount,
 							})
 
 						}
@@ -337,7 +342,6 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 			let statusForPlayer = enemy.statuses.get(player.heroName)
 			if (!statusForPlayer) continue
 			if (statusForPlayer.poison > 0) {
-				console.log(`${enemy.name} takes poison ${JSON.stringify(enemy.statuses)}`)
 				takePoisonDamage(enemy)
 				statusForPlayer.poison--
 			}
