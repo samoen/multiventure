@@ -54,10 +54,10 @@
 </script>
 {#if vu && !(vu.displayHp<1 && vu.side=="enemy")}
 	<div class="top" out:fade|local={{duration:400}}>
-		<p
+		<span
 		class='nametag'
 		class:bold={vu.name == $lastMsgFromServer?.yourInfo.heroName}
-		>{`${vu.name == $lastMsgFromServer?.yourInfo.heroName ? '⭐' :''}${vu.name}`}</p>
+		>{`${vu.name == $lastMsgFromServer?.yourInfo.heroName ? '👤' :''}${vu.name}`}</span>
 		<div class="outerHeroSprite">
 			<div class="statuses">
 				{#each statuses as s}
@@ -86,8 +86,20 @@
 {/if}
 
 <style>
+	.top {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		/* height:100%; */
+		/* width: 60px; */
+		height:100px;
+		/* background-color: aqua; */
+	}
 	.nametag{
-		color:white;
+		color: transparent;
+  		text-shadow: 0 0 0 white;
+		opacity: 0.6;
 		white-space: nowrap;
 		/* text-wrap:balance;
 		word-wrap: break-word;
@@ -97,6 +109,8 @@
 		/* background-color: bisque; */
 		padding: 0;
 		margin: 0;
+		font-weight: bold;
+		font-size: 13px;
 	}
 	.faded{
 		opacity: 0.5;
@@ -122,20 +136,13 @@
 	.bars {
 		display: flex;
 		flex-direction: column;
-		/* align-items: center; */
+		align-items: center;
 		margin-top: 5px;
 		width: 40px;
+		opacity: 0.7;
 	}
 	.flipped {
 		transform: scaleX(-1);
-	}
-	.top {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		/* width: 60px; */
-		/* height:100px; */
-		/* background-color: aqua; */
 	}
 	.outerHeroSprite {
 		position:relative;
@@ -150,24 +157,29 @@
 		object-fit: cover;
 	}
 	.healthbar {
-		/* width:80px; */
+		width:100%;
 		/* align-self: stretch; */
-		height: 7px;
-		border: 1px solid black;
+		height: 8px;
+		border: 2px solid black;
+		border-radius: 5px;
+		background-color:black;
 		/* width: 40px; */
 		/* margin-block: 1px; */
 	}
 	.healthbar_health {
+		border-radius: 5px;
 		background-color: green;
 		/* width: 60%; */
 		height: 100%;
 	}
 	.aggrobar {
-		margin-top: 2px;
-		/* width:80px; */
+		margin-top: 1px;
+		border-radius: 5px;
+		background-color:black;
+		width:85%;
 		/* align-self: stretch; */
-		height: 4px;
-		border: 1px solid black;
+		height: 6px;
+		border: 2px solid black;
 		/* width: 40px; */
 	}
 	.aggro {

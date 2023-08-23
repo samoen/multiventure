@@ -351,7 +351,7 @@
 		justify-content: center;
 	}
 	.clickable {
-		border: 3px dotted yellow;
+		border: 2px dashed yellow;
 	}
 	.projHolder {
 		/* background-color: aquamarine; */

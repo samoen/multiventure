@@ -513,7 +513,7 @@
 					<div>
 						{#each Object.entries($selectedDetail.actual.info.statuses) as [key, value]}
 							{#if value > 0}
-								{`${key} ${value}, `}
+								{`${key} ${value}`}
 							{/if}
 						{/each}
 					</div>
@@ -521,7 +521,7 @@
 					<!-- <div> -->
 					{#each Object.entries($selectedDetail.actual.info.inventory) as [key, value]}
 						<div>
-							{`${key}: ${value.itemId}, `}
+							{`${key}: ${value.itemId}`}
 						</div>
 					{/each}
 					<div>
@@ -732,13 +732,13 @@
 	.selectedDetails {
 		background-color: beige;
 		display: inline-flex;
-		height: 20vh;
+		height: 15vh;
 	}
 	.selectedPortrait {
 		/* width: 100px; */
 		height: 100%;
 		/* background-color: blueviolet; */
-		height: 20vh;
+		/* height: 20vh; */
 	}
 	.selectedPortrait > img {
 		object-fit: cover;
@@ -747,6 +747,9 @@
 		max-width: 140px;
 	}
 	.selectedStats {
+		display: flex;
+		flex-direction: column;
+		flex-wrap: wrap;
 		overflow-y: auto;
 		padding:5px;
 		/* background-color: aquamarine; */

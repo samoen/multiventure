@@ -228,6 +228,7 @@ export function damageEnemy(actor: Player, enemy: ActiveEnemy, damage: number, s
 		enemy.currentHealth -= dmg
 		dmgDone +=dmg
 	}
+	dmgDone = dmgDone + actor.strength
 
 	pushHappening(`${actor.heroName} hit ${enemy.name} ${strikes>1?strikes+' times':''} for ${dmgDone} damage`)
 	
