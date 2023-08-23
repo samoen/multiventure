@@ -1,9 +1,9 @@
 // This file is for stuff available to both the server and browser
 
-import type { EnemyTemplateId } from './server/enemies';
+import type { ActiveEnemy, EnemyTemplateId } from './server/enemies';
 import type { EquipmentSlot, ItemState, ItemStateForSlot } from './server/items';
 import type { SceneId } from './server/scenes';
-import type { Flag, GlobalFlag, HeroName } from './server/users';
+import type { Flag, GlobalFlag, HeroName, Player } from './server/users';
 
 
 export type UnitId = `hero${string}` | `enemy${string}`
@@ -20,8 +20,27 @@ export type BattleAnimation = {
 	alsoModifiesAggro?:AggroModifier[],
 }
 
-export type StatusModifier = {target:UnitId, status:StatusId, remove?:boolean}
+export type BattleEvent = {
+	sourcePlayer?: Player,
+	sourceEnemy?: ActiveEnemy,
+	targetEnemy?: ActiveEnemy,
+	targetPlayer?: Player,
+	baseHealingToSource?: number,
+	baseHealingToTarget?: number,
+	baseDamageToTarget?:number,
+	strikes?:number,
+	// putsStatuses?:StatusModifier[]
+	putsStatuses?:StatusModifierEvent[]
+	behavior: AnimationBehavior,
+	extraSprite?: ExtraSprite,
+	alsoDamages?:HealthModifierEvent[],
+	alsoModifiesAggro?:AggroModifier[],
+}
+
+export type StatusModifier = {target:UnitId, status:StatusId, remove?:boolean, count?:number}
+export type StatusModifierEvent = {targetPlayer?:Player, targetEnemy?:ActiveEnemy, status:StatusId, remove?:boolean, count?:number}
 export type HealthModifier = {target:UnitId,amount:number}
+export type HealthModifierEvent = {targetPlayer?:Player,targetEnemy?:ActiveEnemy,baseDamage?:number,baseHeal?:number}
 export type AggroModifier = {
 	target:UnitId,
 	amount?:number,

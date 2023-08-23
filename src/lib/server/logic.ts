@@ -1,9 +1,9 @@
-import type { StatusEffect } from "$lib/utils"
-import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer } from "./enemies"
+import type { BattleAnimation, HealthModifier, StatusEffect, StatusModifier, UnitId } from "$lib/utils"
+import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, infightDamage } from "./enemies"
 import { items, type Item } from "./items"
 import { pushHappening } from "./messaging"
 import { scenes } from "./scenes"
-import { users, type Player, playerItemStates, activePlayersInScene, type GameAction } from "./users"
+import { users, type Player, playerItemStates, activePlayersInScene, type GameAction, healPlayer } from "./users"
 
 export function updateAllPlayerActions() {
 	for (const allPlayer of users.values()) {
@@ -168,7 +168,124 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	if (player.health > 0) {
 		if (actionFromId.performAction) {
 			preCombatActionPerformed(player, actionFromId)
-			actionFromId.performAction();
+			let battleEvent = actionFromId.performAction();
+			if (battleEvent) {
+				let dmgToSource = 0
+				let dmgToTarget = 0
+				if (battleEvent.sourcePlayer && battleEvent.baseHealingToSource) {
+					let r = healPlayer(battleEvent.sourcePlayer, battleEvent.baseHealingToSource)
+					dmgToSource = r.healed * -1
+				}
+				if (battleEvent.targetPlayer && battleEvent.baseHealingToTarget) {
+					let r = healPlayer(battleEvent.targetPlayer, battleEvent.baseHealingToTarget)
+					dmgToTarget = r.healed * -1
+				}
+				if (battleEvent.baseDamageToTarget) {
+					if (battleEvent.targetEnemy && battleEvent.sourcePlayer) {
+						const r = damageEnemy(battleEvent.sourcePlayer, battleEvent.targetEnemy, battleEvent.baseDamageToTarget, battleEvent.strikes)
+						dmgToTarget = r.dmgDone
+					}
+					if (battleEvent.targetPlayer && battleEvent.sourceEnemy) {
+						const r = damagePlayer(battleEvent.sourceEnemy, battleEvent.targetPlayer)
+						dmgToTarget = r.dmgDone
+					}
+					if (battleEvent.targetEnemy && battleEvent.sourceEnemy) {
+						const r = infightDamage(battleEvent.sourceEnemy, battleEvent.targetEnemy)
+						dmgToTarget = r.dmgDone
+					}
+				}
+
+				if (battleEvent.putsStatuses) {
+					for (const put of battleEvent.putsStatuses) {
+						if (put.count) {
+							if (put.targetEnemy) {
+								let found = put.targetEnemy.statuses.get(player.heroName)
+								if (!found) {
+									found = {
+										poison: 0,
+										rage: 0,
+										hidden: 0,
+									}
+								}
+								if (found[put.status] < put.count) {
+									found.poison = put.count
+								}
+								put.targetEnemy.statuses.set(player.heroName, found)
+							}
+							if (put.targetPlayer) {
+								if (put.targetPlayer.statuses[put.status] < put.count) {
+									put.targetPlayer.statuses[put.status] = put.count
+								}
+							}
+						}
+						if(put.remove){
+							if(put.targetPlayer){
+								put.targetPlayer.statuses[put.status] = 0
+							}
+							if(put.targetEnemy){
+								for(const [key,value] of put.targetEnemy.statuses){
+									value[put.status] = 0
+								}
+							}
+						}
+					}
+				}
+				let alsoDmgedAnimation : HealthModifier[] = []
+				if(battleEvent.alsoDamages){
+					for (const dmged of battleEvent.alsoDamages){
+						if(dmged.targetEnemy){
+							if(battleEvent.sourcePlayer){
+								if(dmged.baseDamage){
+									let r = damageEnemy(battleEvent.sourcePlayer,dmged.targetEnemy,dmged.baseDamage)
+									alsoDmgedAnimation.push({
+										target:dmged.targetEnemy.unitId,
+										amount:r.dmgDone,
+									})
+								}
+							}
+							if(battleEvent.sourceEnemy){
+								if(dmged.baseDamage){
+									let r = infightDamage(battleEvent.sourceEnemy,dmged.targetEnemy)
+									alsoDmgedAnimation.push({
+										target:dmged.targetEnemy.unitId,
+										amount:r.dmgDone,
+									})
+								}
+							}
+						}
+					}
+				}
+
+				let battleAnimation: BattleAnimation = {
+					source: battleEvent.sourcePlayer ? battleEvent.sourcePlayer.unitId : battleEvent.sourceEnemy?.unitId ?? 'herohi',
+					target: battleEvent.targetPlayer ? battleEvent.targetPlayer.unitId : battleEvent.targetEnemy?.unitId ?? 'herohi',
+					damageToSource: dmgToSource,
+					damageToTarget: dmgToTarget,
+					behavior: battleEvent.behavior,
+					alsoDamages: alsoDmgedAnimation,
+					alsoModifiesAggro: battleEvent.alsoModifiesAggro,
+					extraSprite: battleEvent.extraSprite,
+					putsStatuses: battleEvent.putsStatuses?.map(m => {
+						let id: UnitId = 'herohi'
+						if (m.targetEnemy) {
+							id = m.targetEnemy.unitId
+						}
+						if (m.targetPlayer) {
+							id = m.targetPlayer.unitId
+						}
+						return {
+							status: m.status,
+							target: id,
+							count: m.count,
+							remove: m.remove
+						} satisfies StatusModifier
+					}),
+				}
+				pushAnimation({
+					sceneId: player.currentScene,
+					battleAnimation: battleAnimation,
+				})
+			}
 
 		}
 	}

@@ -1,7 +1,7 @@
-import type { AggroModifier, HealthModifier, UnitId } from '$lib/utils';
+import type { AggroModifier, BattleEvent, HealthModifier, HealthModifierEvent, UnitId } from '$lib/utils';
 import { damageEnemy, enemiesInScene, pushAnimation, takePoisonDamage, type ActiveEnemy } from './enemies';
 import { pushHappening } from './messaging';
-import { activePlayersInScene, healPlayer, type Player } from './users';
+import type { Player } from './users';
 
 export type EquipmentSlot =
 	| 'weapon'
@@ -58,7 +58,6 @@ export type GeneratesActionsFor = 'enemies' | 'friendlies' | 'noTarget'
 const dagger: Item = {
 	itemTargeting: 'enemies',
 	actionForEnemy(player, enemy) {
-		// for (const enemy of enemiesInScene(player.currentScene)) {
 		player.itemActions.push(
 			{
 				buttonText: `Attack ${enemy.name} with Dagger`,
@@ -67,23 +66,16 @@ const dagger: Item = {
 				slot: 'weapon',
 				target: enemy.unitId,
 				performAction() {
-					let r = damageEnemy(player, enemy, 7, 3)
-					if (r.dmgDone > 0) {
-						pushAnimation(
-							{
-								sceneId: player.currentScene,
-								battleAnimation: {
-									source: player.unitId,
-									target: enemy.unitId,
-									damageToTarget: r.dmgDone,
+								return {
+									sourcePlayer: player,
+									targetEnemy: enemy,
+									baseDamageToTarget:7,
+									strikes:3,
 									behavior: 'melee',
-								}
-							})
-					}
+								} satisfies BattleEvent
 				}
 			}
 		)
-		// }
 	}
 }
 
@@ -164,34 +156,21 @@ const bandage: Item = {
 					slot: 'utility',
 					target: friend.unitId,
 					performAction: () => {
-						let r = healPlayer(friend, 90)
-						if (r.healed > 0) {
 							if (friend.heroName != player.heroName) {
-								pushAnimation(
-									{
-										sceneId: player.currentScene,
-										battleAnimation: {
-											source: player.unitId,
-											target: friend.unitId,
-											damageToTarget: r.healed * -1,
+										return {
+											sourcePlayer: player,
+											targetPlayer: friend,
+											baseHealingToTarget: 90,
 											behavior: 'melee',
-										}
-									}
-								)
+										} satisfies BattleEvent
 							} else {
-								pushAnimation(
-									{
-										sceneId: player.currentScene,
-										battleAnimation: {
-											source: player.unitId,
-											damageToSource: r.healed * -1,
+										return {
+											sourcePlayer: player,
+											baseHealingToSource: 90,
 											behavior: 'selfInflicted',
 											extraSprite: 'flame'
 										}
-									}
-								)
 							}
-						}
 					},
 				}
 			)
@@ -209,41 +188,34 @@ const bomb: Item = {
 			provoke: 5,
 			slot: 'utility',
 			performAction() {
-				let dmgs: HealthModifier[] = []
-				let aggroAffected: AggroModifier[] = []
+				let dmgs: HealthModifierEvent[] = []
+				// let aggroAffected: AggroModifier[] = []
 				for (const enemy of enemiesInScene(player.currentScene)) {
-					for (const key of enemy.aggros.keys()) {
-						let prevAggro = enemy.aggros.get(key)
-						if (prevAggro != undefined) {
-							let newAggro = prevAggro - 20
-							if (newAggro < 1) newAggro = 0
-							enemy.aggros.set(key, newAggro);
-							aggroAffected.push({
-								target: enemy.unitId,
-								amount: 20,
-								showFor: 'all',
-							})
-						}
-					}
-					let r = damageEnemy(player, enemy, 5)
-					if (r.dmgDone > 0) {
+				// 	for (const key of enemy.aggros.keys()) {
+				// 		let prevAggro = enemy.aggros.get(key)
+				// 		if (prevAggro != undefined) {
+				// 			let newAggro = prevAggro - 20
+				// 			if (newAggro < 1) newAggro = 0
+				// 			enemy.aggros.set(key, newAggro);
+				// 			aggroAffected.push({
+				// 				target: enemy.unitId,
+				// 				amount: 20,
+				// 				showFor: 'all',
+				// 			})
+				// 		}
+				// 	}
 						dmgs.push({
-							amount: r.dmgDone,
-							target: enemy.unitId
-						})
-					}
+							baseDamage: 5,
+							targetEnemy: enemy
+						} )
 				}
-				pushAnimation(
-					{
-						sceneId: player.currentScene,
-						battleAnimation: {
-							source: player.unitId,
+						return {
+							sourcePlayer: player,
 							behavior: 'center',
 							extraSprite: 'bomb',
 							alsoDamages: dmgs,
-							alsoModifiesAggro: aggroAffected
-						}
-					})
+							// alsoModifiesAggro: aggroAffected
+						} satisfies BattleEvent
 			},
 		})
 	},
@@ -261,33 +233,14 @@ const poisonDart: Item = {
 				slot: 'utility',
 				target: enemy.unitId,
 				performAction() {
-					let found = enemy.statuses.get(player.heroName)
-					if (!found) {
-						found = {
-							poison: 0,
-							rage: 0,
-							hidden: 0,
-						}
-					}
-					// found = enemy.statuses.get(player.heroName)
-					if (found.poison < 3) {
-						found.poison = 3
-					}
-					enemy.statuses.set(player.heroName, found)
-
-					let r = damageEnemy(player, enemy, 1)
-					pushAnimation(
-						{
-							sceneId: player.currentScene,
-							battleAnimation: {
-								source: player.unitId,
-								target: enemy.unitId,
-								putsStatuses: [{ target: enemy.unitId, status: 'poison' }],
-								damageToTarget: r.dmgDone,
+							return {
+								sourcePlayer: player,
+								targetEnemy: enemy,
+								putsStatuses: [{ targetEnemy: enemy, status: 'poison', count:3 }],
+								baseDamageToTarget: 3,
 								behavior: 'missile',
 								extraSprite: 'arrow',
-							}
-						})
+							} satisfies BattleEvent
 				},
 			}
 		)
@@ -344,17 +297,13 @@ const theifCloak: Item = {
 			slot: 'body',
 			provoke: 30,
 			performAction() {
-				player.statuses.hidden = 2
 				pushHappening(`${player.heroName} hid in shadows`)
-				pushAnimation({
-					sceneId: player.currentScene,
-					battleAnimation: {
+					return {
 						behavior: 'selfInflicted',
-						source: player.unitId,
+						sourcePlayer: player,
 						extraSprite: 'bomb',
-						putsStatuses: [{ target: player.unitId, status: 'hidden' }],
-					}
-				})
+						putsStatuses: [{ targetPlayer: player, status: 'hidden', count:2 }],
+					} satisfies BattleEvent
 			},
 		})
 	},
@@ -380,31 +329,20 @@ const leatherArmor: Item = {
 					slot: 'body',
 					target: friend.unitId,
 					performAction: () => {
-						friend.statuses.poison = 0
 						if (friend.heroName != player.heroName) {
-							pushAnimation(
-								{
-									sceneId: player.currentScene,
-									battleAnimation: {
-										source: player.unitId,
-										target: friend.unitId,
+									return {
+										sourcePlayer: player,
+										targetPlayer: friend,
 										behavior: 'melee',
-										putsStatuses: [{ target: friend.unitId, status: 'poison', remove: true }]
-									}
-								}
-							)
+										putsStatuses: [{ targetPlayer: friend, status: 'poison', remove: true }]
+									} satisfies BattleEvent
 						} else {
-							pushAnimation(
-								{
-									sceneId: player.currentScene,
-									battleAnimation: {
-										source: player.unitId,
+									return {
+										sourcePlayer: player,
 										behavior: 'selfInflicted',
 										extraSprite: 'bomb',
-										putsStatuses: [{ target: player.unitId, status: 'poison', remove: true }]
-									}
-								}
-							)
+										putsStatuses: [{ targetPlayer: player, status: 'poison', remove: true }]
+									} satisfies BattleEvent
 						}
 					},
 				}

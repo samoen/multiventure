@@ -1,4 +1,4 @@
-import type { UnitId, BattleAnimation, StatusEffect, StatusId } from '$lib/utils';
+import type { UnitId, BattleAnimation, StatusEffect, StatusId, BattleEvent } from '$lib/utils';
 import { items, type Inventory, type Item, type ItemState, type EquipmentSlot, type ItemStateForSlot } from './items';
 import { pushHappening } from './messaging';
 import type { SceneId } from './scenes';
@@ -58,7 +58,7 @@ export type PlayerInClient = {
 
 export type GameAction = {
 	goTo?:SceneId;
-	performAction?: () => void;
+	performAction?: () => BattleEvent | void;
 	buttonText: string;
 	speed?:number;
 	provoke?:number;
