@@ -2,6 +2,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import Unit from '$lib/Components/Unit.svelte';
 	import {
+		actionsForSlot,
 		allVisualUnitProps,
 		animationCancelled,
 		bodySlotActions,
@@ -20,6 +21,7 @@
 		selectedDetail,
 		stockDotsOnSlotButton,
 		syncVisualsToMsg,
+		typedInventory,
 		updateUnit,
 		utilitySlotActions,
 		waitButtonAction,
@@ -30,6 +32,7 @@
 	import { onMount, tick } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import { derived } from 'svelte/store';
+	import plains from '$lib/assets/landscapes/landscape-plain.webp';
 
 	export let data;
 	let signupInput: string;
@@ -308,6 +311,10 @@
 	let enemies = derived(allVisualUnitProps, ($allVisualUnitProps) => {
 		return $allVisualUnitProps.filter((p) => p.side == 'enemy');
 	});
+
+	// function tInventory(){
+
+	// }
 </script>
 
 <!-- <h3>Status: {clientState.status}</h3> -->
@@ -367,6 +374,7 @@
 			class="visual"
 			role="button"
 			tabindex="0"
+			style="background-image:url({plains});"
 			on:keydown
 			on:click={() => {
 				console.log('visual clicked');
@@ -399,7 +407,7 @@
 										});
 									}
 								}
-								
+
 								handlePutsStatuses(anim);
 								if ($currentAnimation.alsoModifiesAggro) {
 									for (const other of $currentAnimation.alsoModifiesAggro) {
@@ -411,8 +419,8 @@
 												if (vup.aggro != undefined) {
 													if (other.amount != undefined) {
 														vup.aggro += other.amount;
-														if(vup.aggro > 100)vup.aggro = 100
-														if(vup.aggro < 0)vup.aggro = 0
+														if (vup.aggro > 100) vup.aggro = 100;
+														if (vup.aggro < 0) vup.aggro = 0;
 													}
 													if (other.setTo != undefined) {
 														vup.aggro = other.setTo;
@@ -446,85 +454,46 @@
 		</div>
 	</div>
 	<div class="slotButtons">
-		<button
-			class="slotButton"
-			class:activeSlotButton={$latestSlotButtonInput == 'weapon'}
-			type="button"
-			disabled={!$wepSlotActions ||
-				!$wepSlotActions.length ||
-				$waitingForMyAnimation ||
-				$clientState.waitingForMyEvent}
-			on:click={() => {
-				if (!$wepSlotActions || !$wepSlotActions.length) return;
-				const oneChoice = $wepSlotActions.length == 1
-				const onlyAction = $wepSlotActions.at(0);
-				if (oneChoice && onlyAction) {
-					choose(onlyAction);
-					$latestSlotButtonInput = 'none';
-					return;
-				}
-				$latestSlotButtonInput = 'weapon';
-			}}
-			>{$lastMsgFromServer.yourInfo.inventory.weapon.itemId}
-			{numberShownOnSlot($lastMsgFromServer.yourInfo.inventory.weapon) ?? ''}
-			{stockDotsOnSlotButton($lastMsgFromServer.yourInfo.inventory.weapon)}
-		</button>
-
-		<button
-			class="slotButton"
-			class:activeSlotButton={$latestSlotButtonInput == 'utility'}
-			type="button"
-			disabled={!$utilitySlotActions ||
-				!$utilitySlotActions.length ||
-				$waitingForMyAnimation ||
-				$clientState.waitingForMyEvent}
-			on:click={() => {
-				if (!$utilitySlotActions || !$utilitySlotActions.length) return;
-				const oneChoice = $utilitySlotActions.length == 1
-				let onlyAction = $utilitySlotActions.at(0);
-				if (onlyAction && oneChoice) {
-					choose(onlyAction);
-					$latestSlotButtonInput = 'none';
-					return;
-				}
-				$latestSlotButtonInput = 'utility';
-			}}
-			>{$lastMsgFromServer.yourInfo.inventory.utility.itemId}
-			{numberShownOnSlot($lastMsgFromServer.yourInfo.inventory.utility) ?? ''}
-			{stockDotsOnSlotButton($lastMsgFromServer.yourInfo.inventory.utility)}
-		</button>
-		<button
-			class="slotButton"
-			class:activeSlotButton={$latestSlotButtonInput == 'body'}
-			type="button"
-			disabled={!$bodySlotActions ||
-				!$bodySlotActions.length ||
-				$waitingForMyAnimation ||
-				$clientState.waitingForMyEvent}
-			on:click={() => {
-				if (!$bodySlotActions || !$bodySlotActions.length) return;
-				const oneChoice = $bodySlotActions.length == 1
-				let onlyAction = $bodySlotActions.at(0);
-				if (onlyAction && oneChoice) {
-					choose(onlyAction);
-					$latestSlotButtonInput = 'none';
-					return;
-				}
-				$latestSlotButtonInput = 'body';
-			}}
-			>{$lastMsgFromServer.yourInfo.inventory.body.itemId}
-			{numberShownOnSlot($lastMsgFromServer.yourInfo.inventory.body) ?? ''}
-			{stockDotsOnSlotButton($lastMsgFromServer.yourInfo.inventory.body)}
-		</button>
-		<button
-			class="slotButton"
-			disabled={!$waitButtonAction || $waitingForMyAnimation || $clientState.waitingForMyEvent}
-			on:click={() => {
-				if ($waitButtonAction) {
-					choose($waitButtonAction);
-				}
-			}}>Wait</button
-		>
+		{#each $typedInventory as [key, value]}
+			{#if actionsForSlot($lastMsgFromServer, key).length || numberShownOnSlot(value)}
+				<button
+					class="slotButton"
+					class:activeSlotButton={$latestSlotButtonInput == key}
+					type="button"
+					disabled={!actionsForSlot($lastMsgFromServer, key) ||
+						!actionsForSlot($lastMsgFromServer, key).length ||
+						$waitingForMyAnimation ||
+						$clientState.waitingForMyEvent}
+					on:click={() => {
+						let wepSlotActions = actionsForSlot($lastMsgFromServer, key);
+						if (!wepSlotActions || !wepSlotActions.length) return;
+						const oneChoice = wepSlotActions.length == 1;
+						const onlyAction = wepSlotActions.at(0);
+						if (oneChoice && onlyAction) {
+							choose(onlyAction);
+							$latestSlotButtonInput = 'none';
+							return;
+						}
+						$latestSlotButtonInput = key;
+					}}
+					>{$lastMsgFromServer.yourInfo.inventory[key].itemId}
+					{numberShownOnSlot($lastMsgFromServer.yourInfo.inventory[key]) ?? ''}
+					{stockDotsOnSlotButton($lastMsgFromServer.yourInfo.inventory[key])}
+				</button>
+			{/if}
+		{/each}
+		{#if $waitButtonAction}
+			<button
+				class="slotButton"
+				disabled={!$waitButtonAction || $waitingForMyAnimation || $clientState.waitingForMyEvent}
+				on:click={() => {
+					if ($waitButtonAction) {
+						choose($waitButtonAction);
+						$latestSlotButtonInput = 'none';
+					}
+				}}>Wait</button
+			>
+		{/if}
 	</div>
 	{#if $selectedDetail}
 		<div class="selectedDetails">
@@ -542,38 +511,58 @@
 				</div>
 				{#if $selectedDetail.actual.kind == 'player'}
 					<div>
-						Statuses : {JSON.stringify($selectedDetail.actual.info.statuses)}
+						{#each Object.entries($selectedDetail.actual.info.statuses) as [key, value]}
+							{#if value > 0}
+								{`${key} ${value}, `}
+							{/if}
+						{/each}
 					</div>
+
 					<!-- <div> -->
-						<!-- Agility: {$selectedDetail.actual.info.} -->
-					<!-- </div> -->
+					{#each Object.entries($selectedDetail.actual.info.inventory) as [key, value]}
+						<div>
+							{`${key}: ${value.itemId}, `}
+						</div>
+					{/each}
 					<div>
-						<button type="button">show gear</button>
+						Agility: {$selectedDetail.actual.info.agility}
 					</div>
+					<div>
+						Strength: {$selectedDetail.actual.info.strength}
+					</div>
+					<!-- <div>
+							<button type="button">show gear</button>
+						</div> -->
 				{/if}
 				{#if $selectedDetail.actual.kind == 'enemy'}
 					<div>
 						Template: {$selectedDetail.actual.enemy.templateId}
 					</div>
 					<div>
-						Statuses : {JSON.stringify($selectedDetail.actual.enemy.statuses)}
+						Aggro: {JSON.stringify($selectedDetail.actual.enemy.myAggro)}
 					</div>
 					<div>
-						Aggro: {JSON.stringify($selectedDetail.actual.enemy.myAggro)}
+						{#each Object.entries($selectedDetail.actual.enemy.statuses) as [forHero, statuses]}
+							{#each Object.entries(statuses) as [key, value]}
+								{#if value > 0}
+									{`${forHero}: ${key} ${value}, `}
+								{/if}
+							{/each}
+						{/each}
 					</div>
 				{/if}
 			</div>
 		</div>
 	{/if}
-	<p>{$lastMsgFromServer.playerFlags} {$lastMsgFromServer.globalFlags}</p>
-	<h3>Nearby Enemies:</h3>
+	<!-- <p>{$lastMsgFromServer.playerFlags} {$lastMsgFromServer.globalFlags}</p> -->
+	<!-- <h3>Nearby Enemies:</h3>
 	{#each $lastMsgFromServer.enemiesInScene as e}
 		<p>
 			<strong>{e.name}:</strong>
 			{e.templateId}, Health: {e.health}, Aggro: {e.myAggro}, statuses: {JSON.stringify(e.statuses)}
 		</p>
 		<p />
-	{/each}
+	{/each} -->
 	<h3>Recent happenings:</h3>
 	<div class="happenings" bind:this={happenings}>
 		{#each $lastMsgFromServer.happenings as h}
@@ -602,6 +591,7 @@
 <style>
 	:global(body) {
 		background-color: aliceblue;
+		padding-inline: 5px;
 	}
 	:global(*) {
 		box-sizing: border-box;
@@ -638,7 +628,8 @@
 		margin-bottom: 0px;
 	}
 	.sceneTexts {
-		height: calc(400px - 20vw);
+		height: calc(20vh);
+		overflow-y: auto;
 		/* height: 5; */
 		overflow-y: auto;
 		border: 1px solid black;
@@ -646,6 +637,8 @@
 		padding: 10px;
 	}
 	.sceneButtons {
+		/* height: 10vh; */
+		overflow-y: auto;
 		display: inline-block;
 		margin-top: 10px;
 		margin-bottom: 10px;
@@ -657,12 +650,6 @@
 		background-color: beige;
 		border: 1px solid black;
 	} */
-	.slotButton {
-		padding: 10px;
-	}
-	.activeSlotButton {
-		border: 5px dotted yellow;
-	}
 	.yourSceneLabel {
 		position: absolute;
 		/* position: sticky; */
@@ -679,13 +666,17 @@
 		background-color: beige;
 	}
 	.wrapGameField {
-		height: 30vh;
+		height: 40vh;
 		position: relative;
-		margin-block: 5px;
-		padding: 3px;
+		/* margin-block: 5px; */
+		/* padding: 3px; */
 		background-color: brown;
 	}
 	.visual {
+		background-repeat: no-repeat;
+		background-size: cover;
+		background-attachment: local;
+		background-position: center bottom;
 		overflow-y: auto;
 		overflow-x: hidden;
 		overscroll-behavior: contain;
@@ -705,6 +696,7 @@
 		/* direction: rtl; */
 		/* background-color: beige; */
 		/* grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); */
+		row-gap: 2px;
 		grid-template-columns: repeat(auto-fit, 120px);
 		justify-content: center;
 		justify-items: center;
@@ -724,20 +716,39 @@
 		height: 100%;
 		width: 100%;
 	}
+	.slotButtons {
+		background-color: bisque;
+		display: flex;
+		justify-content: center;
+		/* height:5vh; */
+		/* border: 2px solid brown; */
+	}
+	.slotButton {
+		padding: 4px;
+	}
+	.activeSlotButton {
+		border: 5px dotted yellow;
+	}
 	.selectedDetails {
-		/* background-color: beige; */
+		background-color: beige;
 		display: inline-flex;
+		height: 20vh;
 	}
 	.selectedPortrait {
-		width: 100px;
-		height: 100px;
+		/* width: 100px; */
+		height: 100%;
 		/* background-color: blueviolet; */
+		height: 20vh;
 	}
 	.selectedPortrait > img {
+		object-fit: cover;
 		height: 100%;
-		width: 100%;
+		/* width: 100%; */
+		max-width: 140px;
 	}
-	/* .selectedStats { */
-	/* background-color: aquamarine; */
-	/* } */
+	.selectedStats {
+		overflow-y: auto;
+		padding:5px;
+		/* background-color: aquamarine; */
+	}
 </style>

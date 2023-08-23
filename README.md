@@ -4,6 +4,11 @@ A multiplayer text aventure just for fun!
 
 ![alt text](https://www.gnu.org/graphics/gplv3-with-text-136x68.png)
 
+Uses:
+Assets from [Wesnoth](https://github.com/wesnoth/wesnoth)
+
+[Svelte](https://svelte.dev/)
+
 ## Developing
 
 Once you've cloned this repo:

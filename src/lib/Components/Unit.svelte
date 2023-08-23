@@ -341,6 +341,7 @@
 		/* background-color: aqua; */
 	}
 	.placeHolder {
+		/* background-color: aqua; */
 		border: 3px groove transparent;
 		width: 60px;
 		height: 100px;

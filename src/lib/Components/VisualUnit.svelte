@@ -54,9 +54,10 @@
 </script>
 {#if vu && !(vu.displayHp<1 && vu.side=="enemy")}
 	<div class="top" out:fade|local={{duration:400}}>
-		<p 
+		<p
+		class='nametag'
 		class:bold={vu.name == $lastMsgFromServer?.yourInfo.heroName}
-		>{vu.name}</p>
+		>{`${vu.name == $lastMsgFromServer?.yourInfo.heroName ? '⭐' :''}${vu.name}`}</p>
 		<div class="outerHeroSprite">
 			<div class="statuses">
 				{#each statuses as s}
@@ -85,12 +86,28 @@
 {/if}
 
 <style>
+	.nametag{
+		color:white;
+		white-space: nowrap;
+		/* text-wrap:balance;
+		word-wrap: break-word;
+		line-break: anywhere; */
+		/* text-align: center; */
+		/* line-height:65%; */
+		/* background-color: bisque; */
+		padding: 0;
+		margin: 0;
+	}
 	.faded{
 		opacity: 0.5;
 	}
 	.bold{
 		font-weight: bold;
 	}
+	/* .bold::before{
+		content:'\2605';
+		color:yellow;
+	} */
 	.statuses {
 		position: absolute;
 		top:0;
@@ -119,16 +136,6 @@
 		/* width: 60px; */
 		/* height:100px; */
 		/* background-color: aqua; */
-	}
-	.top > p {
-		/* text-wrap:balance;
-        word-wrap: break-word;
-        line-break: anywhere; */
-		/* text-align: center; */
-		/* line-height:65%; */
-		/* background-color: bisque; */
-		padding: 0;
-		margin: 0;
 	}
 	.outerHeroSprite {
 		position:relative;

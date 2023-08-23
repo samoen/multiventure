@@ -375,7 +375,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 			player.statuses.poison--
 		}
 		if (player.statuses.rage > 0) {
-			player.speed += 10
+			player.agility += 10
 			pushHappening(`${player.heroName}'s rage grows!`)
 			player.statuses.rage--
 		}
@@ -425,7 +425,7 @@ function preCombatActionPerformed(player: Player, gameAction: GameAction) {
 
 export function handleRetaliations(player: Player, postAction: boolean, action: GameAction) {
 	if (action.grantsImmunity || player.statuses.hidden > 0) return
-	let playerHitSpeed = player.speed
+	let playerHitSpeed = player.agility
 	if (action.speed) {
 		playerHitSpeed += action.speed
 	}

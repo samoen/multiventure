@@ -42,7 +42,7 @@ export const POST: RequestHandler = async (r) => {
 		// startScene = 'forestPassage'
 		// startScene = 'goblinCamp'
 		// startScene = 'throne'
-		// startScene = 'armory'
+		startScene = 'armory'
 		
 		let startInventory: Inventory = {
 			weapon: {
@@ -67,11 +67,13 @@ export const POST: RequestHandler = async (r) => {
 			connectionState: null,
 			heroName: msg.join,
 			previousScene: 'dead',
+			lastCheckpoint: 'forest',
 			currentScene: startScene,
 			inventory: startInventory,
 			health: 100,
 			maxHealth: 100,
-			speed: 0,
+			agility: 0,
+			strength: 0,
 			sceneActions: [],
 			itemActions: [],
 			sceneTexts: [],

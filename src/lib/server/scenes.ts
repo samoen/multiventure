@@ -41,12 +41,12 @@ const dead: Scene = {
 			buttonText: 'Reincarnate in armory',
 			goTo: 'armory',
 		})
-		if (player.lastCheckpoint) {
+		// if (player.lastCheckpoint) {
 			player.sceneActions.push({
 				buttonText: `Reincarnate at checkpoint ${player.lastCheckpoint}`,
 				goTo: player.lastCheckpoint,
 			})
-		}
+		// }
 	}
 }
 

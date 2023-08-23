@@ -16,7 +16,7 @@ import theif from '$lib/assets/thief.png';
 import mage from '$lib/assets/mage.png';
 import arrow from '$lib/assets/arrow.png';
 import bomb from '$lib/assets/bomb.png';
-import type { EquipmentSlot, ItemId, ItemIdForSlot, ItemState, ItemStateForSlot } from '$lib/server/items';
+import type { EquipmentSlot, Inventory, ItemId, ItemIdForSlot, ItemState, ItemStateForSlot } from '$lib/server/items';
 import { crossfade } from "svelte/transition";
 import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easing";
 import { tick } from "svelte";
@@ -101,7 +101,21 @@ export let currentAnimation = derived([currentAnimationIndex, currentAnimationsW
 export const animationCancelled = writable(false)
 export const subAnimationStage: Writable<'start' | 'fire' | 'sentHome'> = writable('start')
 
-
+export function actionsForSlot(lm:MessageFromServer|undefined,equipmentSlot:EquipmentSlot): GameActionSentToClient[] {
+    if(!lm)return []
+    return lm?.itemActions.filter(ia => ia.slot == equipmentSlot)
+}
+export let typedInventory = derived(lastMsgFromServer, ($lastMsgFromServer) => {
+    let map = new Map<EquipmentSlot,ItemState>()
+    if(!$lastMsgFromServer){
+        return map
+    }
+    for(const [key,value] of Object.entries($lastMsgFromServer.yourInfo.inventory)){
+        let tKey = key as EquipmentSlot
+        map.set(tKey,value)
+    }
+    return map
+})
 export let wepSlotActions = derived(lastMsgFromServer, ($lastMsgFromServer) => {
     return $lastMsgFromServer?.itemActions.filter(ia => ia.slot == 'weapon')
 })

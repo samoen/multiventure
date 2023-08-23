@@ -45,6 +45,8 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 			heroName: forPlayer.heroName,
 			health: forPlayer.health,
 			maxHealth: forPlayer.maxHealth,
+			agility: forPlayer.agility,
+			strength: forPlayer.strength,
 			inventory:{
 				weapon: forPlayer.inventory.weapon,
 				utility: forPlayer.inventory.utility,
@@ -61,6 +63,8 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 					heroName: u.heroName,
 					health: u.health,
 					maxHealth: u.maxHealth,
+					agility:u.agility,
+					strength:u.strength,
 					inventory:{
 						weapon: u.inventory.weapon,
 						utility: u.inventory.utility,

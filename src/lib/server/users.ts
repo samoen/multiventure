@@ -30,11 +30,10 @@ export type Player = {
 	// heroName: HeroName;
 	// health: number;
 	// maxHealth: number;
-	speed:number;
 	// inventory:Inventory;
 	// currentScene: SceneId;
 	previousScene: SceneId;
-	lastCheckpoint?: SceneId;
+	lastCheckpoint: SceneId;
 	itemActions: GameAction[];
 	sceneActions: GameAction[];
 	sceneTexts: string[];
@@ -48,6 +47,8 @@ export type PlayerInClient = {
 	heroName: HeroName;
 	currentScene: SceneId;
 	health: number;
+	agility:number;
+	strength:number;
 	maxHealth: number;
 	inventory:Inventory;
 	// weapon: ItemStateForSlot<'weapon'>
