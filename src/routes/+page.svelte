@@ -602,6 +602,8 @@
 		box-sizing: border-box;
 		margin: 0;
 		padding: 0;
+		user-select: none;
+		touch-action: manipulation;
 	}
 	h3 {
 		margin-top: 15px;

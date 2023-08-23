@@ -25,10 +25,20 @@ export function updatePlayerActions(player: Player) {
 
 	for (const cd of playerItemStates(player)) {
 		const i = items[cd.itemId]
-		if (i.actions) {
-			if(i.useableOutOfBattle || enemiesInScene(player.currentScene).length){
-				if (cd.cooldown < 1 && cd.warmup < 1 && (cd.stock == undefined || cd.stock > 0)) {
+		if(i.useableOutOfBattle || enemiesInScene(player.currentScene).length){
+			if (cd.cooldown < 1 && cd.warmup < 1 && (cd.stock == undefined || cd.stock > 0)) {
+				if (i.actions) {
 					i.actions(player)
+				}
+				if(i.actionForEnemy){
+					for (const enemy of enemiesInScene(player.currentScene)) {
+						i.actionForEnemy(player,enemy)
+					}
+				}
+				if(i.actionForFriendly){
+					for (const friend of activePlayersInScene(player.currentScene)) {
+						i.actionForFriendly(player,friend)
+					}
 				}
 			}
 		}
@@ -137,12 +147,6 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		}
 		return
 	}
-	if(actionFromId.provoke != undefined){
-		for (const cd of playerItemStates(player)) {
-			if (cd.cooldown > 0) cd.cooldown--
-			if (cd.warmup > 0) cd.warmup--
-		}
-	}
 
     pushHappening('----');
 	
@@ -163,6 +167,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	
 	if (player.health > 0) {
 		if (actionFromId.performAction) {
+			preCombatActionPerformed(player,actionFromId)
 			actionFromId.performAction();
 			
 		}
@@ -235,6 +240,22 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 			}
 		}
 	}
+}
+
+function preCombatActionPerformed(player:Player, gameAction : GameAction){
+	if(gameAction.provoke != undefined){
+		for (const cd of playerItemStates(player)) {
+			if (cd.cooldown > 0) cd.cooldown--
+			if (cd.warmup > 0) cd.warmup--
+		}
+	}
+	if(gameAction.slot){
+		const itemState = player.inventory[gameAction.slot]
+		if (itemState && itemState.stock) {
+			itemState.stock--
+		}
+	}
+
 }
 
 export function handleRetaliations(player: Player, postAction: boolean, action: GameAction) {
