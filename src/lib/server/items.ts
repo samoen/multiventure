@@ -48,7 +48,7 @@ export type Item = {
 	actionForFriendly?: (player: Player, friend: Player) => void
 	onTakeDamage?: (incoming: number) => number
 	warmup?: number
-	cooldown?:number
+	cooldown?: number
 	startStock?: number
 	useableOutOfBattle?: boolean
 }
@@ -66,13 +66,13 @@ const dagger: Item = {
 				slot: 'weapon',
 				target: enemy.unitId,
 				performAction() {
-								return {
-									sourcePlayer: player,
-									targetEnemy: enemy,
-									baseDamageToTarget:7,
-									strikes:3,
-									behavior: 'melee',
-								} satisfies BattleEvent
+					return {
+						sourcePlayer: player,
+						targetEnemy: enemy,
+						baseDamageToTarget: 7,
+						strikes: 3,
+						behavior: 'melee',
+					} satisfies BattleEvent
 				}
 			}
 		)
@@ -112,7 +112,7 @@ const club: Item = {
 const fireStaff: Item = {
 	itemTargeting: 'enemies',
 	warmup: 2,
-	cooldown:1,
+	cooldown: 1,
 	actionForEnemy(player, enemy) {
 		player.itemActions.push(
 			{
@@ -156,21 +156,21 @@ const bandage: Item = {
 					slot: 'utility',
 					target: friend.unitId,
 					performAction: () => {
-							if (friend.heroName != player.heroName) {
-										return {
-											sourcePlayer: player,
-											targetPlayer: friend,
-											baseHealingToTarget: 90,
-											behavior: 'melee',
-										} satisfies BattleEvent
-							} else {
-										return {
-											sourcePlayer: player,
-											baseHealingToSource: 90,
-											behavior: 'selfInflicted',
-											extraSprite: 'flame'
-										}
+						if (friend.heroName != player.heroName) {
+							return {
+								sourcePlayer: player,
+								targetPlayer: friend,
+								baseHealingToTarget: 90,
+								behavior: 'melee',
+							} satisfies BattleEvent
+						} else {
+							return {
+								sourcePlayer: player,
+								baseHealingToSource: 90,
+								behavior: 'selfInflicted',
+								extraSprite: 'flame'
 							}
+						}
 					},
 				}
 			)
@@ -191,31 +191,31 @@ const bomb: Item = {
 				let dmgs: HealthModifierEvent[] = []
 				// let aggroAffected: AggroModifier[] = []
 				for (const enemy of enemiesInScene(player.currentScene)) {
-				// 	for (const key of enemy.aggros.keys()) {
-				// 		let prevAggro = enemy.aggros.get(key)
-				// 		if (prevAggro != undefined) {
-				// 			let newAggro = prevAggro - 20
-				// 			if (newAggro < 1) newAggro = 0
-				// 			enemy.aggros.set(key, newAggro);
-				// 			aggroAffected.push({
-				// 				target: enemy.unitId,
-				// 				amount: 20,
-				// 				showFor: 'all',
-				// 			})
-				// 		}
-				// 	}
-						dmgs.push({
-							baseDamage: 5,
-							targetEnemy: enemy
-						} )
+					// 	for (const key of enemy.aggros.keys()) {
+					// 		let prevAggro = enemy.aggros.get(key)
+					// 		if (prevAggro != undefined) {
+					// 			let newAggro = prevAggro - 20
+					// 			if (newAggro < 1) newAggro = 0
+					// 			enemy.aggros.set(key, newAggro);
+					// 			aggroAffected.push({
+					// 				target: enemy.unitId,
+					// 				amount: 20,
+					// 				showFor: 'all',
+					// 			})
+					// 		}
+					// 	}
+					dmgs.push({
+						baseDamage: 5,
+						targetEnemy: enemy
+					})
 				}
-						return {
-							sourcePlayer: player,
-							behavior: 'center',
-							extraSprite: 'bomb',
-							alsoDamages: dmgs,
-							// alsoModifiesAggro: aggroAffected
-						} satisfies BattleEvent
+				return {
+					sourcePlayer: player,
+					behavior: 'center',
+					extraSprite: 'bomb',
+					alsoDamages: dmgs,
+					// alsoModifiesAggro: aggroAffected
+				} satisfies BattleEvent
 			},
 		})
 	},
@@ -233,14 +233,14 @@ const poisonDart: Item = {
 				slot: 'utility',
 				target: enemy.unitId,
 				performAction() {
-							return {
-								sourcePlayer: player,
-								targetEnemy: enemy,
-								putsStatuses: [{ targetEnemy: enemy, status: 'poison', count:3 }],
-								baseDamageToTarget: 3,
-								behavior: 'missile',
-								extraSprite: 'arrow',
-							} satisfies BattleEvent
+					return {
+						sourcePlayer: player,
+						targetEnemy: enemy,
+						putsStatuses: [{ targetEnemy: enemy, status: 'poison', count: 3 }],
+						baseDamageToTarget: 3,
+						behavior: 'missile',
+						extraSprite: 'arrow',
+					} satisfies BattleEvent
 				},
 			}
 		)
@@ -249,7 +249,7 @@ const poisonDart: Item = {
 
 const plateMail: Item = {
 	itemTargeting: 'noTarget',
-	cooldown:2,
+	cooldown: 2,
 	actions(player) {
 		player.itemActions.push({
 			provoke: 5,
@@ -257,25 +257,19 @@ const plateMail: Item = {
 			slot: 'body',
 			speed: 999,
 			performAction() {
-				for (const enemy of enemiesInScene(player.currentScene)) {
-					enemy.aggros.set(player.heroName, 100)
-				}
-				pushAnimation({
-					sceneId: player.currentScene,
-					battleAnimation: {
-						behavior: 'center',
-						source: player.unitId,
-						extraSprite: 'bomb',
-						alsoModifiesAggro: enemiesInScene(player.currentScene).map((e) => {
-							return {
-								target: e.unitId,
-								setTo: 100,
-								showFor: 'onlyme'
-							}
-						})
-					}
-				})
 				pushHappening(`${player.heroName} infuriates enemies!`)
+				return {
+					behavior: 'center',
+					sourcePlayer: player,
+					extraSprite: 'bomb',
+					alsoModifiesAggro: enemiesInScene(player.currentScene).map((e) => {
+						return {
+							targetEnemy: e,
+							setTo: 100,
+							showFor: 'onlyme'
+						}
+					})
+				} satisfies BattleEvent
 			},
 		})
 	},
@@ -289,7 +283,7 @@ const plateMail: Item = {
 
 const theifCloak: Item = {
 	itemTargeting: 'noTarget',
-	cooldown:3,
+	cooldown: 3,
 	actions(player) {
 		player.itemActions.push({
 			buttonText: 'Hide in shadows',
@@ -298,12 +292,12 @@ const theifCloak: Item = {
 			provoke: 30,
 			performAction() {
 				pushHappening(`${player.heroName} hid in shadows`)
-					return {
-						behavior: 'selfInflicted',
-						sourcePlayer: player,
-						extraSprite: 'bomb',
-						putsStatuses: [{ targetPlayer: player, status: 'hidden', count:2 }],
-					} satisfies BattleEvent
+				return {
+					behavior: 'selfInflicted',
+					sourcePlayer: player,
+					extraSprite: 'bomb',
+					putsStatuses: [{ targetPlayer: player, status: 'hidden', count: 2 }],
+				} satisfies BattleEvent
 			},
 		})
 	},
@@ -330,19 +324,19 @@ const leatherArmor: Item = {
 					target: friend.unitId,
 					performAction: () => {
 						if (friend.heroName != player.heroName) {
-									return {
-										sourcePlayer: player,
-										targetPlayer: friend,
-										behavior: 'melee',
-										putsStatuses: [{ targetPlayer: friend, status: 'poison', remove: true }]
-									} satisfies BattleEvent
+							return {
+								sourcePlayer: player,
+								targetPlayer: friend,
+								behavior: 'melee',
+								putsStatuses: [{ targetPlayer: friend, status: 'poison', remove: true }]
+							} satisfies BattleEvent
 						} else {
-									return {
-										sourcePlayer: player,
-										behavior: 'selfInflicted',
-										extraSprite: 'bomb',
-										putsStatuses: [{ targetPlayer: player, status: 'poison', remove: true }]
-									} satisfies BattleEvent
+							return {
+								sourcePlayer: player,
+								behavior: 'selfInflicted',
+								extraSprite: 'bomb',
+								putsStatuses: [{ targetPlayer: player, status: 'poison', remove: true }]
+							} satisfies BattleEvent
 						}
 					},
 				}

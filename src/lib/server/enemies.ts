@@ -179,6 +179,23 @@ export function addAggro(actor: Player, provoke: number) {
 
 }
 
+export function modifyAggroForPlayer(heroName:HeroName, enemy:ActiveEnemy,baseAmount:number):{increasedBy:number}{
+	let existing = enemy.aggros.get(heroName)
+	if(existing == undefined){
+		enemy.aggros.set(heroName,enemy.template.startAggro)
+		existing = enemy.template.startAggro
+	}
+	let wantNext = existing + baseAmount
+	if(wantNext > 100){
+		wantNext = 100
+	}
+	if(wantNext < 0){
+		wantNext = 0
+	}
+	enemy.aggros.set(heroName,wantNext)
+	return {increasedBy: wantNext - existing}
+}
+
 export function enemiesInScene(sceneKey: SceneId): ActiveEnemy[] {
 	return activeEnemies.filter(e => e.currentScene == sceneKey)
 }

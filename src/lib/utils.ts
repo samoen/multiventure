@@ -29,12 +29,11 @@ export type BattleEvent = {
 	baseHealingToTarget?: number,
 	baseDamageToTarget?:number,
 	strikes?:number,
-	// putsStatuses?:StatusModifier[]
 	putsStatuses?:StatusModifierEvent[]
 	behavior: AnimationBehavior,
 	extraSprite?: ExtraSprite,
 	alsoDamages?:HealthModifierEvent[],
-	alsoModifiesAggro?:AggroModifier[],
+	alsoModifiesAggro?:AggroModifierEvent[],
 }
 
 export type StatusModifier = {target:UnitId, status:StatusId, remove?:boolean, count?:number}
@@ -44,6 +43,12 @@ export type HealthModifierEvent = {targetPlayer?:Player,targetEnemy?:ActiveEnemy
 export type AggroModifier = {
 	target:UnitId,
 	amount?:number,
+	setTo?:number,
+	showFor:'onlyme' | 'all'
+}
+export type AggroModifierEvent = {
+	targetEnemy:ActiveEnemy,
+	baseAmount?:number,
 	setTo?:number,
 	showFor:'onlyme' | 'all'
 }
