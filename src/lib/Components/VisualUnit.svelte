@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { allVisualUnitProps, lastMsgFromServer, type VisualUnitProps } from '$lib/client/ui';
 	import { fade } from 'svelte/transition';
-	import rage from '$lib/assets/rage.png'
-	import bomb from '$lib/assets/bomb.png'
-	import greenDrip from '$lib/assets/green-drip.png'
+	import rage from '$lib/assets/extras/rage.png'
+	import bomb from '$lib/assets/extras/bomb.png'
+	import shield from '$lib/assets/extras/shield.png'
+	import greenDrip from '$lib/assets/extras/green-drip.png'
 	import type { StatusEffect, StatusId, UnitId } from '$lib/utils';
 
 	export let hostId:UnitId;
@@ -48,7 +49,7 @@
 	const statusImages : Record<StatusId,string>={
 		poison:greenDrip,
 		rage:rage,
-		hidden:bomb,
+		hidden:shield,
 	}
 
 </script>

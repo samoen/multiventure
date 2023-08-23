@@ -56,8 +56,8 @@ export type AggroModifierEvent = {
 	forHeros: Player[]
 }
 
-export type ExtraSprite = 'arrow' | 'bomb' | 'flame' | 'poison' | 'smoke' | 'shield'
-export type ScenerySprite = 'castle'
+export type ExtraSprite = 'arrow' | 'bomb' | 'flame' | 'heal' | 'poison' | 'smoke' | 'shield'
+export type ScenerySprite = 'castle' | 'general'
 export type AnimationBehavior = 'missile' | 'melee' | 'center' | 'selfInflicted'
 
 export type StatusId = 'poison' | 'rage' | 'hidden'

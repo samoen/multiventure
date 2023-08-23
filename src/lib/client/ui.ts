@@ -2,20 +2,25 @@ import type { HeroName, MiscPortrait, PlayerInClient, VisualActionSource } from 
 import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, ExtraSprite, GameActionSentToClient, ScenerySprite } from "$lib/utils";
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 import peasantPortrait from '$lib/assets/portraits/peasant.webp';
-import peasant from '$lib/assets/peasant.png';
+import generalPortrait from '$lib/assets/portraits/general.webp';
+import peasant from '$lib/assets/units/peasant.png';
+import general from '$lib/assets/units/general.png';
 import gruntPortrait from '$lib/assets/portraits/grunt.webp';
-import spearman from '$lib/assets/spearman.png';
-import rat from '$lib/assets/giant-rat.png';
-import grunt from '$lib/assets/grunt.png';
-import troll from '$lib/assets/young-ogre.png';
-import greenDrip from '$lib/assets/green-drip.png';
-import ruffian from '$lib/assets/ruffian.png';
-import rogue from '$lib/assets/rogue.png';
-import fireghost from '$lib/assets/fireghost.png';
-import theif from '$lib/assets/thief.png';
-import mage from '$lib/assets/mage.png';
-import arrow from '$lib/assets/arrow.png';
-import bomb from '$lib/assets/bomb.png';
+import spearman from '$lib/assets/units/spearman.png';
+import rat from '$lib/assets/units/giant-rat.png';
+import grunt from '$lib/assets/units/grunt.png';
+import troll from '$lib/assets/units/young-ogre.png';
+import greenDrip from '$lib/assets/extras/green-drip.png';
+import ruffian from '$lib/assets/units/ruffian.png';
+import rogue from '$lib/assets/units/rogue.png';
+import fireghost from '$lib/assets/units/fireghost.png';
+import theif from '$lib/assets/units/thief.png';
+import mage from '$lib/assets/units/mage.png';
+import arrow from '$lib/assets/extras/arrow.png';
+import bomb from '$lib/assets/extras/bomb.png';
+import shield from '$lib/assets/extras/shield.png';
+import flame from '$lib/assets/extras/flame.png';
+import heal from '$lib/assets/extras/heal.png';
 import lighthouse from '$lib/assets/scenery/lighthouse.png';
 import type { EquipmentSlot, Inventory, ItemId, ItemIdForSlot, ItemState, ItemStateForSlot } from '$lib/server/items';
 import { crossfade } from "svelte/transition";
@@ -202,7 +207,8 @@ let enemyPortraits = {
 } satisfies Record<EnemyTemplateId, string>;
 
 export const miscPortraits = {
-    thing: gruntPortrait,
+    peasant:peasantPortrait,
+    general:generalPortrait,
 } satisfies Record<MiscPortrait, string>;
 
 export function updateUnit(index: UnitId, run: (vup: VisualUnitProps) => void) {
@@ -288,14 +294,16 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
 export const extraSprites: Record<ExtraSprite, string> = {
     arrow: arrow,
     bomb: bomb,
-    smoke: bomb,
-    shield: bomb,
-    flame: arrow,
+    smoke: shield,
+    shield: shield,
+    flame: flame,
+    heal:heal,
     poison: greenDrip,
 }
 
 export const scenerySprites : Record<ScenerySprite,string> ={
     castle:lighthouse,
+    general:general,
 }
 
 export function handlePutsStatuses(anim: BattleAnimation) {

@@ -70,6 +70,13 @@ const tutorial = {
 		player.sceneTexts.push(`You are standing at a castle barracks. Soliders mill around swinging swords and grunting in cool morning air. You see Arthur, the captain of the castle guard marching towards you.\n\nArthur: 'Look alive recruit! The first day of training can be the most dangerous of a guardsman's life. You must be ${player.heroName}, welcome aboard. In this barracks we wake up early, follow orders, and NEVER skip the tutorial. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.'`)
 	},
 	actions(player) {
+		player.visualActionSources.push({
+			id:'vasTutor',
+			actions:[],
+			prompt:'Welcome recruit!',
+			sprite: 'general',
+			portrait:'general',
+		})
 		if (this.sceneFlags.hesitated) {
 			player.sceneActions.push({
 				buttonText: 'Skip tutorial',

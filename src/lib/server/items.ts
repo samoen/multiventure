@@ -148,7 +148,7 @@ const bandage: Item = {
 								sourcePlayer: player,
 								baseHealingToSource: 90,
 								behavior: 'selfInflicted',
-								extraSprite: 'flame'
+								extraSprite: 'heal'
 							}
 						}
 					},
@@ -265,7 +265,7 @@ const theifCloak: Item = {
 				return {
 					behavior: 'selfInflicted',
 					sourcePlayer: player,
-					extraSprite: 'bomb',
+					extraSprite: 'smoke',
 					putsStatuses: [{ targetPlayer: player, status: 'hidden', count: 2 }],
 				} satisfies BattleEvent
 			},
@@ -303,7 +303,7 @@ const leatherArmor: Item = {
 							return {
 								sourcePlayer: player,
 								behavior: 'selfInflicted',
-								extraSprite: 'bomb',
+								extraSprite: 'heal',
 								putsStatuses: [{ targetPlayer: player, status: 'poison', remove: true }]
 							} satisfies BattleEvent
 						}

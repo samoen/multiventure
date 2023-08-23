@@ -68,7 +68,7 @@ export type VisualActionSource = {
 	actions:GameAction[]
 }
 
-export type MiscPortrait = 'thing'
+export type MiscPortrait = 'general' | 'peasant'
 
 export function playerEquipped(player:Player) : Item[]{
 	return [

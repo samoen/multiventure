@@ -464,7 +464,7 @@
 						tabindex="0"
 						on:keydown
 					>
-						<img src={scenerySprites[s.sprite]} alt="a place" />
+						<img class="vasSprite" src={scenerySprites[s.sprite]} alt="a place" />
 					</div>
 				{/each}
 			</div>
@@ -796,6 +796,9 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: space-around;
+	}
+	.vasSprite{
+		transform: scaleX(-1);
 	}
 	/* .vasdPrompt{
 	}
