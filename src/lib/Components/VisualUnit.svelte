@@ -1,76 +1,87 @@
 <script lang="ts">
 	import { allVisualUnitProps, lastMsgFromServer, type VisualUnitProps } from '$lib/client/ui';
 	import { fade } from 'svelte/transition';
-	import rage from '$lib/assets/extras/rage.png'
-	import bomb from '$lib/assets/extras/bomb.png'
-	import shield from '$lib/assets/extras/shield.png'
-	import greenDrip from '$lib/assets/extras/green-drip.png'
+	import rage from '$lib/assets/extras/rage.png';
+	import bomb from '$lib/assets/extras/bomb.png';
+	import shield from '$lib/assets/extras/shield.png';
+	import greenDrip from '$lib/assets/extras/green-drip.png';
 	import type { StatusEffect, StatusId, UnitId } from '$lib/utils';
+	import { tick } from 'svelte';
 
-	export let hostId:UnitId;
-	$: vu = $allVisualUnitProps.find(v=>v.id == hostId)
-	$: hpBar = vu ? (vu.displayHp > 0 ? 100 * (vu.displayHp / vu.maxHp) : 0) : 0
-	export let flip:boolean
-	let statuses : StatusId[] = []
+	export let hostId: UnitId;
+	let shouldDie = false;
+	$: vu = $allVisualUnitProps.find((v) => v.id == hostId);
+	$: hpBar = vu ? (vu.displayHp > 0 ? 100 * (vu.displayHp / vu.maxHp) : 0) : 0;
 	$: {
-		if(vu?.actual.kind == 'enemy'){
+		if (vu && vu.displayHp < 1) {
+			die(vu);
+		}
+	}
+	async function die(vu: VisualUnitProps) {
+		await tick();
+		shouldDie = true;
+	}
+	export let flip: boolean;
+	let statuses: StatusId[] = [];
+	$: {
+		if (vu?.actual.kind == 'enemy') {
 			// statuses = vu.actual.enemy.statuses.map(s=>s.status)
-			statuses = []
-			if(vu.actual.enemy.statuses){
+			statuses = [];
+			if (vu.actual.enemy.statuses) {
 				// console.log(JSON.stringify(vu.actual.enemy.statuses))
-				let arrayOfStatuses = Array.from(Object.values(vu.actual.enemy.statuses))
+				let arrayOfStatuses = Array.from(Object.values(vu.actual.enemy.statuses));
 				// console.log(JSON.stringify(arrayOfStatuses))
-				if(arrayOfStatuses.find(s=>s.poison>0)){
-					statuses.push('poison')
+				if (arrayOfStatuses.find((s) => s.poison > 0)) {
+					statuses.push('poison');
 				}
-				if(arrayOfStatuses.find(s=>s.rage>0)){
-					statuses.push('rage')
+				if (arrayOfStatuses.find((s) => s.rage > 0)) {
+					statuses.push('rage');
 				}
-				if(arrayOfStatuses.find(s=>s.hidden>0)){
-					statuses.push('hidden')
+				if (arrayOfStatuses.find((s) => s.hidden > 0)) {
+					statuses.push('hidden');
 				}
 			}
 		}
-		if(vu?.actual.kind == 'player'){
-			statuses = []
-			if(vu.actual.info.statuses.poison > 0){
+		if (vu?.actual.kind == 'player') {
+			statuses = [];
+			if (vu.actual.info.statuses.poison > 0) {
 				// console.log('pushing poison visual on player')
-				statuses.push('poison')
+				statuses.push('poison');
 			}
-			if(vu.actual.info.statuses.rage > 0){
-				statuses.push('rage')
+			if (vu.actual.info.statuses.rage > 0) {
+				statuses.push('rage');
 			}
-			if(vu.actual.info.statuses.hidden > 0){
-				statuses.push('hidden')
+			if (vu.actual.info.statuses.hidden > 0) {
+				statuses.push('hidden');
 			}
 		}
 	}
 
-	const statusImages : Record<StatusId,string>={
-		poison:greenDrip,
-		rage:rage,
-		hidden:shield,
-	}
-
+	const statusImages: Record<StatusId, string> = {
+		poison: greenDrip,
+		rage: rage,
+		hidden: shield
+	};
 </script>
-{#if vu && !(vu.displayHp<1 && vu.side=="enemy")}
-	<div class="top" out:fade|local={{duration:400}}>
-		<span
-		class='nametag'
-		class:bold={vu.name == $lastMsgFromServer?.yourInfo.heroName}
-		>{`${vu.name == $lastMsgFromServer?.yourInfo.heroName ? '👤' :''}${vu.name}`}</span>
+
+{#if vu && !(shouldDie && vu.side == 'enemy')}
+	<div class="top" out:fade|local={{ duration: 400 }}>
+		<span class="nametag" class:bold={vu.name == $lastMsgFromServer?.yourInfo.heroName}
+			>{`${vu.name == $lastMsgFromServer?.yourInfo.heroName ? '👤' : ''}${vu.name}`}</span
+		>
 		<div class="outerHeroSprite">
 			<div class="statuses">
 				{#each statuses as s}
-					<img class="status" alt="status" src={statusImages[s]}>
+					<img class="status" alt="status" src={statusImages[s]} />
 				{/each}
 			</div>
-			<img 
-			class="heroSprite"
-			class:flipped={flip} 
-			class:faded={statuses.includes('hidden')}
-			alt="you" 
-			src={vu.src} />
+			<img
+				class="heroSprite"
+				class:flipped={flip}
+				class:faded={statuses.includes('hidden')}
+				alt="you"
+				src={vu.src}
+			/>
 		</div>
 		<div class="bars">
 			<div class="healthbar">
@@ -83,7 +94,6 @@
 			{/if}
 		</div>
 	</div>
-	
 {/if}
 
 <style>
@@ -94,12 +104,12 @@
 		justify-content: center;
 		/* height:100%; */
 		/* width: 60px; */
-		height:100px;
+		height: 100px;
 		/* background-color: aqua; */
 	}
-	.nametag{
+	.nametag {
 		color: transparent;
-  		text-shadow: 0 0 0 white;
+		text-shadow: 0 0 0 white;
 		opacity: 0.6;
 		white-space: nowrap;
 		/* text-wrap:balance;
@@ -113,10 +123,10 @@
 		font-weight: bold;
 		font-size: 13px;
 	}
-	.faded{
+	.faded {
 		opacity: 0.5;
 	}
-	.bold{
+	.bold {
 		font-weight: bold;
 	}
 	/* .bold::before{
@@ -125,14 +135,14 @@
 	} */
 	.statuses {
 		position: absolute;
-		top:0;
-		left:0;
+		top: 0;
+		left: 0;
 		z-index: 2;
 	}
-	.status{
+	.status {
 		display: flex;
-		height:10px;
-		width:10px;
+		height: 10px;
+		width: 10px;
 	}
 	.bars {
 		display: flex;
@@ -146,7 +156,7 @@
 		transform: scaleX(-1);
 	}
 	.outerHeroSprite {
-		position:relative;
+		position: relative;
 		overflow: hidden;
 		height: 50px;
 		width: 50px;
@@ -158,12 +168,12 @@
 		object-fit: cover;
 	}
 	.healthbar {
-		width:100%;
+		width: 100%;
 		/* align-self: stretch; */
 		height: 8px;
 		border: 2px solid black;
 		border-radius: 5px;
-		background-color:black;
+		background-color: black;
 		/* width: 40px; */
 		/* margin-block: 1px; */
 	}
@@ -176,8 +186,8 @@
 	.aggrobar {
 		margin-top: 1px;
 		border-radius: 5px;
-		background-color:black;
-		width:85%;
+		background-color: black;
+		width: 85%;
 		/* align-self: stretch; */
 		height: 6px;
 		border: 2px solid black;

@@ -116,8 +116,8 @@
 			await handleAnimationsOnMessage(prevMsg, sMsg);
 
 			// wait for dom elements to be populated
-			// console.log('tick');
 			await tick();
+
 			if (happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
 			if (sceneTexts) sceneTexts.scroll({ top: sceneTexts.scrollHeight, behavior: 'smooth' });
 		});
@@ -134,10 +134,10 @@
 		console.log(`cancelling animations`);
 		$animationCancelled = true;
 		$currentAnimationIndex = 999;
-		// $currentAnimation = undefined;
-		// console.log('tick');
+		
+		// let transitions reach their end
 		await tick();
-		// await new Promise((r) => setTimeout(r, 100));
+
 		$animationCancelled = false;
 	}
 

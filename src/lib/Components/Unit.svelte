@@ -199,7 +199,6 @@
 								vup.aggro = 0;
 							}
 						});
-
 						$subAnimationStage = 'sentHome';
 					}
 				}}

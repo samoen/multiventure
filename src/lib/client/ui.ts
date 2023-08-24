@@ -51,7 +51,7 @@ export type VisualUnitProps = {
     id: UnitId;
     name: string;
     src: string;
-    displayHp: number
+    displayHp: number;
     maxHp: number;
     aggro?: number;
     side: 'hero' | 'enemy'
@@ -343,7 +343,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
 
         }
         allVisualUnitProps.set(newVups)
-        console.log(`${JSON.stringify(lastMsg.visualActionSources.map(v=>v.id))}`)
+        // console.log(`${JSON.stringify(lastMsg.visualActionSources.map(v=>v.id))}`)
         visualActionSources.set(lastMsg.visualActionSources)
         for (const vas of lastMsg.visualActionSources){
             convoStateForEachVAS.update(cs=>{
@@ -445,7 +445,8 @@ export async function nextAnimationIndex(start: boolean, curAnimIndex:number, cu
 
     
     subAnimationStage.set('start')
-    // console.log('tick')
+
+    // let the projectiles render at start position
     await tick()
 
     subAnimationStage.set('fire')
