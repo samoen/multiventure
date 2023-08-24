@@ -28,7 +28,7 @@ import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easin
 import { tick } from "svelte";
 import type { EnemyTemplateId } from "$lib/server/enemies";
 import type { MessageFromServer } from "$lib/server/messaging";
-import type { ConverationResponse, UnlockableAction, VisualActionSource } from "$lib/server/scenes";
+import type { ConversationResponse, UnlockableAction, UnlockableClientAction, VisualActionSource, VisualActionSourceInClient } from "$lib/server/scenes";
 
 
 type UnitDetails = {
@@ -79,7 +79,7 @@ export type Projectile = undefined | ProjectileProps
 export const lastMsgFromServer: Writable<MessageFromServer | undefined> = writable();
 export const previousMsgFromServer: Writable<MessageFromServer | undefined> = writable();
 export let allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
-export let visualActionSources: Writable<VisualActionSource[]> = writable([])
+export let visualActionSources: Writable<VisualActionSourceInClient[]> = writable([])
 
 export const currentAnimationIndex: Writable<number> = writable(0)
 
@@ -171,8 +171,8 @@ export const currentConvoPrompt : Writable<string | undefined> = writable(undefi
 
 export type ConvoState = {
     currentRetort:string
-    maybeLockedResponses: (ConverationResponse)[]
-    maybeLockedActions: (UnlockableAction)[]
+    maybeLockedResponses: (ConversationResponse)[]
+    maybeLockedActions: (UnlockableClientAction)[]
 }
 
 export const convoStateForEachVAS : Writable<Map<UnitId,ConvoState>> = writable(new Map())

@@ -12,6 +12,7 @@ export type Flag =
 	| 'approachedRack'
 	| 'metArthur'
 	| 'heardAboutHiddenPassage'
+	| 'acceptedGoblinQuest'
 	| 'gotFreeStarterWeapon'
 	| 'killedGoblins'
 	| 'sawArthurAfterBattle'

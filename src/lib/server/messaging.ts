@@ -1,7 +1,7 @@
 import type { BattleAnimation, EnemyInClient, GameActionSentToClient } from '$lib/utils';
 import { activeEnemies, addAggro, damagePlayer, enemiesInScene, getAggroForPlayer, takePoisonDamage } from './enemies';
 import { items } from './items';
-import type { VisualActionSource } from './scenes';
+import { convertVasToClient, type VisualActionSource, type VisualActionSourceInClient } from './scenes';
 import { activePlayers, globalFlags, playerItemStates, users, type HeroName, type Player, type GameAction, activePlayersInScene, type PlayerInClient, type Flag, type GlobalFlag } from './users';
 
 export const FAKE_LATENCY = 1;
@@ -20,7 +20,7 @@ export type MessageFromServer = {
 	enemiesInScene: EnemyInClient[];
 	playerFlags: Flag[];
 	globalFlags: GlobalFlag[];
-	visualActionSources: VisualActionSource[];
+	visualActionSources: VisualActionSourceInClient[];
 };
 
 
@@ -92,26 +92,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 		}),
 		// visualActionSources:[],
 		visualActionSources:forPlayer.visualActionSources.map(s=>{
-			s.actionsInClient = s.actions.map(a=>{
-				return {
-					buttonText:a.buttonText
-				}
-			})
-			s.actions = []
-			// s.unlockablesInClient = Object.keys(s.unlockables).reduce((acc,key)=>{
-			// 	acc[key] = {
-			// 		buttonText : s.unlockables[key].buttonText
-			// 	} satisfies GameActionSentToClient
-			// 	return acc
-			// },{} as Record<string,GameActionSentToClient>)
-			s.unlockables = s.unlockables.map(u=>{
-				u.clientAct = {
-					buttonText: u.serverAct?.buttonText ?? 'serveract was undef'
-				}
-				u.serverAct = undefined
-				return u
-			})
-			return s
+			return convertVasToClient(s)
 		}),
 		happenings: recentHappenings,
 		animations: forPlayer.animations,

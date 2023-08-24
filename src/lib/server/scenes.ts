@@ -29,28 +29,69 @@ export type Scene = {
 	actions: (player: Player) => void
 	solo?: boolean
 	hasEntered?: Set<HeroName>
-	sceneFlags?: Record<string, boolean>
+	makeSceneFlags?:()=>object
 };
 
 export type VisualActionSource = {
 	id: VisualActionSourceId
 	sprite: ScenerySprite
 	portrait?: MiscPortrait
-	// prompt: string
 	actions: GameAction[]
-	actionsInClient: GameActionSentToClient[]
 	conversation: Conversation
 	unlockables: UnlockableAction[]
 }
 
-export type Conversation = {
-	startText: string,
-	responses: ConverationResponse[]
+export type VisualActionSourceInClient = {
+	id: VisualActionSourceId
+	sprite: ScenerySprite
+	portrait?: MiscPortrait
+	actionsInClient: GameActionSentToClient[]
+	conversation: Conversation
+	unlockables: UnlockableClientAction[]
 }
 
-export type UnlockableAction = { lockHandle: string, serverAct?: GameAction, clientAct?:GameActionSentToClient, isLocked: boolean }
+export function convertVasToClient(vas:VisualActionSource):VisualActionSourceInClient{
+	let result = {
+		id:vas.id,
+		conversation:vas.conversation,
+		sprite:vas.sprite,
+		portrait:vas.portrait,
+		actionsInClient:vas.actions.map(a=>{
+			return {
+				buttonText:a.buttonText
+			}
+		}),
+		unlockables:vas.unlockables.map(u=>{
+			let clientUnlockable : UnlockableClientAction = {
+				isLocked:true,
+				lockHandle:u.lockHandle,
+				clientAct:{
+					buttonText:u.serverAct.buttonText
+				}
+			}
+			return clientUnlockable
+		})
+	}satisfies VisualActionSourceInClient
+	return result
+}
 
-export type ConverationResponse = { 
+export type Conversation = {
+	startText: string,
+	responses: ConversationResponse[]
+}
+
+export type UnlockableAction = { 
+	lockHandle: string, 
+	serverAct: GameAction, 
+}
+
+export type UnlockableClientAction = { 
+	lockHandle: string, 
+	clientAct:GameActionSentToClient, 
+	isLocked: boolean 
+}
+
+export type ConversationResponse = { 
 	lockHandle:string,
 	isLocked:boolean,
 	responseText: string,
@@ -78,23 +119,13 @@ const dead: Scene = {
 	}
 }
 
-function newtutFlags() {
-	return {
-		hesitated: false,
-		wasSnarky: false,
-		agreedToTrain: false,
-	}
-}
 
-type TutFlags = ReturnType<typeof newtutFlags>
 
 const tutorial = {
-	sceneFlags: newtutFlags(),
 	onEnterScene(player) {
-		this.sceneFlags = newtutFlags()
-		player.inventory.body.itemId = 'rags'
-		player.inventory.utility.itemId = 'empty'
-		player.inventory.weapon.itemId = 'unarmed'
+		// player.inventory.body.itemId = 'rags'
+		// player.inventory.utility.itemId = 'empty'
+		// player.inventory.weapon.itemId = 'unarmed'
 		player.sceneTexts.push(`You are standing at a castle barracks. Soliders mill around swinging swords and grunting in cool morning air. You see Arthur, the captain of the castle guard marching towards you.`)
 	},
 	actions(player) {
@@ -116,7 +147,6 @@ const tutorial = {
 					responses: []
 				},
 				unlockables: [],
-				actionsInClient: []
 			})
 		}
 		if (player.flags.has('approachedRack') && player.inventory.utility.itemId != 'bomb') {
@@ -136,7 +166,6 @@ const tutorial = {
 					responses: []
 				},
 				unlockables: [],
-				actionsInClient: []
 			})
 		}
 		if (player.inventory.utility.itemId == 'bomb' && player.inventory.weapon.itemId == 'club') {
@@ -181,104 +210,25 @@ const tutorial = {
 						buttonText: 'Skip Tutorial',
 						goTo: 'forest',
 					},
-					isLocked: true,
 				},
 				{
 					lockHandle: 'readyForTutorial',
 					serverAct: {
-						buttonText: "Walk to the weapon rack",
+						buttonText: "Sure, show me the weapons!",
 						performAction() {
 							player.flags.add('approachedRack')
-							// console.log('pushing club vas')
-
 						},
 
 					},
-					isLocked: true
 				}
 
 			],
-			actionsInClient: [],
-			// prompt: 'Welcome recruit!',
 			sprite: 'general',
 			portrait: 'general',
 		})
-		if (this.sceneFlags.hesitated) {
-			player.sceneActions.push({
-				buttonText: 'Skip tutorial',
-				goTo: 'forest',
-			})
-		}
-		let tut = this
-		if (!this.sceneFlags.agreedToTrain) {
-			if (!this.sceneFlags.hesitated) {
-				let t = "'Huh? Danger... Early mornings?? I didn't sign up for any of this!'"
-				player.sceneActions.push({
-					buttonText: t,
-					performAction() {
-						player.sceneTexts.push(`${player.heroName}: ${t}`)
-						player.sceneTexts.push("Arthur: 'Hmmf, if you think you can weasel your way through this game without enduring hardship you're in for a rude awakening.. anyway it's just a quick tutorial, skip it only with good reason.'")
-						tut.sceneFlags.hesitated = true
-					},
-				})
-			}
-			if (!this.sceneFlags.wasSnarky) {
-				let wall = "'I would rather you didn't break the fourth wall, I'm into more serious RPGs.'"
-				player.sceneActions.push({
-					buttonText: wall,
-					performAction() {
-						tut.sceneFlags.wasSnarky = true
-						player.sceneTexts.push(`${player.heroName}: ${wall}`)
-						player.sceneTexts.push("Arthur: 'Lighten up recruit. Things will get plenty dark and gritty soon enough. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.'")
-					},
-				})
-			}
-			let breeze = "'I tend to breeze through tutorials pretty easily so.. not worried. Get on with it.'"
-			player.sceneActions.push({
-				buttonText: breeze,
-				performAction() {
-					player.sceneTexts.push(`${player.heroName}: ${breeze}`)
-					player.sceneTexts.push(`Arthur: 'Great to hear ${player.heroName}! Our training goblin is ready for you. Also there's a bit of a rat problem in the training room right now.. so grab some equipment off the rack and let's go.'`)
-					tut.sceneFlags.hesitated = false
-					tut.sceneFlags.agreedToTrain = true
-				},
-			})
-		}
-		if (this.sceneFlags.agreedToTrain && player.inventory.weapon.itemId != 'club') {
-			player.sceneActions.push({
-				buttonText: "Equip Club",
-				performAction() {
-					player.inventory.weapon.itemId = 'club'
-					player.sceneTexts.push("A club deals a hefty chunk of damage each hit. That makes it effective against unarmored foes like goblins.")
-				},
-			})
-		}
-		if (this.sceneFlags.agreedToTrain && player.inventory.utility.itemId != 'bomb') {
-			player.sceneActions.push({
-				buttonText: "Equip Powderbomb",
-				performAction() {
-					player.inventory.utility.itemId = 'bomb'
-					player.sceneTexts.push("A powderbomb deals splash damage to all nearby enemies. It should clear out the rats nicely.")
-				},
-			})
-		}
-		if (player.inventory.utility.itemId == 'bomb' && player.inventory.weapon.itemId == 'club') {
-			player.sceneActions.push({
-				buttonText: "'Splash em' and bash em', got it.'",
-				goTo: `trainingRoom1_${player.heroName}`
-			})
-		}
+
 	},
-} satisfies SceneWithFlags<TutFlags>
-
-// satisfies SceneWithFlags<{hesitated:boolean,agreedToTrain:boolean,wasSnarky:boolean}>
-// satisfies RequiredKeysWithType<Scene,'sceneFlags',{hesitated:boolean,agreedToTrain:boolean,wasSnarky:boolean}>
-
-// type RequiredKeys<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
-// type RequiredKeysWithType<T, K extends keyof T, V> = Omit<T, K> & Required<Pick<T, K>> & { [key in K]: V };
-
-type SceneWithFlags<TFlags> = Omit<Scene, 'sceneFlags'> & { sceneFlags: TFlags }
-// & Required<Pick<Scene,'sceneFlags'>>
+} satisfies Scene
 
 const trainingRoom1 = {
 	solo: true,
@@ -451,7 +401,6 @@ const forest: Scene = {
 				buttonText: 'Slog it towards teh castle',
 				goTo: 'castle',
 			}],
-			actionsInClient: [],
 			conversation: {
 				startText: `In the distance you see a castle. You feel you might have seen it before. Perhaps in a dream. Or was it a nightmare?`,
 				responses: []
@@ -510,9 +459,11 @@ const castle: Scene = {
 	}
 };
 
-const house: SceneWithFlags<{ accepted: boolean }> = {
-	sceneFlags: {
-		accepted: false,
+const house: Scene = {
+	makeSceneFlags(){
+		return{
+			accepted: false
+		}
 	},
 	onEnterScene(player) {
 		if (player.flags.has('killedGoblins')) {
@@ -530,11 +481,11 @@ const house: SceneWithFlags<{ accepted: boolean }> = {
 	actions(player) {
 		let scene = this
 		player.sceneActions.push({ buttonText: 'Leave the house', goTo: 'castle', })
-		if (!scene.sceneFlags.accepted) {
+		if (!player.flags.has('acceptedGoblinQuest')) {
 			player.sceneActions.push({
 				buttonText: `'I will'`,
 				performAction() {
-					scene.sceneFlags.accepted = true
+					player.flags.add('acceptedGoblinQuest')
 					player.sceneTexts.push(`${player.heroName}: 'Good lady. I will do this deed for you. No goblin scum will unpunished for this dark deed. I will return when I have silenced their gibberings.'`)
 					player.sceneTexts.push(`Woman: 'Thank you kind traveller. There is a passage in the forest hidden from normal view. My son would often go searching in the lands beyond. Search the dark recesses of the forest and you will come upon this place. ${player.heroName}, find those wretched curs and show them no mercy.'`)
 				},
@@ -825,8 +776,6 @@ const armory: Scene = {
 
 export function addSoloScenes(name: string) {
 	let t = Object.assign({}, tutorial)
-	// t.sceneFlags = structuredClone(tutorial.sceneFlags)
-	t.sceneFlags = newtutFlags()
 	scenes.set(`tutorial_${name}`, t)
 	scenes.set(`trainingRoom1_${name}`, trainingRoom1)
 	scenes.set(`trainingRoom2_${name}`, trainingRoom2)

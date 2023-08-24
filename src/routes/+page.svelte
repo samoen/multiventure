@@ -461,6 +461,7 @@
 				{/each}
 				{#each $visualActionSources as s (s.id)}
 					<div
+						animate:flip
 						on:click|preventDefault|stopPropagation={() => {
 							$lastUnitClicked = s.id;
 							$currentConvoPrompt = undefined;
