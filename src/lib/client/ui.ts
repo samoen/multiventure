@@ -392,14 +392,19 @@ export function handlePutsStatuses(anim: BattleAnimation) {
                         vup.actual.info.statuses[ps.status] = 0;
                     }
                 }else{
-                    if (vup.actual.kind == 'enemy') {
-                        let existingStatusesForSource = vup.actual.enemy.statuses[anim.source];
-                        if (!existingStatusesForSource) {
-                            vup.actual.enemy.statuses[anim.source] = { poison: 0, rage: 0, hidden:0 };
+                    if(ps.count){
+                        if (vup.actual.kind == 'enemy') {
+                            let existingStatusesForSource = vup.actual.enemy.statuses[anim.source];
+                            console.log(vup.actual.enemy.statuses)
+                            if (!existingStatusesForSource) {
+                                console.log('adding statuses for ' + anim.source)
+                                vup.actual.enemy.statuses[anim.source] = { poison: 0, rage: 0, hidden:0 };
+                            }
+                            vup.actual.enemy.statuses[anim.source][ps.status] = ps.count;
+                        } else if (vup.actual.kind == 'player') {
+                            vup.actual.info.statuses[ps.status] = ps.count;
                         }
-                        vup.actual.enemy.statuses[anim.source][ps.status] = 1;
-                    } else if (vup.actual.kind == 'player') {
-                        vup.actual.info.statuses[ps.status] = 1;
+
                     }
                 }
             })

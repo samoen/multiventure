@@ -1,4 +1,4 @@
-import type { AggroModifier, BattleAnimation, HealthModifier, StatusEffect, StatusModifier, UnitId } from "$lib/utils"
+import type { AggroModifier, BattleAnimation, BattleEvent, HealthModifier, StatusEffect, StatusModifier, UnitId } from "$lib/utils"
 import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, infightDamage, modifyAggroForPlayer } from "./enemies"
 import { items, type Item } from "./items"
 import { pushHappening } from "./messaging"
@@ -172,164 +172,8 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 			preCombatActionPerformed(player, actionFromId)
 			let battleEvent = actionFromId.performAction();
 			if (battleEvent) {
-				let dmgToSource = 0
-				let dmgToTarget = 0
-				if (battleEvent.sourcePlayer && battleEvent.baseHealingToSource) {
-					let r = healPlayer(battleEvent.sourcePlayer, battleEvent.baseHealingToSource)
-					dmgToSource = r.healed * -1
-				}
-				if (battleEvent.targetPlayer && battleEvent.baseHealingToTarget) {
-					let r = healPlayer(battleEvent.targetPlayer, battleEvent.baseHealingToTarget)
-					dmgToTarget = r.healed * -1
-				}
-				if (battleEvent.baseDamageToTarget) {
-					if (battleEvent.targetEnemy && battleEvent.sourcePlayer) {
-						const r = damageEnemy(battleEvent.sourcePlayer, battleEvent.targetEnemy, battleEvent.baseDamageToTarget, battleEvent.strikes)
-						dmgToTarget = r.dmgDone
-					}
-					if (battleEvent.targetPlayer && battleEvent.sourceEnemy) {
-						const r = damagePlayer(battleEvent.sourceEnemy, battleEvent.targetPlayer)
-						dmgToTarget = r.dmgDone
-					}
-					if (battleEvent.targetEnemy && battleEvent.sourceEnemy) {
-						const r = infightDamage(battleEvent.sourceEnemy, battleEvent.targetEnemy)
-						dmgToTarget = r.dmgDone
-					}
-				}
-
-				if (battleEvent.putsStatuses) {
-					for (const put of battleEvent.putsStatuses) {
-						if (put.count) {
-							if (put.targetEnemy) {
-								let found = put.targetEnemy.statuses.get(player.heroName)
-								if (!found) {
-									found = {
-										poison: 0,
-										rage: 0,
-										hidden: 0,
-									}
-								}
-								if (found[put.status] < put.count) {
-									found.poison = put.count
-								}
-								put.targetEnemy.statuses.set(player.heroName, found)
-							}
-							if (put.targetPlayer) {
-								if (put.targetPlayer.statuses[put.status] < put.count) {
-									put.targetPlayer.statuses[put.status] = put.count
-								}
-							}
-						}
-						if (put.remove) {
-							if (put.targetPlayer) {
-								put.targetPlayer.statuses[put.status] = 0
-							}
-							if (put.targetEnemy) {
-								for (const [key, value] of put.targetEnemy.statuses) {
-									value[put.status] = 0
-								}
-							}
-						}
-					}
-				}
-				let alsoDmgedAnimation: HealthModifier[] = []
-				if (battleEvent.alsoDamages) {
-					for (const dmged of battleEvent.alsoDamages) {
-						if (dmged.targetEnemy) {
-							if (battleEvent.sourcePlayer) {
-								if (dmged.baseDamage) {
-									let r = damageEnemy(battleEvent.sourcePlayer, dmged.targetEnemy, dmged.baseDamage)
-									alsoDmgedAnimation.push({
-										target: dmged.targetEnemy.unitId,
-										amount: r.dmgDone,
-									})
-								}
-							}
-							if (battleEvent.sourceEnemy) {
-								if (dmged.baseDamage) {
-									let r = infightDamage(battleEvent.sourceEnemy, dmged.targetEnemy)
-									alsoDmgedAnimation.push({
-										target: dmged.targetEnemy.unitId,
-										amount: r.dmgDone,
-									})
-								}
-							}
-						}
-					}
-				}
-				let aggroModifiedAnimations: AggroModifier[] = []
-				if (battleEvent.alsoModifiesAggro) {
-					for (const modifyEvent of battleEvent.alsoModifiesAggro) {
-						if (modifyEvent.setTo) {
-							for(const hero of modifyEvent.forHeros){
-								modifyEvent.targetEnemy.aggros.set(hero.heroName, modifyEvent.setTo)
-							}
-							// if (modifyEvent.forHeros == 'onlyme' && battleEvent.sourcePlayer) {
-								// 	modifyEvent.targetEnemy.aggros.set(battleEvent.sourcePlayer?.heroName, modifyEvent.setTo)
-								// }
-								// if (modifyEvent.forHeros == 'all') {
-									// 	for (const [key, value] of modifyEvent.targetEnemy.aggros) {
-										// 		modifyEvent.targetEnemy.aggros.set(key, modifyEvent.setTo)
-										// 	}
-										// }
-										aggroModifiedAnimations.push({
-								forHeros: modifyEvent.forHeros.map(h=>h.unitId),
-								target: modifyEvent.targetEnemy.unitId,
-								setTo: modifyEvent.setTo,
-							})
-						}
-						if (modifyEvent.baseAmount) {
-							for(const hero of modifyEvent.forHeros){
-								let r = modifyAggroForPlayer(hero.heroName, modifyEvent.targetEnemy, modifyEvent.baseAmount)
-							}
-
-							// if (modifyEvent.forHeros == 'onlyme' && battleEvent.sourcePlayer) {
-							// 	let r = modifyAggroForPlayer(battleEvent.sourcePlayer.heroName, modifyEvent.targetEnemy, modifyEvent.baseAmount)
-							// }
-							// if (modifyEvent.forHeros == 'all') {
-							// 	for (const [key, value] of modifyEvent.targetEnemy.aggros) {
-							// 		let r = modifyAggroForPlayer(key, modifyEvent.targetEnemy, modifyEvent.baseAmount)
-							// 	}
-							// }
-							aggroModifiedAnimations.push({
-								forHeros: modifyEvent.forHeros.map(h=>h.unitId),
-								target: modifyEvent.targetEnemy.unitId,
-								amount: modifyEvent.baseAmount,
-							})
-
-						}
-					}
-				}
-
-				let battleAnimation: BattleAnimation = {
-					source: battleEvent.sourcePlayer ? battleEvent.sourcePlayer.unitId : battleEvent.sourceEnemy?.unitId ?? 'herohi',
-					target: battleEvent.targetPlayer ? battleEvent.targetPlayer.unitId : battleEvent.targetEnemy?.unitId ?? 'herohi',
-					damageToSource: dmgToSource,
-					damageToTarget: dmgToTarget,
-					behavior: battleEvent.behavior,
-					alsoDamages: alsoDmgedAnimation,
-					alsoModifiesAggro: aggroModifiedAnimations,
-					extraSprite: battleEvent.extraSprite,
-					putsStatuses: battleEvent.putsStatuses?.map(m => {
-						let id: UnitId = 'herohi'
-						if (m.targetEnemy) {
-							id = m.targetEnemy.unitId
-						}
-						if (m.targetPlayer) {
-							id = m.targetPlayer.unitId
-						}
-						return {
-							status: m.status,
-							target: id,
-							count: m.count,
-							remove: m.remove
-						} satisfies StatusModifier
-					}),
-				}
-				pushAnimation({
-					sceneId: player.currentScene,
-					battleAnimation: battleAnimation,
-				})
+				processBattleEvent(battleEvent, player)
+				
 			}
 
 		}
@@ -340,7 +184,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 	if (actionFromId.provoke != undefined) {
 		for (const enemy of enemiesInScene(player.currentScene)) {
-			let statusForPlayer = enemy.statuses.get(player.heroName)
+			let statusForPlayer = enemy.statuses.get(player.unitId)
 			if (!statusForPlayer) continue
 			if (statusForPlayer.poison > 0) {
 				takePoisonDamage(enemy)
@@ -439,7 +283,10 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 			let aggroForActor = getAggroForPlayer(enemyInScene, player)
 			if (aggroForActor) {
 				if ((Math.random() < (aggroForActor / 100))) {
-					if (enemyInScene.template.specialAttack) {
+					if(enemyInScene.template.battleEvent){
+						processBattleEvent(enemyInScene.template.battleEvent(enemyInScene,player),player)
+					}
+					else if (enemyInScene.template.specialAttack) {
 						enemyInScene.template.specialAttack(enemyInScene, player)
 					} else {
 						// for(const _ of Array.from({length:enemyInScene.template.strikes ?? 1})){
@@ -468,4 +315,149 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 		}
 	}
 
+}
+
+function processBattleEvent(battleEvent : BattleEvent, player:Player){
+	let dmgToSource = 0
+	let dmgToTarget = 0
+	if (battleEvent.sourcePlayer && battleEvent.baseHealingToSource) {
+		let r = healPlayer(battleEvent.sourcePlayer, battleEvent.baseHealingToSource)
+		dmgToSource = r.healed * -1
+	}
+	if (battleEvent.targetPlayer && battleEvent.baseHealingToTarget) {
+		let r = healPlayer(battleEvent.targetPlayer, battleEvent.baseHealingToTarget)
+		dmgToTarget = r.healed * -1
+	}
+	if (battleEvent.baseDamageToTarget) {
+		if (battleEvent.targetEnemy && battleEvent.sourcePlayer) {
+			const r = damageEnemy(battleEvent.sourcePlayer, battleEvent.targetEnemy, battleEvent.baseDamageToTarget, battleEvent.strikes)
+			dmgToTarget = r.dmgDone
+		}
+		if (battleEvent.targetPlayer && battleEvent.sourceEnemy) {
+			const r = damagePlayer(battleEvent.sourceEnemy, battleEvent.targetPlayer)
+			dmgToTarget = r.dmgDone
+		}
+		if (battleEvent.targetEnemy && battleEvent.sourceEnemy) {
+			const r = infightDamage(battleEvent.sourceEnemy, battleEvent.targetEnemy)
+			dmgToTarget = r.dmgDone
+		}
+	}
+
+	if (battleEvent.putsStatuses) {
+		for (const put of battleEvent.putsStatuses) {
+			if (put.count) {
+				if (put.targetEnemy) {
+					let found = put.targetEnemy.statuses.get(player.unitId)
+					if (!found) {
+						found = {
+							poison: 0,
+							rage: 0,
+							hidden: 0,
+						}
+					}
+					if (found[put.status] < put.count) {
+						found.poison = put.count
+					}
+					put.targetEnemy.statuses.set(player.unitId, found)
+				}
+				if (put.targetPlayer) {
+					if (put.targetPlayer.statuses[put.status] < put.count) {
+						put.targetPlayer.statuses[put.status] = put.count
+					}
+				}
+			}
+			if (put.remove) {
+				if (put.targetPlayer) {
+					put.targetPlayer.statuses[put.status] = 0
+				}
+				if (put.targetEnemy) {
+					for (const [key, value] of put.targetEnemy.statuses) {
+						value[put.status] = 0
+					}
+				}
+			}
+		}
+	}
+	let alsoDmgedAnimation: HealthModifier[] = []
+	if (battleEvent.alsoDamages) {
+		for (const dmged of battleEvent.alsoDamages) {
+			if (dmged.targetEnemy) {
+				if (battleEvent.sourcePlayer) {
+					if (dmged.baseDamage) {
+						let r = damageEnemy(battleEvent.sourcePlayer, dmged.targetEnemy, dmged.baseDamage)
+						alsoDmgedAnimation.push({
+							target: dmged.targetEnemy.unitId,
+							amount: r.dmgDone,
+						})
+					}
+				}
+				if (battleEvent.sourceEnemy) {
+					if (dmged.baseDamage) {
+						let r = infightDamage(battleEvent.sourceEnemy, dmged.targetEnemy)
+						alsoDmgedAnimation.push({
+							target: dmged.targetEnemy.unitId,
+							amount: r.dmgDone,
+						})
+					}
+				}
+			}
+		}
+	}
+	let aggroModifiedAnimations: AggroModifier[] = []
+	if (battleEvent.alsoModifiesAggro) {
+		for (const modifyEvent of battleEvent.alsoModifiesAggro) {
+			if (modifyEvent.setTo) {
+				for(const hero of modifyEvent.forHeros){
+					modifyEvent.targetEnemy.aggros.set(hero.heroName, modifyEvent.setTo)
+				}
+							aggroModifiedAnimations.push({
+					forHeros: modifyEvent.forHeros.map(h=>h.unitId),
+					target: modifyEvent.targetEnemy.unitId,
+					setTo: modifyEvent.setTo,
+				})
+			}
+			if (modifyEvent.baseAmount) {
+				for(const hero of modifyEvent.forHeros){
+					let r = modifyAggroForPlayer(hero.heroName, modifyEvent.targetEnemy, modifyEvent.baseAmount)
+				}
+
+				aggroModifiedAnimations.push({
+					forHeros: modifyEvent.forHeros.map(h=>h.unitId),
+					target: modifyEvent.targetEnemy.unitId,
+					amount: modifyEvent.baseAmount,
+				})
+
+			}
+		}
+	}
+
+	let battleAnimation: BattleAnimation = {
+		source: battleEvent.sourcePlayer ? battleEvent.sourcePlayer.unitId : battleEvent.sourceEnemy?.unitId ?? 'herohi',
+		target: battleEvent.targetPlayer ? battleEvent.targetPlayer.unitId : battleEvent.targetEnemy?.unitId ?? 'herohi',
+		damageToSource: dmgToSource,
+		damageToTarget: dmgToTarget,
+		behavior: battleEvent.behavior,
+		alsoDamages: alsoDmgedAnimation,
+		alsoModifiesAggro: aggroModifiedAnimations,
+		extraSprite: battleEvent.extraSprite,
+		putsStatuses: battleEvent.putsStatuses?.map(m => {
+			let id: UnitId = 'herohi'
+			if (m.targetEnemy) {
+				id = m.targetEnemy.unitId
+			}
+			if (m.targetPlayer) {
+				id = m.targetPlayer.unitId
+			}
+			return {
+				status: m.status,
+				target: id,
+				count: m.count,
+				remove: m.remove
+			} satisfies StatusModifier
+		}),
+	}
+	pushAnimation({
+		sceneId: player.currentScene,
+		battleAnimation: battleAnimation,
+	})
 }

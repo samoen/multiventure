@@ -234,7 +234,7 @@
 				class="projHolder selfInflictSource"
 				class:startAlignSelf={!$hostIsNotHero}
 				class:endAlignSelf={$hostIsNotHero}
-				out:fly|local={{ delay: 0, duration: 400, x: 0, y: 20 }}
+				out:fly|local={{ delay: 0, duration: 600, x: 0, y: -30 }}
 				on:outrostart={() => {
 					if ($currentAnimation != undefined && !$animationCancelled) {
 						const anim = $currentAnimation;

@@ -560,6 +560,14 @@
 							</div> -->
 						{/if}
 						{#if $selectedDetail.actual.kind == 'enemy'}
+						<div>
+							<strong>
+								{$selectedDetail.actual.enemy.name}
+							</strong>
+						</div>	
+							<div>
+								{$selectedDetail.displayHp}/{$selectedDetail.maxHp} hp
+							</div>
 							<div>
 								Template: {$selectedDetail.actual.enemy.templateId}
 							</div>
