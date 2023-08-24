@@ -1,4 +1,4 @@
-import type { UnitId, BattleAnimation, StatusEffect, StatusId, BattleEvent, HeroId, ScenerySprite, VisualActionSourceId } from '$lib/utils';
+import type { UnitId, BattleAnimation, StatusEffect, StatusId, BattleEvent, HeroId, AnySprite, VisualActionSourceId } from '$lib/utils';
 import { items, type Inventory, type Item, type ItemState, type EquipmentSlot, type ItemStateForSlot } from './items';
 import { pushHappening } from './messaging';
 import type { SceneId, VisualActionSource } from './scenes';

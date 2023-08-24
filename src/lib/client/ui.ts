@@ -1,5 +1,5 @@
 import type { HeroName, MiscPortrait, PlayerInClient } from "$lib/server/users";
-import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, ExtraSprite, GameActionSentToClient, ScenerySprite } from "$lib/utils";
+import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient, AnySprite } from "$lib/utils";
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 import peasantPortrait from '$lib/assets/portraits/peasant.webp';
 import generalPortrait from '$lib/assets/portraits/general.webp';
@@ -22,6 +22,8 @@ import shield from '$lib/assets/extras/shield.png';
 import flame from '$lib/assets/extras/flame.png';
 import heal from '$lib/assets/extras/heal.png';
 import lighthouse from '$lib/assets/scenery/lighthouse.png';
+import clubSlot from '$lib/assets/equipment/club-small.png';
+import club from '$lib/assets/extras/club.png';
 import type { EquipmentSlot, Inventory, ItemId, ItemIdForSlot, ItemState, ItemStateForSlot } from '$lib/server/items';
 import { crossfade } from "svelte/transition";
 import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easing";
@@ -360,7 +362,8 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
     }
 }
 
-export const extraSprites: Record<ExtraSprite, string> = {
+
+export const anySprites : Record<AnySprite,string> ={
     arrow: arrow,
     bomb: bomb,
     smoke: shield,
@@ -368,11 +371,10 @@ export const extraSprites: Record<ExtraSprite, string> = {
     flame: flame,
     heal:heal,
     poison: greenDrip,
-}
-
-export const scenerySprites : Record<ScenerySprite,string> ={
     castle:lighthouse,
     general:general,
+    club:club,
+    clubSlot:clubSlot,
 }
 
 export function handlePutsStatuses(anim: BattleAnimation) {
@@ -414,7 +416,7 @@ export const centerFieldTarget = derived(
             $currentAnimation.behavior == 'center' &&
             $subAnimationStage == 'fire'
         ) {
-            return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
+            return { projectileImg: anySprites[$currentAnimation.extraSprite] };
         }
         return undefined;
     }

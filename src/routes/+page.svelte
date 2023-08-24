@@ -23,7 +23,7 @@
 		nextAnimationIndex,
 		numberShownOnSlot,
 		receiveCenter,
-		scenerySprites,
+		anySprites,
 		selectedDetail,
 		selectedVisualActionSource,
 		selectedVisualActionSourceState,
@@ -470,7 +470,7 @@
 						tabindex="0"
 						on:keydown
 					>
-						<img class="vasSprite" src={scenerySprites[s.sprite]} alt="a place" />
+						<img class="vasSprite" src={anySprites[s.sprite]} alt="a place" />
 					</div>
 				{/each}
 			</div>
@@ -524,153 +524,158 @@
 				<div class="selectedPortrait">
 					<img class="portrait" src={$selectedDetail.actual.portrait} alt="portrait" />
 				</div>
-				<div class="selectedStats">
-					{#if $selectedDetail.actual.kind == 'player'}
-						<div>
-							<strong>
-								{$selectedDetail.actual.info.heroName}
-							</strong>
-						</div>
-						<div>
-							{$selectedDetail.displayHp}/{$selectedDetail.maxHp} hp
-						</div>
-						<div>
-							{#each Object.entries($selectedDetail.actual.info.statuses) as [key, value]}
-								{#if value > 0}
-									{`${key} ${value}`}
-								{/if}
-							{/each}
-						</div>
-
-						<!-- <div> -->
-						{#each Object.entries($selectedDetail.actual.info.inventory) as [key, value]}
+				<div class="selectedRest">
+					<div class="selectedStats">
+						{#if $selectedDetail.actual.kind == 'player'}
 							<div>
-								{`${key}: ${value.itemId}`}
+								<strong>
+									{$selectedDetail.actual.info.heroName}
+								</strong>
 							</div>
-						{/each}
-						<div>
-							Agility: {$selectedDetail.actual.info.agility}
-						</div>
-						<div>
-							Strength: {$selectedDetail.actual.info.strength}
-						</div>
-						<!-- <div>
-						<button type="button">show gear</button>
-						</div> -->
-					{/if}
-					{#if $selectedDetail.actual.kind == 'enemy'}
-						<div>
-							Template: {$selectedDetail.actual.enemy.templateId}
-						</div>
-						<div>
-							Aggro: {JSON.stringify($selectedDetail.actual.enemy.myAggro)}
-						</div>
-						<div>
-							{#each Object.entries($selectedDetail.actual.enemy.statuses) as [forHero, statuses]}
-								{#each Object.entries(statuses) as [key, value]}
+							<div>
+								{$selectedDetail.displayHp}/{$selectedDetail.maxHp} hp
+							</div>
+							<div>
+								{#each Object.entries($selectedDetail.actual.info.statuses) as [key, value]}
 									{#if value > 0}
-										{`${forHero}: ${key} ${value}, `}
+										{`${key} ${value}`}
 									{/if}
 								{/each}
+							</div>
+	
+							<!-- <div> -->
+							{#each Object.entries($selectedDetail.actual.info.inventory) as [key, value]}
+								<div>
+									{`${key}: ${value.itemId}`}
+								</div>
 							{/each}
-						</div>
-					{/if}
+							<div>
+								Agility: {$selectedDetail.actual.info.agility}
+							</div>
+							<div>
+								Strength: {$selectedDetail.actual.info.strength}
+							</div>
+							<!-- <div>
+							<button type="button">show gear</button>
+							</div> -->
+						{/if}
+						{#if $selectedDetail.actual.kind == 'enemy'}
+							<div>
+								Template: {$selectedDetail.actual.enemy.templateId}
+							</div>
+							<div>
+								Aggro: {JSON.stringify($selectedDetail.actual.enemy.myAggro)}
+							</div>
+							<div>
+								{#each Object.entries($selectedDetail.actual.enemy.statuses) as [forHero, statuses]}
+									{#each Object.entries(statuses) as [key, value]}
+										{#if value > 0}
+											{`${forHero}: ${key} ${value}, `}
+										{/if}
+									{/each}
+								{/each}
+							</div>
+						{/if}
+					</div>
 				</div>
 			</div>
 		{/if}
 	{/if}
 	{#if $selectedVisualActionSourceState && $selectedVisualActionSource}
-		<div class="visualActionSourceDetail">
+		<div class="selectedDetails">
 			<div class="selectedPortrait">
 				<img
 					src={$selectedVisualActionSource.portrait
 						? miscPortraits[$selectedVisualActionSource.portrait]
-						: scenerySprites[$selectedVisualActionSource.sprite]}
+						: anySprites[$selectedVisualActionSource.sprite]}
 					alt="place"
 				/>
 			</div>
-			<div class="vasdPromptAndButtons">
-				<div class="vasdPrompt">
-					{$selectedVisualActionSourceState.currentRetort ?? 'selected vas has no current retort'}
-				</div>
-				<div class="vasdButtons">
-					{#each $selectedVisualActionSource.actionsInClient as act}
-						<button
-							type="button"
-							on:click={() => {
-								$lastUnitClicked = undefined;
-								choose(act);
-							}}>{act.buttonText}</button
-						>
-					{/each}
-					{#each $selectedVisualActionSourceState.maybeLockedActions.filter((a) => !a.isLocked) as mla}
-						<button
-							type="button"
-							on:click={() => {
-								// $lastUnitClicked = undefined
-								// $convoBeenSaid.add(act.buttonText)
-								if (mla.clientAct) {
+			<div class="selectedRest">
+				<div class="vasdPromptAndButtons">
+					<div class="vasdPrompt">
+						{$selectedVisualActionSourceState.currentRetort ?? 'selected vas has no current retort'}
+					</div>
+					<div class="vasdButtons">
+						{#each $selectedVisualActionSource.actionsInClient as act}
+							<button
+								type="button"
+								on:click={() => {
+									$lastUnitClicked = undefined;
+									choose(act);
+								}}>{act.buttonText}</button
+							>
+						{/each}
+						{#each $selectedVisualActionSourceState.maybeLockedActions.filter((a) => !a.isLocked) as mla}
+							<button
+								type="button"
+								on:click={() => {
+									// $lastUnitClicked = undefined
+									// $convoBeenSaid.add(act.buttonText)
+									if (mla.clientAct) {
+										if (!$lastUnitClicked) return;
+										let state = $convoStateForEachVAS.get($lastUnitClicked);
+										if (!state) return;
+										for (const toLock of state.maybeLockedActions) {
+											if (toLock.lockHandle == mla.lockHandle) {
+												console.log(`action locking action ${toLock.lockHandle}`);
+												toLock.isLocked = true;
+											}
+										}
+										$convoStateForEachVAS = $convoStateForEachVAS;
+	
+										choose(mla.clientAct);
+									}
+								}}>{mla?.clientAct?.buttonText}</button
+							>
+						{/each}
+						{#each $selectedVisualActionSourceState.maybeLockedResponses.filter((r) => !r.isLocked) as c}
+							<button
+								type="button"
+								on:click={() => {
 									if (!$lastUnitClicked) return;
 									let state = $convoStateForEachVAS.get($lastUnitClicked);
 									if (!state) return;
-									for (const toLock of state.maybeLockedActions) {
-										if (toLock.lockHandle == mla.lockHandle) {
-											console.log(`action locking action ${toLock.lockHandle}`);
+									state.currentRetort = c.retort;
+									for (const toLock of state.maybeLockedResponses) {
+										if (
+											(c.lock && c.lock.includes(toLock.lockHandle)) ||
+											toLock.lockHandle == c.lockHandle
+										) {
+											console.log(`response locking response ${toLock.lockHandle}`);
 											toLock.isLocked = true;
+										}
+										if (c.unlock) {
+											if (c.unlock.includes(toLock.lockHandle)) {
+												console.log(`response unlocking response ${toLock.lockHandle}`);
+												toLock.isLocked = false;
+											}
+										}
+									}
+									for (const toLock of state.maybeLockedActions) {
+										if (c.lock) {
+											if (c.lock.includes(toLock.lockHandle)) {
+												console.log(`response locking action ${toLock.lockHandle}`);
+												toLock.isLocked = true;
+											}
+										}
+										if (c.unlock) {
+											if (c.unlock.includes(toLock.lockHandle)) {
+												console.log(`response unlocking action ${toLock.lockHandle}`);
+												toLock.isLocked = false;
+											}
 										}
 									}
 									$convoStateForEachVAS = $convoStateForEachVAS;
-
-									choose(mla.clientAct);
-								}
-							}}>{mla?.clientAct?.buttonText}</button
-						>
-					{/each}
-					{#each $selectedVisualActionSourceState.maybeLockedResponses.filter((r) => !r.isLocked) as c}
-						<button
-							type="button"
-							on:click={() => {
-								if (!$lastUnitClicked) return;
-								let state = $convoStateForEachVAS.get($lastUnitClicked);
-								if (!state) return;
-								state.currentRetort = c.retort;
-								for (const toLock of state.maybeLockedResponses) {
-									if (
-										(c.lock && c.lock.includes(toLock.lockHandle)) ||
-										toLock.lockHandle == c.lockHandle
-									) {
-										console.log(`response locking response ${toLock.lockHandle}`);
-										toLock.isLocked = true;
-									}
-									if (c.unlock) {
-										if (c.unlock.includes(toLock.lockHandle)) {
-											console.log(`response unlocking response ${toLock.lockHandle}`);
-											toLock.isLocked = false;
-										}
-									}
-								}
-								for (const toLock of state.maybeLockedActions) {
-									if (c.lock) {
-										if (c.lock.includes(toLock.lockHandle)) {
-											console.log(`response locking action ${toLock.lockHandle}`);
-											toLock.isLocked = true;
-										}
-									}
-									if (c.unlock) {
-										if (c.unlock.includes(toLock.lockHandle)) {
-											console.log(`response unlocking action ${toLock.lockHandle}`);
-											toLock.isLocked = false;
-										}
-									}
-								}
-								$convoStateForEachVAS = $convoStateForEachVAS;
-								// $currentConvoPrompt = c.retort
-								// $convoBeenSaid.add(c.responseText)
-								// $convoBeenSaid = $convoBeenSaid
-							}}>{c.responseText}</button
-						>
-					{/each}
+									// $currentConvoPrompt = c.retort
+									// $convoBeenSaid.add(c.responseText)
+									// $convoBeenSaid = $convoBeenSaid
+								}}>{c.responseText}</button
+							>
+						{/each}
+					</div>
 				</div>
+
 			</div>
 		</div>
 		<div />
@@ -844,20 +849,36 @@
 	}
 	.selectedDetails {
 		background-color: beige;
-		display: inline-flex;
-		height: 15vh;
+		display: flex;
+		align-items: flex-start;
+		height: 20vh;
+		/* height:400px; */
 	}
 	.selectedPortrait {
-		/* width: 100px; */
+		/* width: 20vw; */
+		flex-basis:20%;
 		height: 100%;
 		/* background-color: blueviolet; */
+		display:flex;
+		justify-content: center;
+		/* place-items: center; */
+		/* overflow:hidden; */
 		/* height: 20vh; */
 	}
 	.selectedPortrait > img {
-		object-fit: cover;
+		object-fit:cover;
 		height: 100%;
+		/* background-color: brown; */
+		/* width:100%; */
 		/* width: 100%; */
-		max-width: 140px;
+		/* max-height: 90%; */
+		/* max-width: 100%; */
+	}
+	.selectedRest {
+		flex-basis:80%;
+		height:100%;
+		padding:10px;
+		/* width:80vw; */
 	}
 	.selectedStats {
 		display: flex;
@@ -867,14 +888,14 @@
 		padding: 5px;
 		/* background-color: aquamarine; */
 	}
-	.visualActionSourceDetail {
-		display: flex;
+	/* .visualActionSourceDetail { */
+		/* display: flex; */
 		/* height:15vh; */
-		background-color: burlywood;
-	}
+		/* background-color: burlywood; */
+		/* } */
 	.vasdPromptAndButtons {
-		padding: 5px;
 		display: flex;
+		height:100%;
 		flex-direction: column;
 		/* justify-content: space-around; */
 		overflow-y: auto;

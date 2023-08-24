@@ -9,7 +9,6 @@
 		animationCancelled,
 		choose,
 		currentAnimation,
-		extraSprites,
 		lastMsgFromServer,
 		lastUnitClicked,
 		latestSlotButtonInput,
@@ -26,7 +25,10 @@
 		currentAnimationIndex,
 		currentAnimationsWithData,
 
-		handlePutsStatuses
+		handlePutsStatuses,
+
+		anySprites
+
 
 	} from '$lib/client/ui';
 	import { tick } from 'svelte';
@@ -96,7 +98,7 @@
 				$currentAnimation.source == hostId &&
 				$subAnimationStage == 'start'
 			) {
-				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
+				return { projectileImg: anySprites[$currentAnimation.extraSprite] };
 			}
 			return undefined;
 		}
@@ -122,7 +124,7 @@
 				$currentAnimation.target == hostId &&
 				$subAnimationStage == 'fire'
 			) {
-				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
+				return { projectileImg: anySprites[$currentAnimation.extraSprite] };
 			}
 			return undefined;
 		}
@@ -136,7 +138,7 @@
 				$currentAnimation.source == hostId &&
 				$subAnimationStage == 'start'
 			) {
-				return { projectileImg: extraSprites[$currentAnimation.extraSprite] };
+				return { projectileImg: anySprites[$currentAnimation.extraSprite] };
 			}
 			return undefined;
 		}

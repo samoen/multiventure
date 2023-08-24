@@ -1,4 +1,4 @@
-import type { GameActionSentToClient, ScenerySprite, VisualActionSourceId } from '$lib/utils';
+import type { GameActionSentToClient, AnySprite, VisualActionSourceId } from '$lib/utils';
 import { enemiesInScene, enemyTemplates, spawnEnemy, type EnemyTemplateId } from './enemies';
 import { bodyItems, utilityItems, weapons, type ItemIdForSlot, items } from './items';
 import { activePlayersInScene, globalFlags, healPlayer, type GameAction, type HeroName, type MiscPortrait, type Player } from './users';
@@ -34,7 +34,7 @@ export type Scene = {
 
 export type VisualActionSource = {
 	id: VisualActionSourceId
-	sprite: ScenerySprite
+	sprite: AnySprite
 	portrait?: MiscPortrait
 	actions: GameAction[]
 	conversation: Conversation
@@ -43,7 +43,7 @@ export type VisualActionSource = {
 
 export type VisualActionSourceInClient = {
 	id: VisualActionSourceId
-	sprite: ScenerySprite
+	sprite: AnySprite
 	portrait?: MiscPortrait
 	actionsInClient: GameActionSentToClient[]
 	conversation: Conversation
@@ -133,7 +133,7 @@ const tutorial = {
 		if (player.flags.has('approachedRack') && player.inventory.weapon.itemId != 'club') {
 			player.visualActionSources.push({
 				id: 'vasEquipClub',
-				sprite: 'castle',
+				sprite: 'club',
 				actions: [
 					{
 						buttonText: 'equip club',
@@ -152,7 +152,7 @@ const tutorial = {
 		if (player.flags.has('approachedRack') && player.inventory.utility.itemId != 'bomb') {
 			player.visualActionSources.push({
 				id: 'vasEquipBomb',
-				sprite: 'castle',
+				sprite: 'bomb',
 				actions: [
 					{
 						buttonText: 'equip bomb',
