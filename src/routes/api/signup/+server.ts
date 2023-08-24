@@ -42,7 +42,7 @@ export const POST: RequestHandler = async (r) => {
 		// startScene = 'forestPassage'
 		// startScene = 'goblinCamp'
 		// startScene = 'throne'
-		startScene = 'armory'
+		// startScene = 'armory'
 		
 		let startInventory: Inventory = {
 			weapon: {

@@ -9,9 +9,12 @@
 		centerFieldTarget,
 		choose,
 		clientState,
+		convoBeenSaid,
+		convoStateForEachVAS,
 		currentAnimation,
 		currentAnimationIndex,
 		currentAnimationsWithData,
+		currentConvoPrompt,
 		handlePutsStatuses,
 		lastMsgFromServer,
 		lastUnitClicked,
@@ -23,6 +26,7 @@
 		scenerySprites,
 		selectedDetail,
 		selectedVisualActionSource,
+		selectedVisualActionSourceState,
 		stockDotsOnSlotButton,
 		syncVisualsToMsg,
 		typedInventory,
@@ -36,7 +40,7 @@
 	import type { MessageFromServer } from '$lib/server/messaging';
 	import { onMount, tick } from 'svelte';
 	import { flip } from 'svelte/animate';
-	import { derived } from 'svelte/store';
+	import { derived, writable, type Writable } from 'svelte/store';
 	import plains from '$lib/assets/landscapes/landscape-plain.webp';
 
 	export let data;
@@ -459,6 +463,7 @@
 					<div
 						on:click|preventDefault|stopPropagation={() => {
 							$lastUnitClicked = s.id;
+							$currentConvoPrompt = undefined;
 						}}
 						role="button"
 						tabindex="0"
@@ -573,27 +578,101 @@
 			</div>
 		{/if}
 	{/if}
-	{#if $selectedVisualActionSource}
-			<div class='visualActionSourceDetail'>
-				<div class="selectedPortrait">
-					<img src={$selectedVisualActionSource.portrait ? miscPortraits[$selectedVisualActionSource.portrait] : scenerySprites[$selectedVisualActionSource.sprite]} alt='place'>
-				</div>
-				<div class="vasdPromptAndButtons">
-					<div class="vasdPrompt">{$selectedVisualActionSource.prompt}</div>
-					<div class="vasdButtons">
-						{#each $selectedVisualActionSource.actions as act}
-							<button type='button' on:click={()=>{
-								$lastUnitClicked = undefined
-								choose(act)
-							}}>{act.buttonText}</button>
-						{/each}
-					</div>
-				</div>
-
+	{#if $selectedVisualActionSourceState && $selectedVisualActionSource}
+		<div class="visualActionSourceDetail">
+			<div class="selectedPortrait">
+				<img
+					src={$selectedVisualActionSource.portrait
+						? miscPortraits[$selectedVisualActionSource.portrait]
+						: scenerySprites[$selectedVisualActionSource.sprite]}
+					alt="place"
+				/>
 			</div>
-		<div>
+			<div class="vasdPromptAndButtons">
+				<div class="vasdPrompt">
+					{$selectedVisualActionSourceState.currentRetort ?? 'selected vas has no current retort'}
+				</div>
+				<div class="vasdButtons">
+					{#each $selectedVisualActionSource.actionsInClient as act}
+						<button
+							type="button"
+							on:click={() => {
+								$lastUnitClicked = undefined;
+								choose(act);
+							}}>{act.buttonText}</button
+						>
+					{/each}
+					{#each $selectedVisualActionSourceState.maybeLockedActions.filter((a) => !a.isLocked) as mla}
+						<button
+							type="button"
+							on:click={() => {
+								// $lastUnitClicked = undefined
+								// $convoBeenSaid.add(act.buttonText)
+								if (mla.clientAct) {
+									if (!$lastUnitClicked) return;
+									let state = $convoStateForEachVAS.get($lastUnitClicked);
+									if (!state) return;
+									for (const toLock of state.maybeLockedActions) {
+										if (toLock.lockHandle == mla.lockHandle) {
+											console.log(`action locking action ${toLock.lockHandle}`);
+											toLock.isLocked = true;
+										}
+									}
+									$convoStateForEachVAS = $convoStateForEachVAS;
 
+									choose(mla.clientAct);
+								}
+							}}>{mla?.clientAct?.buttonText}</button
+						>
+					{/each}
+					{#each $selectedVisualActionSourceState.maybeLockedResponses.filter((r) => !r.isLocked) as c}
+						<button
+							type="button"
+							on:click={() => {
+								if (!$lastUnitClicked) return;
+								let state = $convoStateForEachVAS.get($lastUnitClicked);
+								if (!state) return;
+								state.currentRetort = c.retort;
+								for (const toLock of state.maybeLockedResponses) {
+									if (
+										(c.lock && c.lock.includes(toLock.lockHandle)) ||
+										toLock.lockHandle == c.lockHandle
+									) {
+										console.log(`response locking response ${toLock.lockHandle}`);
+										toLock.isLocked = true;
+									}
+									if (c.unlock) {
+										if (c.unlock.includes(toLock.lockHandle)) {
+											console.log(`response unlocking response ${toLock.lockHandle}`);
+											toLock.isLocked = false;
+										}
+									}
+								}
+								for (const toLock of state.maybeLockedActions) {
+									if (c.lock) {
+										if (c.lock.includes(toLock.lockHandle)) {
+											console.log(`response locking action ${toLock.lockHandle}`);
+											toLock.isLocked = true;
+										}
+									}
+									if (c.unlock) {
+										if (c.unlock.includes(toLock.lockHandle)) {
+											console.log(`response unlocking action ${toLock.lockHandle}`);
+											toLock.isLocked = false;
+										}
+									}
+								}
+								$convoStateForEachVAS = $convoStateForEachVAS;
+								// $currentConvoPrompt = c.retort
+								// $convoBeenSaid.add(c.responseText)
+								// $convoBeenSaid = $convoBeenSaid
+							}}>{c.responseText}</button
+						>
+					{/each}
+				</div>
+			</div>
 		</div>
+		<div />
 	{/if}
 	<h3>Recent happenings:</h3>
 	<div class="happenings" bind:this={happenings}>
@@ -618,6 +697,7 @@
 		>
 		<button on:click={deleteHero}>Delete Hero</button>
 	</p>
+	{JSON.stringify($lastMsgFromServer.playerFlags)}
 {/if}
 
 <style>
@@ -786,18 +866,19 @@
 		padding: 5px;
 		/* background-color: aquamarine; */
 	}
-	.visualActionSourceDetail{
+	.visualActionSourceDetail {
 		display: flex;
-		height:15vh;
+		/* height:15vh; */
 		background-color: burlywood;
 	}
-	.vasdPromptAndButtons{
-		padding:5px;
+	.vasdPromptAndButtons {
+		padding: 5px;
 		display: flex;
 		flex-direction: column;
-		justify-content: space-around;
+		/* justify-content: space-around; */
+		overflow-y: auto;
 	}
-	.vasSprite{
+	.vasSprite {
 		transform: scaleX(-1);
 	}
 	/* .vasdPrompt{

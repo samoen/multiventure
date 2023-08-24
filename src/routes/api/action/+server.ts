@@ -1,6 +1,6 @@
 import { handleAction, updateAllPlayerActions, updatePlayerActions } from '$lib/server/logic';
 import { FAKE_LATENCY, pushHappening, sendEveryoneWorld } from '$lib/server/messaging';
-import { users } from '$lib/server/users';
+import { users, type GameAction } from '$lib/server/users';
 import { isGameActionSelected } from '$lib/utils';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
@@ -30,7 +30,22 @@ export const POST = (async (r) => {
 
 	// ensure action is still valid
 	updatePlayerActions(player)
-	let actionFromId = [...player.sceneActions, ...player.itemActions, ...player.visualActionSources.flatMap(s=>s.actions)].find((g) => g.buttonText == msg.buttonText);
+
+	let unlockableActions : GameAction[] = []
+	for(const vas of player.visualActionSources){
+		if(vas.unlockables){
+			for(const ua of vas.unlockables){
+				if(ua.serverAct){
+					unlockableActions.push(ua.serverAct)
+				}
+
+			}
+			// for(const [key,value] of Object.entries(vas.unlockables)){
+			// }
+		}
+	}
+
+	let actionFromId = [...player.sceneActions, ...player.itemActions, ...player.visualActionSources.flatMap(s=>s.actions), ...unlockableActions].find((g) => g.buttonText == msg.buttonText);
 	if (!actionFromId) {
 		console.log(`rejected action ${JSON.stringify(msg)} because not available`);
 		return json(`action ${msg.buttonText} not available`, { status: 400 });

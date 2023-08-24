@@ -1,6 +1,7 @@
+import type { GameActionSentToClient, ScenerySprite, VisualActionSourceId } from '$lib/utils';
 import { enemiesInScene, enemyTemplates, spawnEnemy, type EnemyTemplateId } from './enemies';
 import { bodyItems, utilityItems, weapons, type ItemIdForSlot, items } from './items';
-import { activePlayersInScene, globalFlags, healPlayer, type HeroName, type Player } from './users';
+import { activePlayersInScene, globalFlags, healPlayer, type GameAction, type HeroName, type MiscPortrait, type Player } from './users';
 
 
 export const scenes: Map<SceneId, Scene> = new Map()
@@ -31,6 +32,33 @@ export type Scene = {
 	sceneFlags?: Record<string, boolean>
 };
 
+export type VisualActionSource = {
+	id: VisualActionSourceId
+	sprite: ScenerySprite
+	portrait?: MiscPortrait
+	// prompt: string
+	actions: GameAction[]
+	actionsInClient: GameActionSentToClient[]
+	conversation: Conversation
+	unlockables: UnlockableAction[]
+}
+
+export type Conversation = {
+	startText: string,
+	responses: ConverationResponse[]
+}
+
+export type UnlockableAction = { lockHandle: string, serverAct?: GameAction, clientAct?:GameActionSentToClient, isLocked: boolean }
+
+export type ConverationResponse = { 
+	lockHandle:string,
+	isLocked:boolean,
+	responseText: string,
+	retort: string,
+	unlock?: string[],
+	lock?: string[]
+ }
+
 const dead: Scene = {
 	onEnterScene(player) {
 		player.sceneTexts.push("You see a bright light and follow it. After a short eternity you decide wandering the halls of the dead is not for you.")
@@ -42,10 +70,10 @@ const dead: Scene = {
 			goTo: 'armory',
 		})
 		// if (player.lastCheckpoint) {
-			player.sceneActions.push({
-				buttonText: `Reincarnate at checkpoint ${player.lastCheckpoint}`,
-				goTo: player.lastCheckpoint,
-			})
+		player.sceneActions.push({
+			buttonText: `Reincarnate at checkpoint ${player.lastCheckpoint}`,
+			goTo: player.lastCheckpoint,
+		})
 		// }
 	}
 }
@@ -67,15 +95,113 @@ const tutorial = {
 		player.inventory.body.itemId = 'rags'
 		player.inventory.utility.itemId = 'empty'
 		player.inventory.weapon.itemId = 'unarmed'
-		player.sceneTexts.push(`You are standing at a castle barracks. Soliders mill around swinging swords and grunting in cool morning air. You see Arthur, the captain of the castle guard marching towards you.\n\nArthur: 'Look alive recruit! The first day of training can be the most dangerous of a guardsman's life. You must be ${player.heroName}, welcome aboard. In this barracks we wake up early, follow orders, and NEVER skip the tutorial. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.'`)
+		player.sceneTexts.push(`You are standing at a castle barracks. Soliders mill around swinging swords and grunting in cool morning air. You see Arthur, the captain of the castle guard marching towards you.`)
 	},
 	actions(player) {
+		let tutorActions : GameAction[] = []
+		if (player.flags.has('approachedRack') && player.inventory.weapon.itemId != 'club') {
+			player.visualActionSources.push({
+				id: 'vasEquipClub',
+				sprite: 'castle',
+				actions: [
+					{
+						buttonText: 'equip club',
+						performAction() {
+							player.inventory.weapon.itemId = 'club'
+						},
+					}
+				],
+				conversation: {
+					startText: 'A club deals a hefty chunk of damage each hit. That makes it effective against unarmored foes like goblins.',
+					responses: []
+				},
+				unlockables: [],
+				actionsInClient: []
+			})
+		}
+		if (player.flags.has('approachedRack') && player.inventory.utility.itemId != 'bomb') {
+			player.visualActionSources.push({
+				id: 'vasEquipBomb',
+				sprite: 'castle',
+				actions: [
+					{
+						buttonText: 'equip bomb',
+						performAction() {
+							player.inventory.utility.itemId = 'bomb'
+						},
+					}
+				],
+				conversation: {
+					startText: 'A powderbomb deals splash damage to all nearby enemies. It should clear out the rats nicely.',
+					responses: []
+				},
+				unlockables: [],
+				actionsInClient: []
+			})
+		}
+		if (player.inventory.utility.itemId == 'bomb' && player.inventory.weapon.itemId == 'club') {
+			tutorActions.push({
+					buttonText: "'Splash em' and bash em', got it.'",
+					goTo: `trainingRoom1_${player.heroName}`
+			})
+		}
 		player.visualActionSources.push({
-			id:'vasTutor',
-			actions:[],
-			prompt:'Welcome recruit!',
+			id: 'vasTutor',
+			actions: tutorActions,
+			conversation: {
+				startText: `'Look alive recruit! The first day of training can be the most dangerous of a guardsman's life. You must be ${player.heroName}, welcome aboard. In this barracks we wake up early, follow orders, and NEVER skip the tutorial. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.'`,
+				responses: [
+					{
+						lockHandle:'scared',
+						isLocked:false,
+						responseText: `Huh? Danger... Early mornings?? I didn't sign up for any of this!`,
+						retort: `Hmmf, if you think you can weasel your way through this game without enduring hardship you're in for a rude awakening.. anyway it's just a quick tutorial, skip it only with good reason.`,
+						unlock: ['wantsToSkip']
+					},
+					{
+						lockHandle:'cheeky',
+						isLocked:false,
+						responseText: `I would rather you didn't break the fourth wall, I'm into more serious RPGs.`,
+						retort: `Lighten up recruit. Things will get plenty dark and gritty soon enough. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.`
+					},
+					{
+						lockHandle:'brave',
+						isLocked:false,
+						responseText: `I tend to breeze through tutorials pretty easily so.. not worried. Get on with it.`,
+						retort: `Great to hear ${player.heroName}! Our training goblin is ready for you. Also there's a bit of a rat problem in the training room right now.. so grab some equipment off the rack and let's go.`,
+						unlock: [`readyForTutorial`],
+						lock: ['wantsToSkip','scared','cheeky'],
+					},
+				]
+			},
+			unlockables: [
+				{
+					lockHandle: 'wantsToSkip',
+					serverAct: {
+						buttonText: 'Skip Tutorial',
+						goTo: 'forest',
+					},
+					isLocked: true,
+				},
+				{
+					lockHandle: 'readyForTutorial',
+					serverAct: {
+						buttonText: "Walk to the weapon rack",
+						performAction() {
+							player.flags.add('approachedRack')
+							// console.log('pushing club vas')
+
+						},
+
+					},
+					isLocked: true
+				}
+
+			],
+			actionsInClient: [],
+			// prompt: 'Welcome recruit!',
 			sprite: 'general',
-			portrait:'general',
+			portrait: 'general',
 		})
 		if (this.sceneFlags.hesitated) {
 			player.sceneActions.push({
@@ -217,7 +343,7 @@ const trainingRoom2: Scene = {
 			return
 		}
 		let borgusStatuses = new Map()
-		borgusStatuses.set(player.heroName,{poison:0,rage:5}) 
+		borgusStatuses.set(player.heroName, { poison: 0, rage: 5 })
 		player.sceneTexts.push("Borgus: 'Raaargh! What are you hob-doing in MY hob-training room?! How is Glornak by the way? We used to work in the same room but they split us up.'")
 		player.sceneTexts.push("Florgus: 'There you go again Morgus, talking about Glornak like I'm not standing right here. And it's OUR training room now remember? Oh Great, another recruit equipped with a dagger..'")
 		player.sceneTexts.push("Scortchy: 'Burn! I burn you! REEEE HEEE HEEE'")
@@ -319,13 +445,18 @@ const forest: Scene = {
 
 		)
 		player.visualActionSources.push({
-			id:'vascastle',
-			sprite:'castle',
-			prompt:'In the distance you see a castle. You feel you might have seen it before. Perhaps in a dream. Or was it a nightmare?',
-			actions:[{
-				buttonText:'Slog it towards teh castle',
+			id: 'vascastle',
+			sprite: 'castle',
+			actions: [{
+				buttonText: 'Slog it towards teh castle',
 				goTo: 'castle',
-			}]
+			}],
+			actionsInClient: [],
+			conversation: {
+				startText: `In the distance you see a castle. You feel you might have seen it before. Perhaps in a dream. Or was it a nightmare?`,
+				responses: []
+			},
+			unlockables: [],
 		})
 		if (player.flags.has('heardAboutHiddenPassage')) {
 			player.sceneActions.push(
@@ -379,28 +510,28 @@ const castle: Scene = {
 	}
 };
 
-const house: SceneWithFlags<{accepted:boolean}> = {
-	sceneFlags:{
-		accepted:false,
+const house: SceneWithFlags<{ accepted: boolean }> = {
+	sceneFlags: {
+		accepted: false,
 	},
 	onEnterScene(player) {
-		if(player.flags.has('killedGoblins')){
+		if (player.flags.has('killedGoblins')) {
 			player.sceneTexts.push(`Dear Sir ${player.heroName}! You return with the stench of goblin blood about yourself. Thank you for obtaining vengence on my behalf. My son had this set of leather armour. If only he had been wearing it when he went on his adventure.\n\nI bequeath it to you so that his legacy may live on. Good luck out there ${player.heroName}`)
-		}else 
-		if (!player.flags.has('heardAboutHiddenPassage')) {
-			player.flags.add('heardAboutHiddenPassage')
-			player.sceneTexts.push("You come upon a beautiful little thatched roof cottage. The air is sweet with the smell of flowery perfume, but there is a sense of sadness in the air. You notice the door slightly ajar and knock on it quietly. There is no response.\n\nYou gently push the door open and find a woman sitting at a table alone, sobbing silently. Startled, she jumps from her seat. You hold your hands up as in a sign of concilation. 'Traveller, what is it you do here? Do you not see I grieve? My son... he was murdered by Gorlak and his rowdy band of filthy goblin scum. He was barely a man yet had the stars in his eyes. He sought adventure but found his demise far too soon. Will you avenge him on my behalf? I don't have much but I'm sure I can find somethign to reward you")
-			// player.sceneTexts.push("The figure atop the throne opens its mouth and from it emerges something akin to speech, but with the qualities of a dying whisper. 'I am... or was.. the king of this wretched place.' The figure starts, haltingly. 'I... the forest.... there is a passage. Find it and return to me.' The figure falls silent and returns to its corpselike revery.");
-		}
-		else if (!player.flags.has('killedGoblins')) {
-			player.sceneTexts.push(`${player.heroName}... why do you return without the blood of those foul goblins on your hands? Leave me. I do not wish to see anyone while they still draw breath.`)
-		}
+		} else
+			if (!player.flags.has('heardAboutHiddenPassage')) {
+				player.flags.add('heardAboutHiddenPassage')
+				player.sceneTexts.push("You come upon a beautiful little thatched roof cottage. The air is sweet with the smell of flowery perfume, but there is a sense of sadness in the air. You notice the door slightly ajar and knock on it quietly. There is no response.\n\nYou gently push the door open and find a woman sitting at a table alone, sobbing silently. Startled, she jumps from her seat. You hold your hands up as in a sign of concilation. 'Traveller, what is it you do here? Do you not see I grieve? My son... he was murdered by Gorlak and his rowdy band of filthy goblin scum. He was barely a man yet had the stars in his eyes. He sought adventure but found his demise far too soon. Will you avenge him on my behalf? I don't have much but I'm sure I can find somethign to reward you")
+				// player.sceneTexts.push("The figure atop the throne opens its mouth and from it emerges something akin to speech, but with the qualities of a dying whisper. 'I am... or was.. the king of this wretched place.' The figure starts, haltingly. 'I... the forest.... there is a passage. Find it and return to me.' The figure falls silent and returns to its corpselike revery.");
+			}
+			else if (!player.flags.has('killedGoblins')) {
+				player.sceneTexts.push(`${player.heroName}... why do you return without the blood of those foul goblins on your hands? Leave me. I do not wish to see anyone while they still draw breath.`)
+			}
 	},
 	actions(player) {
 		let scene = this
 		player.sceneActions.push({ buttonText: 'Leave the house', goTo: 'castle', })
-		if(!scene.sceneFlags.accepted){
-			player.sceneActions.push({ 
+		if (!scene.sceneFlags.accepted) {
+			player.sceneActions.push({
 				buttonText: `'I will'`,
 				performAction() {
 					scene.sceneFlags.accepted = true
@@ -409,9 +540,9 @@ const house: SceneWithFlags<{accepted:boolean}> = {
 				},
 			})
 		}
-		if(player.flags.has('killedGoblins') && player.inventory.body.itemId != 'leatherArmor'){
+		if (player.flags.has('killedGoblins') && player.inventory.body.itemId != 'leatherArmor') {
 			player.sceneActions.push({
-				buttonText:'Accept the gift',
+				buttonText: 'Accept the gift',
 				performAction() {
 					player.inventory.body.itemId = 'leatherArmor'
 					player.sceneTexts.push(`${player.heroName}: Thank you good lady. I will not let his death be in vain.\n\nYou put on the leather armour and it fits snugly around you. With this, the blows of your enemies will not do nearly so much damage.`)
@@ -437,10 +568,10 @@ const throne: Scene = {
 			player.sceneTexts.push("Before you is a great throne. Sitting aside it are two giant sculptures carved from marble. The one of the left depicts an angel, its wings spread to a might span. It wields a sword from which a great fire burns. To the left of the throne is a garoyle, its lips pulled back in a monstrous snarl revealing rows of serrated teeth. One of its arms are raised and it appears to hold a ball of pure electricity which crackles in the dim light. Atop the throne sits an emaciated figure.")
 			player.sceneTexts.push("You approach the throne, but something feels wrong. As you pass between two mighty sculptures of a warring demon and angel, a powerful energy fills the air. The flame from the angel's sword and the electrical charge from the demon's hand begin to grow in size and reach out towards each other. The rotting body of the king suddenly leaps from it's throne. He screams from from the centre of the skeletal form 'You have proven your worth traveller, but there is a greater threat at hand! The forces of good and evil are no longer in balance! You must take this medallion and complete the ritual before it's too late!' The throne appears to cave in on itself, and a path that leads to the depths of castle appears. You feel you have no choice but to enter.")
 		}
-		
-		
-		
-		
+
+
+
+
 	},
 	actions(player: Player) {
 		const hasDoneMedallion = globalFlags.has('smashedMedallion') || globalFlags.has('placedMedallion')
@@ -552,7 +683,7 @@ const goblinCamp: Scene = {
 			}
 			spawnEnemy('Gorlak', 'goblin', 'goblinCamp')
 			let murkStatuses = new Map()
-			murkStatuses.set(player.heroName,{poison:0,rage:5}) 
+			murkStatuses.set(player.heroName, { poison: 0, rage: 5 })
 			spawnEnemy('Murk', 'goblin', 'goblinCamp', murkStatuses)
 		}
 	},
@@ -655,8 +786,8 @@ const armory: Scene = {
 			})
 		}
 		for (const id in utilityItems) {
-			if (id == 'empty' 
-			// || id == player.inventory.utility.itemId
+			if (id == 'empty'
+				// || id == player.inventory.utility.itemId
 			) continue
 			player.sceneActions.push({
 				buttonText: `Equip Utility ${id}`,
@@ -665,7 +796,7 @@ const armory: Scene = {
 					let typedId = id as ItemIdForSlot<'utility'>
 					player.inventory.utility.itemId = typedId
 					let baseItem = utilityItems[typedId]
-					if(baseItem && baseItem.startStock != undefined) player.inventory.utility.stock = baseItem.startStock
+					if (baseItem && baseItem.startStock != undefined) player.inventory.utility.stock = baseItem.startStock
 				},
 			})
 		}

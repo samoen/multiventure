@@ -1,7 +1,7 @@
 import type { UnitId, BattleAnimation, StatusEffect, StatusId, BattleEvent, HeroId, ScenerySprite, VisualActionSourceId } from '$lib/utils';
 import { items, type Inventory, type Item, type ItemState, type EquipmentSlot, type ItemStateForSlot } from './items';
 import { pushHappening } from './messaging';
-import type { SceneId } from './scenes';
+import type { SceneId, VisualActionSource } from './scenes';
 
 export const users = new Map<UserId, Player>();
 export const globalFlags = new Set<GlobalFlag>();
@@ -9,6 +9,7 @@ export const globalFlags = new Set<GlobalFlag>();
 export type UserId = string;
 export type HeroName = string;
 export type Flag =
+	| 'approachedRack'
 	| 'metArthur'
 	| 'heardAboutHiddenPassage'
 	| 'gotFreeStarterWeapon'
@@ -59,14 +60,6 @@ export type GameAction = {
 	target?: UnitId;
 	wait?:boolean;
 };
-
-export type VisualActionSource = {
-	id:VisualActionSourceId
-	sprite:ScenerySprite
-	portrait?:MiscPortrait
-	prompt:string
-	actions:GameAction[]
-}
 
 export type MiscPortrait = 'general' | 'peasant'
 

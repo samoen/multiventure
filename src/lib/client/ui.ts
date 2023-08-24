@@ -1,4 +1,4 @@
-import type { HeroName, MiscPortrait, PlayerInClient, VisualActionSource } from "$lib/server/users";
+import type { HeroName, MiscPortrait, PlayerInClient } from "$lib/server/users";
 import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, ExtraSprite, GameActionSentToClient, ScenerySprite } from "$lib/utils";
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 import peasantPortrait from '$lib/assets/portraits/peasant.webp';
@@ -28,6 +28,7 @@ import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easin
 import { tick } from "svelte";
 import type { EnemyTemplateId } from "$lib/server/enemies";
 import type { MessageFromServer } from "$lib/server/messaging";
+import type { ConverationResponse, UnlockableAction, VisualActionSource } from "$lib/server/scenes";
 
 
 type UnitDetails = {
@@ -164,6 +165,61 @@ export const selectedVisualActionSource = derived([
     return undefined
 })
 
+// a collection of the responsetexts you've clicked and also the ulockable button texts youve clicked
+export const convoBeenSaid : Writable<Set<string>> = writable(new Set())
+export const currentConvoPrompt : Writable<string | undefined> = writable(undefined)
+
+export type ConvoState = {
+    currentRetort:string
+    maybeLockedResponses: (ConverationResponse)[]
+    maybeLockedActions: (UnlockableAction)[]
+}
+
+export const convoStateForEachVAS : Writable<Map<UnitId,ConvoState>> = writable(new Map())
+export const selectedVisualActionSourceState = derived([
+    lastUnitClicked,
+    visualActionSources,
+    convoStateForEachVAS,
+
+], ([$lastUnitClicked,
+     $visualActionSources,
+     $convoStateForEachVAS,
+]) => {
+    if(!$lastUnitClicked)return undefined
+    let state = $convoStateForEachVAS.get($lastUnitClicked)
+    if(!state){
+        return undefined
+    }
+    return state
+})
+
+// export const unlockableActions = derived([convoBeenSaid,selectedVisualActionSource],([$convoBeenSaid, $selectedVisualActionSource])=>{
+
+    // let unlocked = []
+    // let locked = []
+
+    // // see if we've said something that locks an unlockable action
+    // for(const u of $convoBeenSaid){
+    //     let lockKey = $selectedVisualActionSource?.conversation?.responses.find(r=>r.responseText == u)?.lock
+    //     locked.push(lockKey)
+    // }
+
+    // // find unlockable actions where we have said the thing that unlocks it but haven't said the thing that locks it
+    // for(const u of $convoBeenSaid){
+    //     let unlockKey = $selectedVisualActionSource?.conversation?.responses.find(r=>r.responseText == u)?.unlock
+    //     if(unlockKey && !locked.includes(unlockKey)){
+    //         console.log('unlocking ' + unlockKey)
+    //         let a = $selectedVisualActionSource?.unlockablesInClient[unlockKey]
+            
+    //         if(a && !$convoBeenSaid.has(a.buttonText)){
+    //             unlocked.push(a)
+    //         }
+
+    //     }
+    // }
+    // return unlocked
+// })
+
 
 
 export let latestSlotButtonInput: Writable<EquipmentSlot | 'none'> = writable('none')
@@ -287,7 +343,20 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
 
         }
         allVisualUnitProps.set(newVups)
+        console.log(`${JSON.stringify(lastMsg.visualActionSources.map(v=>v.id))}`)
         visualActionSources.set(lastMsg.visualActionSources)
+        for (const vas of lastMsg.visualActionSources){
+            convoStateForEachVAS.update(cs=>{
+                if(!cs.get(vas.id)){
+                    cs.set(vas.id,{
+                        currentRetort:vas.conversation.startText,
+                        maybeLockedActions:vas.unlockables,
+                        maybeLockedResponses:vas.conversation.responses
+                    })
+                }
+                return cs
+            })
+        }
     }
 }
 
