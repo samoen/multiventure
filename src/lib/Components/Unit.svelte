@@ -66,7 +66,7 @@
 				return true;
 			}
 			if (
-				$currentAnim.behavior == 'melee' &&
+				$currentAnim.behavior.kind == 'melee' &&
 				$currentAnim.source == hostId &&
 				$subAnimationStage == 'fire'
 			) {
@@ -81,7 +81,7 @@
 		([$currentAnimation, $subAnimationStage]) => {
 			if (!$currentAnimation) return undefined;
 			if (
-				$currentAnimation.behavior == 'melee' &&
+				$currentAnimation.behavior.kind == 'melee' &&
 				$currentAnimation.target == hostId &&
 				$subAnimationStage == 'fire'
 			) {
@@ -94,13 +94,13 @@
 	const projectileSource = derived(
 		[currentAnimation, subAnimationStage],
 		([$currentAnimation, $subAnimationStage]) => {
-			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
+			if (!$currentAnimation) return undefined;
 			if (
-				($currentAnimation.behavior == 'missile' || $currentAnimation.behavior == 'center') &&
+				($currentAnimation.behavior.kind == 'missile' || $currentAnimation.behavior.kind == 'center') &&
 				$currentAnimation.source == hostId &&
 				$subAnimationStage == 'start'
 			) {
-				return { projectileImg: anySprites[$currentAnimation.extraSprite] };
+				return { projectileImg: anySprites[$currentAnimation.behavior.extraSprite] };
 			}
 			return undefined;
 		}
@@ -109,8 +109,8 @@
 	const projectileSend = derived(
 		[currentAnimation],
 		([$currentAnimation]) => {
-			if ($currentAnimation?.behavior == 'missile') return { key: 'missile', transition: sendProj };
-			if ($currentAnimation?.behavior == 'center') return { key: 'center', transition: sendCenter };
+			if ($currentAnimation?.behavior.kind == 'missile') return { key: 'missile', transition: sendProj };
+			if ($currentAnimation?.behavior.kind == 'center') return { key: 'center', transition: sendCenter };
 			return { key: 'cancelSend', transition: sendProj };
 		}
 	);
@@ -119,13 +119,13 @@
 	const missileTarget = derived(
 		[currentAnimation, subAnimationStage],
 		([$currentAnimation, $subAnimationStage]) => {
-			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
+			if (!$currentAnimation) return undefined;
 			if (
-				$currentAnimation.behavior == 'missile' &&
+				$currentAnimation.behavior.kind == 'missile' &&
 				$currentAnimation.target == hostId &&
 				$subAnimationStage == 'fire'
 			) {
-				return { projectileImg: anySprites[$currentAnimation.extraSprite] };
+				return { projectileImg: anySprites[$currentAnimation.behavior.extraSprite] };
 			}
 			return undefined;
 		}
@@ -133,13 +133,13 @@
 	const selfInflictSource = derived(
 		[currentAnimation, subAnimationStage],
 		([$currentAnimation, $subAnimationStage]) => {
-			if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
+			if (!$currentAnimation) return undefined;
 			if (
-				$currentAnimation.behavior == 'selfInflicted' &&
+				$currentAnimation.behavior.kind == 'selfInflicted' &&
 				$currentAnimation.source == hostId &&
 				$subAnimationStage == 'start'
 			) {
-				return { projectileImg: anySprites[$currentAnimation.extraSprite] };
+				return { projectileImg: anySprites[$currentAnimation.behavior.extraSprite] };
 			}
 			return undefined;
 		}

@@ -37,7 +37,6 @@ export type EnemyTemplate = {
 	startAggro: number
 	speed: number
 	onTakeDamage?: (incoming: number) => number
-	specialAttack?: (me: ActiveEnemy, player: Player) => void
 	battleEvent?:(me: ActiveEnemy, player: Player) => BattleEvent
 };
 
@@ -71,35 +70,15 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		aggroGain: 10,
 		startAggro: 10,
 		speed: 4,
-		// specialAttack(me, player) {
-		// 	let r = damagePlayer(me, player)
-		// 	if (player.statuses.poison < 3) {
-		// 		player.statuses.poison = 3
-		// 	}
-		// 	pushAnimation(
-		// 		{
-		// 			sceneId: player.currentScene,
-		// 			battleAnimation: {
-		// 				source: me.unitId,
-		// 				target: player.unitId,
-		// 				putsStatuses: [{ target: player.unitId, status: 'poison', count: 3 }],
-		// 				damageToTarget: r.dmgDone,
-		// 				behavior: 'missile',
-		// 				extraSprite: 'arrow',
-		// 			}
-		// 		})
-		// },
 		battleEvent(me, player) {
 			return{
-				behavior:'missile',
+				behavior:{kind:'missile',extraSprite:'arrow'},
 				sourceEnemy:me,
 				targetPlayer:player,
 				baseDamageToTarget:5,
 				putsStatuses:[{status:'poison',count:3,targetPlayer:player}satisfies StatusModifierEvent],
-				extraSprite:'arrow',
 			}satisfies BattleEvent
 		},
-
 	},
 	hobGoblin: {
 		baseHealth: 50,
@@ -118,29 +97,20 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		aggroGain: 50,
 		startAggro: 100,
 		speed: 10,
-		specialAttack(me: ActiveEnemy, player: Player) {
-			let dmged: ({ target: UnitId, amount: number })[] = []
-			for (const enemy of enemiesInScene(me.currentScene)) {
-				if (enemy.name != me.name) {
-					let r = infightDamage(me, enemy)
-					if (r.dmgDone > 0) dmged.push({ target: enemy.unitId, amount: r.dmgDone })
-				}
-			}
-			let r = damagePlayer(me, player)
-			if (r.dmgDone > 0) {
-				pushAnimation({
-					sceneId: player.currentScene,
-					battleAnimation: {
-						source: me.unitId,
-						target: player.unitId,
-						damageToTarget: r.dmgDone,
-						behavior: 'missile',
-						extraSprite: 'flame',
-						alsoDamages: dmged,
-					},
-				})
-			}
-		}
+		battleEvent(me, player) {
+			return {
+				behavior:{kind:'missile',extraSprite:'flame'},
+				alsoDamages:enemiesInScene(me.currentScene).filter(e=>e.name!=me.name).map(e=>{
+					return {
+						baseDamage:5,
+						targetEnemy:e,
+					}
+				}),
+				targetPlayer:player,
+				baseDamageToTarget:5,
+				sourceEnemy:me,
+			}satisfies BattleEvent
+		},
 	},
 	troll: {
 		baseHealth: 150,
@@ -284,8 +254,7 @@ export function takePoisonDamage(enemy: ActiveEnemy): { dmgDone: number } {
 			battleAnimation: {
 				source: enemy.unitId,
 				damageToSource: dmg,
-				behavior: 'selfInflicted',
-				extraSprite: 'poison',
+				behavior: {kind:'selfInflicted', extraSprite:'poison'},
 			}
 		}
 	)

@@ -158,8 +158,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 			sceneId: player.currentScene,
 			battleAnimation: {
 				source: player.unitId,
-				behavior: 'selfInflicted',
-				extraSprite: 'smoke',
+				behavior: {kind:'selfInflicted',extraSprite: 'smoke',},
 				putsStatuses: [{ status: 'hidden', target: player.unitId, remove: true }]
 			}
 		})
@@ -212,8 +211,8 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 					battleAnimation: {
 						source: player.unitId,
 						damageToSource: dmg,
-						behavior: 'selfInflicted',
-						extraSprite: 'poison',
+						behavior: {kind:'selfInflicted',extraSprite: 'poison',}
+						
 					}
 				}
 			)
@@ -285,10 +284,7 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 				if ((Math.random() < (aggroForActor / 100))) {
 					if(enemyInScene.template.battleEvent){
 						processBattleEvent(enemyInScene.template.battleEvent(enemyInScene,player),player)
-					}
-					else if (enemyInScene.template.specialAttack) {
-						enemyInScene.template.specialAttack(enemyInScene, player)
-					} else {
+					}else {
 						// for(const _ of Array.from({length:enemyInScene.template.strikes ?? 1})){
 						let r = damagePlayer(enemyInScene, player)
 						if (r.dmgDone > 0) {
@@ -299,7 +295,7 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 										source: enemyInScene.unitId,
 										target: player.unitId,
 										damageToTarget: r.dmgDone,
-										behavior: enemyInScene.template.behavior ?? 'melee',
+										behavior: enemyInScene.template.behavior ?? {kind:'melee'},
 									}
 								})
 						}
@@ -439,7 +435,6 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 		behavior: battleEvent.behavior,
 		alsoDamages: alsoDmgedAnimation,
 		alsoModifiesAggro: aggroModifiedAnimations,
-		extraSprite: battleEvent.extraSprite,
 		putsStatuses: battleEvent.putsStatuses?.map(m => {
 			let id: UnitId = 'herohi'
 			if (m.targetEnemy) {

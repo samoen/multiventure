@@ -416,13 +416,12 @@ export function handlePutsStatuses(anim: BattleAnimation) {
 export const centerFieldTarget = derived(
     [currentAnimation, subAnimationStage],
     ([$currentAnimation, $subAnimationStage]) => {
-        if (!$currentAnimation || !$currentAnimation.extraSprite) return undefined;
-        // console.log(`calc target proj ${stableHost.name}`)
+        if (!$currentAnimation) return undefined;
         if (
-            $currentAnimation.behavior == 'center' &&
+            $currentAnimation.behavior.kind == 'center' &&
             $subAnimationStage == 'fire'
         ) {
-            return { projectileImg: anySprites[$currentAnimation.extraSprite] };
+            return { projectileImg: anySprites[$currentAnimation.behavior.extraSprite] };
         }
         return undefined;
     }

@@ -18,7 +18,6 @@ export type BattleAnimation = {
 	damageToTarget?: number,
 	putsStatuses?:StatusModifier[]
 	behavior: AnimationBehavior,
-	extraSprite?: AnySprite,
 	alsoDamages?:HealthModifier[],
 	alsoModifiesAggro?:AggroModifier[],
 }
@@ -34,7 +33,6 @@ export type BattleEvent = {
 	strikes?:number,
 	putsStatuses?:StatusModifierEvent[]
 	behavior: AnimationBehavior,
-	extraSprite?: AnySprite,
 	alsoDamages?:HealthModifierEvent[],
 	alsoModifiesAggro?:AggroModifierEvent[],
 }
@@ -69,7 +67,11 @@ export type AnySprite =
 | 'shield' 
 | 'club'
 
-export type AnimationBehavior = 'missile' | 'melee' | 'center' | 'selfInflicted'
+export type AnimationBehavior = 
+	| {kind:'missile', extraSprite:AnySprite} 
+	| {kind: 'melee'} 
+	| {kind: 'center', extraSprite:AnySprite} 
+	| {kind: 'selfInflicted', extraSprite:AnySprite}
 
 export type StatusId = 'poison' | 'rage' | 'hidden'
 
