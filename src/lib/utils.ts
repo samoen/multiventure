@@ -23,10 +23,8 @@ export type BattleAnimation = {
 }
 
 export type BattleEvent = {
-	sourcePlayer?: Player,
-	sourceEnemy?: ActiveEnemy,
-	targetEnemy?: ActiveEnemy,
-	targetPlayer?: Player,
+	source:{kind:'player',entity:Player}|{kind:'enemy',entity:ActiveEnemy}
+	target?:{kind:'player',entity:Player}|{kind:'enemy',entity:ActiveEnemy}
 	baseHealingToSource?: number,
 	baseHealingToTarget?: number,
 	baseDamageToTarget?:number,

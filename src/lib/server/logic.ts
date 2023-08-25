@@ -316,25 +316,25 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 function processBattleEvent(battleEvent : BattleEvent, player:Player){
 	let dmgToSource = 0
 	let dmgToTarget = 0
-	if (battleEvent.sourcePlayer && battleEvent.baseHealingToSource) {
-		let r = healPlayer(battleEvent.sourcePlayer, battleEvent.baseHealingToSource)
+	if (battleEvent.source.kind == 'player' && battleEvent.baseHealingToSource) {
+		let r = healPlayer(battleEvent.source.entity, battleEvent.baseHealingToSource)
 		dmgToSource = r.healed * -1
 	}
-	if (battleEvent.targetPlayer && battleEvent.baseHealingToTarget) {
-		let r = healPlayer(battleEvent.targetPlayer, battleEvent.baseHealingToTarget)
+	if (battleEvent.target?.kind == 'player' && battleEvent.baseHealingToTarget) {
+		let r = healPlayer(battleEvent.target.entity, battleEvent.baseHealingToTarget)
 		dmgToTarget = r.healed * -1
 	}
 	if (battleEvent.baseDamageToTarget) {
-		if (battleEvent.targetEnemy && battleEvent.sourcePlayer) {
-			const r = damageEnemy(battleEvent.sourcePlayer, battleEvent.targetEnemy, battleEvent.baseDamageToTarget, battleEvent.strikes)
+		if (battleEvent.target?.kind == 'enemy' && battleEvent.source.kind == 'player') {
+			const r = damageEnemy(battleEvent.source.entity, battleEvent.target.entity, battleEvent.baseDamageToTarget, battleEvent.strikes)
 			dmgToTarget = r.dmgDone
 		}
-		if (battleEvent.targetPlayer && battleEvent.sourceEnemy) {
-			const r = damagePlayer(battleEvent.sourceEnemy, battleEvent.targetPlayer)
+		if (battleEvent.target?.kind == 'player' && battleEvent.source.kind == 'enemy') {
+			const r = damagePlayer(battleEvent.source.entity, battleEvent.target.entity)
 			dmgToTarget = r.dmgDone
 		}
-		if (battleEvent.targetEnemy && battleEvent.sourceEnemy) {
-			const r = infightDamage(battleEvent.sourceEnemy, battleEvent.targetEnemy)
+		if (battleEvent.target?.kind == 'enemy' && battleEvent.source.kind == 'enemy') {
+			const r = infightDamage(battleEvent.source.entity, battleEvent.target.entity)
 			dmgToTarget = r.dmgDone
 		}
 	}
@@ -378,18 +378,18 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 	if (battleEvent.alsoDamages) {
 		for (const dmged of battleEvent.alsoDamages) {
 			if (dmged.targetEnemy) {
-				if (battleEvent.sourcePlayer) {
+				if (battleEvent.source.kind == 'player') {
 					if (dmged.baseDamage) {
-						let r = damageEnemy(battleEvent.sourcePlayer, dmged.targetEnemy, dmged.baseDamage)
+						let r = damageEnemy(battleEvent.source.entity, dmged.targetEnemy, dmged.baseDamage)
 						alsoDmgedAnimation.push({
 							target: dmged.targetEnemy.unitId,
 							amount: r.dmgDone,
 						})
 					}
 				}
-				if (battleEvent.sourceEnemy) {
+				if (battleEvent.source.kind=='enemy') {
 					if (dmged.baseDamage) {
-						let r = infightDamage(battleEvent.sourceEnemy, dmged.targetEnemy)
+						let r = infightDamage(battleEvent.source.entity, dmged.targetEnemy)
 						alsoDmgedAnimation.push({
 							target: dmged.targetEnemy.unitId,
 							amount: r.dmgDone,
@@ -428,8 +428,8 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 	}
 
 	let battleAnimation: BattleAnimation = {
-		source: battleEvent.sourcePlayer ? battleEvent.sourcePlayer.unitId : battleEvent.sourceEnemy?.unitId ?? 'herohi',
-		target: battleEvent.targetPlayer ? battleEvent.targetPlayer.unitId : battleEvent.targetEnemy?.unitId ?? 'herohi',
+		source: battleEvent.source.entity.unitId,
+		target: battleEvent.target?.entity.unitId,
 		damageToSource: dmgToSource,
 		damageToTarget: dmgToTarget,
 		behavior: battleEvent.behavior,

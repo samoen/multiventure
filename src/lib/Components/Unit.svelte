@@ -218,10 +218,12 @@
 				out:projectileSendTransition={{ key: $projectileSend.key }}
 				class:startAlignSelf={!$hostIsNotHero}
 				class:endAlignSelf={$hostIsNotHero}
-				on:outrostart={() => {
-					updateUnit(hostId, (vup) => {
-						vup.aggro = 0;
-					});
+				on:outroend={() => {
+					if($host?.side == 'enemy'){
+						updateUnit(hostId, (vup) => {
+							vup.aggro = 0;
+						});
+					}
 				}}
 			>
 				<img

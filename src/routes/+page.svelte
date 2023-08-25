@@ -146,7 +146,7 @@
 
 	function startAnimating(msgWithAnims: MessageFromServer) {
 		$currentAnimationsWithData = msgWithAnims.animations;
-		console.log(`starting anims ${JSON.stringify($currentAnimationsWithData)}`);
+		// console.log(`starting anims ${JSON.stringify($currentAnimationsWithData)}`);
 		nextAnimationIndex(
 			true,
 			$currentAnimationIndex,

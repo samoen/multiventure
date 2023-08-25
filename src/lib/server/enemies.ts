@@ -73,8 +73,8 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		battleEvent(me, player) {
 			return{
 				behavior:{kind:'missile',extraSprite:'arrow'},
-				sourceEnemy:me,
-				targetPlayer:player,
+				source:{kind:'enemy',entity:me},
+				target:{kind:'player',entity:player},
 				baseDamageToTarget:5,
 				putsStatuses:[{status:'poison',count:3,targetPlayer:player}satisfies StatusModifierEvent],
 			}satisfies BattleEvent
@@ -106,9 +106,9 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 						targetEnemy:e,
 					}
 				}),
-				targetPlayer:player,
+				target:{kind:'player',entity:player},
 				baseDamageToTarget:5,
-				sourceEnemy:me,
+				source:{kind:'enemy',entity:me},
 			}satisfies BattleEvent
 		},
 	},
