@@ -35,7 +35,10 @@
 		visualActionSources,
 		waitButtonAction,
 		waitingForMyAnimation,
-		wepSlotActions
+		wepSlotActions,
+
+		animationsInWaiting
+
 	} from '$lib/client/ui';
 	import type { MessageFromServer } from '$lib/server/messaging';
 	import { onMount, tick } from 'svelte';
@@ -132,28 +135,30 @@
 
 	async function cancelAnimations() {
 		console.log(`cancelling animations`);
-		$animationCancelled = true;
-		$currentAnimationIndex = 999;
+		// $animationCancelled = true;
+		// $currentAnimationIndex = 999;
 		
 		// let transitions reach their end
-		await tick();
+		// await tick();
 
-		$animationCancelled = false;
+		// $animationCancelled = false;
 	}
 
-	async function startAnimating(previous: MessageFromServer, latest: MessageFromServer) {
-		$currentAnimationsWithData = latest.animations;
+	function startAnimating(msgWithAnims: MessageFromServer) {
+		$currentAnimationsWithData = msgWithAnims.animations;
 		console.log(`starting anims ${JSON.stringify($currentAnimationsWithData)}`);
 		nextAnimationIndex(
 			true,
 			$currentAnimationIndex,
 			$currentAnimationsWithData,
 			$lastMsgFromServer,
-			false
+			false,
+			$animationCancelled,
+			$animationsInWaiting,
 		);
 	}
 
-	async function handleAnimationsOnMessage(
+	function handleAnimationsOnMessage(
 		previous: MessageFromServer | undefined,
 		latest: MessageFromServer
 	) {
@@ -161,9 +166,10 @@
 
 		// first message just sync instant
 		if (!previous) {
-			console.log('first message');
+			console.log('first message, just sync it');
 			if ($currentAnimation) {
-				await cancelAnimations();
+				throw Error('first message but animating already, should be impossible')
+				// await cancelAnimations();
 			}
 			syncVisualsToMsg(latest);
 			return;
@@ -175,39 +181,40 @@
 		}
 
 		// my message with no animations
-		if (latest.triggeredBy == latest.yourInfo.heroName && !latest.animations.length) {
-			console.log('ours with no');
-			if ($currentAnimation) {
-				await cancelAnimations();
-			}
-			syncVisualsToMsg(latest);
+		if (latest.triggeredBy == latest.yourInfo.heroName && !latest.animations.length && $currentAnimation != undefined) {
+			console.log('my message with no animations, but we are animating. Ignore, it will be synced when current anims finish');
+			// if ($currentAnimation) {
+			// 	await cancelAnimations();
+			// }
+			// syncVisualsToMsg(latest);
 			return;
 		}
 
 		// someone else's message and we are animating
 		if (latest.triggeredBy != latest.yourInfo.heroName && $currentAnimation != undefined) {
-			console.log(`someone else and animating ${JSON.stringify($currentAnimation)}`);
+			console.log(`someone else message but ignoring because we are animating: ${JSON.stringify($currentAnimation)}`);
 			return;
 		}
 
 		// anyone's message with no animations and not animating
 		if ($currentAnimation == undefined && !latest.animations.length) {
 			// await cancelAnimations();
-			console.log('anyones message with no animations and not animating');
+			console.log('Anyones message with no animations and not animating, just sync');
 			syncVisualsToMsg(latest);
 			return;
 		}
 
-		// our message with animations but animation is in progress
+		// My message with animations but animation is in progress
 		if (
 			latest.animations.length &&
 			$currentAnimation != undefined &&
 			latest.triggeredBy == latest.yourInfo.heroName
 		) {
-			console.log('ours with anims but in prog');
-			await cancelAnimations();
-			syncVisualsToMsg(previous);
-			await startAnimating(previous, latest);
+			console.log('My message with anims but we are animating. store these anims to play once current is done');
+			animationsInWaiting.set({prev:previous,withAnims:latest})
+			// await cancelAnimations();
+			// syncVisualsToMsg(previous);
+			// await startAnimating(previous, latest);
 			return;
 		}
 
@@ -218,11 +225,11 @@
 			console.log('anyones message, we not animating. starting');
 			// await cancelAnimations();
 			syncVisualsToMsg(previous);
-			await startAnimating(previous, latest);
+			startAnimating(latest);
 			return;
 		}
-		console.log('no specific anim handling');
-		syncVisualsToMsg(latest);
+		// syncVisualsToMsg(latest);
+		console.log('no specific anim handling, ignore');
 	}
 
 	async function deleteHero() {
@@ -401,9 +408,9 @@
 				{#if $centerFieldTarget}
 					<div
 						class="centerField"
-						in:receiveCenter={{ key: $animationCancelled ? 10 : 'center' }}
+						in:receiveCenter={{ key: 'center' }}
 						on:introend={() => {
-							if ($currentAnimation != undefined && !$animationCancelled) {
+							if ($currentAnimation != undefined) {
 								let anim = $currentAnimation;
 								let someoneDied = false;
 								if ($currentAnimation.alsoDamages) {
@@ -444,7 +451,9 @@
 									$currentAnimationIndex,
 									$currentAnimationsWithData,
 									$lastMsgFromServer,
-									someoneDied
+									someoneDied,
+									$animationCancelled,
+									$animationsInWaiting,
 								);
 							}
 						}}

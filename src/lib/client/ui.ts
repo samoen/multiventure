@@ -19,6 +19,7 @@ import mage from '$lib/assets/units/mage.png';
 import arrow from '$lib/assets/extras/arrow.png';
 import bomb from '$lib/assets/extras/bomb.png';
 import shield from '$lib/assets/extras/shield.png';
+import smoke from '$lib/assets/extras/smoke.png';
 import flame from '$lib/assets/extras/flame.png';
 import heal from '$lib/assets/extras/heal.png';
 import lighthouse from '$lib/assets/scenery/lighthouse.png';
@@ -83,7 +84,7 @@ export const previousMsgFromServer: Writable<MessageFromServer | undefined> = wr
 export let allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 export let visualActionSources: Writable<VisualActionSourceInClient[]> = writable([])
 
-export const currentAnimationIndex: Writable<number> = writable(0)
+export const currentAnimationIndex: Writable<number> = writable(999)
 
 export function numberShownOnSlot(itemState: ItemState):number|undefined{
     // if(!$lastMsgFromServer)return undefined
@@ -102,7 +103,7 @@ export function stockDotsOnSlotButton(itemState: ItemState):string{
     return dots
 }
 
-export const currentAnimationsWithData: Writable<BattleAnimation[]> = writable()
+export const currentAnimationsWithData: Writable<BattleAnimation[]> = writable([])
 
 export let currentAnimation = derived([currentAnimationIndex, currentAnimationsWithData], ([$currentAnimationIndex, $currentAnimationsWithData]) => {
     return $currentAnimationsWithData?.at($currentAnimationIndex)
@@ -366,7 +367,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
 export const anySprites : Record<AnySprite,string> ={
     arrow: arrow,
     bomb: bomb,
-    smoke: shield,
+    smoke: smoke,
     shield: shield,
     flame: flame,
     heal:heal,
@@ -426,7 +427,17 @@ export const centerFieldTarget = derived(
         return undefined;
     }
 );
-export async function nextAnimationIndex(start: boolean, curAnimIndex:number, curAnimations:BattleAnimation[], latest:MessageFromServer|undefined, someoneDied:boolean) {
+export type AnimsInWaiting = {prev: MessageFromServer, withAnims:MessageFromServer}
+export const animationsInWaiting : Writable<AnimsInWaiting|undefined> = writable()
+
+export async function nextAnimationIndex(
+    start: boolean, curAnimIndex:number, 
+    curAnimations:BattleAnimation[], 
+    latest:MessageFromServer|undefined, 
+    someoneDied:boolean,
+    cancel:boolean,
+    animsInWaiting:AnimsInWaiting|undefined,
+    ) {
     let cai = 0
     if (start) {
         currentAnimationIndex.set(0)
@@ -438,13 +449,26 @@ export async function nextAnimationIndex(start: boolean, curAnimIndex:number, cu
     }
     
     if (cai > curAnimations.length - 1) {
-        // give some time for enemies slain on the last animation to fade out. 
-        if(someoneDied){
-            await new Promise(r=>setTimeout(r,500))
+        if(!animsInWaiting){
+            // give some time for enemies slain on the last animation to fade out.
+            if(someoneDied){
+                await new Promise(r=>setTimeout(r,500))
+            }
+            waitingForMyAnimation.set(false)
+            syncVisualsToMsg(latest)
+            return
         }
-        // console.log('animations done, sync to recent')
-        waitingForMyAnimation.set(false)
-        syncVisualsToMsg(latest)
+        if(animsInWaiting){
+            console.log('playing anims in waiting')
+            syncVisualsToMsg(animsInWaiting.prev)
+            currentAnimationsWithData.set(animsInWaiting.withAnims.animations)
+            animationsInWaiting.set(undefined)
+            currentAnimationIndex.set(0)
+            subAnimationStage.set('start')
+            await tick()
+            subAnimationStage.set('fire')
+        }
+
         return
     }
 

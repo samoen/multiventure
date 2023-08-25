@@ -27,7 +27,10 @@
 
 		handlePutsStatuses,
 
-		anySprites
+		anySprites,
+
+		animationsInWaiting
+
 
 
 	} from '$lib/client/ui';
@@ -82,7 +85,6 @@
 				$currentAnimation.target == hostId &&
 				$subAnimationStage == 'fire'
 			) {
-				console.log(`new guest ${$currentAnimation.source}`);
 				return $currentAnimation.source;
 			}
 			return undefined;
@@ -105,9 +107,8 @@
 	);
 
 	const projectileSend = derived(
-		[animationCancelled, currentAnimation],
-		([$animationCancelled, $currentAnimation]) => {
-			if ($animationCancelled) return { key: 'cancelSend', transition: sendProj };
+		[currentAnimation],
+		([$currentAnimation]) => {
 			if ($currentAnimation?.behavior == 'missile') return { key: 'missile', transition: sendProj };
 			if ($currentAnimation?.behavior == 'center') return { key: 'center', transition: sendCenter };
 			return { key: 'cancelSend', transition: sendProj };
@@ -164,16 +165,18 @@
 	>
 		{#if $hostHome}
 			<div
-				out:sendMelee={{ key: $animationCancelled ? 0 : 'movehero' }}
-				in:receiveMelee={{ key: $animationCancelled ? 1 : 'movehero' }}
+				out:sendMelee={{ key: 'movehero' }}
+				in:receiveMelee={{ key: 'movehero' }}
 				on:introend={() => {
-					if ($currentAnimation != undefined && !$animationCancelled && $lastMsgFromServer) {
+					if ($currentAnimation != undefined && $lastMsgFromServer) {
 						nextAnimationIndex(
 							false,
 							$currentAnimationIndex,
 							$currentAnimationsWithData,
 							$lastMsgFromServer,
-							false
+							false,
+							$animationCancelled,
+							$animationsInWaiting,
 						);
 					}
 				}}
@@ -186,10 +189,10 @@
 		{#if $guestId != undefined}
 			<div
 				class="placeHolder"
-				in:receiveMelee={{ key: $animationCancelled ? 3 : 'movehero' }}
-				out:sendMelee={{ key: $animationCancelled ? 4 : 'movehero' }}
+				in:receiveMelee={{ key: 'movehero' }}
+				out:sendMelee={{ key: 'movehero' }}
 				on:introend={() => {
-					if ($currentAnimation != undefined && !$animationCancelled) {
+					if ($currentAnimation != undefined) {
 						let anim = $currentAnimation;
 						updateUnit(hostId, (vup) => {
 							vup.displayHp -= anim.damageToTarget ?? 0;
@@ -236,7 +239,7 @@
 				class:endAlignSelf={$hostIsNotHero}
 				out:fly|local={{ delay: 0, duration: 600, x: 0, y: -30 }}
 				on:outrostart={() => {
-					if ($currentAnimation != undefined && !$animationCancelled) {
+					if ($currentAnimation != undefined) {
 						const anim = $currentAnimation;
 						updateUnit(hostId, (vup) => {
 							vup.displayHp -= anim.damageToSource ?? 0;
@@ -250,7 +253,9 @@
 						$currentAnimationIndex,
 						$currentAnimationsWithData,
 						$lastMsgFromServer,
-						false
+						false,
+						$animationCancelled,
+						$animationsInWaiting,
 					);
 				}}
 			>
@@ -267,9 +272,9 @@
 				class="projHolder"
 				class:startAlignSelf={!$hostIsNotHero}
 				class:endAlignSelf={$hostIsNotHero}
-				in:receiveProj={{ key: $animationCancelled ? 8 : 'missile' }}
+				in:receiveProj={{ key: 'missile' }}
 				on:introend={async () => {
-					if ($currentAnimation != undefined && !$animationCancelled) {
+					if ($currentAnimation != undefined) {
 						let anim = $currentAnimation;
 						let someoneDied = false;
 						updateUnit(hostId, (vup) => {
@@ -317,7 +322,9 @@
 							$currentAnimationIndex,
 							$currentAnimationsWithData,
 							$lastMsgFromServer,
-							someoneDied
+							someoneDied,
+							$animationCancelled,
+							$animationsInWaiting,
 						);
 					}
 				}}
