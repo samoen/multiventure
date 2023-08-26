@@ -22,6 +22,15 @@ export type BattleAnimation = {
 	alsoModifiesAggro?:AggroModifier[],
 }
 
+export type DataFirstLoad = {
+	cookieMissing?:boolean,
+	noPlayer?:boolean,
+	yourHeroCookie?:string,
+	noMatch?:boolean,
+	readyToSubscribe?:boolean,
+	userId?:string,
+}
+
 export type BattleEvent = {
 	source:{kind:'player',entity:Player}|{kind:'enemy',entity:ActiveEnemy}
 	target?:{kind:'player',entity:Player}|{kind:'enemy',entity:ActiveEnemy}

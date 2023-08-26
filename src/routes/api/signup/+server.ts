@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { isJoin } from '$lib/utils';
 import { FAKE_LATENCY } from '$lib/server/messaging';
-import { users, type Player, type Flag, globalFlags } from '$lib/server/users';
+import { users, type Player, type Flag, globalFlags, addNewUser } from '$lib/server/users';
 import { scenes, type SceneId, addSoloScenes } from '$lib/server/scenes';
 import type { Inventory } from '$lib/server/items';
 import { v4 } from 'uuid';
@@ -31,71 +31,12 @@ export const POST: RequestHandler = async (r) => {
 		
 		// globalFlags.add('smashedMedallion')
 		
-		const startflags: Set<Flag> = new Set()
-		// startflags.add('heardAboutHiddenPassage')
-		// startflags.add('gotFreeStarterWeapon')
-		// startflags.add('killedGoblins')
-		
-		let startScene: SceneId = `tutorial_${msg.join}`
-		// startScene = `trainingRoom3_${msg.join}`
-		// startScene = `forest`
-		// startScene = 'forestPassage'
-		// startScene = 'goblinCamp'
-		// startScene = 'throne'
-		startScene = 'armory'
-		
-		let startInventory: Inventory = {
-			weapon: {
-				itemId: 'unarmed',
-				cooldown: 0,
-				warmup: 0,
-			},
-			utility: {
-				itemId: 'empty',
-				cooldown: 0,
-				warmup: 0,
-			},
-			body: {
-				itemId: 'rags',
-				cooldown: 0,
-				warmup: 0,
-			}
-		}
-		
-		let player : Player = {
-			unitId:`hero${msg.join}`,
-			connectionState: null,
-			heroName: msg.join,
-			previousScene: 'dead',
-			lastCheckpoint: 'forest',
-			currentScene: startScene,
-			inventory: startInventory,
-			health: 100,
-			maxHealth: 100,
-			agility: 0,
-			strength: 0,
-			sceneActions: [],
-			itemActions: [],
-			visualActionSources: [],
-			sceneTexts: [],
-			flags: startflags,
-			animations:[],
-			statuses:{
-				poison:0,
-				rage:0,
-				hidden:0,
-			},
-		}
-		
-		addSoloScenes(msg.join)
-		scenes.get(player.currentScene)?.onEnterScene(player)
-		let userId = v4()
-		users.set(userId, player);
+	let {id, player} =	addNewUser(msg.join)
 		// }
 		
 	console.log('added player, setting cookies ' + msg.join);
 	r.cookies.set('hero', msg.join, { path: '/', secure: false });
-	r.cookies.set('uid', userId, { path: '/', secure: false });
+	r.cookies.set('uid', id, { path: '/', secure: false });
 
 	if (player && player.connectionState != null) {
 		return json({ alreadyConnected: true });

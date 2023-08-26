@@ -45,8 +45,9 @@
 	import { flip } from 'svelte/animate';
 	import { derived, writable, type Writable } from 'svelte/store';
 	import plains from '$lib/assets/landscapes/landscape-plain.webp';
+	import type { DataFirstLoad } from '$lib/utils';
 
-	export let data;
+	export let data : DataFirstLoad;
 	let signupInput: string;
 	let signInNameInput: string;
 	let signInIdInput: string;
@@ -64,6 +65,7 @@
 		console.log('mounted with ssr data ' + JSON.stringify(data));
 
 		if (data.readyToSubscribe) {
+
 			console.log(`ssr data says cookies are good. auto-subscribing..`);
 			$clientState.status = 'auto subscribing';
 			subscribeEventsIfNotAlready();

@@ -1,7 +1,8 @@
 import type { UnitId, BattleAnimation, StatusEffect, StatusId, BattleEvent, HeroId, AnySprite, VisualActionSourceId } from '$lib/utils';
+import { v4 } from 'uuid';
 import { items, type Inventory, type Item, type ItemState, type EquipmentSlot, type ItemStateForSlot } from './items';
 import { pushHappening } from './messaging';
-import type { SceneId, VisualActionSource } from './scenes';
+import { addSoloScenes, scenes, type SceneId, type VisualActionSource } from './scenes';
 
 export const users = new Map<UserId, Player>();
 export const globalFlags = new Set<GlobalFlag>();
@@ -108,4 +109,68 @@ export function cleanConnections(){
 			p.connectionState.con?.close()	
 		}
 	}
+}
+
+export function addNewUser(heroName : string) : {id:string,player:Player}{
+	const startflags: Set<Flag> = new Set()
+		// startflags.add('heardAboutHiddenPassage')
+		// startflags.add('gotFreeStarterWeapon')
+		// startflags.add('killedGoblins')
+		
+		let startScene: SceneId = `tutorial_${heroName}`
+		// startScene = `trainingRoom3_${msg.join}`
+		// startScene = `forest`
+		// startScene = 'forestPassage'
+		// startScene = 'goblinCamp'
+		// startScene = 'throne'
+		startScene = 'armory'
+		
+		let startInventory: Inventory = {
+			weapon: {
+				itemId: 'unarmed',
+				cooldown: 0,
+				warmup: 0,
+			},
+			utility: {
+				itemId: 'empty',
+				cooldown: 0,
+				warmup: 0,
+			},
+			body: {
+				itemId: 'rags',
+				cooldown: 0,
+				warmup: 0,
+			}
+		}
+		
+		let player : Player = {
+			unitId:`hero${heroName}`,
+			connectionState: null,
+			heroName: heroName,
+			previousScene: 'dead',
+			lastCheckpoint: 'forest',
+			currentScene: startScene,
+			inventory: startInventory,
+			health: 100,
+			maxHealth: 100,
+			agility: 0,
+			strength: 0,
+			sceneActions: [],
+			itemActions: [],
+			visualActionSources: [],
+			sceneTexts: [],
+			flags: startflags,
+			animations:[],
+			statuses:{
+				poison:0,
+				rage:0,
+				hidden:0,
+			},
+		}
+		
+		addSoloScenes(heroName)
+		scenes.get(player.currentScene)?.onEnterScene(player)
+		let userId = v4()
+		users.set(userId, player);
+		return {id:userId,player:player}
 }
