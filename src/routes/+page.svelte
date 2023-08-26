@@ -118,7 +118,7 @@
 				loading = false;
 			}
 			// console.log(`gotworld`);
-			await handleAnimationsOnMessage(prevMsg, sMsg);
+			handleAnimationsOnMessage(prevMsg, sMsg);
 
 			// wait for dom elements to be populated
 			await tick();
@@ -470,7 +470,7 @@
 						<Unit hostId={e.id} />
 					</div>
 				{/each}
-				{#each $visualActionSources as s (s.id)}
+				{#each $visualActionSources.filter(s=>!$convoStateForEachVAS.get(s.id)?.vasIsLocked) as s (s.id)}
 					<div
 						animate:flip
 						on:click|preventDefault|stopPropagation={() => {
@@ -637,9 +637,13 @@
 										if (!state) return;
 										for (const toLock of state.maybeLockedActions) {
 											if (toLock.lockHandle == mla.lockHandle) {
-												console.log(`action locking action ${toLock.lockHandle}`);
+												console.log(`action locking itself ${toLock.lockHandle}`);
 												toLock.isLocked = true;
 											}
+										}
+										if(mla.locksVas){
+											console.log(`action ${mla.clientAct.buttonText} locking it's vas ${$lastUnitClicked}`);
+											state.vasIsLocked = true
 										}
 										$convoStateForEachVAS = $convoStateForEachVAS;
 	
@@ -685,6 +689,25 @@
 											}
 										}
 									}
+									for (const toLock of $visualActionSources) {
+										// if (c.lock) {
+										// 	if (c.lock.includes(toLock.lockHandle)) {
+										// 		console.log(`response locking action ${toLock.lockHandle}`);
+										// 		toLock.isLocked = true;
+										// 	}
+										// }
+										if (c.unlock && toLock.lockHandle) {
+											if (c.unlock.includes(toLock.lockHandle)) {
+												console.log(`response unlocking vas ${toLock.lockHandle}`);
+												let stateToLock = $convoStateForEachVAS.get(toLock.id)
+												if(stateToLock){
+													stateToLock.vasIsLocked = false
+												}
+												// toLock.startsLocked = false;
+											}
+										}
+									}
+									$visualActionSources = $visualActionSources
 									$convoStateForEachVAS = $convoStateForEachVAS;
 									// $currentConvoPrompt = c.retort
 									// $convoBeenSaid.add(c.responseText)

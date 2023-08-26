@@ -111,6 +111,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 		playerFlags: Array.from(forPlayer.flags),
 		globalFlags: Array.from(globalFlags),
 	};
+	// console.log('sending vases '+JSON.stringify(nextMsg.visualActionSources.at(0)))
 	return nextMsg;
 }
 

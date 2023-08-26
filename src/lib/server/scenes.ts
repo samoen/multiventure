@@ -29,7 +29,7 @@ export type Scene = {
 	actions: (player: Player) => void
 	solo?: boolean
 	hasEntered?: Set<HeroName>
-	makeSceneFlags?:()=>object
+	makeSceneFlags?: () => object
 };
 
 export type VisualActionSource = {
@@ -37,68 +37,78 @@ export type VisualActionSource = {
 	sprite: AnySprite
 	portrait?: MiscPortrait
 	actions: GameAction[]
-	conversation: Conversation
-	unlockables: UnlockableAction[]
+	startText: string,
+	responses?: ConversationResponse[]
+	unlockables?: UnlockableAction[]
+	startsLocked?: boolean
+	lockHandle?: string
 }
 
 export type VisualActionSourceInClient = {
+	startsLocked?: boolean
+	lockHandle?: string
 	id: VisualActionSourceId
 	sprite: AnySprite
 	portrait?: MiscPortrait
 	actionsInClient: GameActionSentToClient[]
-	conversation: Conversation
-	unlockables: UnlockableClientAction[]
+	startText: string,
+	responses?: ConversationResponse[]
+	unlockables?: UnlockableClientAction[]
 }
 
-export function convertVasToClient(vas:VisualActionSource):VisualActionSourceInClient{
+export function convertVasToClient(vas: VisualActionSource): VisualActionSourceInClient {
 	let result = {
-		id:vas.id,
-		conversation:vas.conversation,
-		sprite:vas.sprite,
-		portrait:vas.portrait,
-		actionsInClient:vas.actions.map(a=>{
+		id: vas.id,
+		startText: vas.startText,
+		responses: vas.responses,
+		sprite: vas.sprite,
+		portrait: vas.portrait,
+		startsLocked: vas.startsLocked,
+		lockHandle: vas.lockHandle,
+		actionsInClient: vas.actions.map(a => {
 			return {
-				buttonText:a.buttonText
+				buttonText: a.buttonText
 			}
 		}),
-		unlockables:vas.unlockables.map(u=>{
-			let clientUnlockable : UnlockableClientAction = {
-				isLocked:true,
-				lockHandle:u.lockHandle,
-				clientAct:{
-					buttonText:u.serverAct.buttonText
+		unlockables: vas.unlockables
+			?.map(u => {
+			let clientUnlockable: UnlockableClientAction = {
+				locksVas: u.locksVas,
+				isLocked: u.startsLocked,
+				lockHandle: u.lockHandle,
+				clientAct: {
+					buttonText: u.serverAct.buttonText
 				}
 			}
+			console.log('including unlockable ' + u.lockHandle)
 			return clientUnlockable
 		})
-	}satisfies VisualActionSourceInClient
+	} satisfies VisualActionSourceInClient
 	return result
 }
 
-export type Conversation = {
-	startText: string,
-	responses: ConversationResponse[]
+export type UnlockableAction = {
+	lockHandle: string,
+	serverAct: GameAction,
+	startsLocked: boolean,
+	locksVas: boolean,
 }
 
-export type UnlockableAction = { 
-	lockHandle: string, 
-	serverAct: GameAction, 
+export type UnlockableClientAction = {
+	lockHandle: string,
+	clientAct: GameActionSentToClient,
+	isLocked: boolean
+	locksVas: boolean,
 }
 
-export type UnlockableClientAction = { 
-	lockHandle: string, 
-	clientAct:GameActionSentToClient, 
-	isLocked: boolean 
-}
-
-export type ConversationResponse = { 
-	lockHandle:string,
-	isLocked:boolean,
+export type ConversationResponse = {
+	lockHandle: string,
+	isLocked: boolean,
 	responseText: string,
 	retort: string,
 	unlock?: string[],
 	lock?: string[]
- }
+}
 
 const dead: Scene = {
 	onEnterScene(player) {
@@ -129,99 +139,98 @@ const tutorial = {
 		player.sceneTexts.push(`You are standing at a castle barracks. Soliders mill around swinging swords and grunting in cool morning air. You see Arthur, the captain of the castle guard marching towards you.`)
 	},
 	actions(player) {
-		let tutorActions : GameAction[] = []
-		if (player.flags.has('approachedRack') && player.inventory.weapon.itemId != 'club') {
-			player.visualActionSources.push({
-				id: 'vasEquipClub',
-				sprite: 'club',
-				actions: [
-					{
+		player.lastCheckpoint = `tutorial_${player.heroName}`
+		// if (player.flags.has('approachedRack') && player.inventory.weapon.itemId != 'club') {
+		player.visualActionSources.push({
+			id: 'vasEquipClub',
+			sprite: 'club',
+			actions: [
+			],
+			unlockables: [
+				{
+					lockHandle: 'equipClub',
+					startsLocked: false,
+					locksVas: true,
+					serverAct: {
 						buttonText: 'equip club',
 						performAction() {
 							player.inventory.weapon.itemId = 'club'
 						},
 					}
-				],
-				conversation: {
-					startText: 'A club deals a hefty chunk of damage each hit. That makes it effective against unarmored foes like goblins.',
-					responses: []
 				},
-				unlockables: [],
-			})
-		}
-		if (player.flags.has('approachedRack') && player.inventory.utility.itemId != 'bomb') {
-			player.visualActionSources.push({
-				id: 'vasEquipBomb',
-				sprite: 'bomb',
-				actions: [
-					{
+			],
+			startText: 'A club deals a hefty chunk of damage each hit. That makes it effective against unarmored foes like goblins.',
+			startsLocked: true,
+			lockHandle: 'clubRack',
+		})
+		// }
+		// if (player.flags.has('approachedRack') && player.inventory.utility.itemId != 'bomb') {
+		player.visualActionSources.push({
+			id: 'vasEquipBomb',
+			sprite: 'bomb',
+			actions: [],
+			unlockables: [
+				{
+					lockHandle: 'equipBomb',
+					startsLocked: false,
+					locksVas: true,
+					serverAct: {
 						buttonText: 'equip bomb',
 						performAction() {
 							player.inventory.utility.itemId = 'bomb'
 						},
 					}
-				],
-				conversation: {
-					startText: 'A powderbomb deals splash damage to all nearby enemies. It should clear out the rats nicely.',
-					responses: []
 				},
-				unlockables: [],
-			})
-		}
+			],
+			startText: 'A powderbomb deals splash damage to all nearby enemies. It should clear out the rats nicely.',
+			startsLocked: true,
+			lockHandle: 'bombRack',
+		})
+		// }
+		let tutorActions: GameAction[] = []
 		if (player.inventory.utility.itemId == 'bomb' && player.inventory.weapon.itemId == 'club') {
 			tutorActions.push({
-					buttonText: "'Splash em' and bash em', got it.'",
-					goTo: `trainingRoom1_${player.heroName}`
+				buttonText: "'Splash em' and bash em', got it.'",
+				goTo: `trainingRoom1_${player.heroName}`
 			})
 		}
 		player.visualActionSources.push({
 			id: 'vasTutor',
 			actions: tutorActions,
-			conversation: {
-				startText: `'Look alive recruit! The first day of training can be the most dangerous of a guardsman's life. You must be ${player.heroName}, welcome aboard. In this barracks we wake up early, follow orders, and NEVER skip the tutorial. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.'`,
-				responses: [
-					{
-						lockHandle:'scared',
-						isLocked:false,
-						responseText: `Huh? Danger... Early mornings?? I didn't sign up for any of this!`,
-						retort: `Hmmf, if you think you can weasel your way through this game without enduring hardship you're in for a rude awakening.. anyway it's just a quick tutorial, skip it only with good reason.`,
-						unlock: ['wantsToSkip']
-					},
-					{
-						lockHandle:'cheeky',
-						isLocked:false,
-						responseText: `I would rather you didn't break the fourth wall, I'm into more serious RPGs.`,
-						retort: `Lighten up recruit. Things will get plenty dark and gritty soon enough. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.`
-					},
-					{
-						lockHandle:'brave',
-						isLocked:false,
-						responseText: `I tend to breeze through tutorials pretty easily so.. not worried. Get on with it.`,
-						retort: `Great to hear ${player.heroName}! Our training goblin is ready for you. Also there's a bit of a rat problem in the training room right now.. so grab some equipment off the rack and let's go.`,
-						unlock: [`readyForTutorial`],
-						lock: ['wantsToSkip','scared','cheeky'],
-					},
-				]
-			},
+			startText: `'Look alive recruit! The first day of training can be the most dangerous of a guardsman's life. You must be ${player.heroName}, welcome aboard. In this barracks we wake up early, follow orders, and NEVER skip the tutorial. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.'`,
+			responses: [
+				{
+					lockHandle: 'scared',
+					isLocked: false,
+					responseText: `Huh? Danger... Early mornings?? I didn't sign up for any of this!`,
+					retort: `Hmmf, if you think you can weasel your way through this game without enduring hardship you're in for a rude awakening.. anyway it's just a quick tutorial, skip it only with good reason.`,
+					unlock: ['wantsToSkip']
+				},
+				{
+					lockHandle: 'cheeky',
+					isLocked: false,
+					responseText: `I would rather you didn't break the fourth wall, I'm into more serious RPGs.`,
+					retort: `Lighten up recruit. Things will get plenty dark and gritty soon enough. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.`
+				},
+				{
+					lockHandle: 'brave',
+					isLocked: false,
+					responseText: `I tend to breeze through tutorials pretty easily so.. not worried. Get on with it.`,
+					retort: `Great to hear ${player.heroName}! Our training goblin is ready for you. Also there's a bit of a rat problem in the training room right now.. so grab some equipment off the rack and let's go.`,
+					unlock: [`readyForTutorial`, 'bombRack', 'clubRack'],
+					lock: ['wantsToSkip', 'scared', 'cheeky'],
+				},
+			],
 			unlockables: [
 				{
 					lockHandle: 'wantsToSkip',
+					startsLocked: true,
+					locksVas: false,
 					serverAct: {
 						buttonText: 'Skip Tutorial',
 						goTo: 'forest',
 					},
 				},
-				{
-					lockHandle: 'readyForTutorial',
-					serverAct: {
-						buttonText: "Sure, show me the weapons!",
-						performAction() {
-							player.flags.add('approachedRack')
-						},
-
-					},
-				}
-
 			],
 			sprite: 'general',
 			portrait: 'general',
@@ -401,11 +410,7 @@ const forest: Scene = {
 				buttonText: 'Slog it towards teh castle',
 				goTo: 'castle',
 			}],
-			conversation: {
-				startText: `In the distance you see a castle. You feel you might have seen it before. Perhaps in a dream. Or was it a nightmare?`,
-				responses: []
-			},
-			unlockables: [],
+			startText: `In the distance you see a castle. You feel you might have seen it before. Perhaps in a dream. Or was it a nightmare?`,
 		})
 		if (player.flags.has('heardAboutHiddenPassage')) {
 			player.sceneActions.push(
@@ -460,8 +465,8 @@ const castle: Scene = {
 };
 
 const house: Scene = {
-	makeSceneFlags(){
-		return{
+	makeSceneFlags() {
+		return {
 			accepted: false
 		}
 	},

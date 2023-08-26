@@ -176,6 +176,7 @@ export type ConvoState = {
     currentRetort:string
     maybeLockedResponses: (ConversationResponse)[]
     maybeLockedActions: (UnlockableClientAction)[]
+    vasIsLocked?:boolean
 }
 
 export const convoStateForEachVAS : Writable<Map<UnitId,ConvoState>> = writable(new Map())
@@ -195,34 +196,6 @@ export const selectedVisualActionSourceState = derived([
     }
     return state
 })
-
-// export const unlockableActions = derived([convoBeenSaid,selectedVisualActionSource],([$convoBeenSaid, $selectedVisualActionSource])=>{
-
-    // let unlocked = []
-    // let locked = []
-
-    // // see if we've said something that locks an unlockable action
-    // for(const u of $convoBeenSaid){
-    //     let lockKey = $selectedVisualActionSource?.conversation?.responses.find(r=>r.responseText == u)?.lock
-    //     locked.push(lockKey)
-    // }
-
-    // // find unlockable actions where we have said the thing that unlocks it but haven't said the thing that locks it
-    // for(const u of $convoBeenSaid){
-    //     let unlockKey = $selectedVisualActionSource?.conversation?.responses.find(r=>r.responseText == u)?.unlock
-    //     if(unlockKey && !locked.includes(unlockKey)){
-    //         console.log('unlocking ' + unlockKey)
-    //         let a = $selectedVisualActionSource?.unlockablesInClient[unlockKey]
-            
-    //         if(a && !$convoBeenSaid.has(a.buttonText)){
-    //             unlocked.push(a)
-    //         }
-
-    //     }
-    // }
-    // return unlocked
-// })
-
 
 
 export let latestSlotButtonInput: Writable<EquipmentSlot | 'none'> = writable('none')
@@ -290,7 +263,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         let newVups: VisualUnitProps[] = []
         // console.log(`syncing hero with poison ${lastMsg.yourInfo.statuses.poison}`)
         newVups.push({
-            id:`hero${lastMsg.yourInfo.heroName}`,
+            id:lastMsg.yourInfo.unitId,
             name: lastMsg.yourInfo.heroName,
             src: heroSprites[heroSprite(lastMsg.yourInfo.inventory.weapon?.itemId)],
             maxHp: lastMsg.yourInfo.maxHealth,
@@ -308,7 +281,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         for (const e of lastMsg.enemiesInScene) {
             newVups.push(
                 {
-                    id:`enemy${e.name}`,
+                    id:e.unitId,
                     name: e.name,
                     src: enemySprites[e.templateId],
                     displayHp: e.health,
@@ -328,7 +301,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                 if (p.currentScene == lastMsg.yourInfo.currentScene) {
                     newVups.push(
                         {
-                        id:`hero${p.heroName}`,
+                        id:p.unitId,
                         name: p.heroName,
                         src: heroSprites[heroSprite(p.inventory.weapon.itemId)],
                         displayHp: p.health,
@@ -350,11 +323,15 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         visualActionSources.set(lastMsg.visualActionSources)
         for (const vas of lastMsg.visualActionSources){
             convoStateForEachVAS.update(cs=>{
-                if(!cs.get(vas.id)){
+                let existing = cs.get(vas.id)
+                // if we can't find this vas in the state, initialize it
+                if(!existing){
+                    console.log(`init vas state ${vas.id} with unlockable`)
                     cs.set(vas.id,{
-                        currentRetort:vas.conversation.startText,
-                        maybeLockedActions:vas.unlockables,
-                        maybeLockedResponses:vas.conversation.responses
+                        currentRetort:vas.startText,
+                        maybeLockedActions:vas.unlockables ?? [],
+                        maybeLockedResponses:vas.responses ?? [],
+                        vasIsLocked:vas.startsLocked
                     })
                 }
                 return cs
