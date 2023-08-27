@@ -3,7 +3,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { activeEnemies, modifiedEnemyHealth } from '$lib/server/enemies';
 import { scenes } from '$lib/server/scenes';
-import { FAKE_LATENCY, pushHappening, sendEveryoneWorld } from '$lib/server/messaging';
+import { FAKE_LATENCY, encode, pushHappening, sendEveryoneWorld } from '$lib/server/messaging';
 import { enterSceneOrWakeup, updateAllPlayerActions } from '$lib/server/logic';
 
 export const GET: RequestHandler = async (event) => {
@@ -66,6 +66,10 @@ export const GET: RequestHandler = async (event) => {
 					enterSceneOrWakeup(player)
 					updateAllPlayerActions()
 					sendEveryoneWorld(from);
+					if(player.connectionState && player.connectionState.con) {
+						player.connectionState.con.enqueue(encode(`firstack`, {yes:'okk'}));
+						// player.animations = []
+					}
 				}, 1);
 			},
 			cancel: (reason) => {

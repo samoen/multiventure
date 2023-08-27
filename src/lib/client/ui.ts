@@ -45,8 +45,9 @@ type UnitDetails = {
 }
 
 export let clientState = writable({
-    waitingForMyEvent: true,
+    waitingForMyEvent: false,
     status: 'starting up',
+    loading: false,
 })
 export let waitingForMyAnimation = writable(false)
 
@@ -144,11 +145,11 @@ export let waitButtonAction = derived(lastMsgFromServer, ($lastMsgFromServer) =>
 // export const lastUnitClicked: Writable<VisualUnitProps | undefined> = writable()
 export const lastUnitClicked: Writable<UnitId | undefined> = writable()
 
-export type DetailWindow = {kind:'vup',entity:VisualUnitProps} | {kind:'vas',entity:VisualActionSourceInClient}
+export type DetailWindow = { kind: 'vup', entity: VisualUnitProps } | { kind: 'vas', entity: VisualActionSourceInClient }
 
-export const lockedHandles: Writable<Map<string,boolean>> = writable(new Map())
+export const lockedHandles: Writable<Map<string, boolean>> = writable(new Map())
 
-export const selectedDetail : Readable<DetailWindow | undefined> = derived([
+export const selectedDetail: Readable<DetailWindow | undefined> = derived([
     lastUnitClicked,
     allVisualUnitProps,
     visualActionSources,
@@ -159,38 +160,38 @@ export const selectedDetail : Readable<DetailWindow | undefined> = derived([
     $lockedHandles,
 ]) => {
 
-    if(!$lastUnitClicked){
+    if (!$lastUnitClicked) {
         let firstVas = undefined
         // find unlocked vas with an unlocked action or response
-        outer: for(const vas of $visualActionSources){
-            if($lockedHandles.get(vas.id)==true)continue
-            for(const act of vas.actionsInClient){
-                if(!act.lockHandle || $lockedHandles.get(act.lockHandle) == false){
+        outer: for (const vas of $visualActionSources) {
+            if ($lockedHandles.get(vas.id) == true) continue
+            for (const act of vas.actionsInClient) {
+                if (!act.lockHandle || $lockedHandles.get(act.lockHandle) == false) {
                     firstVas = vas
                     break outer
                 }
             }
-            for(const r of vas.responses){
-                if(!r.lockHandle || $lockedHandles.get(r.lockHandle) == false){
+            for (const r of vas.responses) {
+                if (!r.lockHandle || $lockedHandles.get(r.lockHandle) == false) {
                     firstVas = vas
                     break outer
                 }
             }
         }
-        if(firstVas) return {kind:'vas', entity:firstVas} satisfies DetailWindow
+        if (firstVas) return { kind: 'vas', entity: firstVas } satisfies DetailWindow
 
-        let me = $allVisualUnitProps.at(0) 
-        if(me) return {kind:'vup',entity:me} satisfies DetailWindow
+        let me = $allVisualUnitProps.at(0)
+        if (me) return { kind: 'vup', entity: me } satisfies DetailWindow
     }
-    
+
     let vupAt = $allVisualUnitProps.find(v => v.id == $lastUnitClicked)
-    if (vupAt) return {kind:'vup', entity:vupAt} satisfies DetailWindow
-    
+    if (vupAt) return { kind: 'vup', entity: vupAt } satisfies DetailWindow
+
     let vasAt = $visualActionSources.find(v => v.id == $lastUnitClicked)
-    if (vasAt) return {kind:'vas',entity:vasAt} satisfies DetailWindow
-    
-    let me = $allVisualUnitProps.at(0) 
-    if(me) return {kind:'vup',entity:me} satisfies DetailWindow
+    if (vasAt) return { kind: 'vas', entity: vasAt } satisfies DetailWindow
+
+    let me = $allVisualUnitProps.at(0)
+    if (me) return { kind: 'vup', entity: me } satisfies DetailWindow
 
     return undefined
 })
@@ -222,7 +223,7 @@ export const selectedVisualActionSourceState = derived([
     $visualActionSources,
     $convoStateForEachVAS,
 ]) => {
-    if(!$selectedDetail || $selectedDetail.kind != 'vas')return undefined
+    if (!$selectedDetail || $selectedDetail.kind != 'vas') return undefined
     let state = $convoStateForEachVAS.get($selectedDetail.entity.id)
     if (!state) {
         return undefined
@@ -369,33 +370,33 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                 // console.log(`new msg, current lockhandles: ${[...lh.entries()]}`)
                 let existing = lh.get(vas.id)
                 if (existing == undefined) {
-                    if(vas.startsLocked){
-                        lh.set(vas.id,true)
-                    }else{
-                        lh.set(vas.id,false)
+                    if (vas.startsLocked) {
+                        lh.set(vas.id, true)
+                    } else {
+                        lh.set(vas.id, false)
                     }
                 }
                 for (const uAct of vas.actionsInClient) {
-                    if(uAct.lockHandle){
+                    if (uAct.lockHandle) {
                         let existing = lh.get(uAct.lockHandle)
-                        if(existing == undefined){
+                        if (existing == undefined) {
                             if (uAct.startsLocked) {
-                                lh.set(uAct.lockHandle,true)
-                            }else{
-                                lh.set(uAct.lockHandle,false)
+                                lh.set(uAct.lockHandle, true)
+                            } else {
+                                lh.set(uAct.lockHandle, false)
                             }
                         }
 
                     }
                 }
                 for (const resp of vas.responses) {
-                    if(resp.lockHandle){
+                    if (resp.lockHandle) {
                         let existing = lh.get(resp.lockHandle)
-                        if(existing == undefined){
-                            if (resp.startsLocked ){
-                                lh.set(resp.lockHandle,true)
-                            }else{
-                                lh.set(resp.lockHandle,false)
+                        if (existing == undefined) {
+                            if (resp.startsLocked) {
+                                lh.set(resp.lockHandle, true)
+                            } else {
+                                lh.set(resp.lockHandle, false)
                             }
                         }
                     }
@@ -475,22 +476,21 @@ export type AnimsInWaiting = { prev: MessageFromServer, withAnims: MessageFromSe
 export const animationsInWaiting: Writable<AnimsInWaiting | undefined> = writable()
 
 export async function nextAnimationIndex(
-    start: boolean, curAnimIndex: number,
-    curAnimations: BattleAnimation[],
-    latest: MessageFromServer | undefined,
+    start: boolean,
     someoneDied: boolean,
-    cancel: boolean,
-    animsInWaiting: AnimsInWaiting | undefined,
 ) {
-    let cai = 0
+    let curAnimations = get(currentAnimationsWithData)
+    let latest = get(lastMsgFromServer)
+    let animsInWaiting = get(animationsInWaiting)
     if (start) {
         currentAnimationIndex.set(0)
     } else {
         currentAnimationIndex.update(o => {
             return o + 1
         })
-        cai = curAnimIndex + 1
+        // cai = curAnimIndex + 1
     }
+    let cai = get(currentAnimationIndex)
 
     if (cai > curAnimations.length - 1) {
         if (!animsInWaiting) {
@@ -541,7 +541,8 @@ export const heroSprites = {
     ruffian: ruffian,
     mage: mage
 };
-export async function choose(chosen: GameActionSentToClient) {
+
+export async function choose(chosen: GameActionSentToClient): Promise<MessageFromServer | undefined> {
     clientState.update((s) => {
         s.waitingForMyEvent = true;
         s.status = 'submitting action';
@@ -553,7 +554,6 @@ export async function choose(chosen: GameActionSentToClient) {
     });
 
     if (f.status > 399) {
-        // let res = await f.json();
         console.log('action submit failed');
         clientState.update((s) => {
 
@@ -561,10 +561,117 @@ export async function choose(chosen: GameActionSentToClient) {
             s.status = 'playing';
             return s
         })
+        return undefined;
+    }
+    let res = await f.json();
+    if (!isMsgFromServer(res)) {
+        console.log('sent action but response not mgsfromserver')
+        return undefined
+    }
+
+    worldReceived(res)
+
+    clientState.update(cs => {
+        cs.status = 'playing'
+        cs.waitingForMyEvent = false
+        cs.loading = false;
+        return cs
+    })
+
+    return res
+}
+
+function isMsgFromServer(msg: object): msg is MessageFromServer {
+    return 'triggeredBy' in msg;
+}
+
+function handleAnimationsOnMessage(
+    previous: MessageFromServer | undefined,
+    latest: MessageFromServer,
+
+) {
+    const currentAnim = get(currentAnimation)
+    // console.log(`got animations: ${JSON.stringify(latest.animations)}`);
+
+    // first message just sync instant
+    if (!previous) {
+        console.log('first message, just sync it');
+        if (currentAnim) {
+            throw Error('first message but animating already, should be impossible')
+            // await cancelAnimations();
+        }
+        syncVisualsToMsg(latest);
         return;
     }
-    clientState.update(s => {
-        s.status = 'waiting for my event';
-        return s
-    })
+
+    if (latest.animations.length && latest.triggeredBy == latest.yourInfo.heroName) {
+        console.log('start waiting my anim');
+        waitingForMyAnimation.set(true);
+    }
+
+    // my message with no animations
+    if (latest.triggeredBy == latest.yourInfo.heroName && !latest.animations.length && currentAnim != undefined) {
+        console.log('my message with no animations, but we are animating. Ignore, it will be synced when current anims finish');
+        // if ($currentAnimation) {
+        // 	await cancelAnimations();
+        // }
+        // syncVisualsToMsg(latest);
+        return;
+    }
+
+    // someone else's message and we are animating
+    if (latest.triggeredBy != latest.yourInfo.heroName && currentAnim != undefined) {
+        console.log(`someone else message but ignoring because we are animating: ${JSON.stringify(currentAnim)}`);
+        return;
+    }
+
+    // anyone's message with no animations and not animating
+    if (currentAnim == undefined && !latest.animations.length) {
+        // await cancelAnimations();
+        console.log('Anyones message with no animations and not animating, just sync');
+        syncVisualsToMsg(latest);
+        return;
+    }
+
+    // My message with animations but animation is in progress
+    if (
+        latest.animations.length &&
+        currentAnim != undefined &&
+        latest.triggeredBy == latest.yourInfo.heroName
+    ) {
+        console.log('My message with anims but we are animating. store these anims to play once current is done');
+        animationsInWaiting.set({ prev: previous, withAnims: latest })
+        // await cancelAnimations();
+        // syncVisualsToMsg(previous);
+        // await startAnimating(previous, latest);
+        return;
+    }
+
+    // console.log(`precheck start anim ${JSON.stringify($currentAnimation)}`)
+
+    // new animations and we aren't animating, start animating
+    if (latest.animations.length && currentAnim == undefined) {
+        console.log('anyones message, we not animating. starting');
+        // await cancelAnimations();
+        syncVisualsToMsg(previous);
+        startAnimating(latest);
+        return;
+    }
+    // syncVisualsToMsg(latest);
+    console.log('no specific anim handling, ignore');
+}
+
+function startAnimating(msgWithAnims: MessageFromServer) {
+    currentAnimationsWithData.set(msgWithAnims.animations);
+    // console.log(`starting anims ${JSON.stringify($currentAnimationsWithData)}`);
+    nextAnimationIndex(
+        true,
+        false,
+    );
+}
+
+export async function worldReceived(sMsg: MessageFromServer) {
+    let prevMsg = structuredClone(get(lastMsgFromServer));
+    lastMsgFromServer.set(sMsg);
+    handleAnimationsOnMessage(prevMsg, sMsg);
 }

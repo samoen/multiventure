@@ -37,7 +37,12 @@
 		waitingForMyAnimation,
 		wepSlotActions,
 
-		animationsInWaiting
+		animationsInWaiting,
+
+
+		worldReceived
+
+
 
 	} from '$lib/client/ui';
 	import type { MessageFromServer } from '$lib/server/messaging';
@@ -45,7 +50,7 @@
 	import { flip } from 'svelte/animate';
 	import { derived, writable, type Writable } from 'svelte/store';
 	import plains from '$lib/assets/landscapes/landscape-plain.webp';
-	import type { DataFirstLoad } from '$lib/utils';
+	import type { BattleAnimation, DataFirstLoad } from '$lib/utils';
 
 	export let data : DataFirstLoad;
 	let signupInput: string;
@@ -53,7 +58,7 @@
 	let signInIdInput: string;
 	let source: EventSource | null;
 
-	let loading = true;
+	
 
 	// let unitsDetails: UnitDetails[] = [];
 
@@ -75,19 +80,31 @@
 			signUp(data.yourHeroCookie);
 		} else {
 			$clientState.status = 'need manual login';
-			loading = false;
+			$clientState.loading = false;
 		}
 	});
-	export function isMsgFromServer(msg: object): msg is MessageFromServer {
+	function isMsgFromServer(msg: object): msg is MessageFromServer {
 		return 'triggeredBy' in msg;
 	}
+
+	lastMsgFromServer.subscribe(m=>{
+		scrollHappenings()
+	})
+		
+	async function scrollHappenings(){
+		
+		// wait for dom elements to be populated
+		await tick();
+		if (happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
+		if (sceneTexts) sceneTexts.scroll({ top: sceneTexts.scrollHeight, behavior: 'smooth' });
+	}
+
 	function subscribeEventsIfNotAlready() {
 		if (source != null && source.readyState != EventSource.CLOSED) {
 			console.log('no need to subscribe');
 			return;
 		}
 		$clientState.status = 'subscribing to events';
-		$clientState.waitingForMyEvent = true;
 		try {
 			source = new EventSource('/api/subscribe');
 		} catch (e) {
@@ -100,8 +117,12 @@
 			$clientState.status = 'Event source errored, need manual action';
 			this.close();
 			$lastMsgFromServer = undefined;
-			loading = false;
+			$clientState.loading = false;
 		};
+
+		source.addEventListener('firstack',async(e)=>{
+			getWorld()
+		})
 
 		source.addEventListener('world', async (e) => {
 			let sMsg = JSON.parse(e.data);
@@ -109,22 +130,7 @@
 				console.log('malformed event from server');
 				return;
 			}
-
-			let prevMsg = structuredClone($lastMsgFromServer);
-			$lastMsgFromServer = sMsg;
-			if ($clientState.waitingForMyEvent && sMsg.triggeredBy == sMsg.yourInfo.heroName) {
-				$clientState.status = 'playing';
-				$clientState.waitingForMyEvent = false;
-				loading = false;
-			}
-			// console.log(`gotworld`);
-			handleAnimationsOnMessage(prevMsg, sMsg);
-
-			// wait for dom elements to be populated
-			await tick();
-
-			if (happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
-			if (sceneTexts) sceneTexts.scroll({ top: sceneTexts.scrollHeight, behavior: 'smooth' });
+			worldReceived(sMsg)
 		});
 		source.addEventListener('closing', (e) => {
 			console.log('got closing msg');
@@ -133,6 +139,16 @@
 			$lastMsgFromServer = undefined;
 		});
 		console.log('subscribed');
+	}
+
+	async function getWorld(){
+		let r = await fetch('/api/world', { method: 'POST' })
+		let sMsg = await r.json()
+		if (!isMsgFromServer(sMsg)) {
+			console.log('malformed event from server');
+			return;
+		}
+		worldReceived(sMsg)
 	}
 
 	async function cancelAnimations() {
@@ -146,96 +162,11 @@
 		// $animationCancelled = false;
 	}
 
-	function startAnimating(msgWithAnims: MessageFromServer) {
-		$currentAnimationsWithData = msgWithAnims.animations;
-		// console.log(`starting anims ${JSON.stringify($currentAnimationsWithData)}`);
-		nextAnimationIndex(
-			true,
-			$currentAnimationIndex,
-			$currentAnimationsWithData,
-			$lastMsgFromServer,
-			false,
-			$animationCancelled,
-			$animationsInWaiting,
-		);
-	}
 
-	function handleAnimationsOnMessage(
-		previous: MessageFromServer | undefined,
-		latest: MessageFromServer
-	) {
-		// console.log(`got animations: ${JSON.stringify(latest.animations)}`);
-
-		// first message just sync instant
-		if (!previous) {
-			console.log('first message, just sync it');
-			if ($currentAnimation) {
-				throw Error('first message but animating already, should be impossible')
-				// await cancelAnimations();
-			}
-			syncVisualsToMsg(latest);
-			return;
-		}
-
-		if (latest.animations.length && latest.triggeredBy == latest.yourInfo.heroName) {
-			console.log('start waiting my anim');
-			$waitingForMyAnimation = true;
-		}
-
-		// my message with no animations
-		if (latest.triggeredBy == latest.yourInfo.heroName && !latest.animations.length && $currentAnimation != undefined) {
-			console.log('my message with no animations, but we are animating. Ignore, it will be synced when current anims finish');
-			// if ($currentAnimation) {
-			// 	await cancelAnimations();
-			// }
-			// syncVisualsToMsg(latest);
-			return;
-		}
-
-		// someone else's message and we are animating
-		if (latest.triggeredBy != latest.yourInfo.heroName && $currentAnimation != undefined) {
-			console.log(`someone else message but ignoring because we are animating: ${JSON.stringify($currentAnimation)}`);
-			return;
-		}
-
-		// anyone's message with no animations and not animating
-		if ($currentAnimation == undefined && !latest.animations.length) {
-			// await cancelAnimations();
-			console.log('Anyones message with no animations and not animating, just sync');
-			syncVisualsToMsg(latest);
-			return;
-		}
-
-		// My message with animations but animation is in progress
-		if (
-			latest.animations.length &&
-			$currentAnimation != undefined &&
-			latest.triggeredBy == latest.yourInfo.heroName
-		) {
-			console.log('My message with anims but we are animating. store these anims to play once current is done');
-			animationsInWaiting.set({prev:previous,withAnims:latest})
-			// await cancelAnimations();
-			// syncVisualsToMsg(previous);
-			// await startAnimating(previous, latest);
-			return;
-		}
-
-		// console.log(`precheck start anim ${JSON.stringify($currentAnimation)}`)
-
-		// new animations and we aren't animating, start animating
-		if (latest.animations.length && $currentAnimation == undefined) {
-			console.log('anyones message, we not animating. starting');
-			// await cancelAnimations();
-			syncVisualsToMsg(previous);
-			startAnimating(latest);
-			return;
-		}
-		// syncVisualsToMsg(latest);
-		console.log('no specific anim handling, ignore');
-	}
+	
 
 	async function deleteHero() {
-		loading = true;
+		$clientState.loading = true;
 		$clientState.status = 'submitting hero delete';
 		let f = await fetch('/api/delete', { method: 'POST' });
 		if (!f.ok) {
@@ -253,7 +184,7 @@
 		}
 		source = null;
 		$clientState.status = 'need manual login';
-		loading = false;
+		$clientState.loading = false;
 	}
 
 	async function signUp(usrName: string) {
@@ -285,13 +216,13 @@
 		} else {
 			console.log('joincall not ok');
 			$clientState.status = 'signup failed, need manual';
-			loading = false;
+			$clientState.loading = false;
 		}
 	}
 
 	function signUpButtonClicked() {
 		if (!signupInput) return;
-		loading = true;
+		$clientState.loading = true;
 		$clientState.status = 'submitting sign up';
 		let usrName = signupInput;
 		signupInput = '';
@@ -300,7 +231,7 @@
 	}
 
 	async function signInButtonClicked() {
-		loading = true;
+		$clientState.loading = true;
 		$clientState.status = 'submitting login';
 		let loginCall = await fetch('/api/login', {
 			method: 'POST',
@@ -311,7 +242,7 @@
 		});
 		if (!loginCall.ok) {
 			console.log('login nope');
-			loading = false;
+			$clientState.loading = false;
 		}
 		signInIdInput = '';
 		signInNameInput = '';
@@ -330,17 +261,14 @@
 		return $allVisualUnitProps.filter((p) => p.side == 'enemy');
 	});
 
-	// function tInventory(){
-
-	// }
 </script>
 
 <!-- <h3>Status: {clientState.status}</h3> -->
-{#if loading}
+{#if $clientState.loading}
 	<p>loading...</p>
 {/if}
 <br />
-{#if !loading && $lastMsgFromServer == null}
+{#if !$clientState.loading && $lastMsgFromServer == null}
 	<p>Welcome! Please sign up with your hero name:</p>
 	<input type="text" bind:value={signupInput} />
 	<button disabled={!signupInput} on:click={signUpButtonClicked}>Sign Up</button>
@@ -450,12 +378,7 @@
 								}
 								nextAnimationIndex(
 									false,
-									$currentAnimationIndex,
-									$currentAnimationsWithData,
-									$lastMsgFromServer,
 									someoneDied,
-									$animationCancelled,
-									$animationsInWaiting,
 								);
 							}
 						}}
@@ -617,7 +540,11 @@
 						{#each $selectedDetail.entity.actionsInClient.filter(a=>!a.lockHandle || !$lockedHandles.get(a.lockHandle)) as act}
 							<button
 								type="button"
-								on:click={() => {
+								disabled={$clientState.waitingForMyEvent}
+								on:click={async () => {
+									if(!$selectedDetail || $selectedDetail.kind != 'vas')return
+									$lastUnitClicked = $selectedDetail.entity.id
+									await choose(act.clientAct);
 									if(act.lock){
 										for (const handleToLock of act.lock){
 											$lockedHandles.set(handleToLock,true)
@@ -628,10 +555,9 @@
 											$lockedHandles.set(handleToUnlock,false)
 										}
 									}
+									$lastUnitClicked = undefined;
 									$lockedHandles = $lockedHandles
 									$visualActionSources = $visualActionSources
-									choose(act.clientAct);
-									$lastUnitClicked = undefined;
 
 								}}>{act.clientAct.buttonText}</button
 							>

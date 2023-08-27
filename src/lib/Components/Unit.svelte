@@ -171,12 +171,7 @@
 					if ($currentAnimation != undefined && $lastMsgFromServer) {
 						nextAnimationIndex(
 							false,
-							$currentAnimationIndex,
-							$currentAnimationsWithData,
-							$lastMsgFromServer,
 							false,
-							$animationCancelled,
-							$animationsInWaiting,
 						);
 					}
 				}}
@@ -252,12 +247,7 @@
 				on:outroend={()=>{
 					nextAnimationIndex(
 						false,
-						$currentAnimationIndex,
-						$currentAnimationsWithData,
-						$lastMsgFromServer,
 						false,
-						$animationCancelled,
-						$animationsInWaiting,
 					);
 				}}
 			>
@@ -270,8 +260,7 @@
 			</div>
 		{/if}
 		{#if $missileTarget}
-			<div
-				class="projHolder"
+			<div class="projHolder"
 				class:startAlignSelf={!$hostIsNotHero}
 				class:endAlignSelf={$hostIsNotHero}
 				in:receiveProj={{ key: 'missile' }}
@@ -321,12 +310,7 @@
 						}
 						nextAnimationIndex(
 							false,
-							$currentAnimationIndex,
-							$currentAnimationsWithData,
-							$lastMsgFromServer,
 							someoneDied,
-							$animationCancelled,
-							$animationsInWaiting,
 						);
 					}
 				}}

@@ -4,7 +4,7 @@ import { items } from './items';
 import { convertServerActionToClientAction, convertVasToClient, type VisualActionSource, type VisualActionSourceInClient } from './scenes';
 import { activePlayers, globalFlags, playerItemStates, users, type HeroName, type Player, type GameAction, activePlayersInScene, type PlayerInClient, type Flag, type GlobalFlag } from './users';
 
-export const FAKE_LATENCY = 1;
+export const FAKE_LATENCY = 50;
 
 export const recentHappenings: string[] = [];
 
@@ -29,7 +29,7 @@ export async function sendEveryoneWorld(triggeredBy: HeroName) {
 		setTimeout(r, FAKE_LATENCY);
 	});
 	for (const user of users.values()) {
-		if (user.connectionState && user.connectionState.con) {
+		if (user.heroName != triggeredBy && user.connectionState && user.connectionState.con) {
 			const toSend = buildNextMessage(user, triggeredBy);
 			user.connectionState.con.enqueue(encode(`world`, toSend));
 			user.animations = []

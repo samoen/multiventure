@@ -1,5 +1,5 @@
 import { handleAction, updateAllPlayerActions, updatePlayerActions } from '$lib/server/logic';
-import { FAKE_LATENCY, pushHappening, sendEveryoneWorld } from '$lib/server/messaging';
+import { FAKE_LATENCY, buildNextMessage, pushHappening, sendEveryoneWorld } from '$lib/server/messaging';
 import { users, type GameAction } from '$lib/server/users';
 import { isGameActionSelected } from '$lib/utils';
 import { json } from '@sveltejs/kit';
@@ -55,7 +55,9 @@ export const POST = (async (r) => {
 		if (player?.heroName) sendEveryoneWorld(player.heroName);
 	}, 1);
 
-	return json({ sucess: 'yessir' });
+	let nm = buildNextMessage(player,player.heroName)
+	player.animations = []
+	return json(nm);
 }) satisfies RequestHandler;
 
 
