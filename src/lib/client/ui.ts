@@ -144,27 +144,51 @@ export let waitButtonAction = derived(lastMsgFromServer, ($lastMsgFromServer) =>
 // export const lastUnitClicked: Writable<VisualUnitProps | undefined> = writable()
 export const lastUnitClicked: Writable<UnitId | undefined> = writable()
 
-export const selectedDetail = derived([
+export type DetailWindow = {kind:'vup',entity:VisualUnitProps} | {kind:'vas',entity:VisualActionSourceInClient}
+
+export const lockedHandles: Writable<Map<string,boolean>> = writable(new Map())
+
+export const selectedDetail : Readable<DetailWindow | undefined> = derived([
     lastUnitClicked,
     allVisualUnitProps,
+    visualActionSources,
+    lockedHandles,
 ], ([$lastUnitClicked,
     $allVisualUnitProps,
-]) => {
-
-    let props = $allVisualUnitProps
-    let vupAt = props.find(v => v.id == $lastUnitClicked)
-    if (vupAt) return vupAt
-    return $allVisualUnitProps.at(0)
-})
-export const selectedVisualActionSource = derived([
-    lastUnitClicked,
-    visualActionSources,
-], ([$lastUnitClicked,
     $visualActionSources,
+    $lockedHandles,
 ]) => {
 
+    if(!$lastUnitClicked){
+        let firstVas = $visualActionSources.at(0)
+        // find unlocked vas with an unlocked action or response
+        outer: for(const vas of $visualActionSources){
+            if($lockedHandles.get(vas.id)==true)continue
+            for(const act of vas.actionsInClient){
+                if(!act.lockHandle || $lockedHandles.get(act.lockHandle) == false){
+                    firstVas = vas
+                    break outer
+                }
+            }
+            for(const r of vas.responses){
+                if(!r.lockHandle || $lockedHandles.get(r.lockHandle) == false){
+                    firstVas = vas
+                    break outer
+                }
+            }
+        }
+        if(firstVas) return {kind:'vas', entity:firstVas} satisfies DetailWindow
+
+        let me = $allVisualUnitProps.at(0) 
+        if(me) return {kind:'vup',entity:me} satisfies DetailWindow
+    }
+
+    let vupAt = $allVisualUnitProps.find(v => v.id == $lastUnitClicked)
+    if (vupAt) return {kind:'vup', entity:vupAt} satisfies DetailWindow
+    
     let vasAt = $visualActionSources.find(v => v.id == $lastUnitClicked)
-    if (vasAt) return vasAt
+    if (vasAt) return {kind:'vas',entity:vasAt} satisfies DetailWindow
+
     return undefined
 })
 
@@ -179,20 +203,24 @@ export type ConvoState = {
     // vasIsLocked?:boolean
 }
 
-export const lockedHandles: Writable<Map<string,boolean>> = writable(new Map())
 
 export const convoStateForEachVAS: Writable<Map<UnitId, ConvoState>> = writable(new Map())
 export const selectedVisualActionSourceState = derived([
-    lastUnitClicked,
+    // lastUnitClicked,
+    // selectedVisualActionSource,
+    selectedDetail,
     visualActionSources,
     convoStateForEachVAS,
 
-], ([$lastUnitClicked,
+], ([
+    // $lastUnitClicked,
+    // $selectedVisualActionSource,
+    $selectedDetail,
     $visualActionSources,
     $convoStateForEachVAS,
 ]) => {
-    if (!$lastUnitClicked) return undefined
-    let state = $convoStateForEachVAS.get($lastUnitClicked)
+    if(!$selectedDetail || $selectedDetail.kind != 'vas')return undefined
+    let state = $convoStateForEachVAS.get($selectedDetail.entity.id)
     if (!state) {
         return undefined
     }
@@ -335,11 +363,10 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                 return cs
             })
             lockedHandles.update((lh) => {
-                console.log(`new msg, current lockhandles: ${[...lh.entries()]}`)
+                // console.log(`new msg, current lockhandles: ${[...lh.entries()]}`)
                 let existing = lh.get(vas.id)
                 if (existing == undefined) {
                     if(vas.startsLocked){
-                        console.log(`init ${vas.id} starts locked`)
                         lh.set(vas.id,true)
                     }else{
                         lh.set(vas.id,false)

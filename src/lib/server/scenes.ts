@@ -27,6 +27,7 @@ export type Scene = {
 	onBattleJoin?: (player: Player) => void
 	onVictory?: (player: Player) => void
 	actions: (player: Player) => void
+	vases?: VisualActionSource[]
 	solo?: boolean
 	hasEntered?: Set<HeroName>
 	makeSceneFlags?: () => object
@@ -59,10 +60,6 @@ export type VisualActionSourceInClient = {
 	responses: ConversationResponse[]
 }
 
-// export function getActionsInClientFromVas(vas : VisualActionSource) : UnlockableClientAction[] {
-// 	let serverActions = getServerActionsMetRequirementsFromVases([vas])
-// 	return serverActions.map(sa=>convertServerActionToClientAction(sa))
-// }
 
 export function getServerActionsMetRequirementsFromVases(vases : VisualActionSource[]) : GameAction[]{
 	let validActionsFromVases : GameAction[] = []
@@ -138,32 +135,25 @@ export function convertUnlockableActionsToClient(sUnlockables:(UnlockableAction[
 	})
 }
 
-
+export type Lockability = {
+	lockHandle?: string,
+	unlock?: string[],
+	lock?: string[]
+	startsLocked?: boolean,
+}
 
 export type UnlockableAction = {
-	lockHandle?: string,
 	serverAct: GameAction,
-	startsLocked: boolean,
-	unlock?: string[],
-	lock?: string[]
-}
+} & Lockability
 
 export type UnlockableClientAction = {
-	lockHandle?: string,
 	clientAct: GameActionSentToClient,
-	startsLocked: boolean
-	unlock?: string[],
-	lock?: string[]
-}
+} & Lockability
 
 export type ConversationResponse = {
-	lockHandle: string,
-	startsLocked: boolean,
 	responseText: string,
 	retort: string,
-	unlock?: string[],
-	lock?: string[]
-}
+} & Lockability
 
 const dead: Scene = {
 	onEnterScene(player) {
@@ -189,20 +179,59 @@ const dead: Scene = {
 const tutorial = {
 	onEnterScene(player) {
 		player.lastCheckpoint = `tutorial_${player.heroName}`
-		// player.inventory.body.itemId = 'rags'
-		// player.inventory.utility.itemId = 'empty'
-		// player.inventory.weapon.itemId = 'unarmed'
 		player.sceneTexts.push(`You are standing at a castle barracks. Soliders mill around swinging swords and grunting in cool morning air. You see Arthur, the captain of the castle guard marching towards you.`)
 	},
 	actions(player) {
-		// if (player.flags.has('approachedRack') && player.inventory.weapon.itemId != 'club') {
+		player.visualActionSources.push({
+			id: 'vasTutor',
+			actionsWithRequirements: [
+				{
+					
+					sAction:{
+						
+							lockHandle: 'wantsToSkip',
+							startsLocked: true,
+							serverAct: {
+								buttonText: 'Skip Tutorial',
+								goTo: 'forest',
+							},
+						
+						}
+					}
+
+			],
+			startText: `'Look alive recruit! The first day of training can be the most dangerous of a guardsman's life. You must be ${player.heroName}, welcome aboard. In this barracks we wake up early, follow orders, and NEVER skip the tutorial. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.'`,
+			responses: [
+				{
+					lockHandle: 'scared',
+					responseText: `Huh? Danger... Early mornings?? I didn't sign up for any of this!`,
+					retort: `Hmmf, if you think you can weasel your way through this game without enduring hardship you're in for a rude awakening.. anyway it's just a quick tutorial, skip it only with good reason.`,
+					unlock: ['wantsToSkip']
+				},
+				{
+					lockHandle: 'cheeky',
+					responseText: `I would rather you didn't break the fourth wall, I'm into more serious RPGs.`,
+					retort: `Lighten up recruit. Things will get plenty dark and gritty soon enough. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.`
+				},
+				{
+					lockHandle: 'brave',
+					responseText: `I tend to breeze through tutorials pretty easily so.. not worried. Get on with it.`,
+					retort: `Great to hear ${player.heroName}! Our training goblin is ready for you. Also there's a bit of a rat problem in the training room right now.. Click these items and enter that training room!`,
+					unlock: [`readyForTutorial`, 'vasEquipBomb', 'vasEquipClub'],
+					lock: ['wantsToSkip', 'scared', 'cheeky'],
+				},
+			],
+			sprite: 'general',
+			portrait: 'general',
+		})
 		player.visualActionSources.push({
 			id: 'vasEquipClub',
 			sprite: 'club',
+			startText: 'A club deals a hefty chunk of damage each hit. That makes it effective against unarmored foes like goblins.',
+			startsLocked: true,
 			actionsWithRequirements: [
 				{
 					sAction:{
-						startsLocked:false,
 						lock:['vasEquipClub'],
 						serverAct:{
 							buttonText: 'equip club',
@@ -213,18 +242,15 @@ const tutorial = {
 					}
 				}
 			],
-			startText: 'A club deals a hefty chunk of damage each hit. That makes it effective against unarmored foes like goblins.',
-			startsLocked: true,
 		})
-		// }
-		// if (player.flags.has('approachedRack') && player.inventory.utility.itemId != 'bomb') {
 		player.visualActionSources.push({
 			id: 'vasEquipBomb',
 			sprite: 'bomb',
+			startText: 'A powderbomb deals splash damage to all nearby enemies. It should clear out the rats nicely.',
+			startsLocked: true,
 			actionsWithRequirements: [
 				{
 					sAction:{
-						startsLocked: false,
 						lock:['vasEquipBomb'],
 						serverAct: {
 							buttonText: 'equip bomb',
@@ -235,66 +261,25 @@ const tutorial = {
 					},
 				}
 			],
-			startText: 'A powderbomb deals splash damage to all nearby enemies. It should clear out the rats nicely.',
-			startsLocked: true,
 		})
 		player.visualActionSources.push({
-			id: 'vasTutor',
-			actionsWithRequirements: [
+			id:'vasGoTrain1',
+			sprite:'castle',
+			startText:`An entrance to a training room`,
+			actionsWithRequirements:[
 				{
 					sAction: {
-						startsLocked:false,
 						serverAct:{
-							buttonText: "'Splash em' and bash em', got it.'",
+							buttonText: "Enter the training room",
 							goTo: `trainingRoom1_${player.heroName}`
 						},
 					},
 					requires() {
 						return player.inventory.utility.itemId == 'bomb' && player.inventory.weapon.itemId == 'club'
 					},
-
-				},
-				{
-
-					sAction:{
-						
-							lockHandle: 'wantsToSkip',
-							startsLocked: true,
-							serverAct: {
-								buttonText: 'Skip Tutorial',
-								goTo: 'forest',
-							},
-						
-					}
-				}
-
-			],
-			startText: `'Look alive recruit! The first day of training can be the most dangerous of a guardsman's life. You must be ${player.heroName}, welcome aboard. In this barracks we wake up early, follow orders, and NEVER skip the tutorial. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.'`,
-			responses: [
-				{
-					lockHandle: 'scared',
-					startsLocked: false,
-					responseText: `Huh? Danger... Early mornings?? I didn't sign up for any of this!`,
-					retort: `Hmmf, if you think you can weasel your way through this game without enduring hardship you're in for a rude awakening.. anyway it's just a quick tutorial, skip it only with good reason.`,
-					unlock: ['wantsToSkip']
-				},
-				{
-					lockHandle: 'cheeky',
-					startsLocked: false,
-					responseText: `I would rather you didn't break the fourth wall, I'm into more serious RPGs.`,
-					retort: `Lighten up recruit. Things will get plenty dark and gritty soon enough. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.`
-				},
-				{
-					lockHandle: 'brave',
-					startsLocked: false,
-					responseText: `I tend to breeze through tutorials pretty easily so.. not worried. Get on with it.`,
-					retort: `Great to hear ${player.heroName}! Our training goblin is ready for you. Also there's a bit of a rat problem in the training room right now.. so grab some equipment off the rack and let's go.`,
-					unlock: [`readyForTutorial`, 'vasEquipBomb', 'vasEquipClub'],
-					lock: ['wantsToSkip', 'scared', 'cheeky'],
+		
 				},
 			],
-			sprite: 'general',
-			portrait: 'general',
 		})
 
 	},
@@ -469,7 +454,6 @@ const forest: Scene = {
 			sprite: 'castle',
 			actionsWithRequirements: [{
 				sAction: {
-					startsLocked:false,
 					serverAct:{
 						buttonText: 'Slog it towards teh castle',
 						goTo: 'castle',

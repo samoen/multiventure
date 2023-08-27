@@ -26,7 +26,6 @@
 		receiveCenter,
 		anySprites,
 		selectedDetail,
-		selectedVisualActionSource,
 		selectedVisualActionSourceState,
 		stockDotsOnSlotButton,
 		syncVisualsToMsg,
@@ -530,25 +529,24 @@
 			>
 		{/if}
 	</div>
-	{#if $selectedDetail}
-		{#if $selectedVisualActionSource == undefined}
+	{#if $selectedDetail && $selectedDetail.kind == 'vup'}
 			<div class="selectedDetails">
 				<div class="selectedPortrait">
-					<img class="portrait" src={$selectedDetail.actual.portrait} alt="portrait" />
+					<img class="portrait" src={$selectedDetail.entity.actual.portrait} alt="portrait" />
 				</div>
 				<div class="selectedRest">
 					<div class="selectedStats">
-						{#if $selectedDetail.actual.kind == 'player'}
+						{#if $selectedDetail.entity.actual.kind == 'player'}
 							<div>
 								<strong>
-									{$selectedDetail.actual.info.heroName}
+									{$selectedDetail.entity.actual.info.heroName}
 								</strong>
 							</div>
 							<div>
-								{$selectedDetail.displayHp}/{$selectedDetail.maxHp} hp
+								{$selectedDetail.entity.displayHp}/{$selectedDetail.entity.maxHp} hp
 							</div>
 							<div>
-								{#each Object.entries($selectedDetail.actual.info.statuses) as [key, value]}
+								{#each Object.entries($selectedDetail.entity.actual.info.statuses) as [key, value]}
 									{#if value > 0}
 										{`${key} ${value}`}
 									{/if}
@@ -556,38 +554,38 @@
 							</div>
 	
 							<!-- <div> -->
-							{#each Object.entries($selectedDetail.actual.info.inventory) as [key, value]}
+							{#each Object.entries($selectedDetail.entity.actual.info.inventory) as [key, value]}
 								<div>
 									{`${key}: ${value.itemId}`}
 								</div>
 							{/each}
 							<div>
-								Agility: {$selectedDetail.actual.info.agility}
+								Agility: {$selectedDetail.entity.actual.info.agility}
 							</div>
 							<div>
-								Strength: {$selectedDetail.actual.info.strength}
+								Strength: {$selectedDetail.entity.actual.info.strength}
 							</div>
 							<!-- <div>
 							<button type="button">show gear</button>
 							</div> -->
 						{/if}
-						{#if $selectedDetail.actual.kind == 'enemy'}
+						{#if $selectedDetail.entity.actual.kind == 'enemy'}
 						<div>
 							<strong>
-								{$selectedDetail.actual.enemy.name}
+								{$selectedDetail.entity.actual.enemy.name}
 							</strong>
 						</div>	
 							<div>
-								{$selectedDetail.displayHp}/{$selectedDetail.maxHp} hp
+								{$selectedDetail.entity.displayHp}/{$selectedDetail.entity.maxHp} hp
 							</div>
 							<div>
-								Template: {$selectedDetail.actual.enemy.templateId}
+								Template: {$selectedDetail.entity.actual.enemy.templateId}
 							</div>
 							<div>
-								Aggro: {JSON.stringify($selectedDetail.actual.enemy.myAggro)}
+								Aggro: {JSON.stringify($selectedDetail.entity.actual.enemy.myAggro)}
 							</div>
 							<div>
-								{#each Object.entries($selectedDetail.actual.enemy.statuses) as [forHero, statuses]}
+								{#each Object.entries($selectedDetail.entity.actual.enemy.statuses) as [forHero, statuses]}
 									{#each Object.entries(statuses) as [key, value]}
 										{#if value > 0}
 											{`${forHero}: ${key} ${value}, `}
@@ -599,15 +597,14 @@
 					</div>
 				</div>
 			</div>
-		{/if}
 	{/if}
-	{#if $selectedVisualActionSourceState && $selectedVisualActionSource}
+	{#if $selectedVisualActionSourceState && $selectedDetail && $selectedDetail.kind == 'vas'}
 		<div class="selectedDetails">
 			<div class="selectedPortrait">
 				<img
-					src={$selectedVisualActionSource.portrait
-						? miscPortraits[$selectedVisualActionSource.portrait]
-						: anySprites[$selectedVisualActionSource.sprite]}
+					src={$selectedDetail.entity.portrait
+						? miscPortraits[$selectedDetail.entity.portrait]
+						: anySprites[$selectedDetail.entity.sprite]}
 					alt="place"
 				/>
 			</div>
@@ -617,11 +614,10 @@
 						{$selectedVisualActionSourceState.currentRetort ?? 'selected vas has no current retort'}
 					</div>
 					<div class="vasdButtons">
-						{#each $selectedVisualActionSource.actionsInClient.filter(a=>!a.lockHandle || !$lockedHandles.get(a.lockHandle)) as act}
+						{#each $selectedDetail.entity.actionsInClient.filter(a=>!a.lockHandle || !$lockedHandles.get(a.lockHandle)) as act}
 							<button
 								type="button"
 								on:click={() => {
-									if(!$selectedVisualActionSource)return
 									if(act.lock){
 										for (const handleToLock of act.lock){
 											$lockedHandles.set(handleToLock,true)
@@ -640,24 +636,27 @@
 								}}>{act.clientAct.buttonText}</button
 							>
 						{/each}
-						{#each $selectedVisualActionSource.responses.filter((r) => !r.lockHandle || !$lockedHandles.get(r.lockHandle) ) as c}
+						{#each $selectedDetail.entity.responses.filter((r) => !r.lockHandle || !$lockedHandles.get(r.lockHandle) ) as c}
 							<button
 								type="button"
 								on:click={() => {
-									if (!$lastUnitClicked) return;
+									if(!$selectedDetail)return
+									$lastUnitClicked = $selectedDetail.entity.id
 									if(c.lock){
 										for (const handleToLock of c.lock){
 											$lockedHandles.set(handleToLock,true)
 										}
 									}
-									$lockedHandles.set(c.lockHandle,true)
+									if(c.lockHandle){
+										$lockedHandles.set(c.lockHandle,true)
+									}
 									if(c.unlock){
 										for (const handleToUnlock of c.unlock){
 											$lockedHandles.set(handleToUnlock,false)
 										}
 									}
 
-									let state = $convoStateForEachVAS.get($lastUnitClicked);
+									let state = $selectedVisualActionSourceState;
 									if (!state) return;
 									state.currentRetort = c.retort;
 									$visualActionSources = $visualActionSources
