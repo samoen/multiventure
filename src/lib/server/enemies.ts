@@ -16,7 +16,7 @@ export type ActiveEnemy = {
 	damage: number
 	aggros: Map<HeroName, number>
 	template: EnemyTemplate
-	statuses: Map<HeroId, Record<StatusId, number>>
+	statuses: EnemyStatuses
 }
 
 export function getAggroForPlayer(enemy: ActiveEnemy, player: Player): number {
@@ -128,7 +128,11 @@ export function modifiedEnemyHealth(h: number): number {
 	return h + Math.floor(((activePlayers().length - 1) * PERCENT_OF_BASE_ADDED_PER_PLAYER * h))
 }
 
-export function spawnEnemy(name: string, template: EnemyTemplateId, where: SceneId, statuses: Map<HeroId, Record<StatusId, number>> = new Map()) {
+export function spawnEnemy(
+	name: string, 
+	template: EnemyTemplateId, 
+	where: SceneId, 
+	statuses: EnemyStatuses = new Map()) {
 	const baseHealth = enemyTemplates[template].baseHealth
 	let modifiedBaseHealth = scenes.get(where)?.solo ? baseHealth : modifiedEnemyHealth(baseHealth)
 	activeEnemies.push({
@@ -144,6 +148,7 @@ export function spawnEnemy(name: string, template: EnemyTemplateId, where: Scene
 		statuses: statuses,
 	})
 }
+export type EnemyStatuses = Map<HeroId, Record<StatusId, number>>
 
 export function addAggro(actor: Player, provoke: number) {
 	for (const respondingEnemy of enemiesInScene(actor.currentScene)) {

@@ -1,5 +1,5 @@
 import type { GameActionSentToClient, AnySprite, VisualActionSourceId } from '$lib/utils';
-import { enemiesInScene, enemyTemplates, spawnEnemy, type EnemyTemplateId } from './enemies';
+import { enemiesInScene, enemyTemplates, spawnEnemy, type EnemyTemplateId, type EnemyStatuses } from './enemies';
 import { bodyItems, utilityItems, weapons, type ItemIdForSlot, items } from './items';
 import { activePlayersInScene, globalFlags, healPlayer, type GameAction, type HeroName, type MiscPortrait, type Player } from './users';
 
@@ -61,11 +61,11 @@ export type VisualActionSourceInClient = {
 }
 
 
-export function getServerActionsMetRequirementsFromVases(vases : VisualActionSource[]) : GameAction[]{
-	let validActionsFromVases : GameAction[] = []
-	for(const vas of vases){
+export function getServerActionsMetRequirementsFromVases(vases: VisualActionSource[]): GameAction[] {
+	let validActionsFromVases: GameAction[] = []
+	for (const vas of vases) {
 		let acts = getValidUnlockableServerActionsFromVas(vas)
-		for (const act of acts){
+		for (const act of acts) {
 			validActionsFromVases.push(act.serverAct)
 		}
 	}
@@ -73,11 +73,11 @@ export function getServerActionsMetRequirementsFromVases(vases : VisualActionSou
 }
 
 
-export function getValidUnlockableServerActionsFromVas(vas : VisualActionSource) : UnlockableAction[]{
-	let validUnlockableActions : UnlockableAction[] = []
-	if(vas.actionsWithRequirements){
-		for (const awr of vas.actionsWithRequirements){
-			if(!awr.requires || awr.requires()){
+export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource): UnlockableAction[] {
+	let validUnlockableActions: UnlockableAction[] = []
+	if (vas.actionsWithRequirements) {
+		for (const awr of vas.actionsWithRequirements) {
+			if (!awr.requires || awr.requires()) {
 				validUnlockableActions.push(awr.sAction)
 			}
 		}
@@ -87,23 +87,23 @@ export function getValidUnlockableServerActionsFromVas(vas : VisualActionSource)
 }
 
 
-export function convertServerActionToClientAction(sa : GameAction) : GameActionSentToClient {
+export function convertServerActionToClientAction(sa: GameAction): GameActionSentToClient {
 	return {
-		
-			buttonText: sa.buttonText,
-			slot:sa.slot,
-			target:sa.target,
-			wait:sa.wait,
-	
+
+		buttonText: sa.buttonText,
+		slot: sa.slot,
+		target: sa.target,
+		wait: sa.wait,
+
 	}
 }
 
 export function convertVasToClient(vas: VisualActionSource): VisualActionSourceInClient {
 	let validUnlockableActions = getValidUnlockableServerActionsFromVas(vas)
-	
-	let validUnlockableClientActions : UnlockableClientAction[] = []
+
+	let validUnlockableClientActions: UnlockableClientAction[] = []
 	// for (const vua of validUnlockableActions){
-		
+
 	// }
 	validUnlockableClientActions = convertUnlockableActionsToClient(validUnlockableActions)
 
@@ -120,13 +120,13 @@ export function convertVasToClient(vas: VisualActionSource): VisualActionSourceI
 	return result
 }
 
-export function convertUnlockableActionsToClient(sUnlockables:(UnlockableAction[] | undefined)):UnlockableClientAction[] {
-	let clientUnlockables : UnlockableClientAction[] = []
-	if(!sUnlockables)return clientUnlockables
+export function convertUnlockableActionsToClient(sUnlockables: (UnlockableAction[] | undefined)): UnlockableClientAction[] {
+	let clientUnlockables: UnlockableClientAction[] = []
+	if (!sUnlockables) return clientUnlockables
 	return sUnlockables.map(u => {
 		let clientUnlockable: UnlockableClientAction = {
-			lock:u.lock,
-			unlock:u.unlock,
+			lock: u.lock,
+			unlock: u.unlock,
 			startsLocked: u.startsLocked,
 			lockHandle: u.lockHandle,
 			clientAct: convertServerActionToClientAction(u.serverAct)
@@ -186,18 +186,18 @@ const tutorial = {
 			id: 'vasTutor',
 			actionsWithRequirements: [
 				{
-					
-					sAction:{
-						
-							lockHandle: 'wantsToSkip',
-							startsLocked: true,
-							serverAct: {
-								buttonText: 'Skip Tutorial',
-								goTo: 'forest',
-							},
-						
-						}
+
+					sAction: {
+
+						lockHandle: 'wantsToSkip',
+						startsLocked: true,
+						serverAct: {
+							buttonText: 'Skip Tutorial',
+							goTo: 'forest',
+						},
+
 					}
+				}
 
 			],
 			startText: `'Look alive recruit! The first day of training can be the most dangerous of a guardsman's life. You must be ${player.heroName}, welcome aboard. In this barracks we wake up early, follow orders, and NEVER skip the tutorial. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.'`,
@@ -231,9 +231,9 @@ const tutorial = {
 			startsLocked: true,
 			actionsWithRequirements: [
 				{
-					sAction:{
-						lock:['vasEquipClub'],
-						serverAct:{
+					sAction: {
+						lock: ['vasEquipClub'],
+						serverAct: {
 							buttonText: 'equip club',
 							performAction() {
 								player.inventory.weapon.itemId = 'club'
@@ -250,8 +250,8 @@ const tutorial = {
 			startsLocked: true,
 			actionsWithRequirements: [
 				{
-					sAction:{
-						lock:['vasEquipBomb'],
+					sAction: {
+						lock: ['vasEquipBomb'],
 						serverAct: {
 							buttonText: 'equip bomb',
 							performAction() {
@@ -263,13 +263,13 @@ const tutorial = {
 			],
 		})
 		player.visualActionSources.push({
-			id:'vasGoTrain1',
-			sprite:'castle',
-			startText:`An entrance to a training room`,
-			actionsWithRequirements:[
+			id: 'vasGoTrain1',
+			sprite: 'castle',
+			startText: `An entrance to a training room`,
+			actionsWithRequirements: [
 				{
 					sAction: {
-						serverAct:{
+						serverAct: {
 							buttonText: "Enter the training room",
 							goTo: `trainingRoom1_${player.heroName}`
 						},
@@ -277,7 +277,7 @@ const tutorial = {
 					requires() {
 						return player.inventory.utility.itemId == 'bomb' && player.inventory.weapon.itemId == 'club'
 					},
-		
+
 				},
 			],
 		})
@@ -305,31 +305,31 @@ const trainingRoom1 = {
 		spawnEnemy('Nibbles', 'rat', `trainingRoom1_${player.heroName}`)
 	},
 	actions(player) {
-		if(!enemiesInScene(player.currentScene).length){
+		if (!enemiesInScene(player.currentScene).length) {
 			player.visualActionSources.push({
-				id:'vasTutor2',
-				sprite:'general',
-				portrait:'general',
-				startText:`Great job! Let's switch up your equipment. Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you.`,
-				responses:[
+				id: 'vasTutor2',
+				sprite: 'general',
+				portrait: 'general',
+				startText: `Great job! Let's switch up your equipment. Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you.`,
+				responses: [
 					{
-						lockHandle:'gimmie',
-						responseText:`ok, gimmie`,
-						retort:`gear up and go!`,
-						unlock:['vasEquipDagger',`vasEquipBandage`]
+						lockHandle: 'gimmie',
+						responseText: `ok, gimmie`,
+						retort: `gear up and go!`,
+						unlock: ['vasEquipDagger', `vasEquipBandage`]
 					}
 				]
 			})
 			player.visualActionSources.push({
-				id:'vasEquipDagger',
-				sprite:'club',
-				startText:'Hobgoblins wear heavy armor, which limits the amount of damage they take each strike. A dagger strikes multiple times per attack, mitigating their defenses.',
-				startsLocked:true,
-				actionsWithRequirements:[
+				id: 'vasEquipDagger',
+				sprite: 'club',
+				startText: 'Hobgoblins wear heavy armor, which limits the amount of damage they take each strike. A dagger strikes multiple times per attack, mitigating their defenses.',
+				startsLocked: true,
+				actionsWithRequirements: [
 					{
-						sAction:{
-							lock:['vasEquipDagger'],						
-							serverAct:{
+						sAction: {
+							lock: ['vasEquipDagger'],
+							serverAct: {
 								buttonText: 'Equip Dagger',
 								performAction() {
 									player.inventory.weapon.itemId = 'dagger'
@@ -340,15 +340,15 @@ const trainingRoom1 = {
 				]
 			})
 			player.visualActionSources.push({
-				id:'vasEquipBandage',
-				sprite:'club',
-				startText:`Use that bandage when you get low on health. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
-				startsLocked:true,
-				actionsWithRequirements:[
+				id: 'vasEquipBandage',
+				sprite: 'club',
+				startText: `Use that bandage when you get low on health. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
+				startsLocked: true,
+				actionsWithRequirements: [
 					{
-						sAction:{							
-							lock:['vasEquipBandage'],						
-							serverAct:{
+						sAction: {
+							lock: ['vasEquipBandage'],
+							serverAct: {
 								buttonText: 'Equip Bandage',
 								performAction() {
 									player.inventory.utility.itemId = 'bandage'
@@ -359,18 +359,18 @@ const trainingRoom1 = {
 				]
 			})
 			player.visualActionSources.push({
-				id:'vasGoTrain2',
-				sprite:'castle',
-				startText:`Another door, another training room.`,
-				actionsWithRequirements:[
+				id: 'vasGoTrain2',
+				sprite: 'castle',
+				startText: `Another door, another training room.`,
+				actionsWithRequirements: [
 					{
 						requires() {
 							return player.inventory.weapon.itemId == 'dagger' && player.inventory.utility.itemId == 'bandage'
 						},
-						sAction:{
-							serverAct:{
-								buttonText:'Go to the next room',
-								goTo:`trainingRoom2_${player.heroName}`,
+						sAction: {
+							serverAct: {
+								buttonText: 'Go to the next room',
+								goTo: `trainingRoom2_${player.heroName}`,
 							}
 						}
 					}
@@ -420,8 +420,8 @@ const trainingRoom2: Scene = {
 			this.onVictory && this.onVictory(player)
 			return
 		}
-		let borgusStatuses = new Map()
-		borgusStatuses.set(player.heroName, { poison: 0, rage: 5 })
+		let borgusStatuses: EnemyStatuses = new Map()
+		borgusStatuses.set(player.unitId, { poison: 0, rage: 5, hidden: 0 })
 		player.sceneTexts.push("Borgus: 'Raaargh! What are you hob-doing in MY hob-training room?! How is Glornak by the way? We used to work in the same room but they split us up.'")
 		player.sceneTexts.push("Florgus: 'There you go again Morgus, talking about Glornak like I'm not standing right here. And it's OUR training room now remember? Oh Great, another recruit equipped with a dagger..'")
 		player.sceneTexts.push("Scortchy: 'Burn! I burn you! REEEE HEEE HEEE'")
@@ -527,7 +527,7 @@ const forest: Scene = {
 			sprite: 'castle',
 			actionsWithRequirements: [{
 				sAction: {
-					serverAct:{
+					serverAct: {
 						buttonText: 'Slog it towards teh castle',
 						goTo: 'castle',
 					}
@@ -761,9 +761,12 @@ const goblinCamp: Scene = {
 				playerInScene.sceneTexts.push(`Suddendly, A pair of goblins rush out of a tent.. "Hey Gorlak, looks like lunch!" "Right you are Murk. Let's eat!"`)
 			}
 			spawnEnemy('Gorlak', 'goblin', 'goblinCamp')
-			let murkStatuses = new Map()
-			murkStatuses.set(player.heroName, { poison: 0, rage: 5 })
-			spawnEnemy('Murk', 'goblin', 'goblinCamp', murkStatuses)
+			spawnEnemy(
+				'Murk',
+				'goblin',
+				'goblinCamp',
+				new Map([[player.unitId,{ poison: 0, rage: 5, hidden: 0 }]])
+			)
 		}
 	},
 	onBattleJoin(player) {
