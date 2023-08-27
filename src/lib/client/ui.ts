@@ -160,7 +160,7 @@ export const selectedDetail : Readable<DetailWindow | undefined> = derived([
 ]) => {
 
     if(!$lastUnitClicked){
-        let firstVas = $visualActionSources.at(0)
+        let firstVas = undefined
         // find unlocked vas with an unlocked action or response
         outer: for(const vas of $visualActionSources){
             if($lockedHandles.get(vas.id)==true)continue
@@ -182,12 +182,15 @@ export const selectedDetail : Readable<DetailWindow | undefined> = derived([
         let me = $allVisualUnitProps.at(0) 
         if(me) return {kind:'vup',entity:me} satisfies DetailWindow
     }
-
+    
     let vupAt = $allVisualUnitProps.find(v => v.id == $lastUnitClicked)
     if (vupAt) return {kind:'vup', entity:vupAt} satisfies DetailWindow
     
     let vasAt = $visualActionSources.find(v => v.id == $lastUnitClicked)
     if (vasAt) return {kind:'vas',entity:vasAt} satisfies DetailWindow
+    
+    let me = $allVisualUnitProps.at(0) 
+    if(me) return {kind:'vup',entity:me} satisfies DetailWindow
 
     return undefined
 })
@@ -355,7 +358,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                 let existing = cs.get(vas.id)
                 // if we can't find this vas in the state, initialize it
                 if (!existing) {
-                    console.log(`init vas state ${vas.id} with unlockable`)
+                    // console.log(`init vas state ${vas.id} with unlockable`)
                     cs.set(vas.id, {
                         currentRetort: vas.startText,
                     })

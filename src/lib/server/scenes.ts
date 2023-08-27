@@ -288,11 +288,11 @@ const tutorial = {
 const trainingRoom1 = {
 	solo: true,
 	onEnterScene(player) {
-		player.lastCheckpoint = `tutorial_${player.heroName}`
-		if (player.previousScene == 'dead') {
-			this.onVictory && this.onVictory(player)
-			return
-		}
+		player.lastCheckpoint = `trainingRoom1_${player.heroName}`
+		// if (player.previousScene == 'dead') {
+		// 	this.onVictory && this.onVictory(player)
+		// 	return
+		// }
 		player.sceneTexts.push("You enter the training room. It is well worn by many training sessions. The walls are covered in blast marks, dents and splinters.")
 		player.sceneTexts.push("Glornak: 'Hey you! I've never seen a more pitiful excuse for a guardsman in my life, and I've been working here since Arthur was a recruit! Go, my rats!'")
 		player.sceneTexts.push("Skitters: 'Squeak!'")
@@ -305,6 +305,79 @@ const trainingRoom1 = {
 		spawnEnemy('Nibbles', 'rat', `trainingRoom1_${player.heroName}`)
 	},
 	actions(player) {
+		if(!enemiesInScene(player.currentScene).length){
+			player.visualActionSources.push({
+				id:'vasTutor2',
+				sprite:'general',
+				portrait:'general',
+				startText:`Great job! Let's switch up your equipment. Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you.`,
+				responses:[
+					{
+						lockHandle:'gimmie',
+						responseText:`ok, gimmie`,
+						retort:`gear up and go!`,
+						unlock:['vasEquipDagger',`vasEquipBandage`]
+					}
+				]
+			})
+			player.visualActionSources.push({
+				id:'vasEquipDagger',
+				sprite:'club',
+				startText:'Hobgoblins wear heavy armor, which limits the amount of damage they take each strike. A dagger strikes multiple times per attack, mitigating their defenses.',
+				startsLocked:true,
+				actionsWithRequirements:[
+					{
+						sAction:{
+							lock:['vasEquipDagger'],						
+							serverAct:{
+								buttonText: 'Equip Dagger',
+								performAction() {
+									player.inventory.weapon.itemId = 'dagger'
+								},
+							}
+						}
+					},
+				]
+			})
+			player.visualActionSources.push({
+				id:'vasEquipBandage',
+				sprite:'club',
+				startText:`Use that bandage when you get low on health. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
+				startsLocked:true,
+				actionsWithRequirements:[
+					{
+						sAction:{							
+							lock:['vasEquipBandage'],						
+							serverAct:{
+								buttonText: 'Equip Bandage',
+								performAction() {
+									player.inventory.utility.itemId = 'bandage'
+								},
+							}
+						}
+					},
+				]
+			})
+			player.visualActionSources.push({
+				id:'vasGoTrain2',
+				sprite:'castle',
+				startText:`Another door, another training room.`,
+				actionsWithRequirements:[
+					{
+						requires() {
+							return player.inventory.weapon.itemId == 'dagger' && player.inventory.utility.itemId == 'bandage'
+						},
+						sAction:{
+							serverAct:{
+								buttonText:'Go to the next room',
+								goTo:`trainingRoom2_${player.heroName}`,
+							}
+						}
+					}
+				]
+			})
+		}
+
 
 		if (player.inventory.utility.itemId == 'bandage' && player.inventory.weapon.itemId == 'dagger') {
 			player.sceneActions.push({
