@@ -4,6 +4,7 @@ import { users, type GameAction } from '$lib/server/users';
 import { isGameActionSelected } from '$lib/utils';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { getServerActionsMetRequirementsFromVases } from '$lib/server/scenes';
 
 export const POST = (async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
@@ -31,21 +32,10 @@ export const POST = (async (r) => {
 	// ensure action is still valid
 	updatePlayerActions(player)
 
-	let unlockableActions : GameAction[] = []
-	for(const vas of player.visualActionSources){
-		if(vas.unlockables){
-			for(const ua of vas.unlockables){
-				if(ua.serverAct){
-					unlockableActions.push(ua.serverAct)
-				}
+	
+	let validActionsFromVases : GameAction[] = getServerActionsMetRequirementsFromVases(player.visualActionSources)
 
-			}
-			// for(const [key,value] of Object.entries(vas.unlockables)){
-			// }
-		}
-	}
-
-	let actionFromId = [...player.sceneActions, ...player.itemActions, ...player.visualActionSources.flatMap(s=>s.actions), ...unlockableActions].find((g) => g.buttonText == msg.buttonText);
+	let actionFromId = [...player.sceneActions, ...player.itemActions, ...validActionsFromVases].find((g) => g.buttonText == msg.buttonText);
 	if (!actionFromId) {
 		console.log(`rejected action ${JSON.stringify(msg)} because not available`);
 		return json(`action ${msg.buttonText} not available`, { status: 400 });

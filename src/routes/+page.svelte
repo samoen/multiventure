@@ -2,15 +2,16 @@
 	import { invalidateAll } from '$app/navigation';
 	import Unit from '$lib/Components/Unit.svelte';
 	import {
+		convoStateForEachVAS,
 		actionsForSlot,
 		allVisualUnitProps,
 		animationCancelled,
 		bodySlotActions,
 		centerFieldTarget,
 		choose,
+		lockedHandles,
 		clientState,
 		convoBeenSaid,
-		convoStateForEachVAS,
 		currentAnimation,
 		currentAnimationIndex,
 		currentAnimationsWithData,
@@ -470,7 +471,7 @@
 						<Unit hostId={e.id} />
 					</div>
 				{/each}
-				{#each $visualActionSources.filter(s=>!$convoStateForEachVAS.get(s.id)?.vasIsLocked) as s (s.id)}
+				{#each $visualActionSources.filter(s=>!$lockedHandles.get(s.id)) as s (s.id)}
 					<div
 						animate:flip
 						on:click|preventDefault|stopPropagation={() => {
@@ -616,102 +617,51 @@
 						{$selectedVisualActionSourceState.currentRetort ?? 'selected vas has no current retort'}
 					</div>
 					<div class="vasdButtons">
-						{#each $selectedVisualActionSource.actionsInClient as act}
+						{#each $selectedVisualActionSource.actionsInClient.filter(a=>!a.lockHandle || !$lockedHandles.get(a.lockHandle)) as act}
 							<button
 								type="button"
 								on:click={() => {
-									$lastUnitClicked = undefined;
-									choose(act);
-								}}>{act.buttonText}</button
-							>
-						{/each}
-						{#each $selectedVisualActionSourceState.maybeLockedActions.filter((a) => !a.isLocked) as mla}
-							<button
-								type="button"
-								on:click={() => {
-									// $lastUnitClicked = undefined
-									// $convoBeenSaid.add(act.buttonText)
-									if (mla.clientAct) {
-										if (!$lastUnitClicked) return;
-										let state = $convoStateForEachVAS.get($lastUnitClicked);
-										if (!state) return;
-										for (const toLock of state.maybeLockedActions) {
-											if (toLock.lockHandle == mla.lockHandle) {
-												console.log(`action locking itself ${toLock.lockHandle}`);
-												toLock.isLocked = true;
-											}
+									if(!$selectedVisualActionSource)return
+									if(act.lock){
+										for (const handleToLock of act.lock){
+											$lockedHandles.set(handleToLock,true)
 										}
-										if(mla.locksVas){
-											console.log(`action ${mla.clientAct.buttonText} locking it's vas ${$lastUnitClicked}`);
-											state.vasIsLocked = true
-										}
-										$convoStateForEachVAS = $convoStateForEachVAS;
-	
-										choose(mla.clientAct);
 									}
-								}}>{mla?.clientAct?.buttonText}</button
+									if(act.unlock){
+										for (const handleToUnlock of act.unlock){
+											$lockedHandles.set(handleToUnlock,false)
+										}
+									}
+									$lockedHandles = $lockedHandles
+									$visualActionSources = $visualActionSources
+									choose(act.clientAct);
+									$lastUnitClicked = undefined;
+
+								}}>{act.clientAct.buttonText}</button
 							>
 						{/each}
-						{#each $selectedVisualActionSourceState.maybeLockedResponses.filter((r) => !r.isLocked) as c}
+						{#each $selectedVisualActionSource.responses.filter((r) => !r.lockHandle || !$lockedHandles.get(r.lockHandle) ) as c}
 							<button
 								type="button"
 								on:click={() => {
 									if (!$lastUnitClicked) return;
+									if(c.lock){
+										for (const handleToLock of c.lock){
+											$lockedHandles.set(handleToLock,true)
+										}
+									}
+									$lockedHandles.set(c.lockHandle,true)
+									if(c.unlock){
+										for (const handleToUnlock of c.unlock){
+											$lockedHandles.set(handleToUnlock,false)
+										}
+									}
+
 									let state = $convoStateForEachVAS.get($lastUnitClicked);
 									if (!state) return;
 									state.currentRetort = c.retort;
-									for (const toLock of state.maybeLockedResponses) {
-										if (
-											(c.lock && c.lock.includes(toLock.lockHandle)) ||
-											toLock.lockHandle == c.lockHandle
-										) {
-											console.log(`response locking response ${toLock.lockHandle}`);
-											toLock.isLocked = true;
-										}
-										if (c.unlock) {
-											if (c.unlock.includes(toLock.lockHandle)) {
-												console.log(`response unlocking response ${toLock.lockHandle}`);
-												toLock.isLocked = false;
-											}
-										}
-									}
-									for (const toLock of state.maybeLockedActions) {
-										if (c.lock) {
-											if (c.lock.includes(toLock.lockHandle)) {
-												console.log(`response locking action ${toLock.lockHandle}`);
-												toLock.isLocked = true;
-											}
-										}
-										if (c.unlock) {
-											if (c.unlock.includes(toLock.lockHandle)) {
-												console.log(`response unlocking action ${toLock.lockHandle}`);
-												toLock.isLocked = false;
-											}
-										}
-									}
-									for (const toLock of $visualActionSources) {
-										// if (c.lock) {
-										// 	if (c.lock.includes(toLock.lockHandle)) {
-										// 		console.log(`response locking action ${toLock.lockHandle}`);
-										// 		toLock.isLocked = true;
-										// 	}
-										// }
-										if (c.unlock && toLock.lockHandle) {
-											if (c.unlock.includes(toLock.lockHandle)) {
-												console.log(`response unlocking vas ${toLock.lockHandle}`);
-												let stateToLock = $convoStateForEachVAS.get(toLock.id)
-												if(stateToLock){
-													stateToLock.vasIsLocked = false
-												}
-												// toLock.startsLocked = false;
-											}
-										}
-									}
 									$visualActionSources = $visualActionSources
 									$convoStateForEachVAS = $convoStateForEachVAS;
-									// $currentConvoPrompt = c.retort
-									// $convoBeenSaid.add(c.responseText)
-									// $convoBeenSaid = $convoBeenSaid
 								}}>{c.responseText}</button
 							>
 						{/each}

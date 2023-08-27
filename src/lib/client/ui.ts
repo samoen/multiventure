@@ -62,10 +62,10 @@ export type VisualUnitProps = {
     actionsThatCanTargetMe: GameActionSentToClient[]
 }
 
-export const enemySprites : Record<EnemyTemplateId,string> = {
+export const enemySprites: Record<EnemyTemplateId, string> = {
     goblin: spearman,
     rat: rat,
-    darter:spearman,
+    darter: spearman,
     hobGoblin: grunt,
     troll: troll,
     fireGremlin: fireghost
@@ -86,18 +86,18 @@ export let visualActionSources: Writable<VisualActionSourceInClient[]> = writabl
 
 export const currentAnimationIndex: Writable<number> = writable(999)
 
-export function numberShownOnSlot(itemState: ItemState):number|undefined{
+export function numberShownOnSlot(itemState: ItemState): number | undefined {
     // if(!$lastMsgFromServer)return undefined
     const higherOfCooldownOrWarmup = Math.max(itemState.cooldown, itemState.warmup)
-    if(higherOfCooldownOrWarmup > 0) return higherOfCooldownOrWarmup
+    if (higherOfCooldownOrWarmup > 0) return higherOfCooldownOrWarmup
     return undefined
 }
 
-export function stockDotsOnSlotButton(itemState: ItemState):string{
+export function stockDotsOnSlotButton(itemState: ItemState): string {
     let dots = ''
-    if(itemState.stock != undefined){
-        for (const _ of Array.from({length:itemState.stock})){
-            dots=dots+'.'
+    if (itemState.stock != undefined) {
+        for (const _ of Array.from({ length: itemState.stock })) {
+            dots = dots + '.'
         }
     }
     return dots
@@ -112,18 +112,18 @@ export let currentAnimation = derived([currentAnimationIndex, currentAnimationsW
 export const animationCancelled = writable(false)
 export const subAnimationStage: Writable<'start' | 'fire' | 'sentHome'> = writable('start')
 
-export function actionsForSlot(lm:MessageFromServer|undefined,equipmentSlot:EquipmentSlot): GameActionSentToClient[] {
-    if(!lm)return []
+export function actionsForSlot(lm: MessageFromServer | undefined, equipmentSlot: EquipmentSlot): GameActionSentToClient[] {
+    if (!lm) return []
     return lm?.itemActions.filter(ia => ia.slot == equipmentSlot)
 }
 export let typedInventory = derived(lastMsgFromServer, ($lastMsgFromServer) => {
-    let map = new Map<EquipmentSlot,ItemState>()
-    if(!$lastMsgFromServer){
+    let map = new Map<EquipmentSlot, ItemState>()
+    if (!$lastMsgFromServer) {
         return map
     }
-    for(const [key,value] of Object.entries($lastMsgFromServer.yourInfo.inventory)){
+    for (const [key, value] of Object.entries($lastMsgFromServer.yourInfo.inventory)) {
         let tKey = key as EquipmentSlot
-        map.set(tKey,value)
+        map.set(tKey, value)
     }
     return map
 })
@@ -148,50 +148,52 @@ export const selectedDetail = derived([
     lastUnitClicked,
     allVisualUnitProps,
 ], ([$lastUnitClicked,
-     $allVisualUnitProps,
+    $allVisualUnitProps,
 ]) => {
 
     let props = $allVisualUnitProps
-    let vupAt = props.find(v=>v.id == $lastUnitClicked)
-    if(vupAt)return vupAt
+    let vupAt = props.find(v => v.id == $lastUnitClicked)
+    if (vupAt) return vupAt
     return $allVisualUnitProps.at(0)
 })
 export const selectedVisualActionSource = derived([
     lastUnitClicked,
     visualActionSources,
 ], ([$lastUnitClicked,
-     $visualActionSources,
+    $visualActionSources,
 ]) => {
 
-    let vasAt = $visualActionSources.find(v=>v.id==$lastUnitClicked)
-    if(vasAt)return vasAt
+    let vasAt = $visualActionSources.find(v => v.id == $lastUnitClicked)
+    if (vasAt) return vasAt
     return undefined
 })
 
 // a collection of the responsetexts you've clicked and also the ulockable button texts youve clicked
-export const convoBeenSaid : Writable<Set<string>> = writable(new Set())
-export const currentConvoPrompt : Writable<string | undefined> = writable(undefined)
+export const convoBeenSaid: Writable<Set<string>> = writable(new Set())
+export const currentConvoPrompt: Writable<string | undefined> = writable(undefined)
 
 export type ConvoState = {
-    currentRetort:string
-    maybeLockedResponses: (ConversationResponse)[]
-    maybeLockedActions: (UnlockableClientAction)[]
-    vasIsLocked?:boolean
+    currentRetort: string
+    // maybeLockedResponses: (ConversationResponse)[]
+    // maybeLockedActions: (UnlockableClientAction)[]
+    // vasIsLocked?:boolean
 }
 
-export const convoStateForEachVAS : Writable<Map<UnitId,ConvoState>> = writable(new Map())
+export const lockedHandles: Writable<Map<string,boolean>> = writable(new Map())
+
+export const convoStateForEachVAS: Writable<Map<UnitId, ConvoState>> = writable(new Map())
 export const selectedVisualActionSourceState = derived([
     lastUnitClicked,
     visualActionSources,
     convoStateForEachVAS,
 
 ], ([$lastUnitClicked,
-     $visualActionSources,
-     $convoStateForEachVAS,
+    $visualActionSources,
+    $convoStateForEachVAS,
 ]) => {
-    if(!$lastUnitClicked)return undefined
+    if (!$lastUnitClicked) return undefined
     let state = $convoStateForEachVAS.get($lastUnitClicked)
-    if(!state){
+    if (!state) {
         return undefined
     }
     return state
@@ -239,18 +241,18 @@ let enemyPortraits = {
 } satisfies Record<EnemyTemplateId, string>;
 
 export const miscPortraits = {
-    peasant:peasantPortrait,
-    general:generalPortrait,
+    peasant: peasantPortrait,
+    general: generalPortrait,
 } satisfies Record<MiscPortrait, string>;
 
 export function updateUnit(index: UnitId, run: (vup: VisualUnitProps) => void) {
-    allVisualUnitProps.update((old)=>{
-            return old.map((p, j) => {
-                if (index == p.id) {
-                    run(p);
-                }
-                return p;
-            });
+    allVisualUnitProps.update((old) => {
+        return old.map((p, j) => {
+            if (index == p.id) {
+                run(p);
+            }
+            return p;
+        });
 
     })
 }
@@ -263,7 +265,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         let newVups: VisualUnitProps[] = []
         // console.log(`syncing hero with poison ${lastMsg.yourInfo.statuses.poison}`)
         newVups.push({
-            id:lastMsg.yourInfo.unitId,
+            id: lastMsg.yourInfo.unitId,
             name: lastMsg.yourInfo.heroName,
             src: heroSprites[heroSprite(lastMsg.yourInfo.inventory.weapon?.itemId)],
             maxHp: lastMsg.yourInfo.maxHealth,
@@ -272,7 +274,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
             actual: {
                 kind: 'player',
                 portrait: peasantPortrait,
-                info:lastMsg.yourInfo,
+                info: lastMsg.yourInfo,
             },
             actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == lastMsg.yourInfo.unitId)
         } satisfies VisualUnitProps
@@ -281,7 +283,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         for (const e of lastMsg.enemiesInScene) {
             newVups.push(
                 {
-                    id:e.unitId,
+                    id: e.unitId,
                     name: e.name,
                     src: enemySprites[e.templateId],
                     displayHp: e.health,
@@ -295,13 +297,13 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                     },
                     actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == e.unitId)
                 } satisfies VisualUnitProps
-                )
-            }
-            for (const p of lastMsg.otherPlayers) {
-                if (p.currentScene == lastMsg.yourInfo.currentScene) {
-                    newVups.push(
-                        {
-                        id:p.unitId,
+            )
+        }
+        for (const p of lastMsg.otherPlayers) {
+            if (p.currentScene == lastMsg.yourInfo.currentScene) {
+                newVups.push(
+                    {
+                        id: p.unitId,
                         name: p.heroName,
                         src: heroSprites[heroSprite(p.inventory.weapon.itemId)],
                         displayHp: p.health,
@@ -320,63 +322,99 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         }
         allVisualUnitProps.set(newVups)
         // console.log(`${JSON.stringify(lastMsg.visualActionSources.map(v=>v.id))}`)
-        visualActionSources.set(lastMsg.visualActionSources)
-        for (const vas of lastMsg.visualActionSources){
-            convoStateForEachVAS.update(cs=>{
+        for (const vas of lastMsg.visualActionSources) {
+            convoStateForEachVAS.update(cs => {
                 let existing = cs.get(vas.id)
                 // if we can't find this vas in the state, initialize it
-                if(!existing){
+                if (!existing) {
                     console.log(`init vas state ${vas.id} with unlockable`)
-                    cs.set(vas.id,{
-                        currentRetort:vas.startText,
-                        maybeLockedActions:vas.unlockables ?? [],
-                        maybeLockedResponses:vas.responses ?? [],
-                        vasIsLocked:vas.startsLocked
+                    cs.set(vas.id, {
+                        currentRetort: vas.startText,
                     })
                 }
                 return cs
             })
+            lockedHandles.update((lh) => {
+                console.log(`new msg, current lockhandles: ${[...lh.entries()]}`)
+                let existing = lh.get(vas.id)
+                if (existing == undefined) {
+                    if(vas.startsLocked){
+                        console.log(`init ${vas.id} starts locked`)
+                        lh.set(vas.id,true)
+                    }else{
+                        lh.set(vas.id,false)
+                    }
+                }
+                for (const uAct of vas.actionsInClient) {
+                    if(uAct.lockHandle){
+                        let existing = lh.get(uAct.lockHandle)
+                        if(existing == undefined){
+                            if (uAct.startsLocked) {
+                                lh.set(uAct.lockHandle,true)
+                            }else{
+                                lh.set(uAct.lockHandle,false)
+                            }
+                        }
+
+                    }
+                }
+                for (const resp of vas.responses) {
+                    if(resp.lockHandle){
+                        let existing = lh.get(resp.lockHandle)
+                        if(existing == undefined){
+                            if (resp.startsLocked ){
+                                lh.set(resp.lockHandle,true)
+                            }else{
+                                lh.set(resp.lockHandle,false)
+                            }
+                        }
+                    }
+                }
+                return lh
+            })
+
         }
+        visualActionSources.set(lastMsg.visualActionSources)
     }
 }
 
 
-export const anySprites : Record<AnySprite,string> ={
+export const anySprites: Record<AnySprite, string> = {
     arrow: arrow,
     bomb: bomb,
     smoke: smoke,
     shield: shield,
     flame: flame,
-    heal:heal,
+    heal: heal,
     poison: greenDrip,
-    castle:lighthouse,
-    general:general,
-    club:club,
-    clubSlot:clubSlot,
+    castle: lighthouse,
+    general: general,
+    club: club,
+    clubSlot: clubSlot,
 }
 
 export function handlePutsStatuses(anim: BattleAnimation) {
     if (anim.putsStatuses) {
-        for(const ps of anim.putsStatuses){
-            updateUnit(ps.target,(vup)=>{
-                if(ps.remove){
+        for (const ps of anim.putsStatuses) {
+            updateUnit(ps.target, (vup) => {
+                if (ps.remove) {
                     if (vup.actual.kind == 'enemy') {
                         // remove enemy status for all sources
-                        for(const sourceId in vup.actual.enemy.statuses){
+                        for (const sourceId in vup.actual.enemy.statuses) {
                             const tSourceId = sourceId as UnitId
                             vup.actual.enemy.statuses[tSourceId][ps.status] = 0
                         }
                     } else if (vup.actual.kind == 'player') {
                         vup.actual.info.statuses[ps.status] = 0;
                     }
-                }else{
-                    if(ps.count){
+                } else {
+                    if (ps.count) {
                         if (vup.actual.kind == 'enemy') {
                             let existingStatusesForSource = vup.actual.enemy.statuses[anim.source];
                             console.log(vup.actual.enemy.statuses)
                             if (!existingStatusesForSource) {
                                 console.log('adding statuses for ' + anim.source)
-                                vup.actual.enemy.statuses[anim.source] = { poison: 0, rage: 0, hidden:0 };
+                                vup.actual.enemy.statuses[anim.source] = { poison: 0, rage: 0, hidden: 0 };
                             }
                             vup.actual.enemy.statuses[anim.source][ps.status] = ps.count;
                         } else if (vup.actual.kind == 'player') {
@@ -403,17 +441,17 @@ export const centerFieldTarget = derived(
         return undefined;
     }
 );
-export type AnimsInWaiting = {prev: MessageFromServer, withAnims:MessageFromServer}
-export const animationsInWaiting : Writable<AnimsInWaiting|undefined> = writable()
+export type AnimsInWaiting = { prev: MessageFromServer, withAnims: MessageFromServer }
+export const animationsInWaiting: Writable<AnimsInWaiting | undefined> = writable()
 
 export async function nextAnimationIndex(
-    start: boolean, curAnimIndex:number, 
-    curAnimations:BattleAnimation[], 
-    latest:MessageFromServer|undefined, 
-    someoneDied:boolean,
-    cancel:boolean,
-    animsInWaiting:AnimsInWaiting|undefined,
-    ) {
+    start: boolean, curAnimIndex: number,
+    curAnimations: BattleAnimation[],
+    latest: MessageFromServer | undefined,
+    someoneDied: boolean,
+    cancel: boolean,
+    animsInWaiting: AnimsInWaiting | undefined,
+) {
     let cai = 0
     if (start) {
         currentAnimationIndex.set(0)
@@ -421,20 +459,20 @@ export async function nextAnimationIndex(
         currentAnimationIndex.update(o => {
             return o + 1
         })
-        cai = curAnimIndex+1
+        cai = curAnimIndex + 1
     }
-    
+
     if (cai > curAnimations.length - 1) {
-        if(!animsInWaiting){
+        if (!animsInWaiting) {
             // give some time for enemies slain on the last animation to fade out.
-            if(someoneDied){
-                await new Promise(r=>setTimeout(r,500))
+            if (someoneDied) {
+                await new Promise(r => setTimeout(r, 500))
             }
             waitingForMyAnimation.set(false)
             syncVisualsToMsg(latest)
             return
         }
-        if(animsInWaiting){
+        if (animsInWaiting) {
             console.log('playing anims in waiting')
             syncVisualsToMsg(animsInWaiting.prev)
             currentAnimationsWithData.set(animsInWaiting.withAnims.animations)
@@ -450,7 +488,7 @@ export async function nextAnimationIndex(
 
 
 
-    
+
     subAnimationStage.set('start')
 
     // let the projectiles render at start position

@@ -36,12 +36,16 @@ export type VisualActionSource = {
 	id: VisualActionSourceId
 	sprite: AnySprite
 	portrait?: MiscPortrait
-	actions: GameAction[]
+	actionsWithRequirements?: (UnlockableGameActionWithRequirement)[]
 	startText: string,
 	responses?: ConversationResponse[]
-	unlockables?: UnlockableAction[]
 	startsLocked?: boolean
 	lockHandle?: string
+}
+
+export type UnlockableGameActionWithRequirement = {
+	sAction: UnlockableAction,
+	requires?: () => boolean,
 }
 
 export type VisualActionSourceInClient = {
@@ -50,60 +54,111 @@ export type VisualActionSourceInClient = {
 	id: VisualActionSourceId
 	sprite: AnySprite
 	portrait?: MiscPortrait
-	actionsInClient: GameActionSentToClient[]
+	actionsInClient: UnlockableClientAction[]
 	startText: string,
-	responses?: ConversationResponse[]
-	unlockables?: UnlockableClientAction[]
+	responses: ConversationResponse[]
+}
+
+// export function getActionsInClientFromVas(vas : VisualActionSource) : UnlockableClientAction[] {
+// 	let serverActions = getServerActionsMetRequirementsFromVases([vas])
+// 	return serverActions.map(sa=>convertServerActionToClientAction(sa))
+// }
+
+export function getServerActionsMetRequirementsFromVases(vases : VisualActionSource[]) : GameAction[]{
+	let validActionsFromVases : GameAction[] = []
+	for(const vas of vases){
+		let acts = getValidUnlockableServerActionsFromVas(vas)
+		for (const act of acts){
+			validActionsFromVases.push(act.serverAct)
+		}
+	}
+	return validActionsFromVases
+}
+
+
+export function getValidUnlockableServerActionsFromVas(vas : VisualActionSource) : UnlockableAction[]{
+	let validUnlockableActions : UnlockableAction[] = []
+	if(vas.actionsWithRequirements){
+		for (const awr of vas.actionsWithRequirements){
+			if(!awr.requires || awr.requires()){
+				validUnlockableActions.push(awr.sAction)
+			}
+		}
+
+	}
+	return validUnlockableActions
+}
+
+
+export function convertServerActionToClientAction(sa : GameAction) : GameActionSentToClient {
+	return {
+		
+			buttonText: sa.buttonText,
+			slot:sa.slot,
+			target:sa.target,
+			wait:sa.wait,
+	
+	}
 }
 
 export function convertVasToClient(vas: VisualActionSource): VisualActionSourceInClient {
+	let validUnlockableActions = getValidUnlockableServerActionsFromVas(vas)
+	
+	let validUnlockableClientActions : UnlockableClientAction[] = []
+	// for (const vua of validUnlockableActions){
+		
+	// }
+	validUnlockableClientActions = convertUnlockableActionsToClient(validUnlockableActions)
+
 	let result = {
 		id: vas.id,
 		startText: vas.startText,
-		responses: vas.responses,
+		responses: vas.responses ?? [],
 		sprite: vas.sprite,
 		portrait: vas.portrait,
 		startsLocked: vas.startsLocked,
 		lockHandle: vas.lockHandle,
-		actionsInClient: vas.actions.map(a => {
-			return {
-				buttonText: a.buttonText
-			}
-		}),
-		unlockables: vas.unlockables
-			?.map(u => {
-			let clientUnlockable: UnlockableClientAction = {
-				locksVas: u.locksVas,
-				isLocked: u.startsLocked,
-				lockHandle: u.lockHandle,
-				clientAct: {
-					buttonText: u.serverAct.buttonText
-				}
-			}
-			console.log('including unlockable ' + u.lockHandle)
-			return clientUnlockable
-		})
+		actionsInClient: validUnlockableClientActions,
 	} satisfies VisualActionSourceInClient
 	return result
 }
 
+export function convertUnlockableActionsToClient(sUnlockables:(UnlockableAction[] | undefined)):UnlockableClientAction[] {
+	let clientUnlockables : UnlockableClientAction[] = []
+	if(!sUnlockables)return clientUnlockables
+	return sUnlockables.map(u => {
+		let clientUnlockable: UnlockableClientAction = {
+			lock:u.lock,
+			unlock:u.unlock,
+			startsLocked: u.startsLocked,
+			lockHandle: u.lockHandle,
+			clientAct: convertServerActionToClientAction(u.serverAct)
+		}
+		return clientUnlockable
+	})
+}
+
+
+
 export type UnlockableAction = {
-	lockHandle: string,
+	lockHandle?: string,
 	serverAct: GameAction,
 	startsLocked: boolean,
-	locksVas: boolean,
+	unlock?: string[],
+	lock?: string[]
 }
 
 export type UnlockableClientAction = {
-	lockHandle: string,
+	lockHandle?: string,
 	clientAct: GameActionSentToClient,
-	isLocked: boolean
-	locksVas: boolean,
+	startsLocked: boolean
+	unlock?: string[],
+	lock?: string[]
 }
 
 export type ConversationResponse = {
 	lockHandle: string,
-	isLocked: boolean,
+	startsLocked: boolean,
 	responseText: string,
 	retort: string,
 	unlock?: string[],
@@ -133,103 +188,109 @@ const dead: Scene = {
 
 const tutorial = {
 	onEnterScene(player) {
+		player.lastCheckpoint = `tutorial_${player.heroName}`
 		// player.inventory.body.itemId = 'rags'
 		// player.inventory.utility.itemId = 'empty'
 		// player.inventory.weapon.itemId = 'unarmed'
 		player.sceneTexts.push(`You are standing at a castle barracks. Soliders mill around swinging swords and grunting in cool morning air. You see Arthur, the captain of the castle guard marching towards you.`)
 	},
 	actions(player) {
-		player.lastCheckpoint = `tutorial_${player.heroName}`
 		// if (player.flags.has('approachedRack') && player.inventory.weapon.itemId != 'club') {
 		player.visualActionSources.push({
 			id: 'vasEquipClub',
 			sprite: 'club',
-			actions: [
-			],
-			unlockables: [
+			actionsWithRequirements: [
 				{
-					lockHandle: 'equipClub',
-					startsLocked: false,
-					locksVas: true,
-					serverAct: {
-						buttonText: 'equip club',
-						performAction() {
-							player.inventory.weapon.itemId = 'club'
-						},
+					sAction:{
+						startsLocked:false,
+						lock:['vasEquipClub'],
+						serverAct:{
+							buttonText: 'equip club',
+							performAction() {
+								player.inventory.weapon.itemId = 'club'
+							},
+						}
 					}
-				},
+				}
 			],
 			startText: 'A club deals a hefty chunk of damage each hit. That makes it effective against unarmored foes like goblins.',
 			startsLocked: true,
-			lockHandle: 'clubRack',
 		})
 		// }
 		// if (player.flags.has('approachedRack') && player.inventory.utility.itemId != 'bomb') {
 		player.visualActionSources.push({
 			id: 'vasEquipBomb',
 			sprite: 'bomb',
-			actions: [],
-			unlockables: [
+			actionsWithRequirements: [
 				{
-					lockHandle: 'equipBomb',
-					startsLocked: false,
-					locksVas: true,
-					serverAct: {
-						buttonText: 'equip bomb',
-						performAction() {
-							player.inventory.utility.itemId = 'bomb'
-						},
-					}
-				},
+					sAction:{
+						startsLocked: false,
+						lock:['vasEquipBomb'],
+						serverAct: {
+							buttonText: 'equip bomb',
+							performAction() {
+								player.inventory.utility.itemId = 'bomb'
+							},
+						}
+					},
+				}
 			],
 			startText: 'A powderbomb deals splash damage to all nearby enemies. It should clear out the rats nicely.',
 			startsLocked: true,
-			lockHandle: 'bombRack',
 		})
-		// }
-		let tutorActions: GameAction[] = []
-		if (player.inventory.utility.itemId == 'bomb' && player.inventory.weapon.itemId == 'club') {
-			tutorActions.push({
-				buttonText: "'Splash em' and bash em', got it.'",
-				goTo: `trainingRoom1_${player.heroName}`
-			})
-		}
 		player.visualActionSources.push({
 			id: 'vasTutor',
-			actions: tutorActions,
+			actionsWithRequirements: [
+				{
+					sAction: {
+						startsLocked:false,
+						serverAct:{
+							buttonText: "'Splash em' and bash em', got it.'",
+							goTo: `trainingRoom1_${player.heroName}`
+						},
+					},
+					requires() {
+						return player.inventory.utility.itemId == 'bomb' && player.inventory.weapon.itemId == 'club'
+					},
+
+				},
+				{
+
+					sAction:{
+						
+							lockHandle: 'wantsToSkip',
+							startsLocked: true,
+							serverAct: {
+								buttonText: 'Skip Tutorial',
+								goTo: 'forest',
+							},
+						
+					}
+				}
+
+			],
 			startText: `'Look alive recruit! The first day of training can be the most dangerous of a guardsman's life. You must be ${player.heroName}, welcome aboard. In this barracks we wake up early, follow orders, and NEVER skip the tutorial. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.'`,
 			responses: [
 				{
 					lockHandle: 'scared',
-					isLocked: false,
+					startsLocked: false,
 					responseText: `Huh? Danger... Early mornings?? I didn't sign up for any of this!`,
 					retort: `Hmmf, if you think you can weasel your way through this game without enduring hardship you're in for a rude awakening.. anyway it's just a quick tutorial, skip it only with good reason.`,
 					unlock: ['wantsToSkip']
 				},
 				{
 					lockHandle: 'cheeky',
-					isLocked: false,
+					startsLocked: false,
 					responseText: `I would rather you didn't break the fourth wall, I'm into more serious RPGs.`,
 					retort: `Lighten up recruit. Things will get plenty dark and gritty soon enough. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.`
 				},
 				{
 					lockHandle: 'brave',
-					isLocked: false,
+					startsLocked: false,
 					responseText: `I tend to breeze through tutorials pretty easily so.. not worried. Get on with it.`,
 					retort: `Great to hear ${player.heroName}! Our training goblin is ready for you. Also there's a bit of a rat problem in the training room right now.. so grab some equipment off the rack and let's go.`,
-					unlock: [`readyForTutorial`, 'bombRack', 'clubRack'],
+					unlock: [`readyForTutorial`, 'vasEquipBomb', 'vasEquipClub'],
 					lock: ['wantsToSkip', 'scared', 'cheeky'],
-				},
-			],
-			unlockables: [
-				{
-					lockHandle: 'wantsToSkip',
-					startsLocked: true,
-					locksVas: false,
-					serverAct: {
-						buttonText: 'Skip Tutorial',
-						goTo: 'forest',
-					},
 				},
 			],
 			sprite: 'general',
@@ -406,9 +467,14 @@ const forest: Scene = {
 		player.visualActionSources.push({
 			id: 'vascastle',
 			sprite: 'castle',
-			actions: [{
-				buttonText: 'Slog it towards teh castle',
-				goTo: 'castle',
+			actionsWithRequirements: [{
+				sAction: {
+					startsLocked:false,
+					serverAct:{
+						buttonText: 'Slog it towards teh castle',
+						goTo: 'castle',
+					}
+				}
 			}],
 			startText: `In the distance you see a castle. You feel you might have seen it before. Perhaps in a dream. Or was it a nightmare?`,
 		})

@@ -1,7 +1,7 @@
 import type { BattleAnimation, EnemyInClient, GameActionSentToClient } from '$lib/utils';
 import { activeEnemies, addAggro, damagePlayer, enemiesInScene, getAggroForPlayer, takePoisonDamage } from './enemies';
 import { items } from './items';
-import { convertVasToClient, type VisualActionSource, type VisualActionSourceInClient } from './scenes';
+import { convertServerActionToClientAction, convertVasToClient, type VisualActionSource, type VisualActionSourceInClient } from './scenes';
 import { activePlayers, globalFlags, playerItemStates, users, type HeroName, type Player, type GameAction, activePlayersInScene, type PlayerInClient, type Flag, type GlobalFlag } from './users';
 
 export const FAKE_LATENCY = 1;
@@ -82,14 +82,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				// target:gameAction.target
 			};
 		}),
-		itemActions: forPlayer.itemActions.map((gameAction) => {
-			return {
-				buttonText: gameAction.buttonText,
-				slot:gameAction.slot,
-				target:gameAction.target,
-				wait:gameAction.wait,
-			} satisfies GameActionSentToClient;
-		}),
+		itemActions: forPlayer.itemActions.map((gameAction) => convertServerActionToClientAction(gameAction)),
 		// visualActionSources:[],
 		visualActionSources:forPlayer.visualActionSources.map(s=>{
 			return convertVasToClient(s)
