@@ -1,8 +1,8 @@
 // This file is for stuff available to both the server and browser
 
 import type { ActiveEnemy, EnemyTemplateId } from './server/enemies';
-import type { EquipmentSlot, ItemState, ItemStateForSlot } from './server/items';
-import type { SceneId } from './server/scenes';
+import type { EquipmentSlot, ItemId, ItemState, ItemStateForSlot } from './server/items';
+import type { SceneId, VisualActionSource } from './server/scenes';
 import type { Flag, GlobalFlag, HeroName, Player } from './server/users';
 
 
@@ -20,6 +20,7 @@ export type BattleAnimation = {
 	behavior: AnimationBehavior,
 	alsoDamages?:HealthModifier[],
 	alsoModifiesAggro?:AggroModifier[],
+	takesItem?:{slot:EquipmentSlot, id:ItemId},
 }
 
 export type DataFirstLoad = {
@@ -33,7 +34,7 @@ export type DataFirstLoad = {
 
 export type BattleEvent = {
 	source:{kind:'player',entity:Player}|{kind:'enemy',entity:ActiveEnemy}
-	target?:{kind:'player',entity:Player}|{kind:'enemy',entity:ActiveEnemy}
+	target?:{kind:'player',entity:Player}|{kind:'enemy',entity:ActiveEnemy}|{kind:'vas',entity:{unitId:VisualActionSourceId}}
 	baseHealingToSource?: number,
 	baseHealingToTarget?: number,
 	baseDamageToTarget?:number,
@@ -42,6 +43,7 @@ export type BattleEvent = {
 	behavior: AnimationBehavior,
 	alsoDamages?:HealthModifierEvent[],
 	alsoModifiesAggro?:AggroModifierEvent[],
+	takesItem?:{slot:EquipmentSlot, id:ItemId},
 }
 
 export type StatusModifier = {target:UnitId, status:StatusId, remove?:boolean, count?:number}

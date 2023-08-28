@@ -1,6 +1,6 @@
 import type { AggroModifier, BattleAnimation, BattleEvent, HealthModifier, StatusEffect, StatusModifier, UnitId } from "$lib/utils"
 import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, infightDamage, modifyAggroForPlayer } from "./enemies"
-import { items, type Item } from "./items"
+import { items, type Item, equipItem } from "./items"
 import { pushHappening } from "./messaging"
 import { scenes } from "./scenes"
 import { users, type Player, playerItemStates, activePlayersInScene, type GameAction, healPlayer } from "./users"
@@ -424,6 +424,10 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 		}
 	}
 
+	if(battleEvent.takesItem && battleEvent.source.kind == 'player'){
+		equipItem(battleEvent.source.entity,battleEvent.takesItem.id)
+	}
+
 	let battleAnimation: BattleAnimation = {
 		source: battleEvent.source.entity.unitId,
 		target: battleEvent.target?.entity.unitId,
@@ -447,6 +451,7 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 				remove: m.remove
 			} satisfies StatusModifier
 		}),
+		takesItem:battleEvent.takesItem,
 	}
 	pushAnimation({
 		sceneId: player.currentScene,

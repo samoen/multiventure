@@ -163,9 +163,6 @@
 		// $animationCancelled = false;
 	}
 
-
-	
-
 	async function deleteHero() {
 		$clientState.loading = true;
 		$clientState.status = 'submitting hero delete';
@@ -546,6 +543,7 @@
 								on:click={async () => {
 									if(!$selectedDetail || $selectedDetail.kind != 'vas')return
 									$lastUnitClicked = $selectedDetail.entity.id
+									$selectedDetail.entity
 									await choose(act.clientAct);
 									if(act.lock){
 										for (const handleToLock of act.lock){

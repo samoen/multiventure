@@ -1,4 +1,4 @@
-import type { GameActionSentToClient, AnySprite, VisualActionSourceId } from '$lib/utils';
+import type { GameActionSentToClient, AnySprite, VisualActionSourceId, BattleEvent } from '$lib/utils';
 import { enemiesInScene, enemyTemplates, spawnEnemy, type EnemyTemplateId, type EnemyStatuses } from './enemies';
 import { bodyItems, utilityItems, weapons, type ItemIdForSlot, items } from './items';
 import { activePlayersInScene, globalFlags, healPlayer, type GameAction, type HeroName, type MiscPortrait, type Player } from './users';
@@ -34,7 +34,7 @@ export type Scene = {
 };
 
 export type VisualActionSource = {
-	id: VisualActionSourceId
+	unitId: VisualActionSourceId
 	sprite: AnySprite
 	portrait?: MiscPortrait
 	actionsWithRequirements?: (UnlockableGameActionWithRequirement)[]
@@ -58,6 +58,7 @@ export type VisualActionSourceInClient = {
 	actionsInClient: UnlockableClientAction[]
 	startText: string,
 	responses: ConversationResponse[]
+	
 }
 
 
@@ -106,7 +107,7 @@ export function convertVasToClient(vas: VisualActionSource): VisualActionSourceI
 	validUnlockableClientActions = convertUnlockableActionsToClient(validUnlockableActions)
 
 	let result = {
-		id: vas.id,
+		id: vas.unitId,
 		startText: vas.startText,
 		responses: vas.responses ?? [],
 		sprite: vas.sprite,
@@ -181,7 +182,7 @@ const tutorial = {
 	},
 	actions(player) {
 		player.visualActionSources.push({
-			id: 'vasTutor',
+			unitId: 'vasTutor',
 			actionsWithRequirements: [
 				{
 
@@ -223,7 +224,7 @@ const tutorial = {
 			portrait: 'general',
 		})
 		player.visualActionSources.push({
-			id: 'vasGoTrain1',
+			unitId: 'vasGoTrain1',
 			sprite: 'castle',
 			startText: `An entrance to a training room`,
 			actionsWithRequirements: [
@@ -242,18 +243,23 @@ const tutorial = {
 			],
 		})
 		player.visualActionSources.push({
-			id: 'vasEquipClub',
+			unitId: 'vasEquipClub',
 			sprite: 'club',
 			startText: 'A club deals a hefty chunk of damage each hit. That makes it effective against unarmored foes like goblins.',
 			startsLocked: true,
 			actionsWithRequirements: [
 				{
 					sAction: {
-						lock: ['vasEquipClub'],
+						lock: [],
 						serverAct: {
 							buttonText: 'equip club',
 							performAction() {
-								player.inventory.weapon.itemId = 'club'
+								return {
+									source:{kind:'player',entity:player},
+									target:{kind:'vas',entity:{unitId:'vasEquipClub'}},
+									behavior:{kind:'melee'},
+									takesItem:{slot:'weapon',id:'club'}
+								} satisfies BattleEvent
 							},
 						}
 					}
@@ -261,18 +267,23 @@ const tutorial = {
 			],
 		})
 		player.visualActionSources.push({
-			id: 'vasEquipBomb',
+			unitId: 'vasEquipBomb',
 			sprite: 'bomb',
 			startText: 'A powderbomb deals splash damage to all nearby enemies. It should clear out the rats nicely.',
 			startsLocked: true,
 			actionsWithRequirements: [
 				{
 					sAction: {
-						lock: ['vasEquipBomb'],
+						lock: [],
 						serverAct: {
 							buttonText: 'equip bomb',
 							performAction() {
-								player.inventory.utility.itemId = 'bomb'
+								return {
+									source:{kind:'player',entity:player},
+									target:{kind:'vas',entity:{unitId:'vasEquipBomb'}},
+									behavior:{kind:'melee'},
+									takesItem:{slot:'utility',id:'bomb'}
+								} satisfies BattleEvent
 							},
 						}
 					},
@@ -305,7 +316,7 @@ const trainingRoom1 = {
 	actions(player) {
 		if (!enemiesInScene(player.currentScene).length) {
 			player.visualActionSources.push({
-				id: 'vasTutor2',
+				unitId: 'vasTutor2',
 				sprite: 'general',
 				portrait: 'general',
 				startText: `Great job! Let's switch up your equipment. Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you.`,
@@ -319,7 +330,7 @@ const trainingRoom1 = {
 				]
 			})
 			player.visualActionSources.push({
-				id: 'vasEquipDagger',
+				unitId: 'vasEquipDagger',
 				sprite: 'club',
 				startText: 'Hobgoblins wear heavy armor, which limits the amount of damage they take each strike. A dagger strikes multiple times per attack, mitigating their defenses.',
 				startsLocked: true,
@@ -338,7 +349,7 @@ const trainingRoom1 = {
 				]
 			})
 			player.visualActionSources.push({
-				id: 'vasEquipBandage',
+				unitId: 'vasEquipBandage',
 				sprite: 'club',
 				startText: `Use bandages when you get low on health.`,
 				startsLocked: true,
@@ -357,7 +368,7 @@ const trainingRoom1 = {
 				]
 			})
 			player.visualActionSources.push({
-				id: 'vasGoTrain2',
+				unitId: 'vasGoTrain2',
 				sprite: 'castle',
 				startText: `Another door, another training room.`,
 				actionsWithRequirements: [
@@ -521,7 +532,7 @@ const forest: Scene = {
 
 		)
 		player.visualActionSources.push({
-			id: 'vascastle',
+			unitId: 'vascastle',
 			sprite: 'castle',
 			actionsWithRequirements: [{
 				sAction: {

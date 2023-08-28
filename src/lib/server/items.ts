@@ -336,4 +336,15 @@ export const items: Record<ItemId, Item> = {
 	...bodyItems
 } satisfies Record<ItemId, Item>
 
+export function equipItem(player:Player, id:ItemId){
+	if(weapons.hasOwnProperty(id)){
+		player.inventory.weapon.itemId = id as ItemIdForSlot<'weapon'>
+	}
+	if(utilityItems.hasOwnProperty(id)){
+		player.inventory.utility.itemId = id as ItemIdForSlot<'utility'>
+	}
+	if(bodyItems.hasOwnProperty(id)){
+		player.inventory.body.itemId = id as ItemIdForSlot<'body'>
+	}
+}
 
