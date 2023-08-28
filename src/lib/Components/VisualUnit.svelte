@@ -66,9 +66,10 @@
 
 {#if vu && !(shouldDie && vu.side == 'enemy')}
 	<div class="top" out:fade|local={{ duration: 400 }}>
-		<span class="nametag" class:bold={vu.name == $lastMsgFromServer?.yourInfo.heroName}
-			>{`${vu.name == $lastMsgFromServer?.yourInfo.heroName ? '👤' : ''}${vu.name}`}</span
-		>
+		<div class="nameHolder">
+			<span class="selfIndicator">{vu.name == $lastMsgFromServer?.yourInfo.heroName ? '👤' : ''}</span>
+			<span class="nametag">{vu.name}</span>
+		</div>
 		<div class="outerHeroSprite">
 			<div class="statuses">
 				{#each statuses as s}
@@ -98,30 +99,26 @@
 
 <style>
 	.top {
-		/* display: flex; */
-		/* flex-direction: column; */
-		/* align-items: center; */
-		/* justify-content: center; */
-		height:100%;
-		width: 100%;
-		/* height:clamp(100px,14vw,200px); */
-		background-color: bisque;
-		/* height: 100px; */
-		/* background-color: aqua; */
+		display: contents;
 	}
-	.nametag {
+	.nameHolder{
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.selfIndicator{
+		font-size: 50%;
 		color: transparent;
 		text-shadow: 0 0 0 white;
 		opacity: 0.6;
+	}
+	.nametag {
+		opacity: 0.6;
+		color:white;
 		white-space: nowrap;
 		/* text-wrap:balance;
 		word-wrap: break-word;
 		line-break: anywhere; */
-		/* text-align: center; */
-		/* line-height:65%; */
-		/* background-color: bisque; */
-		padding: 0;
-		margin: 0;
 		font-weight: bold;
 		font-size: 13px;
 	}
@@ -143,66 +140,63 @@
 	}
 	.status {
 		display: flex;
-		height: 10px;
-		width: 10px;
+		height:clamp(14px,1vw + 10px,30px);
+		/* height: 1vw; */
+		/* width: 1vw; */
 	}
 	.flipped {
 		transform: scaleX(-1);
 	}
 	.outerHeroSprite {
-		background-color: aqua;
+		/* background-color: aqua; */
 		position: relative;
-		/* flex-basis: 60%; */
-		/* display: block; */
+		/* display: inline-block; */
+		width: 100%;
+		/* display: flex; */
 		/* overflow: hidden; */
-		/* height: 50px; */
-		/* max-width: 100%; */
-		/* text-align: center; */
-		/* display: inline-flex; */
-		/* justify-content: center; */
-		/* align-items: center; */
-		/* flex-grow: 1; */
-		/* flex-shrink: 1; */
-		/* height:60%; */
+		/* height:auto; */
 	}
 	.heroSprite {
-		display: inline;
-		background-color: blueviolet;
+		display: block;
+		/* background-color: blueviolet; */
 		width:100%;
+		/* position:relative; */
+		/* inset:0; */
 		/* height:100%; */
 		/* margin-inline: auto; */
 		/* object-fit: cover; */
 	}
 	.bars {
-		margin-top: 5px;
+		/* margin-top: 5px; */
 		/* height:20%; */
 		height:clamp(17px,1vw + 10px,30px);
 		/* width: 100%; */
 		opacity: 0.7;
-		flex-grow: 1;
-		/* flex-shrink: 1; */
-		flex-basis: 20%;
+		/* flex-grow: 1; */
+		/* flex-basis: 20%; */
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		background-color: chocolate;
+		/* background-color: chocolate; */
 		/* justify-content: center; */
 		/* min-height: 30px; */
 	}
 	.healthbar {
 		width: 100%;
 		/* align-self: stretch; */
-		flex-basis:50%;
+		/* flex-basis:50%; */
+		height:50%;
 		/* height:40%; */
 		/* flex-grow: 1; */
 		/* height: 8px; */
 		border: 2px solid black;
 		border-radius: 5px;
-		/* background-color: black; */
+		background-color: black;
 		/* width: 40px; */
 		/* margin-block: 1px; */
 		/* display: flex; */
 		/* position: relative; */
+		margin-bottom: 1px;
 	}
 	.healthbar_health {
 		border-radius: 5px;
@@ -213,9 +207,9 @@
 		height: 100%;
 	}
 	.aggrobar {
-		flex-grow: 1;
+		/* flex-grow: 1; */
 		/* flex-basis: 50%; */
-		margin-top: 1px;
+		height:50%;
 		border-radius: 5px;
 		background-color: black;
 		width: 85%;

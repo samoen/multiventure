@@ -332,65 +332,56 @@
 	}
 	.home {
 		order: 1;
-		/* width:10px; */
-		/* background-color: aqua; */
-		background-color: red;
+		/* background-color: red; */
 	}
 	.placeHolder {
-		/* flex-basis:50%; */
-		border: 3px groove transparent;
+		border: 3px dashed transparent;
 		width: 50%;
-		/* height:100%; */
-		/* height: 100px; */
-		/* display: flex; */
-		/* flex-direction: column; */
-		/* align-items: center; */
-		/* justify-content: center; */
 	}
 	.clickable {
-		border: 2px dashed yellow;
+		border: 3px dashed yellow;
 	}
 	.projHolder {
-		background-color: aquamarine;
+		/* background-color: aquamarine; */
 		/* display: none; */
 		/* opacity: 0; */
 		z-index: 3;
-		height: 30px;
+		display: inline;
+		top:40%;
+		height:clamp(14px,1vw + 12px,30px);
+		width:clamp(14px,1vw + 12px,30px);
 		position:absolute;
-		top:50%;
-		/* width: 30px; */
 	}
-	.selfInflictSource {
-		justify-self: flex-start;
-		background-color: chartreuse;
-	}
+	/* .selfInflictSource { */
+		/* justify-self: flex-start; */
+		/* background-color: chartreuse; */
+	/* } */
 	.projectile {
-		/* background-color: aqua; */
-		background-color: chartreuse;
+		/* background-color: chartreuse; */
 		z-index: 3;
 		height: 100%;
 		width: 100%;
 	}
 	.startAlignSelf {
 		/* align-self: flex-start; */
-		left:1;
+		left:0;
 	}
 	.endAlignSelf {
-		/* align-self: flex-end; */
+		align-self: flex-end;
 		right:0;
 	}
 	.unitAndArea {
-		display: inline-flex;
+		display: flex;
 		flex-direction: row;
-		/* height:clamp(100px,10vw,300px); */
-		width: 100%;
-		/* width:clamp(100px,10vw,300px); */
-		height: 100%;
 	}
 	.guestArea {
+		/* min-height: 100%; */
 		/* background-color: brown; */
-		/* z-index: 2; */
+		/* display: flex; */
+		/* flex-direction: column; */
+		z-index: 2;
 		position:relative;
+		/* overflow: hidden; */
 		/* width:50%; */
 	}
 </style>

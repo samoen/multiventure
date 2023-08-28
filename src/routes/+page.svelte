@@ -732,15 +732,19 @@
 
 	.units {
 		display: grid;
-		background-color: beige;
+		/* background-color: beige; */
 		/* row-gap: 2px; */
 		/* column-gap: 2px; */
-		grid-template-columns: repeat(auto-fit, clamp(100px,18vw,250px));
+		grid-template-columns: repeat(auto-fit, clamp(90px,18vw,240px));
 		justify-content: center;
+		/* align-items: start; */
+		
 	}
 	.centerPlaceHolder {
-		height: 30px;
-		width: 30px;
+		/* height: 30px; */
+		/* width: 30px; */
+		height:clamp(14px,1vw + 12px,30px);
+		width:clamp(14px,1vw + 12px,30px);
 		/* background-color: aqua; */
 	}
 	.centerField {
