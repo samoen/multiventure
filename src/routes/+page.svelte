@@ -329,7 +329,7 @@
 		>
 			<div class="units">
 				{#each $allies as p (p.id)}
-					<div animate:flip>
+					<div class="unitHolder" animate:flip>
 						<Unit hostId={p.id} />
 					</div>
 				{/each}
@@ -389,7 +389,7 @@
 			</div>
 			<div class="units">
 				{#each $enemies as e (e.id)}
-					<div animate:flip>
+					<div class="unitHolder" animate:flip>
 						<Unit hostId={e.id} />
 					</div>
 				{/each}
@@ -719,24 +719,24 @@
 		display: grid;
 		grid-template-columns: 1fr auto 1fr;
 		/* gap:4px; */
-		/* justify-content: center; */
+		justify-content: center;
 		align-items: center;
-		/* justify-items:; */
+		/* justify-items:center; */
 		/* height: fit-content; */
 		height: 100%;
 	}
 
+	/* .unitHolder{ */
+		/* background-color: blue; */
+	/* } */
+
 	.units {
 		display: grid;
-		/* direction: rtl; */
-		/* background-color: beige; */
-		/* grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); */
-		row-gap: 2px;
-		grid-template-columns: repeat(auto-fit, 120px);
+		background-color: beige;
+		/* row-gap: 2px; */
+		/* column-gap: 2px; */
+		grid-template-columns: repeat(auto-fit, clamp(100px,18vw,250px));
 		justify-content: center;
-		justify-items: center;
-		align-items: center;
-		/* gap:2px; */
 	}
 	.centerPlaceHolder {
 		height: 30px;

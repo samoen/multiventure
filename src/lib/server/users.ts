@@ -119,7 +119,7 @@ export function addNewUser(heroName : string) : {id:string,player:Player}{
 		
 		let startScene: SceneId = `tutorial_${heroName}`
 		// startScene = `trainingRoom3_${msg.join}`
-		// startScene = `forest`
+		startScene = `forest`
 		// startScene = 'forestPassage'
 		// startScene = 'goblinCamp'
 		// startScene = 'throne'
