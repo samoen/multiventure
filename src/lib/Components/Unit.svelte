@@ -330,16 +330,34 @@
 	.flipped {
 		transform: scaleX(-1);
 	}
+	.unitAndArea {
+		display: flex;
+		flex-direction: row;
+		/* background-color: brown; */
+	}
 	.home {
 		order: 1;
 		/* background-color: red; */
 	}
+	.guestArea {
+		/* min-height: 100%; */
+		/* display: flex; */
+		/* flex-direction: column; */
+		z-index: 2;
+		position:relative;
+		/* overflow: hidden; */
+		/* width:50%; */
+	}
 	.placeHolder {
-		border: 3px dashed transparent;
+		border: 2px dashed transparent;
 		width: 50%;
 	}
 	.clickable {
-		border: 3px dashed yellow;
+		border: 2px dashed yellow;
+		/* box-shadow: inset 0 0 10px yellow; */
+		/* outline: 2px dashed yellow; */
+		/* outline-offset: -7px; */
+	
 	}
 	.projHolder {
 		/* background-color: aquamarine; */
@@ -369,19 +387,5 @@
 	.endAlignSelf {
 		align-self: flex-end;
 		right:0;
-	}
-	.unitAndArea {
-		display: flex;
-		flex-direction: row;
-	}
-	.guestArea {
-		/* min-height: 100%; */
-		/* background-color: brown; */
-		/* display: flex; */
-		/* flex-direction: column; */
-		z-index: 2;
-		position:relative;
-		/* overflow: hidden; */
-		/* width:50%; */
 	}
 </style>

@@ -60,7 +60,6 @@ export type GameAction = {
 	grantsImmunity?:boolean;
 	slot?:EquipmentSlot
 	target?: UnitId;
-	wait?:boolean;
 };
 
 export type MiscPortrait = 'general' | 'peasant'

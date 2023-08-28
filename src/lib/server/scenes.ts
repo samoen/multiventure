@@ -93,8 +93,6 @@ export function convertServerActionToClientAction(sa: GameAction): GameActionSen
 		buttonText: sa.buttonText,
 		slot: sa.slot,
 		target: sa.target,
-		wait: sa.wait,
-
 	}
 }
 

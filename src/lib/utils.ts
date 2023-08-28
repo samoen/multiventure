@@ -112,7 +112,6 @@ export type GameActionSentToClient = {
 	buttonText: string;
 	slot?:EquipmentSlot;
 	target?: UnitId;
-	wait?:boolean;
 };
 
 export type EnemyName = string

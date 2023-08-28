@@ -17,10 +17,11 @@ export function updatePlayerActions(player: Player) {
 	player.visualActionSources = []
 
 	if (player.health < 1) {
-		player.sceneActions.push({
+		player.itemActions.push({
 			buttonText: 'Succumb to your wounds',
 			goTo: 'dead',
 		})
+
 		return
 	}
 
@@ -49,16 +50,12 @@ export function updatePlayerActions(player: Player) {
 		player.itemActions.push(
 			{
 				buttonText: 'wait',
-				wait: true,
-				// target:{kind:'onlySelf'},
 				provoke: 0,
-				performAction() {
-				},
 			}
 		)
-		if (player.currentScene != 'armory') {
-			return
-		}
+		// if (player.currentScene != 'armory') {
+		// 	return
+		// }
 	}
 
 	scenes.get(player.currentScene)?.actions(player)

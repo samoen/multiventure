@@ -138,8 +138,8 @@ export let utilitySlotActions = derived(lastMsgFromServer, ($lastMsgFromServer) 
 export let bodySlotActions = derived(lastMsgFromServer, ($lastMsgFromServer) => {
     return $lastMsgFromServer?.itemActions.filter(ia => ia.slot == 'body')
 })
-export let waitButtonAction = derived(lastMsgFromServer, ($lastMsgFromServer) => {
-    return $lastMsgFromServer?.itemActions.find(ia => ia.wait)
+export let slotlessBattleActions = derived(lastMsgFromServer, ($lastMsgFromServer) => {
+    return $lastMsgFromServer?.itemActions.filter(ia => ia.slot == undefined) ?? []
 })
 
 // export const lastUnitClicked: Writable<VisualUnitProps | undefined> = writable()
@@ -235,7 +235,7 @@ export const selectedVisualActionSourceState = derived([
 export let latestSlotButtonInput: Writable<EquipmentSlot | 'none'> = writable('none')
 
 export const [sendMelee, receiveMelee] = crossfade({
-    duration: (d) => Math.sqrt(d * 900),
+    duration: (d) => 500,
     easing: quintInOut,
     fallback(node, params) {
         return {

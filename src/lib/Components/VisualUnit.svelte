@@ -152,19 +152,12 @@
 		position: relative;
 		/* display: inline-block; */
 		width: 100%;
-		/* display: flex; */
-		/* overflow: hidden; */
-		/* height:auto; */
 	}
 	.heroSprite {
 		display: block;
 		/* background-color: blueviolet; */
 		width:100%;
-		/* position:relative; */
-		/* inset:0; */
-		/* height:100%; */
-		/* margin-inline: auto; */
-		/* object-fit: cover; */
+		aspect-ratio: 1/1;
 	}
 	.bars {
 		/* margin-top: 5px; */

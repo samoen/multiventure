@@ -33,7 +33,7 @@
 		updateUnit,
 		utilitySlotActions,
 		visualActionSources,
-		waitButtonAction,
+		slotlessBattleActions,
 		waitingForMyAnimation,
 		wepSlotActions,
 
@@ -439,18 +439,18 @@
 				</button>
 			{/if}
 		{/each}
-		{#if $waitButtonAction}
+		{#each $slotlessBattleActions as act}
 			<button
 				class="slotButton"
-				disabled={!$waitButtonAction || $waitingForMyAnimation || $clientState.waitingForMyEvent}
+				disabled={!$slotlessBattleActions || $waitingForMyAnimation || $clientState.waitingForMyEvent}
 				on:click={() => {
-					if ($waitButtonAction) {
-						choose($waitButtonAction);
+					// if (a) {
+						choose(act);
 						$latestSlotButtonInput = 'none';
-					}
-				}}>Wait</button
+					// }
+				}}>{act.buttonText}</button
 			>
-		{/if}
+		{/each}
 	</div>
 	{#if $selectedDetail && $selectedDetail.kind == 'vup'}
 			<div class="selectedDetails">
@@ -626,7 +626,7 @@
 <style>
 	:global(body) {
 		background-color: aliceblue;
-		padding-inline: 5px;
+		/* padding-inline: 5px; */
 	}
 	:global(*) {
 		box-sizing: border-box;
@@ -705,10 +705,11 @@
 		position: relative;
 		/* margin-block: 5px; */
 		/* padding: 3px; */
-		background-color: brown;
+		/* background-color: brown; */
+		overflow-x: hidden;
 	}
 	.visual {
-		background-repeat: no-repeat;
+		background-repeat:repeat-x;
 		background-size: cover;
 		background-attachment: local;
 		background-position: center bottom;
@@ -733,9 +734,9 @@
 	.units {
 		display: grid;
 		/* background-color: beige; */
-		/* row-gap: 2px; */
+		row-gap: 2px;
 		/* column-gap: 2px; */
-		grid-template-columns: repeat(auto-fit, clamp(90px,18vw,240px));
+		grid-template-columns: repeat(auto-fit, clamp(90px,50%,240px));
 		justify-content: center;
 		/* align-items: start; */
 		
