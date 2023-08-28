@@ -1,8 +1,9 @@
+import { goto } from "$app/navigation"
 import type { AggroModifier, BattleAnimation, BattleEvent, HealthModifier, StatusEffect, StatusModifier, UnitId } from "$lib/utils"
 import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, infightDamage, modifyAggroForPlayer } from "./enemies"
 import { items, type Item, equipItem } from "./items"
 import { pushHappening } from "./messaging"
-import { scenes } from "./scenes"
+import { scenes, type SceneId } from "./scenes"
 import { users, type Player, playerItemStates, activePlayersInScene, type GameAction, healPlayer } from "./users"
 
 export function updateAllPlayerActions() {
@@ -107,36 +108,40 @@ export function enterSceneOrWakeup(player: Player) {
 	enteringScene.hasEntered.add(player.heroName)
 }
 
-export function handleAction(player: Player, actionFromId: GameAction) {
-	if (actionFromId.goTo) {
-		player.previousScene = player.currentScene
-		player.currentScene = actionFromId.goTo
+export function changeScene(player:Player, goTo:SceneId){
+	player.previousScene = player.currentScene
+	player.currentScene = goTo
 
-		// When entering a new scene, state cooldowns to 0,
-		// state warmups to the item warmup, stocks to start
-		for (const itemState of playerItemStates(player)) {
-			itemState.cooldown = 0
-			let item = items[itemState.itemId]
-			if (item != undefined) {
-				if (item.warmup) {
-					itemState.warmup = item.warmup
-				} else {
-					itemState.warmup = 0
-				}
-				if (item.startStock != undefined) {
-					itemState.stock = item.startStock
-				}
+	// When entering a new scene, state cooldowns to 0,
+	// state warmups to the item warmup, stocks to start
+	for (const itemState of playerItemStates(player)) {
+		itemState.cooldown = 0
+		let item = items[itemState.itemId]
+		if (item != undefined) {
+			if (item.warmup) {
+				itemState.warmup = item.warmup
+			} else {
+				itemState.warmup = 0
+			}
+			if (item.startStock != undefined) {
+				itemState.stock = item.startStock
 			}
 		}
+	}
 
-		// should status persist after battles?
-		player.statuses = {
-			poison: 0,
-			rage: 0,
-			hidden: 0,
-		}
+	// should status persist after battles?
+	player.statuses = {
+		poison: 0,
+		rage: 0,
+		hidden: 0,
+	}
 
-		enterSceneOrWakeup(player)
+	enterSceneOrWakeup(player)
+}
+
+export function handleAction(player: Player, actionFromId: GameAction) {
+	if (actionFromId.goTo) {
+		changeScene(player, actionFromId.goTo)
 		return
 	}
 
@@ -426,6 +431,10 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 
 	if(battleEvent.takesItem && battleEvent.source.kind == 'player'){
 		equipItem(battleEvent.source.entity,battleEvent.takesItem.id)
+	}
+
+	if(battleEvent.behavior.kind == 'travel'){
+		changeScene(player, battleEvent.behavior.goTo)
 	}
 
 	let battleAnimation: BattleAnimation = {

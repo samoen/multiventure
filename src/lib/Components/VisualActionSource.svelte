@@ -4,8 +4,12 @@
 		anySprites,
 		currentAnimation,
 		currentConvoPrompt,
+		heroSprite,
+		heroSprites,
+		lastMsgFromServer,
 		lastUnitClicked,
 		lockedHandles,
+		nextAnimationIndex,
 		receiveMelee,
 		sendMelee,
 		subAnimationStage,
@@ -17,6 +21,7 @@
 	import VisualUnit from './VisualUnit.svelte';
 	import { tick } from 'svelte';
 	import { fade } from 'svelte/transition';
+	import type { ItemIdForSlot } from '$lib/server/items';
 
 	export let hostId: VisualActionSourceId;
 	let pickedup = false;
@@ -31,7 +36,7 @@
 		([$currentAnimation, $subAnimationStage]) => {
 			if (!$currentAnimation) return undefined;
 			if (
-				$currentAnimation.behavior.kind == 'melee' &&
+				($currentAnimation.behavior.kind == 'melee' || $currentAnimation.behavior.kind == 'travel') &&
 				$currentAnimation.target == hostId &&
 				$subAnimationStage == 'fire'
 			) {
@@ -42,26 +47,31 @@
 	);
 
 	async function guestArrived() {
-		if ($currentAnimation != undefined && $host != undefined) {
-			let anim = $currentAnimation;
-			// updateUnit(hostId, (vup) => {
-			//     // vup.displayHp -= anim.damageToTarget ?? 0;
-			// });
-			// $lockedHandles.set($host.id,true)
-			pickedup = true;
-			$visualActionSources = $visualActionSources;
-			// await tick()
-			// setTimeout(()=>{
+        if ($currentAnimation != undefined && $host != undefined) {
+            if($currentAnimation.behavior.kind == 'travel'){
+                nextAnimationIndex(false,false)
+                return
+            }
+            if($currentAnimation.takesItem){
+                pickedup = true;
+                if($guestId){
+                    updateUnit($guestId,(vup)=>{
+                        if($currentAnimation?.takesItem?.slot == 'weapon'){
+                            vup.src = heroSprites[heroSprite($currentAnimation.takesItem.id as ItemIdForSlot<'weapon'>)]
+                        }
+                    })
+                    await tick()   
+                }
+            }
 			$subAnimationStage = 'sentHome';
-			// },200)
-			// if ($guestId == undefined) return;
 		}
 	}
+
 	function guestReturned() {
 		if (!$host || !$currentAnimation) {
 			return;
 		}
-		console.log('vas guest outro end');
+        
         if($currentAnimation.takesItem){
             $lockedHandles.set($host.id, true);
         }
@@ -82,7 +92,10 @@
 			on:keydown
 		>
 			{#if !pickedup}
-				<img class="vasSprite" out:fade|local src={anySprites[$host.sprite]} alt="a place" />
+				<img class="vasSprite" 
+                    out:fade|local
+                    src={anySprites[$host.sprite]} 
+                    alt="a place" />
 			{/if}
 		</div>
 		<div class="guestArea placeHolder">

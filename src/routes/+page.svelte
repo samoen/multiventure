@@ -50,6 +50,7 @@
 	import plains from '$lib/assets/landscapes/landscape-plain.webp';
 	import type { BattleAnimation, DataFirstLoad } from '$lib/utils';
 	import VisualActionSource from '$lib/Components/VisualActionSource.svelte';
+	import { fade } from 'svelte/transition';
 
 	export let data : DataFirstLoad;
 	let signupInput: string;
@@ -400,6 +401,7 @@
 				{/each}
 				{#each $visualActionSources.filter(s=>!$lockedHandles.get(s.id)) as s (s.id)}
 					<div class="vasSpriteHolder"
+						in:fade|local
 						animate:flip
 					>
 						<VisualActionSource hostId={s.id}></VisualActionSource>

@@ -65,7 +65,7 @@
 				return true;
 			}
 			if (
-				$currentAnim.behavior.kind == 'melee' &&
+				($currentAnim.behavior.kind == 'melee' || $currentAnim.behavior.kind == 'travel') &&
 				$currentAnim.source == hostId &&
 				$subAnimationStage == 'fire'
 			) {

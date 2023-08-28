@@ -79,6 +79,7 @@ export type AnySprite =
 export type AnimationBehavior = 
 	| {kind:'missile', extraSprite:AnySprite} 
 	| {kind: 'melee'} 
+	| {kind: 'travel', goTo:SceneId} 
 	| {kind: 'center', extraSprite:AnySprite} 
 	| {kind: 'selfInflicted', extraSprite:AnySprite}
 

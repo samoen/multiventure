@@ -232,7 +232,14 @@ const tutorial = {
 					sAction: {
 						serverAct: {
 							buttonText: "Enter the training room",
-							goTo: `trainingRoom1_${player.heroName}`
+							performAction() {
+								return {
+									behavior:{kind:'travel', goTo:`trainingRoom1_${player.heroName}`},
+									source:{kind:'player',entity:player},
+									target:{kind:'vas',entity:{unitId:'vasGoTrain1'}}
+							
+								}satisfies BattleEvent
+							},
 						},
 					},
 					requires() {
