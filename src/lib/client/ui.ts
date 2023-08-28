@@ -81,11 +81,16 @@ export type Projectile = undefined | ProjectileProps
 
 
 export const lastMsgFromServer: Writable<MessageFromServer | undefined> = writable();
-export const previousMsgFromServer: Writable<MessageFromServer | undefined> = writable();
-export let allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
-export let visualActionSources: Writable<VisualActionSourceInClient[]> = writable([])
-
+export const allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
+export const visualActionSources: Writable<VisualActionSourceInClient[]> = writable([])
 export const currentAnimationIndex: Writable<number> = writable(999)
+export const currentAnimationsWithData: Writable<BattleAnimation[]> = writable([])
+export const subAnimationStage: Writable<'start' | 'fire' | 'sentHome'> = writable('start')
+export const lockedHandles: Writable<Map<string, boolean>> = writable(new Map())
+export const currentConvoPrompt: Writable<string | undefined> = writable(undefined)
+export const convoStateForEachVAS: Writable<Map<UnitId, ConvoState>> = writable(new Map())
+export const latestSlotButtonInput: Writable<EquipmentSlot | 'none'> = writable('none')
+
 
 export function numberShownOnSlot(itemState: ItemState): number | undefined {
     // if(!$lastMsgFromServer)return undefined
@@ -104,14 +109,12 @@ export function stockDotsOnSlotButton(itemState: ItemState): string {
     return dots
 }
 
-export const currentAnimationsWithData: Writable<BattleAnimation[]> = writable([])
 
 export let currentAnimation = derived([currentAnimationIndex, currentAnimationsWithData], ([$currentAnimationIndex, $currentAnimationsWithData]) => {
     return $currentAnimationsWithData?.at($currentAnimationIndex)
 })
 
-export const animationCancelled = writable(false)
-export const subAnimationStage: Writable<'start' | 'fire' | 'sentHome'> = writable('start')
+// export const animationCancelled = writable(false)
 
 export function actionsForSlot(lm: MessageFromServer | undefined, equipmentSlot: EquipmentSlot): GameActionSentToClient[] {
     if (!lm) return []
@@ -147,7 +150,6 @@ export const lastUnitClicked: Writable<UnitId | undefined> = writable()
 
 export type DetailWindow = { kind: 'vup', entity: VisualUnitProps } | { kind: 'vas', entity: VisualActionSourceInClient }
 
-export const lockedHandles: Writable<Map<string, boolean>> = writable(new Map())
 
 export const selectedDetail: Readable<DetailWindow | undefined> = derived([
     lastUnitClicked,
@@ -179,26 +181,23 @@ export const selectedDetail: Readable<DetailWindow | undefined> = derived([
             }
         }
         if (firstVas) return { kind: 'vas', entity: firstVas } satisfies DetailWindow
-
+        
         let me = $allVisualUnitProps.at(0)
         if (me) return { kind: 'vup', entity: me } satisfies DetailWindow
     }
-
+    
     let vupAt = $allVisualUnitProps.find(v => v.id == $lastUnitClicked)
     if (vupAt) return { kind: 'vup', entity: vupAt } satisfies DetailWindow
-
+    
     let vasAt = $visualActionSources.find(v => v.id == $lastUnitClicked)
     if (vasAt) return { kind: 'vas', entity: vasAt } satisfies DetailWindow
-
+    
     let me = $allVisualUnitProps.at(0)
     if (me) return { kind: 'vup', entity: me } satisfies DetailWindow
-
+    
     return undefined
 })
 
-// a collection of the responsetexts you've clicked and also the ulockable button texts youve clicked
-export const convoBeenSaid: Writable<Set<string>> = writable(new Set())
-export const currentConvoPrompt: Writable<string | undefined> = writable(undefined)
 
 export type ConvoState = {
     currentRetort: string
@@ -208,7 +207,6 @@ export type ConvoState = {
 }
 
 
-export const convoStateForEachVAS: Writable<Map<UnitId, ConvoState>> = writable(new Map())
 export const selectedVisualActionSourceState = derived([
     // lastUnitClicked,
     // selectedVisualActionSource,
@@ -230,9 +228,6 @@ export const selectedVisualActionSourceState = derived([
     }
     return state
 })
-
-
-export let latestSlotButtonInput: Writable<EquipmentSlot | 'none'> = writable('none')
 
 export const [sendMelee, receiveMelee] = crossfade({
     duration: (d) => 500,

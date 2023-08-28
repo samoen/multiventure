@@ -5,13 +5,11 @@
 		convoStateForEachVAS,
 		actionsForSlot,
 		allVisualUnitProps,
-		animationCancelled,
 		bodySlotActions,
 		centerFieldTarget,
 		choose,
 		lockedHandles,
 		clientState,
-		convoBeenSaid,
 		currentAnimation,
 		currentAnimationIndex,
 		currentAnimationsWithData,
@@ -51,6 +49,7 @@
 	import { derived, writable, type Writable } from 'svelte/store';
 	import plains from '$lib/assets/landscapes/landscape-plain.webp';
 	import type { BattleAnimation, DataFirstLoad } from '$lib/utils';
+	import VisualActionSource from '$lib/Components/VisualActionSource.svelte';
 
 	export let data : DataFirstLoad;
 	let signupInput: string;
@@ -142,6 +141,7 @@
 	}
 
 	async function getWorld(){
+		$clientState.loading = true
 		let r = await fetch('/api/world', { method: 'POST' })
 		let sMsg = await r.json()
 		if (!isMsgFromServer(sMsg)) {
@@ -149,6 +149,7 @@
 			return;
 		}
 		worldReceived(sMsg)
+		$clientState.loading = false
 	}
 
 	async function cancelAnimations() {
@@ -176,15 +177,22 @@
 		leaveGame();
 	}
 	function leaveGame() {
-		$lastMsgFromServer = undefined;
 		$clientState.status = 'unsubscribing from events';
 		if (source?.readyState != source?.CLOSED) {
 			console.log('closing con from browser');
 			source?.close();
 		}
 		source = null;
+		$lastMsgFromServer = undefined;
 		$clientState.status = 'need manual login';
 		$clientState.loading = false;
+		$currentAnimationIndex = 999
+		$convoStateForEachVAS.clear();
+		$visualActionSources = []
+		$allVisualUnitProps = []
+		$lockedHandles.clear()
+		$currentConvoPrompt = undefined
+		$latestSlotButtonInput = 'none'
 	}
 
 	async function signUp(usrName: string) {
@@ -396,15 +404,9 @@
 				{#each $visualActionSources.filter(s=>!$lockedHandles.get(s.id)) as s (s.id)}
 					<div class="vasSpriteHolder"
 						animate:flip
-						on:click|preventDefault|stopPropagation={() => {
-							$lastUnitClicked = s.id;
-							$currentConvoPrompt = undefined;
-						}}
-						role="button"
-						tabindex="0"
-						on:keydown
 					>
-						<img class="vasSprite" src={anySprites[s.sprite]} alt="a place" />
+						<VisualActionSource hostId={s.id}></VisualActionSource>
+						<!-- <img class="vasSprite" src={anySprites[s.sprite]} alt="a place" /> -->
 					</div>
 				{/each}
 			</div>
@@ -831,10 +833,7 @@
 		display: grid;
 		place-items: center;
 	}
-	.vasSprite {
-		/* background-color: aqua; */
-		transform: scaleX(-1);
-	}
+
 	/* .vasdPrompt{
 	}
 	.vasdButtons{

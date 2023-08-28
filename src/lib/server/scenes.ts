@@ -223,6 +223,25 @@ const tutorial = {
 			portrait: 'general',
 		})
 		player.visualActionSources.push({
+			id: 'vasGoTrain1',
+			sprite: 'castle',
+			startText: `An entrance to a training room`,
+			actionsWithRequirements: [
+				{
+					sAction: {
+						serverAct: {
+							buttonText: "Enter the training room",
+							goTo: `trainingRoom1_${player.heroName}`
+						},
+					},
+					requires() {
+						return player.inventory.utility.itemId == 'bomb' && player.inventory.weapon.itemId == 'club'
+					},
+
+				},
+			],
+		})
+		player.visualActionSources.push({
 			id: 'vasEquipClub',
 			sprite: 'club',
 			startText: 'A club deals a hefty chunk of damage each hit. That makes it effective against unarmored foes like goblins.',
@@ -258,25 +277,6 @@ const tutorial = {
 						}
 					},
 				}
-			],
-		})
-		player.visualActionSources.push({
-			id: 'vasGoTrain1',
-			sprite: 'castle',
-			startText: `An entrance to a training room`,
-			actionsWithRequirements: [
-				{
-					sAction: {
-						serverAct: {
-							buttonText: "Enter the training room",
-							goTo: `trainingRoom1_${player.heroName}`
-						},
-					},
-					requires() {
-						return player.inventory.utility.itemId == 'bomb' && player.inventory.weapon.itemId == 'club'
-					},
-
-				},
 			],
 		})
 

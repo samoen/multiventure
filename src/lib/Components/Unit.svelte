@@ -6,7 +6,6 @@
 <script lang="ts">
 	import {
 		allVisualUnitProps,
-		animationCancelled,
 		choose,
 		currentAnimation,
 		lastMsgFromServer,
