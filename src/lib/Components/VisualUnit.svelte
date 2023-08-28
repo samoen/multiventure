@@ -13,7 +13,7 @@
 	$: vu = $allVisualUnitProps.find((v) => v.id == hostId);
 	$: hpBar = vu ? (vu.displayHp > 0 ? 100 * (vu.displayHp / vu.maxHp) : 0) : 0;
 	$: {
-		if (vu && vu.displayHp < 1) {
+		if (vu?.side == 'enemy'  && vu.displayHp < 1) {
 			die(vu);
 		}
 	}
@@ -64,7 +64,7 @@
 	};
 </script>
 
-{#if vu && !(shouldDie && vu.side == 'enemy')}
+{#if vu && !shouldDie}
 	<div class="top" out:fade|local={{ duration: 400 }}>
 		<div class="nameHolder">
 			<span class="selfIndicator">{vu.name == $lastMsgFromServer?.yourInfo.heroName ? '👤' : ''}</span>
@@ -98,9 +98,9 @@
 {/if}
 
 <style>
-	.top {
-		display: contents;
-	}
+	/* .top { */
+		/* display: contents; */
+	/* } */
 	.nameHolder{
 		display: flex;
 		align-items: center;
@@ -125,9 +125,9 @@
 	.faded {
 		opacity: 0.5;
 	}
-	.bold {
+	/* .bold {
 		font-weight: bold;
-	}
+	} */
 	/* .bold::before{
 		content:'\2605';
 		color:yellow;

@@ -315,7 +315,7 @@ const trainingRoom1 = {
 					{
 						lockHandle: 'gimmie',
 						responseText: `ok, gimmie`,
-						retort: `gear up and go!`,
+						retort: `Gear up and head into the next room. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
 						unlock: ['vasEquipDagger', `vasEquipBandage`]
 					}
 				]
@@ -342,7 +342,7 @@ const trainingRoom1 = {
 			player.visualActionSources.push({
 				id: 'vasEquipBandage',
 				sprite: 'club',
-				startText: `Use that bandage when you get low on health. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
+				startText: `Use bandages when you get low on health.`,
 				startsLocked: true,
 				actionsWithRequirements: [
 					{

@@ -394,7 +394,7 @@
 					</div>
 				{/each}
 				{#each $visualActionSources.filter(s=>!$lockedHandles.get(s.id)) as s (s.id)}
-					<div
+					<div class="vasSpriteHolder"
 						animate:flip
 						on:click|preventDefault|stopPropagation={() => {
 							$lastUnitClicked = s.id;
@@ -777,28 +777,32 @@
 	}
 	.selectedPortrait {
 		/* width: 20vw; */
-		flex-basis:20%;
-		height: 100%;
+		flex-basis:15%;
+		/* height: 100%; */
 		/* background-color: blueviolet; */
-		display:flex;
-		justify-content: center;
+		/* display:flex; */
+		/* justify-content: center; */
+		/* width:10vw; */
+		height:100%;
 		/* place-items: center; */
 		/* overflow:hidden; */
 		/* height: 20vh; */
 	}
 	.selectedPortrait > img {
+		display:block;
 		object-fit:cover;
-		height: 100%;
+		/* height: 100%; */
 		/* background-color: brown; */
-		/* width:100%; */
+		width:100%;
+		height:100%
 		/* width: 100%; */
 		/* max-height: 90%; */
 		/* max-width: 100%; */
 	}
 	.selectedRest {
-		flex-basis:80%;
+		flex-basis:85%;
 		height:100%;
-		padding:10px;
+		/* padding:10px; */
 		/* width:80vw; */
 	}
 	.selectedStats {
@@ -815,13 +819,19 @@
 		/* background-color: burlywood; */
 		/* } */
 	.vasdPromptAndButtons {
+		padding:10px;
 		display: flex;
 		height:100%;
 		flex-direction: column;
 		/* justify-content: space-around; */
 		overflow-y: auto;
 	}
+	.vasSpriteHolder{
+		display: grid;
+		place-items: center;
+	}
 	.vasSprite {
+		/* background-color: aqua; */
 		transform: scaleX(-1);
 	}
 	/* .vasdPrompt{
