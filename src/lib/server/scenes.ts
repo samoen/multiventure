@@ -1,4 +1,4 @@
-import type { GameActionSentToClient, AnySprite, VisualActionSourceId, BattleEvent } from '$lib/utils';
+import type { GameActionSentToClient, AnySprite, VisualActionSourceId, BattleEvent, LandscapeImage } from '$lib/utils';
 import { enemiesInScene, enemyTemplates, spawnEnemy, type EnemyTemplateId, type EnemyStatuses } from './enemies';
 import { bodyItems, utilityItems, weapons, type ItemIdForSlot, items } from './items';
 import { activePlayersInScene, globalFlags, healPlayer, type GameAction, type HeroName, type MiscPortrait, type Player, type Flag } from './users';
@@ -30,6 +30,7 @@ export type Scene = {
 	vases?: VisualActionSource[]
 	solo?: boolean
 	hasEntered?: Set<HeroName>
+	landscape?:LandscapeImage
 };
 
 export type VisualActionSource = {
@@ -556,7 +557,13 @@ const forest: Scene = {
 				sAction: {
 					serverAct: {
 						buttonText: 'Slog it towards teh castle',
-						goTo: 'castle',
+						performAction() {
+							return {
+								behavior:{kind:'travel',goTo:'castle'},
+								source:{kind:'player',entity:player},
+								target:{kind:'vas',entity:{unitId:'vascastle'}}
+							}satisfies BattleEvent
+						},
 					}
 				}
 			}],
@@ -574,6 +581,7 @@ const forest: Scene = {
 }
 
 const castle: Scene = {
+	landscape:'castle',
 	onEnterScene(player) {
 		if (player.previousScene == 'throne') {
 			player.sceneTexts.push('You climb back down those darn steps. So many steps.')

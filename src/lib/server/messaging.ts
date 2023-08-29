@@ -1,7 +1,7 @@
-import type { BattleAnimation, EnemyInClient, GameActionSentToClient } from '$lib/utils';
+import type { BattleAnimation, EnemyInClient, GameActionSentToClient, LandscapeImage } from '$lib/utils';
 import { activeEnemies, addAggro, damagePlayer, enemiesInScene, getAggroForPlayer, takePoisonDamage } from './enemies';
 import { items } from './items';
-import { convertServerActionToClientAction, convertVasToClient, type VisualActionSource, type VisualActionSourceInClient } from './scenes';
+import { convertServerActionToClientAction, convertVasToClient, scenes, type VisualActionSource, type VisualActionSourceInClient } from './scenes';
 import { activePlayers, globalFlags, playerItemStates, users, type HeroName, type Player, type GameAction, activePlayersInScene, type PlayerInClient, type Flag, type GlobalFlag } from './users';
 
 export const FAKE_LATENCY = 50;
@@ -21,6 +21,7 @@ export type MessageFromServer = {
 	playerFlags: Flag[];
 	globalFlags: GlobalFlag[];
 	visualActionSources: VisualActionSourceInClient[];
+	landscape:LandscapeImage;
 };
 
 
@@ -41,6 +42,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 	// console.log(`sending anims ${JSON.stringify(forPlayer.animations)}`)
 	const nextMsg: MessageFromServer = {
 		triggeredBy: triggeredBy,
+		landscape:scenes.get(forPlayer.currentScene)?.landscape ?? 'plains',
 		yourInfo:{
 			unitId:forPlayer.unitId,
 			heroName: forPlayer.heroName,

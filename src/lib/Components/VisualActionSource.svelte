@@ -13,7 +13,8 @@
 		sendMelee,
 		subAnimationStage,
 		updateUnit,
-		visualActionSources
+		visualActionSources,
+		visualOpacity
 	} from '$lib/client/ui';
 	import type { VisualActionSourceId } from '$lib/utils';
 	import { derived } from 'svelte/store';
@@ -35,7 +36,8 @@
 		([$currentAnimation, $subAnimationStage]) => {
 			if (!$currentAnimation) return undefined;
 			if (
-				($currentAnimation.behavior.kind == 'melee' || $currentAnimation.behavior.kind == 'travel') &&
+				($currentAnimation.behavior.kind == 'melee' ||
+					$currentAnimation.behavior.kind == 'travel') &&
 				$currentAnimation.target == hostId &&
 				$subAnimationStage == 'fire'
 			) {
@@ -46,22 +48,25 @@
 	);
 
 	async function guestArrived() {
-        if ($currentAnimation != undefined && $host != undefined) {
-            if($currentAnimation.behavior.kind == 'travel'){
-                nextAnimationIndex(false,false)
-                return
-            }
-            if($currentAnimation.takesItem){
-                pickedup = true;
-                if($guestId){
-                    updateUnit($guestId,(vup)=>{
-                        if($currentAnimation?.takesItem?.slot == 'weapon'){
-                            vup.src = heroSprites[heroSprite($currentAnimation.takesItem.id as ItemIdForSlot<'weapon'>)]
-                        }
-                    })
-                    await tick()   
-                }
-            }
+		if ($currentAnimation != undefined && $host != undefined) {
+			if ($currentAnimation.behavior.kind == 'travel') {
+				$visualOpacity = false;
+
+				nextAnimationIndex(false, false);
+				return;
+			}
+			if ($currentAnimation.takesItem) {
+				pickedup = true;
+				if ($guestId) {
+					updateUnit($guestId, (vup) => {
+						if ($currentAnimation?.takesItem?.slot == 'weapon') {
+							vup.src =
+								heroSprites[heroSprite($currentAnimation.takesItem.id as ItemIdForSlot<'weapon'>)];
+						}
+					});
+					await tick();
+				}
+			}
 			$subAnimationStage = 'sentHome';
 		}
 	}
@@ -71,9 +76,9 @@
 			return;
 		}
 
-        if($currentAnimation.takesItem){
-            $lockedHandles.set($host.id, true);
-        }
+		if ($currentAnimation.takesItem) {
+			$lockedHandles.set($host.id, true);
+		}
 	}
 </script>
 
@@ -90,14 +95,16 @@
 			on:keydown
 		>
 			{#if !pickedup}
-                <div class="nameHolder">
-                    <span class="nametag">{$host.id}</span>
-                </div>
-				<img class="vasSprite flipped" 
-                    out:fade|local
-                    src={anySprites[$host.sprite]} 
-                    alt="a place" />
-                <div class="healthBarPlaceHolder"></div>
+				<div class="nameHolder">
+					<span class="nametag">{$host.id}</span>
+				</div>
+				<img
+					class="vasSprite flipped"
+					out:fade|local
+					src={anySprites[$host.sprite]}
+					alt="a place"
+				/>
+				<div class="healthBarPlaceHolder" />
 			{/if}
 		</div>
 		<div class="guestArea placeHolder">
@@ -121,17 +128,17 @@
 {/if}
 
 <style>
-    .healthBarPlaceHolder{
-        height:clamp(17px,1vw + 10px,30px);
-    }
-    .nameHolder{
+	.healthBarPlaceHolder {
+		height: clamp(17px, 1vw + 10px, 30px);
+	}
+	.nameHolder {
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
 	.nametag {
 		opacity: 0.6;
-		color:white;
+		color: white;
 		white-space: nowrap;
 		/* text-wrap:balance;
 		word-wrap: break-word;
@@ -157,7 +164,7 @@
 		/* background-color: red; */
 	}
 	.vasSprite {
-        display: block;
+		display: block;
 		width: 100%;
 		/* background-color: aqua; */
 		aspect-ratio: 1/1;

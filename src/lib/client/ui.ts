@@ -1,5 +1,5 @@
 import type { Flag, HeroName, MiscPortrait, PlayerInClient } from "$lib/server/users";
-import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient, AnySprite } from "$lib/utils";
+import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient, AnySprite, LandscapeImage } from "$lib/utils";
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 import peasantPortrait from '$lib/assets/portraits/peasant.webp';
 import generalPortrait from '$lib/assets/portraits/general.webp';
@@ -91,6 +91,9 @@ export const lockedHandles: Writable<Map<string, boolean>> = writable(new Map())
 export const convoStateForEachVAS: Writable<Map<UnitId, ConvoState>> = writable(new Map())
 export const latestSlotButtonInput: Writable<EquipmentSlot | 'none'> = writable('none')
 export const lastUnitClicked: Writable<UnitId | undefined> = writable()
+export const visualLandscape: Writable<LandscapeImage> = writable('plains')
+export const visualOpacity = writable(false)
+export const visualSceneLabel = writable('nowhere')
 
 
 export function numberShownOnSlot(itemState: ItemState): number | undefined {
@@ -286,6 +289,10 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         console.log('tried to sync with bad msg')
     }
     if (lastMsg) {
+        console.log('sync label to '+ lastMsg.yourInfo.currentScene)
+        visualLandscape.set(lastMsg.landscape)
+        visualSceneLabel.set(lastMsg.yourInfo.currentScene)
+
         let newVups: VisualUnitProps[] = []
         // console.log(`syncing hero with poison ${lastMsg.yourInfo.statuses.poison}`)
         newVups.push({

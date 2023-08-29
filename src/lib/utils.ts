@@ -77,6 +77,8 @@ export type AnySprite =
 | 'club'
 | 'armorStand'
 
+export type LandscapeImage = 'plains' | 'castle'
+
 export type AnimationBehavior = 
 	| {kind:'missile', extraSprite:AnySprite} 
 	| {kind: 'melee'} 

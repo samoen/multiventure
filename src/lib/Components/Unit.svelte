@@ -28,7 +28,10 @@
 
 		anySprites,
 
-		animationsInWaiting
+		animationsInWaiting,
+
+		visualOpacity
+
 
 
 
@@ -168,10 +171,7 @@
 				in:receiveMelee={{ key: 'movehero' }}
 				on:introend={() => {
 					if ($currentAnimation != undefined && $lastMsgFromServer) {
-						nextAnimationIndex(
-							false,
-							false,
-						);
+						nextAnimationIndex(false, false);
 					}
 				}}
 			>
