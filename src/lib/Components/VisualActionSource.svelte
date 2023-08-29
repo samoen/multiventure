@@ -58,7 +58,6 @@
 			}
 			if ($currentAnimation.takesItem && $guestId) {
 				pickedup = true;
-				// $visualActionSources = $visualActionSources.filter(v=>v.id != hostId)
 				updateUnit($guestId, (vup) => {
 					if ($currentAnimation?.takesItem?.slot == 'weapon') {
 						vup.src =
@@ -125,9 +124,6 @@
 <style>
 	.nameAndSprite {
 		transition: opacity 0.3s ease-in-out;
-	}
-	.noOpacity {
-		opacity: 0;
 	}
 	.healthBarPlaceHolder {
 		height: clamp(17px, 1vw + 10px, 30px);

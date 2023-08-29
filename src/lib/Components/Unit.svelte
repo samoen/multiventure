@@ -211,7 +211,7 @@
 		{#if $projectileSource}
 			<!-- in:fade|local={{ duration: 1 }} -->
 			<div
-				class="projHolder"
+				class="projHolder projectileSized"
 				out:projectileSendTransition={{ key: $projectileSend.key }}
 				class:startAlignSelf={!$hostIsNotHero}
 				class:endAlignSelf={$hostIsNotHero}
@@ -233,7 +233,7 @@
 		{/if}
 		{#if $selfInflictSource}
 			<div
-				class="projHolder selfInflictSource"
+				class="projHolder selfInflictSource projectileSized"
 				class:startAlignSelf={!$hostIsNotHero}
 				class:endAlignSelf={$hostIsNotHero}
 				out:fly|local={{ delay: 0, duration: 600, x: 0, y: -30 }}
@@ -262,7 +262,7 @@
 			</div>
 		{/if}
 		{#if $missileTarget}
-			<div class="projHolder"
+			<div class="projHolder projectileSized"
 				class:startAlignSelf={!$hostIsNotHero}
 				class:endAlignSelf={$hostIsNotHero}
 				in:receiveProj={{ key: 'missile' }}
@@ -368,8 +368,6 @@
 		z-index: 3;
 		display: inline;
 		top:40%;
-		height:clamp(14px,1vw + 12px,30px);
-		width:clamp(14px,1vw + 12px,30px);
 		position:absolute;
 	}
 	/* .selfInflictSource { */

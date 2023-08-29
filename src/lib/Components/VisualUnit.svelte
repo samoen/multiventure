@@ -103,9 +103,6 @@
 	.top {
 		transition: opacity 0.5s ease-in-out;
 	}
-	.noOpacity {
-		opacity: 0;
-	}
 	.nameHolder {
 		display: flex;
 		align-items: center;

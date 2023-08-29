@@ -351,7 +351,7 @@
 					</div>
 				{/each}
 			</div>
-			<div class="centerPlaceHolder">
+			<div class="centerPlaceHolder projectileSized">
 				{#if $centerFieldTarget}
 					<div
 						class="centerField"
@@ -656,6 +656,13 @@
 		user-select: none;
 		touch-action: manipulation;
 	}
+	.wrapGameField :global(.noOpacity) {
+        opacity: 0;
+    }
+	.wrapGameField :global(.projectileSized) {
+		height:clamp(25px,5vw + 1px,50px);
+		width:clamp(25px,5vw + 1px,50px);
+    }
 	h3 {
 		margin-top: 15px;
 		margin-bottom: 1px;
@@ -668,9 +675,6 @@
 		border: 1px solid black;
 		overflow-y: auto;
 		min-width: 150px;
-	}
-	.noOpacity{
-		opacity: 0;
 	}
 	button {
 		margin: 5px;
@@ -690,7 +694,6 @@
 		height: calc(20vh);
 		overflow-y: auto;
 		/* height: 5; */
-		overflow-y: auto;
 		border: 1px solid black;
 		background-color: lightblue;
 		padding: 10px;
@@ -727,30 +730,32 @@
 	}
 	.wrapGameField {
 		height: 40vh;
-		position: relative;
+		/* position: relative; */
 		/* margin-block: 5px; */
 		/* padding: 3px; */
+		overflow-y: scroll;
 		background-color: black;
-		overflow-x: hidden;
+		/* overflow-x: hidden; */
 	}
 	.visual {
+		position:relative;
 		transition: opacity 0.6s ease-in-out;
-		background-repeat: repeat-x;
+		/* background-repeat:repeat; */
 		background-size: cover;
 		background-attachment: local;
 		background-position: center bottom;
-		overflow-y: auto;
-		overflow-x: hidden;
 		overscroll-behavior: contain;
 		background-color: burlywood;
 		display: grid;
-		grid-template-columns: 1fr auto 1fr;
+		column-gap:1px;
+		grid-template-columns: 1fr 1fr;
 		/* gap:4px; */
 		justify-content: center;
 		align-items: center;
 		/* justify-items:center; */
 		/* height: fit-content; */
-		height: 100%;
+		height: max-content;
+		min-height: 100%;
 	}
 
 	/* .unitHolder{ */
@@ -762,16 +767,15 @@
 		/* background-color: beige; */
 		row-gap: 2px;
 		/* column-gap: 2px; */
-		grid-template-columns: repeat(auto-fit, clamp(90px, 50%, 240px));
+		grid-template-columns: repeat(auto-fit, clamp(100px, 50%, 240px));
 		justify-content: center;
 		/* align-items: start; */
 	}
 	.centerPlaceHolder {
-		/* height: 30px; */
-		/* width: 30px; */
-		height: clamp(14px, 1vw + 12px, 30px);
-		width: clamp(14px, 1vw + 12px, 30px);
+		position:absolute;
 		/* background-color: aqua; */
+		top:50%;
+		left:50%;
 	}
 	.centerField {
 		height: 100%;
