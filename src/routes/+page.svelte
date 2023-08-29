@@ -191,6 +191,7 @@
 		$lockedHandles.clear()
 		$currentConvoPrompt = undefined
 		$latestSlotButtonInput = 'none'
+		$lastUnitClicked = undefined
 	}
 
 	async function signUp(usrName: string) {

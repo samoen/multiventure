@@ -71,7 +71,7 @@
 		if (!$host || !$currentAnimation) {
 			return;
 		}
-        
+
         if($currentAnimation.takesItem){
             $lockedHandles.set($host.id, true);
         }
@@ -81,7 +81,7 @@
 {#if $host}
 	<div class="unitAndArea">
 		<div
-			class="home placeHolder flipped"
+			class="home placeHolder"
 			on:click|preventDefault|stopPropagation={() => {
 				if (!$host) return;
 				$lastUnitClicked = $host.id;
@@ -92,10 +92,14 @@
 			on:keydown
 		>
 			{#if !pickedup}
-				<img class="vasSprite" 
+                <div class="nameHolder">
+                    <span class="nametag">{$host.id}</span>
+                </div>
+				<img class="vasSprite flipped" 
                     out:fade|local
                     src={anySprites[$host.sprite]} 
                     alt="a place" />
+                <div class="healthBarPlaceHolder"></div>
 			{/if}
 		</div>
 		<div class="guestArea placeHolder">
@@ -119,6 +123,24 @@
 {/if}
 
 <style>
+    .healthBarPlaceHolder{
+        height:clamp(17px,1vw + 10px,30px);
+    }
+    .nameHolder{
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.nametag {
+		opacity: 0.6;
+		color:white;
+		white-space: nowrap;
+		/* text-wrap:balance;
+		word-wrap: break-word;
+		line-break: anywhere; */
+		font-weight: bold;
+		font-size: 13px;
+	}
 	.flipped {
 		transform: scaleX(-1);
 	}
@@ -129,16 +151,17 @@
 	.unitAndArea {
 		display: flex;
 		flex-direction: row;
-		background-color: brown;
+		/* background-color: brown; */
 		width: 100%;
 	}
 	.home {
 		order: 1;
-		background-color: red;
+		/* background-color: red; */
 	}
 	.vasSprite {
+        display: block;
 		width: 100%;
-		background-color: aqua;
+		/* background-color: aqua; */
 		aspect-ratio: 1/1;
 	}
 	.guestArea {

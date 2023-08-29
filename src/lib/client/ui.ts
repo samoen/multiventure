@@ -90,6 +90,7 @@ export const lockedHandles: Writable<Map<string, boolean>> = writable(new Map())
 export const currentConvoPrompt: Writable<string | undefined> = writable(undefined)
 export const convoStateForEachVAS: Writable<Map<UnitId, ConvoState>> = writable(new Map())
 export const latestSlotButtonInput: Writable<EquipmentSlot | 'none'> = writable('none')
+export const lastUnitClicked: Writable<UnitId | undefined> = writable()
 
 
 export function numberShownOnSlot(itemState: ItemState): number | undefined {
@@ -145,8 +146,6 @@ export let slotlessBattleActions = derived(lastMsgFromServer, ($lastMsgFromServe
     return $lastMsgFromServer?.itemActions.filter(ia => ia.slot == undefined) ?? []
 })
 
-// export const lastUnitClicked: Writable<VisualUnitProps | undefined> = writable()
-export const lastUnitClicked: Writable<UnitId | undefined> = writable()
 
 export type DetailWindow = { kind: 'vup', entity: VisualUnitProps } | { kind: 'vas', entity: VisualActionSourceInClient }
 
