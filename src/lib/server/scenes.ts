@@ -1,7 +1,7 @@
 import type { GameActionSentToClient, AnySprite, VisualActionSourceId, BattleEvent } from '$lib/utils';
 import { enemiesInScene, enemyTemplates, spawnEnemy, type EnemyTemplateId, type EnemyStatuses } from './enemies';
 import { bodyItems, utilityItems, weapons, type ItemIdForSlot, items } from './items';
-import { activePlayersInScene, globalFlags, healPlayer, type GameAction, type HeroName, type MiscPortrait, type Player } from './users';
+import { activePlayersInScene, globalFlags, healPlayer, type GameAction, type HeroName, type MiscPortrait, type Player, type Flag } from './users';
 
 
 export const scenes: Map<SceneId, Scene> = new Map()
@@ -30,7 +30,6 @@ export type Scene = {
 	vases?: VisualActionSource[]
 	solo?: boolean
 	hasEntered?: Set<HeroName>
-	makeSceneFlags?: () => object
 };
 
 export type VisualActionSource = {
@@ -40,6 +39,7 @@ export type VisualActionSource = {
 	actionsWithRequirements?: (UnlockableGameActionWithRequirement)[]
 	startText: string,
 	responses?: ConversationResponse[]
+	detect?:{flag:Flag,startText:string,responses:ConversationResponse[]}
 	startsLocked?: boolean
 	lockHandle?: string
 }
@@ -58,6 +58,7 @@ export type VisualActionSourceInClient = {
 	actionsInClient: UnlockableClientAction[]
 	startText: string,
 	responses: ConversationResponse[]
+	detectStep?:Flag
 	
 }
 
@@ -97,24 +98,34 @@ export function convertServerActionToClientAction(sa: GameAction): GameActionSen
 	}
 }
 
-export function convertVasToClient(vas: VisualActionSource): VisualActionSourceInClient {
+export function convertVasToClient(vas: VisualActionSource, player:Player): VisualActionSourceInClient {
 	let validUnlockableActions = getValidUnlockableServerActionsFromVas(vas)
 
 	let validUnlockableClientActions: UnlockableClientAction[] = []
-	// for (const vua of validUnlockableActions){
-
-	// }
 	validUnlockableClientActions = convertUnlockableActionsToClient(validUnlockableActions)
+
+	let startText = vas.startText
+	let responses : ConversationResponse[] = []
+	if(vas.responses)responses = vas.responses
+	let detectStep = undefined
+	if(vas.detect){
+		if(player.flags.has(vas.detect.flag)){
+			detectStep = vas.detect.flag
+			responses = vas.detect.responses
+			startText = vas.detect.startText
+		}
+	}
 
 	let result = {
 		id: vas.unitId,
-		startText: vas.startText,
-		responses: vas.responses ?? [],
+		startText: startText,
+		responses: responses,
 		sprite: vas.sprite,
 		portrait: vas.portrait,
 		startsLocked: vas.startsLocked,
 		lockHandle: vas.lockHandle,
 		actionsInClient: validUnlockableClientActions,
+		detectStep:detectStep,
 	} satisfies VisualActionSourceInClient
 	return result
 }
@@ -572,6 +583,7 @@ const castle: Scene = {
 		}
 		if (player.previousScene == 'house') {
 			player.sceneTexts.push('You exit the housing of the greiving mother. The castle looms, and the forest beckons.')
+			player.flags.add('killedGoblins')
 		}
 		if (player.flags.has('heardAboutHiddenPassage') && !player.flags.has('metArthur')) {
 			player.flags.add('metArthur')
@@ -604,18 +616,13 @@ const castle: Scene = {
 };
 
 const house: Scene = {
-	makeSceneFlags() {
-		return {
-			accepted: false
-		}
-	},
 	onEnterScene(player) {
 		if (player.flags.has('killedGoblins')) {
 			player.sceneTexts.push(`Dear Sir ${player.heroName}! You return with the stench of goblin blood about yourself. Thank you for obtaining vengence on my behalf. My son had this set of leather armour. If only he had been wearing it when he went on his adventure.\n\nI bequeath it to you so that his legacy may live on. Good luck out there ${player.heroName}`)
 		} else
 			if (!player.flags.has('heardAboutHiddenPassage')) {
 				player.flags.add('heardAboutHiddenPassage')
-				player.sceneTexts.push("You come upon a beautiful little thatched roof cottage. The air is sweet with the smell of flowery perfume, but there is a sense of sadness in the air. You notice the door slightly ajar and knock on it quietly. There is no response.\n\nYou gently push the door open and find a woman sitting at a table alone, sobbing silently. Startled, she jumps from her seat. You hold your hands up as in a sign of concilation. 'Traveller, what is it you do here? Do you not see I grieve? My son... he was murdered by Gorlak and his rowdy band of filthy goblin scum. He was barely a man yet had the stars in his eyes. He sought adventure but found his demise far too soon. Will you avenge him on my behalf? I don't have much but I'm sure I can find somethign to reward you")
+				player.sceneTexts.push("You come upon a beautiful little thatched roof cottage. The air is sweet with the smell of flowery perfume, but there is a sense of sadness in the air. You notice the door slightly ajar and knock on it quietly. There is no response.\n\nYou gently push the door open and find a woman sitting at a table alone, sobbing silently. Startled, she jumps from her seat. You hold your hands up as in a sign of concilation.")
 				// player.sceneTexts.push("The figure atop the throne opens its mouth and from it emerges something akin to speech, but with the qualities of a dying whisper. 'I am... or was.. the king of this wretched place.' The figure starts, haltingly. 'I... the forest.... there is a passage. Find it and return to me.' The figure falls silent and returns to its corpselike revery.");
 			}
 			else if (!player.flags.has('killedGoblins')) {
@@ -623,7 +630,65 @@ const house: Scene = {
 			}
 	},
 	actions(player) {
-		let scene = this
+		player.visualActionSources.push({
+			unitId:'vasHouseWoman',
+			sprite:'general',
+			startText:`Traveller, what is it you do here? Do you not see I grieve? My son... he was murdered by Gorlak and his rowdy band of filthy goblin scum. He was barely a man yet had the stars in his eyes. He sought adventure but found his demise far too soon. Will you avenge him on my behalf? I don't have much but I'm sure I can find somethign to reward you`,
+			responses:[
+				{
+					lockHandle:`accepted`,
+					responseText:`I will`,
+					retort:`Thank you, good luck. If you succeed I'll give you this armor`,
+					lock:['reward','rejected'],
+					unlock:['vasLeatherGift']
+				},
+				{
+					lockHandle:`rejected`,
+					responseText:`I won't`,
+					retort:`Not much of a hero are you?`,
+				},
+				{
+					lockHandle:`reward`,
+					responseText:`What reward will I get`,
+					retort:`You can have my sons armor. If only he was wearing it`,
+					unlock:['vasLeatherGift']
+				},
+			],
+			detect:{
+				flag:'killedGoblins',
+				startText:`Dear Sir ${player.heroName}! You return with the stench of goblin blood about yourself. Thank you for obtaining vengence on my behalf. My son had this set of leather armour. If only he had been wearing it when he went on his adventure.\n\nI bequeath it to you so that his legacy may live on. Good luck out there ${player.heroName}`,
+				responses:[
+					{
+						lockHandle:`noProbs`,
+						responseText:`No Problemo`,
+						retort:`You are a great hero`,
+						unlock:['vasLeatherGift']
+					},
+				]
+			}
+		})
+		player.visualActionSources.push({
+			unitId:'vasGoCastle',
+			sprite:'castle',
+			startText:'go back the the castle grounds',
+			actionsWithRequirements:[
+				{
+					sAction:{
+						serverAct:{
+							buttonText:'Head back outside',
+							performAction() {
+								return {
+									source:{kind:'player',entity:player},
+									behavior:{kind:'travel',goTo:'castle'},
+									target:{kind:'vas',entity:{unitId:'vasGoCastle'}}
+								}satisfies BattleEvent
+							},
+
+						}
+					}
+				}
+			]
+		})
 		player.sceneActions.push({ buttonText: 'Leave the house', goTo: 'castle', })
 		if (!player.flags.has('acceptedGoblinQuest')) {
 			player.sceneActions.push({
@@ -635,12 +700,38 @@ const house: Scene = {
 				},
 			})
 		}
+		player.visualActionSources.push({
+			unitId:'vasLeatherGift',
+			sprite:'club',
+			startText:`Leather armor reduces the damage of each incoming strike.`,
+			startsLocked:true,
+			actionsWithRequirements:[
+				{
+					requires() {
+						return player.flags.has('killedGoblins')
+					},
+					sAction:{
+						serverAct:{
+							buttonText:'Equip',
+							performAction() {
+								return {
+									source:{kind:'player',entity:player},
+									behavior:{kind:'melee'},
+									takesItem:{slot:'body',id:'leatherArmor'},
+									target:{kind:'vas',entity:{unitId:'vasLeatherGift'}},
+								}
+							},
+						}
+					}
+				}
+			]				
+		})
 		if (player.flags.has('killedGoblins') && player.inventory.body.itemId != 'leatherArmor') {
 			player.sceneActions.push({
 				buttonText: 'Accept the gift',
 				performAction() {
 					player.inventory.body.itemId = 'leatherArmor'
-					player.sceneTexts.push(`${player.heroName}: Thank you good lady. I will not let his death be in vain.\n\nYou put on the leather armour and it fits snugly around you. With this, the blows of your enemies will not do nearly so much damage.`)
+					player.sceneTexts.push(`${player.heroName}: Thank you good lady. I will not let his death be in vain.\n\nYou put on the leather armour and it fits snugly around you.`)
 				},
 			})
 		}

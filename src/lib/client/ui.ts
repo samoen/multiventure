@@ -1,4 +1,4 @@
-import type { HeroName, MiscPortrait, PlayerInClient } from "$lib/server/users";
+import type { Flag, HeroName, MiscPortrait, PlayerInClient } from "$lib/server/users";
 import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient, AnySprite } from "$lib/utils";
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 import peasantPortrait from '$lib/assets/portraits/peasant.webp';
@@ -87,7 +87,6 @@ export const currentAnimationIndex: Writable<number> = writable(999)
 export const currentAnimationsWithData: Writable<BattleAnimation[]> = writable([])
 export const subAnimationStage: Writable<'start' | 'fire' | 'sentHome'> = writable('start')
 export const lockedHandles: Writable<Map<string, boolean>> = writable(new Map())
-export const currentConvoPrompt: Writable<string | undefined> = writable(undefined)
 export const convoStateForEachVAS: Writable<Map<UnitId, ConvoState>> = writable(new Map())
 export const latestSlotButtonInput: Writable<EquipmentSlot | 'none'> = writable('none')
 export const lastUnitClicked: Writable<UnitId | undefined> = writable()
@@ -199,10 +198,8 @@ export const selectedDetail: Readable<DetailWindow | undefined> = derived([
 
 
 export type ConvoState = {
-    currentRetort: string
-    // maybeLockedResponses: (ConversationResponse)[]
-    // maybeLockedActions: (UnlockableClientAction)[]
-    // vasIsLocked?:boolean
+    currentRetort: string,
+    detectStep?:Flag,
 }
 
 
@@ -351,11 +348,14 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         for (const vas of lastMsg.visualActionSources) {
             convoStateForEachVAS.update(cs => {
                 let existing = cs.get(vas.id)
+
                 // if we can't find this vas in the state, initialize it
-                if (!existing) {
+                // also reset it if it's a new conversation
+                if (!existing || existing.detectStep != vas.detectStep) {
                     // console.log(`init vas state ${vas.id} with unlockable`)
                     cs.set(vas.id, {
                         currentRetort: vas.startText,
+                        detectStep:vas.detectStep
                     })
                 }
                 return cs

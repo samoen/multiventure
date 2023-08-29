@@ -121,6 +121,7 @@ export function addNewUser(heroName : string) : {id:string,player:Player}{
 		// startScene = `forest`
 		// startScene = 'forestPassage'
 		// startScene = 'goblinCamp'
+		// startScene = 'castle'
 		// startScene = 'throne'
 		// startScene = 'armory'
 		

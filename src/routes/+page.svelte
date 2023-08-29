@@ -13,7 +13,6 @@
 		currentAnimation,
 		currentAnimationIndex,
 		currentAnimationsWithData,
-		currentConvoPrompt,
 		handlePutsStatuses,
 		lastMsgFromServer,
 		lastUnitClicked,
@@ -189,7 +188,6 @@
 		$visualActionSources = []
 		$allVisualUnitProps = []
 		$lockedHandles.clear()
-		$currentConvoPrompt = undefined
 		$latestSlotButtonInput = 'none'
 		$lastUnitClicked = undefined
 	}

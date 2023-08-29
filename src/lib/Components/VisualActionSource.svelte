@@ -3,7 +3,6 @@
 		allVisualUnitProps,
 		anySprites,
 		currentAnimation,
-		currentConvoPrompt,
 		heroSprite,
 		heroSprites,
 		lastMsgFromServer,
@@ -85,7 +84,6 @@
 			on:click|preventDefault|stopPropagation={() => {
 				if (!$host) return;
 				$lastUnitClicked = $host.id;
-				$currentConvoPrompt = undefined;
 			}}
 			role="button"
 			tabindex="0"

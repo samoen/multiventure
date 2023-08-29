@@ -85,7 +85,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 		itemActions: forPlayer.itemActions.map((gameAction) => convertServerActionToClientAction(gameAction)),
 		// visualActionSources:[],
 		visualActionSources:forPlayer.visualActionSources.map(s=>{
-			return convertVasToClient(s)
+			return convertVasToClient(s,forPlayer)
 		}),
 		happenings: recentHappenings,
 		animations: forPlayer.animations,
