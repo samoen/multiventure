@@ -282,7 +282,7 @@
 	<p>loading...</p>
 {/if}
 <br />
-{#if !$clientState.loading && $lastMsgFromServer == null}
+{#if !$clientState.loading && !$lastMsgFromServer}
 	<p>Welcome! Please sign up with your hero name:</p>
 	<input type="text" bind:value={signupInput} />
 	<button disabled={!signupInput} on:click={signUpButtonClicked}>Sign Up</button>

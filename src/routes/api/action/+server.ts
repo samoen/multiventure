@@ -33,7 +33,7 @@ export const POST = (async (r) => {
 	updatePlayerActions(player)
 
 	
-	let validActionsFromVases : GameAction[] = getServerActionsMetRequirementsFromVases(player.visualActionSources)
+	let validActionsFromVases : GameAction[] = getServerActionsMetRequirementsFromVases(player.visualActionSources,player)
 
 	let actionFromId = [...player.sceneActions, ...player.itemActions, ...validActionsFromVases].find((g) => g.buttonText == msg.buttonText);
 	if (!actionFromId) {

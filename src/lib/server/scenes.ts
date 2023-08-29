@@ -1,6 +1,6 @@
 import type { GameActionSentToClient, AnySprite, VisualActionSourceId, BattleEvent, LandscapeImage } from '$lib/utils';
 import { enemiesInScene, enemyTemplates, spawnEnemy, type EnemyTemplateId, type EnemyStatuses } from './enemies';
-import { bodyItems, utilityItems, weapons, type ItemIdForSlot, items } from './items';
+import { bodyItems, utilityItems, weapons, type ItemIdForSlot, items, type ItemId, checkHasItem } from './items';
 import { activePlayersInScene, globalFlags, healPlayer, type GameAction, type HeroName, type MiscPortrait, type Player, type Flag } from './users';
 
 
@@ -30,24 +30,23 @@ export type Scene = {
 	vases?: VisualActionSource[]
 	solo?: boolean
 	hasEntered?: Set<HeroName>
-	landscape?:LandscapeImage
+	landscape?: LandscapeImage
 };
 
 export type VisualActionSource = {
 	unitId: VisualActionSourceId
 	sprite: AnySprite
 	portrait?: MiscPortrait
-	actionsWithRequirements?: (UnlockableGameActionWithRequirement)[]
+	actionsWithRequirements?: UnlockableAction[]
 	startText: string,
 	responses?: ConversationResponse[]
-	detect?:{flag:Flag,startText:string,responses:ConversationResponse[]}
+	detect?: { flag: Flag, startText: string, responses: ConversationResponse[] }
 	startsLocked?: boolean
 	lockHandle?: string
 }
 
 export type UnlockableGameActionWithRequirement = {
 	sAction: UnlockableAction,
-	requires?: () => boolean,
 }
 
 export type VisualActionSourceInClient = {
@@ -59,15 +58,15 @@ export type VisualActionSourceInClient = {
 	actionsInClient: UnlockableClientAction[]
 	startText: string,
 	responses: ConversationResponse[]
-	detectStep?:Flag
-	
+	detectStep?: Flag
+
 }
 
 
-export function getServerActionsMetRequirementsFromVases(vases: VisualActionSource[]): GameAction[] {
+export function getServerActionsMetRequirementsFromVases(vases: VisualActionSource[], player: Player): GameAction[] {
 	let validActionsFromVases: GameAction[] = []
 	for (const vas of vases) {
-		let acts = getValidUnlockableServerActionsFromVas(vas)
+		let acts = getValidUnlockableServerActionsFromVas(vas, player)
 		for (const act of acts) {
 			validActionsFromVases.push(act.serverAct)
 		}
@@ -76,15 +75,26 @@ export function getServerActionsMetRequirementsFromVases(vases: VisualActionSour
 }
 
 
-export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource): UnlockableAction[] {
+export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, player: Player): UnlockableAction[] {
 	let validUnlockableActions: UnlockableAction[] = []
 	if (vas.actionsWithRequirements) {
 		for (const awr of vas.actionsWithRequirements) {
-			if (!awr.requires || awr.requires()) {
-				validUnlockableActions.push(awr.sAction)
+			let passedRequirements = true
+			if (awr.requiresGear) {
+				for (const requiredItem of awr.requiresGear) {
+					if (!checkHasItem(player, requiredItem)) {
+						passedRequirements = false
+						break
+					}
+				}
+			}
+			if (awr.requiresFlag != undefined && !player.flags.has(awr.requiresFlag)) {
+				passedRequirements = false
+			}
+			if (passedRequirements) {
+				validUnlockableActions.push(awr)
 			}
 		}
-
 	}
 	return validUnlockableActions
 }
@@ -99,18 +109,18 @@ export function convertServerActionToClientAction(sa: GameAction): GameActionSen
 	}
 }
 
-export function convertVasToClient(vas: VisualActionSource, player:Player): VisualActionSourceInClient {
-	let validUnlockableActions = getValidUnlockableServerActionsFromVas(vas)
+export function convertVasToClient(vas: VisualActionSource, player: Player): VisualActionSourceInClient {
+	let validUnlockableActions = getValidUnlockableServerActionsFromVas(vas, player)
 
 	let validUnlockableClientActions: UnlockableClientAction[] = []
 	validUnlockableClientActions = convertUnlockableActionsToClient(validUnlockableActions)
 
 	let startText = vas.startText
-	let responses : ConversationResponse[] = []
-	if(vas.responses)responses = vas.responses
+	let responses: ConversationResponse[] = []
+	if (vas.responses) responses = vas.responses
 	let detectStep = undefined
-	if(vas.detect){
-		if(player.flags.has(vas.detect.flag)){
+	if (vas.detect) {
+		if (player.flags.has(vas.detect.flag)) {
 			detectStep = vas.detect.flag
 			responses = vas.detect.responses
 			startText = vas.detect.startText
@@ -126,7 +136,7 @@ export function convertVasToClient(vas: VisualActionSource, player:Player): Visu
 		startsLocked: vas.startsLocked,
 		lockHandle: vas.lockHandle,
 		actionsInClient: validUnlockableClientActions,
-		detectStep:detectStep,
+		detectStep: detectStep,
 	} satisfies VisualActionSourceInClient
 	return result
 }
@@ -154,7 +164,9 @@ export type Lockability = {
 }
 
 export type UnlockableAction = {
-	serverAct: GameAction,
+	serverAct: GameAction
+	requiresFlag?: Flag
+	requiresGear?: ItemId[]
 } & Lockability
 
 export type UnlockableClientAction = {
@@ -197,21 +209,16 @@ const tutorial = {
 			unitId: 'vasTutor',
 			actionsWithRequirements: [
 				{
-
-					sAction: {
-
-						lockHandle: 'wantsToSkip',
-						startsLocked: true,
-						serverAct: {
-							buttonText: 'Skip Tutorial',
-							goTo: 'forest',
-						},
-
-					}
+					lockHandle: 'wantsToSkip',
+					startsLocked: true,
+					serverAct: {
+						buttonText: 'Skip Tutorial',
+						goTo: 'forest',
+					},
 				}
 
 			],
-			startText: `'Look alive recruit! The first day of training can be the most dangerous of a guardsman's life. You must be ${player.heroName}, welcome aboard. In this barracks we wake up early, follow orders, and NEVER skip the tutorial. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.'`,
+			startText: `Look alive recruit! The first day of training can be the most dangerous of a guardsman's life. You must be ${player.heroName}, welcome aboard. In this barracks we wake up early, follow orders, and NEVER skip the tutorial. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.`,
 			responses: [
 				{
 					lockHandle: 'scared',
@@ -241,23 +248,18 @@ const tutorial = {
 			startText: `An entrance to a training room`,
 			actionsWithRequirements: [
 				{
-					sAction: {
-						serverAct: {
-							buttonText: "Enter the training room",
-							performAction() {
-								return {
-									behavior:{kind:'travel', goTo:`trainingRoom1_${player.heroName}`},
-									source:{kind:'player',entity:player},
-									target:{kind:'vas',entity:{unitId:'vasGoTrain1'}}
-							
-								}satisfies BattleEvent
-							},
+					requiresGear: ['bomb', 'club'],
+					serverAct: {
+						buttonText: "Enter the training room",
+						performAction() {
+							return {
+								behavior: { kind: 'travel', goTo: `trainingRoom1_${player.heroName}` },
+								source: { kind: 'player', entity: player },
+								target: { kind: 'vas', entity: { unitId: 'vasGoTrain1' } }
+
+							} satisfies BattleEvent
 						},
 					},
-					requires() {
-						return player.inventory.utility.itemId == 'bomb' && player.inventory.weapon.itemId == 'club'
-					},
-
 				},
 			],
 		})
@@ -268,19 +270,16 @@ const tutorial = {
 			startsLocked: true,
 			actionsWithRequirements: [
 				{
-					sAction: {
-						lock: [],
-						serverAct: {
-							buttonText: 'equip club',
-							performAction() {
-								return {
-									source:{kind:'player',entity:player},
-									target:{kind:'vas',entity:{unitId:'vasEquipClub'}},
-									behavior:{kind:'melee'},
-									takesItem:{slot:'weapon',id:'club'}
-								} satisfies BattleEvent
-							},
-						}
+					serverAct: {
+						buttonText: 'equip club',
+						performAction() {
+							return {
+								source: { kind: 'player', entity: player },
+								target: { kind: 'vas', entity: { unitId: 'vasEquipClub' } },
+								behavior: { kind: 'melee' },
+								takesItem: { slot: 'weapon', id: 'club' }
+							} satisfies BattleEvent
+						},
 					}
 				}
 			],
@@ -292,20 +291,17 @@ const tutorial = {
 			startsLocked: true,
 			actionsWithRequirements: [
 				{
-					sAction: {
-						lock: [],
-						serverAct: {
-							buttonText: 'equip bomb',
-							performAction() {
-								return {
-									source:{kind:'player',entity:player},
-									target:{kind:'vas',entity:{unitId:'vasEquipBomb'}},
-									behavior:{kind:'melee'},
-									takesItem:{slot:'utility',id:'bomb'}
-								} satisfies BattleEvent
-							},
-						}
-					},
+					serverAct: {
+						buttonText: 'equip bomb',
+						performAction() {
+							return {
+								source: { kind: 'player', entity: player },
+								target: { kind: 'vas', entity: { unitId: 'vasEquipBomb' } },
+								behavior: { kind: 'melee' },
+								takesItem: { slot: 'utility', id: 'bomb' }
+							} satisfies BattleEvent
+						},
+					}
 				}
 			],
 		})
@@ -355,14 +351,12 @@ const trainingRoom1 = {
 				startsLocked: true,
 				actionsWithRequirements: [
 					{
-						sAction: {
-							lock: ['vasEquipDagger'],
-							serverAct: {
-								buttonText: 'Equip Dagger',
-								performAction() {
-									player.inventory.weapon.itemId = 'dagger'
-								},
-							}
+						lock: ['vasEquipDagger'],
+						serverAct: {
+							buttonText: 'Equip Dagger',
+							performAction() {
+								player.inventory.weapon.itemId = 'dagger'
+							},
 						}
 					},
 				]
@@ -374,14 +368,12 @@ const trainingRoom1 = {
 				startsLocked: true,
 				actionsWithRequirements: [
 					{
-						sAction: {
-							lock: ['vasEquipBandage'],
-							serverAct: {
-								buttonText: 'Equip Bandage',
-								performAction() {
-									player.inventory.utility.itemId = 'bandage'
-								},
-							}
+						lock: ['vasEquipBandage'],
+						serverAct: {
+							buttonText: 'Equip Bandage',
+							performAction() {
+								player.inventory.utility.itemId = 'bandage'
+							},
 						}
 					},
 				]
@@ -392,14 +384,10 @@ const trainingRoom1 = {
 				startText: `Another door, another training room.`,
 				actionsWithRequirements: [
 					{
-						requires() {
-							return player.inventory.weapon.itemId == 'dagger' && player.inventory.utility.itemId == 'bandage'
-						},
-						sAction: {
-							serverAct: {
-								buttonText: 'Go to the next room',
-								goTo: `trainingRoom2_${player.heroName}`,
-							}
+						requiresGear: ['dagger', 'bandage'],
+						serverAct: {
+							buttonText: 'Go to the next room',
+							goTo: `trainingRoom2_${player.heroName}`,
 						}
 					}
 				]
@@ -554,17 +542,15 @@ const forest: Scene = {
 			unitId: 'vascastle',
 			sprite: 'castle',
 			actionsWithRequirements: [{
-				sAction: {
-					serverAct: {
-						buttonText: 'Slog it towards teh castle',
-						performAction() {
-							return {
-								behavior:{kind:'travel',goTo:'castle'},
-								source:{kind:'player',entity:player},
-								target:{kind:'vas',entity:{unitId:'vascastle'}}
-							}satisfies BattleEvent
-						},
-					}
+				serverAct: {
+					buttonText: 'Slog it towards teh castle',
+					performAction() {
+						return {
+							behavior: { kind: 'travel', goTo: 'castle' },
+							source: { kind: 'player', entity: player },
+							target: { kind: 'vas', entity: { unitId: 'vascastle' } }
+						} satisfies BattleEvent
+					},
 				}
 			}],
 			startText: `In the distance you see a castle. You feel you might have seen it before. Perhaps in a dream. Or was it a nightmare?`,
@@ -581,7 +567,7 @@ const forest: Scene = {
 }
 
 const castle: Scene = {
-	landscape:'castle',
+	landscape: 'castle',
 	onEnterScene(player) {
 		if (player.previousScene == 'throne') {
 			player.sceneTexts.push('You climb back down those darn steps. So many steps.')
@@ -639,60 +625,58 @@ const house: Scene = {
 	},
 	actions(player) {
 		player.visualActionSources.push({
-			unitId:'vasHouseWoman',
-			sprite:'general',
-			startText:`Traveller, what is it you do here? Do you not see I grieve? My son... he was murdered by Gorlak and his rowdy band of filthy goblin scum. He was barely a man yet had the stars in his eyes. He sought adventure but found his demise far too soon. Will you avenge him on my behalf? I don't have much but I'm sure I can find somethign to reward you`,
-			responses:[
+			unitId: 'vasHouseWoman',
+			sprite: 'general',
+			startText: `Traveller, what is it you do here? Do you not see I grieve? My son... he was murdered by Gorlak and his rowdy band of filthy goblin scum. He was barely a man yet had the stars in his eyes. He sought adventure but found his demise far too soon. Will you avenge him on my behalf? I don't have much but I'm sure I can find somethign to reward you`,
+			responses: [
 				{
-					lockHandle:`accepted`,
-					responseText:`I will`,
-					retort:`Thank you, good luck. If you succeed I'll give you this armor`,
-					lock:['reward','rejected'],
-					unlock:['vasLeatherGift']
+					lockHandle: `accepted`,
+					responseText: `I will`,
+					retort: `Thank you, good luck. If you succeed I'll give you this armor`,
+					lock: ['reward', 'rejected'],
+					unlock: ['vasLeatherGift']
 				},
 				{
-					lockHandle:`rejected`,
-					responseText:`I won't`,
-					retort:`Not much of a hero are you?`,
+					lockHandle: `rejected`,
+					responseText: `I won't`,
+					retort: `Not much of a hero are you?`,
 				},
 				{
-					lockHandle:`reward`,
-					responseText:`What reward will I get`,
-					retort:`You can have my sons armor. If only he was wearing it`,
-					unlock:['vasLeatherGift']
+					lockHandle: `reward`,
+					responseText: `What reward will I get`,
+					retort: `You can have my sons armor. If only he was wearing it`,
+					unlock: ['vasLeatherGift']
 				},
 			],
-			detect:{
-				flag:'killedGoblins',
-				startText:`Dear Sir ${player.heroName}! You return with the stench of goblin blood about yourself. Thank you for obtaining vengence on my behalf. My son had this set of leather armour. If only he had been wearing it when he went on his adventure.\n\nI bequeath it to you so that his legacy may live on. Good luck out there ${player.heroName}`,
-				responses:[
+			detect: {
+				flag: 'killedGoblins',
+				startText: `Dear Sir ${player.heroName}! You return with the stench of goblin blood about yourself. Thank you for obtaining vengence on my behalf. My son had this set of leather armour. If only he had been wearing it when he went on his adventure.\n\nI bequeath it to you so that his legacy may live on. Good luck out there ${player.heroName}`,
+				responses: [
 					{
-						lockHandle:`noProbs`,
-						responseText:`No Problemo`,
-						retort:`You are a great hero`,
-						unlock:['vasLeatherGift']
+						lockHandle: `noProbs`,
+						responseText: `No Problemo`,
+						retort: `You are a great hero`,
+						unlock: ['vasLeatherGift']
 					},
 				]
 			}
 		})
 		player.visualActionSources.push({
-			unitId:'vasGoCastle',
-			sprite:'castle',
-			startText:'go back the the castle grounds',
-			actionsWithRequirements:[
+			unitId: 'vasGoCastle',
+			sprite: 'castle',
+			startText: 'go back the the castle grounds',
+			actionsWithRequirements: [
 				{
-					sAction:{
-						serverAct:{
-							buttonText:'Head back outside',
-							performAction() {
-								return {
-									source:{kind:'player',entity:player},
-									behavior:{kind:'travel',goTo:'castle'},
-									target:{kind:'vas',entity:{unitId:'vasGoCastle'}}
-								}satisfies BattleEvent
-							},
+					serverAct: {
+						buttonText: 'Head back outside',
+						performAction() {
+							return {
+								source: { kind: 'player', entity: player },
+								behavior: { kind: 'travel', goTo: 'castle' },
+								target: { kind: 'vas', entity: { unitId: 'vasGoCastle' } }
+							} satisfies BattleEvent
+						},
 
-						}
 					}
 				}
 			]
@@ -709,30 +693,26 @@ const house: Scene = {
 			})
 		}
 		player.visualActionSources.push({
-			unitId:'vasLeatherGift',
-			sprite:'armorStand',
-			startText:`Leather armor reduces the damage of each incoming strike.`,
-			startsLocked:true,
-			actionsWithRequirements:[
+			unitId: 'vasLeatherGift',
+			sprite: 'armorStand',
+			startText: `Leather armor reduces the damage of each incoming strike.`,
+			startsLocked: true,
+			actionsWithRequirements: [
 				{
-					requires() {
-						return player.flags.has('killedGoblins')
-					},
-					sAction:{
-						serverAct:{
-							buttonText:'Equip',
-							performAction() {
-								return {
-									source:{kind:'player',entity:player},
-									behavior:{kind:'melee'},
-									takesItem:{slot:'body',id:'leatherArmor'},
-									target:{kind:'vas',entity:{unitId:'vasLeatherGift'}},
-								}
-							},
-						}
+					requiresFlag: 'killedGoblins',
+					serverAct: {
+						buttonText: 'Equip',
+						performAction() {
+							return {
+								source: { kind: 'player', entity: player },
+								behavior: { kind: 'melee' },
+								takesItem: { slot: 'body', id: 'leatherArmor' },
+								target: { kind: 'vas', entity: { unitId: 'vasLeatherGift' } },
+							}
+						},
 					}
 				}
-			]				
+			]
 		})
 		if (player.flags.has('killedGoblins') && player.inventory.body.itemId != 'leatherArmor') {
 			player.sceneActions.push({
@@ -880,7 +860,7 @@ const goblinCamp: Scene = {
 				'Murk',
 				'goblin',
 				'goblinCamp',
-				new Map([[player.unitId,{ poison: 0, rage: 5, hidden: 0 }]])
+				new Map([[player.unitId, { poison: 0, rage: 5, hidden: 0 }]])
 			)
 		}
 	},

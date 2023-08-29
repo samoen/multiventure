@@ -348,3 +348,18 @@ export function equipItem(player:Player, id:ItemId){
 	}
 }
 
+export function checkHasItem(player:Player, id:ItemId):boolean{
+	if(weapons.hasOwnProperty(id)){
+		return player.inventory.weapon.itemId == id
+	}
+	if(utilityItems.hasOwnProperty(id)){
+		return player.inventory.utility.itemId == id
+	}
+	if(bodyItems.hasOwnProperty(id)){
+		return player.inventory.body.itemId == id
+	}
+	return false
+}
+
+
+
