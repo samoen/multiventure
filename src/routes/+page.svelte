@@ -344,8 +344,8 @@
 		>
 			<div class="units">
 				{#each $allies as p (p.id)}
-				<!-- animate:flip -->
 				<div class="unitHolder" 
+				animate:flip
 					>
 						<Unit hostId={p.id} />
 					</div>

@@ -239,9 +239,8 @@ export const selectedVisualActionSourceState = derived([
     }
     return state
 })
-
 export const [sendMelee, receiveMelee] = crossfade({
-    duration: (d) => 500,
+    duration: 500,
     easing: quintInOut,
     fallback(node, params) {
         return {

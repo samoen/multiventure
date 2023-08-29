@@ -36,8 +36,10 @@
 		([$currentAnimation, $subAnimationStage]) => {
 			if (!$currentAnimation) return undefined;
 			if (
-				($currentAnimation.behavior.kind == 'melee' ||
-					$currentAnimation.behavior.kind == 'travel') &&
+				(
+                    $currentAnimation.behavior.kind == 'melee' 
+                    || $currentAnimation.behavior.kind == 'travel'
+                    ) &&
 				$currentAnimation.target == hostId &&
 				$subAnimationStage == 'fire'
 			) {
@@ -47,25 +49,25 @@
 		}
 	);
 
+
 	async function guestArrived() {
 		if ($currentAnimation != undefined && $host != undefined) {
 			if ($currentAnimation.behavior.kind == 'travel') {
 				$visualOpacity = false;
-
+                $allVisualUnitProps = $allVisualUnitProps.filter(v=>v.id != $guestId)
+                await tick()
 				nextAnimationIndex(false, false);
 				return;
 			}
-			if ($currentAnimation.takesItem) {
+			if ($currentAnimation.takesItem && $guestId) {
 				pickedup = true;
-				if ($guestId) {
-					updateUnit($guestId, (vup) => {
-						if ($currentAnimation?.takesItem?.slot == 'weapon') {
-							vup.src =
-								heroSprites[heroSprite($currentAnimation.takesItem.id as ItemIdForSlot<'weapon'>)];
-						}
-					});
-					await tick();
-				}
+                updateUnit($guestId, (vup) => {
+                    if ($currentAnimation?.takesItem?.slot == 'weapon') {
+                        vup.src =
+                            heroSprites[heroSprite($currentAnimation.takesItem.id as ItemIdForSlot<'weapon'>)];
+                    }
+                });
+                await tick();
 			}
 			$subAnimationStage = 'sentHome';
 		}
