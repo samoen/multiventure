@@ -75,6 +75,7 @@ export type AnySprite =
 | 'smoke' 
 | 'shield' 
 | 'club'
+| 'armorStand'
 
 export type AnimationBehavior = 
 	| {kind:'missile', extraSprite:AnySprite} 

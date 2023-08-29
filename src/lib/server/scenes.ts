@@ -702,7 +702,7 @@ const house: Scene = {
 		}
 		player.visualActionSources.push({
 			unitId:'vasLeatherGift',
-			sprite:'club',
+			sprite:'armorStand',
 			startText:`Leather armor reduces the damage of each incoming strike.`,
 			startsLocked:true,
 			actionsWithRequirements:[

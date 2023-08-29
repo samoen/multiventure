@@ -23,6 +23,7 @@ import smoke from '$lib/assets/extras/smoke.png';
 import flame from '$lib/assets/extras/flame.png';
 import heal from '$lib/assets/extras/heal.png';
 import lighthouse from '$lib/assets/scenery/lighthouse.png';
+import armor from '$lib/assets/scenery/armor.png';
 import clubSlot from '$lib/assets/equipment/club-small.png';
 import club from '$lib/assets/extras/club.png';
 import type { EquipmentSlot, Inventory, ItemId, ItemIdForSlot, ItemState, ItemStateForSlot } from '$lib/server/items';
@@ -416,6 +417,7 @@ export const anySprites: Record<AnySprite, string> = {
     general: general,
     club: club,
     clubSlot: clubSlot,
+    armorStand: armor,
 }
 
 export function handlePutsStatuses(anim: BattleAnimation) {
