@@ -174,7 +174,6 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 			let battleEvent = actionFromId.performAction();
 			if (battleEvent) {
 				processBattleEvent(battleEvent, player)
-				
 			}
 
 		}

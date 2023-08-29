@@ -312,11 +312,11 @@ const tutorial = {
 const trainingRoom1 = {
 	solo: true,
 	onEnterScene(player) {
-		player.lastCheckpoint = `trainingRoom1_${player.heroName}`
-		// if (player.previousScene == 'dead') {
-		// 	this.onVictory && this.onVictory(player)
-		// 	return
-		// }
+		// if respawning from checkpoint we already beat the room
+		if (player.previousScene == 'dead') {
+			this.onVictory && this.onVictory(player)
+			return
+		}
 		player.sceneTexts.push("You enter the training room. It is well worn by many training sessions. The walls are covered in blast marks, dents and splinters.")
 		player.sceneTexts.push("Glornak: 'Hey you! I've never seen a more pitiful excuse for a guardsman in my life, and I've been working here since Arthur was a recruit! Go, my rats!'")
 		player.sceneTexts.push("Skitters: 'Squeak!'")
@@ -351,11 +351,15 @@ const trainingRoom1 = {
 				startsLocked: true,
 				actionsWithRequirements: [
 					{
-						lock: ['vasEquipDagger'],
 						serverAct: {
 							buttonText: 'Equip Dagger',
 							performAction() {
-								player.inventory.weapon.itemId = 'dagger'
+								return {
+									source: { kind: 'player', entity: player },
+									target: { kind: 'vas', entity: { unitId: 'vasEquipDagger' } },
+									behavior: { kind: 'melee' },
+									takesItem: { slot: 'weapon', id: 'dagger' }
+								} satisfies BattleEvent
 							},
 						}
 					},
@@ -368,11 +372,15 @@ const trainingRoom1 = {
 				startsLocked: true,
 				actionsWithRequirements: [
 					{
-						lock: ['vasEquipBandage'],
 						serverAct: {
 							buttonText: 'Equip Bandage',
 							performAction() {
-								player.inventory.utility.itemId = 'bandage'
+								return {
+									source: { kind: 'player', entity: player },
+									target: { kind: 'vas', entity: { unitId: 'vasEquipBandage' } },
+									behavior: { kind: 'melee' },
+									takesItem: { slot: 'utility', id: 'bandage' }
+								} satisfies BattleEvent
 							},
 						}
 					},
@@ -387,40 +395,21 @@ const trainingRoom1 = {
 						requiresGear: ['dagger', 'bandage'],
 						serverAct: {
 							buttonText: 'Go to the next room',
-							goTo: `trainingRoom2_${player.heroName}`,
+							performAction() {
+								return {
+									behavior: { kind: 'travel', goTo: `trainingRoom2_${player.heroName}` },
+									source: { kind: 'player', entity: player },
+									target: { kind: 'vas', entity: { unitId: 'vasGoTrain2' } }
+								} satisfies BattleEvent
+							},
 						}
 					}
 				]
 			})
 		}
-
-
-		if (player.inventory.utility.itemId == 'bandage' && player.inventory.weapon.itemId == 'dagger') {
-			player.sceneActions.push({
-				buttonText: "'Yeah yeah, prioritize my targets.. OK I'm ready.'",
-				goTo: `trainingRoom2_${player.heroName}`,
-			})
-		}
-		if (player.inventory.weapon.itemId != 'dagger') {
-			player.sceneActions.push({
-				buttonText: 'Equip Dagger',
-				performAction() {
-					player.inventory.weapon.itemId = 'dagger'
-					player.sceneTexts.push("Hobgoblins wear heavy armor, which limits the amount of damage they take each strike. A dagger strikes multiple times per attack, mitigating their defenses.")
-				},
-			})
-		}
-		if (player.inventory.utility.itemId != 'bandage') {
-			player.sceneActions.push({
-				buttonText: 'Equip Bandage',
-				performAction() {
-					player.inventory.utility.itemId = 'bandage'
-					player.sceneTexts.push("Use that bandage when you get low on health. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!")
-				},
-			})
-		}
 	},
 	onVictory(player) {
+		player.lastCheckpoint = `trainingRoom1_${player.heroName}`
 		player.health = player.maxHealth
 		player.sceneTexts.push("Glornak: 'Ohhhh nooooo. How could I underestimate this recruit. Surely they are the chosen one.'")
 		player.sceneTexts.push("Glornak falls down in a very convincing display.")
@@ -431,7 +420,6 @@ const trainingRoom1 = {
 const trainingRoom2: Scene = {
 	solo: true,
 	onEnterScene(player) {
-		player.lastCheckpoint = `trainingRoom1_${player.heroName}`
 		if (player.previousScene == 'dead') {
 			this.onVictory && this.onVictory(player)
 			return
@@ -481,6 +469,7 @@ const trainingRoom2: Scene = {
 			})
 	},
 	onVictory(player) {
+		player.lastCheckpoint = `trainingRoom2_${player.heroName}`
 		player.health = player.maxHealth
 		player.sceneTexts.push("Arthur: 'Brilliant work recruit! Alright, last one. We don't normally do this but I see something great in you. You are going to fight a cave troll. Trolls have very high damage and health, this equipment will let you handle him.'")
 	},

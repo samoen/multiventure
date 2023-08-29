@@ -117,7 +117,7 @@ export function addNewUser(heroName : string) : {id:string,player:Player}{
 		// startflags.add('killedGoblins')
 		
 		let startScene: SceneId = `tutorial_${heroName}`
-		// startScene = `trainingRoom3_${msg.join}`
+		// startScene = `trainingRoom1_${heroName}`
 		// startScene = `forest`
 		// startScene = 'forestPassage'
 		// startScene = 'goblinCamp'
@@ -128,11 +128,13 @@ export function addNewUser(heroName : string) : {id:string,player:Player}{
 		let startInventory: Inventory = {
 			weapon: {
 				itemId: 'unarmed',
+				// itemId: 'club',
 				cooldown: 0,
 				warmup: 0,
 			},
 			utility: {
 				itemId: 'empty',
+				// itemId: 'bomb',
 				cooldown: 0,
 				warmup: 0,
 			},

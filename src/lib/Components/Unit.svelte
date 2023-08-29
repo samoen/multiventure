@@ -72,6 +72,7 @@
 				$currentAnim.source == hostId &&
 				$subAnimationStage == 'fire'
 			) {
+				console.log('host leave')
 				return false;
 			}
 			return true;

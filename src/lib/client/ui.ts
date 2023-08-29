@@ -289,7 +289,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         console.log('tried to sync with bad msg')
     }
     if (lastMsg) {
-        console.log('sync label to '+ lastMsg.yourInfo.currentScene)
+        // console.log('sync label to '+ lastMsg.yourInfo.currentScene)
         visualLandscape.set(lastMsg.landscape)
         visualSceneLabel.set(lastMsg.yourInfo.currentScene)
 
