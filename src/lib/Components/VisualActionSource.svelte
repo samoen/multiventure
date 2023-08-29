@@ -36,10 +36,8 @@
 		([$currentAnimation, $subAnimationStage]) => {
 			if (!$currentAnimation) return undefined;
 			if (
-				(
-                    $currentAnimation.behavior.kind == 'melee' 
-                    || $currentAnimation.behavior.kind == 'travel'
-                    ) &&
+				($currentAnimation.behavior.kind == 'melee' ||
+					$currentAnimation.behavior.kind == 'travel') &&
 				$currentAnimation.target == hostId &&
 				$subAnimationStage == 'fire'
 			) {
@@ -49,25 +47,25 @@
 		}
 	);
 
-
 	async function guestArrived() {
 		if ($currentAnimation != undefined && $host != undefined) {
 			if ($currentAnimation.behavior.kind == 'travel') {
 				$visualOpacity = false;
-                $allVisualUnitProps = $allVisualUnitProps.filter(v=>v.id != $guestId)
-                await tick()
+				$allVisualUnitProps = $allVisualUnitProps.filter((v) => v.id != $guestId);
+				await tick();
 				nextAnimationIndex(false, false);
 				return;
 			}
 			if ($currentAnimation.takesItem && $guestId) {
 				pickedup = true;
-                updateUnit($guestId, (vup) => {
-                    if ($currentAnimation?.takesItem?.slot == 'weapon') {
-                        vup.src =
-                            heroSprites[heroSprite($currentAnimation.takesItem.id as ItemIdForSlot<'weapon'>)];
-                    }
-                });
-                await tick();
+				// $visualActionSources = $visualActionSources.filter(v=>v.id != hostId)
+				updateUnit($guestId, (vup) => {
+					if ($currentAnimation?.takesItem?.slot == 'weapon') {
+						vup.src =
+							heroSprites[heroSprite($currentAnimation.takesItem.id as ItemIdForSlot<'weapon'>)];
+					}
+				});
+				await tick();
 			}
 			$subAnimationStage = 'sentHome';
 		}
@@ -96,18 +94,13 @@
 			tabindex="0"
 			on:keydown
 		>
-			{#if !pickedup}
+			<div class="nameAndSprite" class:noOpacity={pickedup}>
 				<div class="nameHolder">
 					<span class="nametag">{$host.id}</span>
 				</div>
-				<img
-					class="vasSprite flipped"
-					out:fade|local
-					src={anySprites[$host.sprite]}
-					alt="a place"
-				/>
+				<img class="vasSprite flipped" src={anySprites[$host.sprite]} alt="a place" />
 				<div class="healthBarPlaceHolder" />
-			{/if}
+			</div>
 		</div>
 		<div class="guestArea placeHolder">
 			{#if $guestId != undefined}
@@ -130,6 +123,12 @@
 {/if}
 
 <style>
+	.nameAndSprite {
+		transition: opacity 0.3s ease-in-out;
+	}
+	.noOpacity {
+		opacity: 0;
+	}
 	.healthBarPlaceHolder {
 		height: clamp(17px, 1vw + 10px, 30px);
 	}

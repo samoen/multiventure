@@ -13,7 +13,7 @@
 	$: vu = $allVisualUnitProps.find((v) => v.id == hostId);
 	$: hpBar = vu ? (vu.displayHp > 0 ? 100 * (vu.displayHp / vu.maxHp) : 0) : 0;
 	$: {
-		if (vu?.side == 'enemy'  && vu.displayHp < 1) {
+		if (vu?.side == 'enemy' && vu.displayHp < 1) {
 			die(vu);
 		}
 	}
@@ -64,10 +64,12 @@
 	};
 </script>
 
-{#if vu && !shouldDie}
-	<div class="top" out:fade|local={{ duration: 400 }}>
+{#if vu}
+	<div class="top" class:noOpacity={shouldDie}>
 		<div class="nameHolder">
-			<span class="selfIndicator">{vu.name == $lastMsgFromServer?.yourInfo.heroName ? '👤' : ''}</span>
+			<span class="selfIndicator"
+				>{vu.name == $lastMsgFromServer?.yourInfo.heroName ? '👤' : ''}</span
+			>
 			<span class="nametag">{vu.name}</span>
 		</div>
 		<div class="outerHeroSprite">
@@ -98,15 +100,18 @@
 {/if}
 
 <style>
-	/* .top { */
-		/* display: contents; */
-	/* } */
-	.nameHolder{
+	.top {
+		transition: opacity 0.5s ease-in-out;
+	}
+	.noOpacity {
+		opacity: 0;
+	}
+	.nameHolder {
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
-	.selfIndicator{
+	.selfIndicator {
 		font-size: 50%;
 		color: transparent;
 		text-shadow: 0 0 0 white;
@@ -114,7 +119,7 @@
 	}
 	.nametag {
 		opacity: 0.6;
-		color:white;
+		color: white;
 		white-space: nowrap;
 		/* text-wrap:balance;
 		word-wrap: break-word;
@@ -140,7 +145,7 @@
 	}
 	.status {
 		display: flex;
-		height:clamp(14px,1vw + 10px,30px);
+		height: clamp(14px, 1vw + 10px, 30px);
 		/* height: 1vw; */
 		/* width: 1vw; */
 	}
@@ -156,13 +161,13 @@
 	.heroSprite {
 		display: block;
 		/* background-color: blueviolet; */
-		width:100%;
+		width: 100%;
 		aspect-ratio: 1/1;
 	}
 	.bars {
 		/* margin-top: 5px; */
 		/* height:20%; */
-		height:clamp(17px,1vw + 10px,30px);
+		height: clamp(17px, 1vw + 10px, 30px);
 		/* width: 100%; */
 		opacity: 0.7;
 		/* flex-grow: 1; */
@@ -178,7 +183,7 @@
 		width: 100%;
 		/* align-self: stretch; */
 		/* flex-basis:50%; */
-		height:50%;
+		height: 50%;
 		/* height:40%; */
 		/* flex-grow: 1; */
 		/* height: 8px; */
@@ -202,7 +207,7 @@
 	.aggrobar {
 		/* flex-grow: 1; */
 		/* flex-basis: 50%; */
-		height:50%;
+		height: 50%;
 		border-radius: 5px;
 		background-color: black;
 		width: 85%;
