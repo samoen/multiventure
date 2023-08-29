@@ -45,11 +45,6 @@ type UnitDetails = {
     info: PlayerInClient
 }
 
-export let clientState = writable({
-    waitingForMyEvent: false,
-    status: 'starting up',
-    loading: false,
-})
 export let waitingForMyAnimation = writable(false)
 
 export type VisualUnitProps = {
@@ -81,6 +76,11 @@ export type Guest = VisualUnitProps | undefined
 export type Projectile = undefined | ProjectileProps
 
 
+export let clientState = writable({
+    waitingForMyEvent: false,
+    status: 'starting up',
+    loading: false,
+})
 export const lastMsgFromServer: Writable<MessageFromServer | undefined> = writable();
 export const allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 export const visualActionSources: Writable<VisualActionSourceInClient[]> = writable([])
@@ -167,18 +167,24 @@ export type DetailWindow = { kind: 'vup', entity: VisualUnitProps } | { kind: 'v
 export const selectedDetail: Readable<DetailWindow | undefined> = derived([
     lastUnitClicked,
     allVisualUnitProps,
-    visualActionSources,
+    vases,
     lockedHandles,
 ], ([$lastUnitClicked,
     $allVisualUnitProps,
-    $visualActionSources,
+    $vases,
     $lockedHandles,
 ]) => {
 
-    if (!$lastUnitClicked) {
+    let vupAt = $allVisualUnitProps.find(v => v.id == $lastUnitClicked)
+    if (vupAt) return { kind: 'vup', entity: vupAt } satisfies DetailWindow
+    
+    let vasAt = $vases.find(v => v.id == $lastUnitClicked)
+    if (vasAt) return { kind: 'vas', entity: vasAt } satisfies DetailWindow
+
+    // if (!$lastUnitClicked) {
         let firstVas = undefined
         // find unlocked vas with an unlocked action or response
-        outer: for (const vas of $visualActionSources) {
+        outer: for (const vas of $vases) {
             if ($lockedHandles.get(vas.id) == true) continue
             for (const act of vas.actionsInClient) {
                 if (!act.lockHandle || $lockedHandles.get(act.lockHandle) == false) {
@@ -194,16 +200,8 @@ export const selectedDetail: Readable<DetailWindow | undefined> = derived([
             }
         }
         if (firstVas) return { kind: 'vas', entity: firstVas } satisfies DetailWindow
-        
-        let me = $allVisualUnitProps.at(0)
-        if (me) return { kind: 'vup', entity: me } satisfies DetailWindow
-    }
+    // }
     
-    let vupAt = $allVisualUnitProps.find(v => v.id == $lastUnitClicked)
-    if (vupAt) return { kind: 'vup', entity: vupAt } satisfies DetailWindow
-    
-    let vasAt = $visualActionSources.find(v => v.id == $lastUnitClicked)
-    if (vasAt) return { kind: 'vas', entity: vasAt } satisfies DetailWindow
     
     let me = $allVisualUnitProps.at(0)
     if (me) return { kind: 'vup', entity: me } satisfies DetailWindow

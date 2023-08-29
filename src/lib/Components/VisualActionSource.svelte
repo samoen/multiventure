@@ -51,9 +51,18 @@
 		if ($currentAnimation != undefined && $host != undefined) {
 			if ($currentAnimation.behavior.kind == 'travel') {
 				$visualOpacity = false;
+
+                let travellerIsMe = $guestId == $lastMsgFromServer?.yourInfo.unitId
+                // remove the traveller from visuals
 				$allVisualUnitProps = $allVisualUnitProps.filter((v) => v.id != $guestId);
-				await tick();
+				
+                await tick();
 				nextAnimationIndex(false, false);
+                
+                // auto-select something in new scene
+                if(travellerIsMe){
+                    $lastUnitClicked = undefined
+                }
 				return;
 			}
 			if ($currentAnimation.takesItem && $guestId) {

@@ -252,27 +252,6 @@ const tutorial = {
 			portrait: 'general',
 		})
 		player.visualActionSources.push({
-			unitId: 'vasGoTrain1',
-			sprite: 'castle',
-			startText: `An entrance to a training room`,
-			actionsWithRequirements: [
-				{
-					requiresGear: ['bomb', 'club'],
-					serverAct: {
-						buttonText: "Enter the training room",
-						performAction() {
-							return {
-								behavior: { kind: 'travel', goTo: `trainingRoom1_${player.heroName}` },
-								source: { kind: 'player', entity: player },
-								target: { kind: 'vas', entity: { unitId: 'vasGoTrain1' } }
-
-							} satisfies BattleEvent
-						},
-					},
-				},
-			],
-		})
-		player.visualActionSources.push({
 			unitId: 'vasEquipClub',
 			sprite: 'club',
 			startText: 'A club deals a hefty chunk of damage each hit. That makes it effective against unarmored foes like goblins.',
@@ -314,7 +293,28 @@ const tutorial = {
 				}
 			],
 		})
+		player.visualActionSources.push({
+			unitId: 'vasGoTrain1',
+			sprite: 'castle',
+			startText: `An entrance to a training room`,
+			actionsWithRequirements: [
+				{
+					requiresGear: ['bomb', 'club'],
+					serverAct: {
+						buttonText: "Enter the training room",
+						performAction() {
+							return {
+								behavior: { kind: 'travel', goTo: `trainingRoom1_${player.heroName}` },
+								source: { kind: 'player', entity: player },
+								target: { kind: 'vas', entity: { unitId: 'vasGoTrain1' } }
 
+							} satisfies BattleEvent
+						},
+					},
+				},
+			],
+		})
+		
 	},
 } satisfies Scene
 
@@ -575,7 +575,6 @@ const castle: Scene = {
 		}
 		if (player.previousScene == 'house') {
 			player.sceneTexts.push('You exit the housing of the greiving mother. The castle looms, and the forest beckons.')
-			player.flags.add('killedGoblins')
 		}
 		if (player.flags.has('heardAboutHiddenPassage') && !player.flags.has('metArthur')) {
 			player.flags.add('metArthur')
@@ -596,6 +595,25 @@ const castle: Scene = {
 		}
 	},
 	actions(player: Player) {
+
+		player.visualActionSources.push({
+			unitId: 'vasHouse',
+			sprite: 'castle',
+			actionsWithRequirements: [{
+				serverAct: {
+					buttonText: 'Enter the house',
+					performAction() {
+						return {
+							behavior: { kind: 'travel', goTo: 'house' },
+							source: { kind: 'player', entity: player },
+							target: { kind: 'vas', entity: { unitId: 'vasHouse' } }
+						} satisfies BattleEvent
+					},
+				}
+			}],
+			startText: `You see a quaint house`,
+		})
+
 		player.sceneActions.push({ buttonText: 'Delve into the forest', goTo: 'forest', })
 		player.sceneActions.push({ buttonText: 'Go into house', goTo: 'house', })
 		player.sceneActions.push(

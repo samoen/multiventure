@@ -578,7 +578,6 @@
 											$lockedHandles.set(handleToUnlock, false);
 										}
 									}
-									$lastUnitClicked = undefined;
 									$lockedHandles = $lockedHandles;
 									$visualActionSources = $visualActionSources;
 								}}>{act.clientAct.buttonText}</button
@@ -740,10 +739,12 @@
 	.visual {
 		position:relative;
 		transition: opacity 0.6s ease-in-out;
-		/* background-repeat:repeat; */
-		background-size: cover;
-		background-attachment: local;
-		background-position: center bottom;
+		/* background-repeat:no-repeat; */
+		background-size:cover;
+		/* background-attachment:local; */
+		/* background-origin: border-box; */
+		/* background-attachment:scroll; */
+		background-position: center top;
 		overscroll-behavior: contain;
 		background-color: burlywood;
 		display: grid;
