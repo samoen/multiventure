@@ -21,6 +21,11 @@ export function updatePlayerActions(player: Player) {
 		player.itemActions.push({
 			buttonText: 'Succumb to your wounds',
 			goTo: 'dead',
+			// performAction() {
+				// return {
+				// 	behavior:{kind:'fadeOut'}
+				// }satisfies
+			// },
 		})
 
 		return
@@ -167,15 +172,13 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 
 	handleRetaliations(player, false, actionFromId)
-
 	if (player.health > 0) {
+		preCombatActionPerformed(player, actionFromId)
 		if (actionFromId.performAction) {
-			preCombatActionPerformed(player, actionFromId)
 			let battleEvent = actionFromId.performAction();
 			if (battleEvent) {
 				processBattleEvent(battleEvent, player)
 			}
-
 		}
 	}
 

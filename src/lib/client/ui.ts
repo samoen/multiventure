@@ -199,7 +199,9 @@ export const selectedDetail: Readable<DetailWindow | undefined> = derived([
                 }
             }
         }
-        if (firstVas) return { kind: 'vas', entity: firstVas } satisfies DetailWindow
+        if (firstVas) {
+            return { kind: 'vas', entity: firstVas } satisfies DetailWindow
+        }
     // }
     
     
@@ -297,7 +299,8 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         console.log('tried to sync with bad msg')
     }
     if (lastMsg) {
-        // console.log('sync label to '+ lastMsg.yourInfo.currentScene)
+        console.log('sync wep wu to '+ lastMsg.yourInfo.inventory.weapon.warmup)
+
         visualLandscape.set(lastMsg.landscape)
         visualSceneLabel.set(lastMsg.yourInfo.currentScene)
 

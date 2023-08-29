@@ -733,6 +733,7 @@
 		/* margin-block: 5px; */
 		/* padding: 3px; */
 		overflow-y: scroll;
+		overflow-x: hidden;
 		background-color: black;
 		/* overflow-x: hidden; */
 	}
@@ -744,7 +745,7 @@
 		/* background-attachment:local; */
 		/* background-origin: border-box; */
 		/* background-attachment:scroll; */
-		background-position: center top;
+		background-position: center bottom;
 		overscroll-behavior: contain;
 		background-color: burlywood;
 		display: grid;
