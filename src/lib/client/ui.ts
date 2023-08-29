@@ -96,6 +96,17 @@ export const visualOpacity = writable(false)
 export const visualSceneLabel = writable('nowhere')
 
 
+export const allies = derived(allVisualUnitProps, ($allVisualUnitProps) => {
+    let calAllies = $allVisualUnitProps.filter((v, i) => v.side == 'hero' && v.name);
+    return calAllies;
+});
+export const enemies = derived(allVisualUnitProps, ($allVisualUnitProps) => {
+    return $allVisualUnitProps.filter((p) => p.side == 'enemy');
+});
+export const vases = derived([visualActionSources, lockedHandles], ([$visualActionSources,$lockedHandles]) => {
+    return $visualActionSources.filter((s) => !$lockedHandles.get(s.id))
+});
+
 export function numberShownOnSlot(itemState: ItemState): number | undefined {
     // if(!$lastMsgFromServer)return undefined
     const higherOfCooldownOrWarmup = Math.max(itemState.cooldown, itemState.warmup)
@@ -485,16 +496,14 @@ export async function nextAnimationIndex(
     let curAnimations = get(currentAnimationsWithData)
     let latest = get(lastMsgFromServer)
     let animsInWaiting = get(animationsInWaiting)
-    if (start) {
-        currentAnimationIndex.set(0)
-    } else {
-        currentAnimationIndex.update(o => {
-            return o + 1
-        })
-        // cai = curAnimIndex + 1
-    }
     let cai = get(currentAnimationIndex)
-
+    if (start) {
+        cai = 0
+    } else {
+        cai++
+    }
+    currentAnimationIndex.set(cai)
+    
     if (cai > curAnimations.length - 1) {
         if (!animsInWaiting) {
             // give some time for enemies slain on the last animation to fade out.
@@ -515,12 +524,20 @@ export async function nextAnimationIndex(
             await tick()
             subAnimationStage.set('fire')
         }
-
+        
         return
     }
-
-
-
+    
+    let nextAnim = curAnimations.at(cai)
+    if(!nextAnim || !checkAnimationValid(nextAnim)){
+        console.log('invalid next anim!')
+        currentAnimationIndex.set(999)
+        waitingForMyAnimation.set(false)
+        syncVisualsToMsg(latest)
+        return
+    }
+    
+    
 
     subAnimationStage.set('start')
 
@@ -528,6 +545,18 @@ export async function nextAnimationIndex(
     await tick()
 
     subAnimationStage.set('fire')
+}
+
+function checkAnimationValid(ba:BattleAnimation):boolean{
+    let valid = true
+    let enemiesToCheck = get(enemies)
+    let alliesToCheck = get(allies)
+    let vasesToCheck = get(vases)
+
+    let foundSource = enemiesToCheck.some(e=>e.id == ba.source) || alliesToCheck.some(a=>a.id == ba.source)
+    let foundTarget = ba.target == undefined || enemiesToCheck.some(e=>e.id == ba.target) || alliesToCheck.some(a=>a.id == ba.target) || vasesToCheck.some(v=>v.id == ba.target)
+
+    return foundSource && foundTarget
 }
 
 

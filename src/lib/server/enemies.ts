@@ -224,12 +224,14 @@ export function damageEnemy(actor: Player, enemy: ActiveEnemy, damage: number, s
 }
 
 export function pushAnimation(
-	{ sceneId, battleAnimation }: { sceneId: SceneId, battleAnimation: BattleAnimation }
+	{ sceneId, battleAnimation, leavingScene }: { sceneId: SceneId, battleAnimation: BattleAnimation, leavingScene?:Player }
 ) {
 	activePlayersInScene(sceneId).forEach(p => {
 		p.animations.push(battleAnimation)
-
 	})
+	if(leavingScene){
+		leavingScene.animations.push(battleAnimation)
+	}
 }
 
 export function infightDamage(actor: ActiveEnemy, target: ActiveEnemy): { dmgDone: number } {

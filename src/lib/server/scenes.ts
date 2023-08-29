@@ -184,19 +184,28 @@ const dead: Scene = {
 		player.health = player.maxHealth
 	},
 	actions(player) {
-		player.sceneActions.push({
-			buttonText: 'Reincarnate in armory',
-			goTo: 'armory',
+
+		player.visualActionSources.push({
+			unitId:'vasDeath',
+			sprite:'general',
+			startText:`I'm afraid your dead. Would you like to respawn?`,
+			actionsWithRequirements:[
+				{
+					serverAct:{
+						buttonText:'Respawn at armory',
+						goTo:'armory'
+					}
+				},
+				{
+					serverAct:{
+						buttonText: `Reincarnate at checkpoint ${player.lastCheckpoint}`,
+						goTo: player.lastCheckpoint,
+					}
+				}
+			]
 		})
-		// if (player.lastCheckpoint) {
-		player.sceneActions.push({
-			buttonText: `Reincarnate at checkpoint ${player.lastCheckpoint}`,
-			goTo: player.lastCheckpoint,
-		})
-		// }
 	}
 }
-
 
 
 const tutorial = {
@@ -599,6 +608,7 @@ const castle: Scene = {
 };
 
 const house: Scene = {
+	landscape:'castle',
 	onEnterScene(player) {
 		if (player.flags.has('killedGoblins')) {
 			player.sceneTexts.push(`Dear Sir ${player.heroName}! You return with the stench of goblin blood about yourself. Thank you for obtaining vengence on my behalf. My son had this set of leather armour. If only he had been wearing it when he went on his adventure.\n\nI bequeath it to you so that his legacy may live on. Good luck out there ${player.heroName}`)
@@ -688,6 +698,7 @@ const house: Scene = {
 			startsLocked: true,
 			actionsWithRequirements: [
 				{
+					lock:['noProbs'],
 					requiresFlag: 'killedGoblins',
 					serverAct: {
 						buttonText: 'Equip',

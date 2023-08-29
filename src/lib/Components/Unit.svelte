@@ -171,7 +171,10 @@
 				out:sendMelee={{ key: 'movehero' }}
 				in:receiveMelee={{ key: 'movehero' }}
 				on:introend={() => {
-					if ($currentAnimation != undefined && $lastMsgFromServer) {
+					if ($currentAnimation != undefined &&
+					 $subAnimationStage == 'sentHome'
+					 
+					 ) {
 						nextAnimationIndex(false, false);
 					}
 				}}

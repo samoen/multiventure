@@ -431,8 +431,10 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 	if(battleEvent.takesItem && battleEvent.source.kind == 'player'){
 		equipItem(battleEvent.source.entity,battleEvent.takesItem.id)
 	}
-
+	let leavingScene = undefined
+	let sceneToPlayAnim = player.currentScene
 	if(battleEvent.behavior.kind == 'travel'){
+		leavingScene = player
 		changeScene(player, battleEvent.behavior.goTo)
 	}
 
@@ -462,7 +464,8 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 		takesItem:battleEvent.takesItem,
 	}
 	pushAnimation({
-		sceneId: player.currentScene,
+		sceneId: sceneToPlayAnim,
 		battleAnimation: battleAnimation,
+		leavingScene:leavingScene,
 	})
 }

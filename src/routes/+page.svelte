@@ -40,7 +40,16 @@
 
 		visualOpacity,
 
-		visualSceneLabel
+		visualSceneLabel,
+
+		allies,
+
+		enemies,
+
+		vases
+
+
+
 
 
 
@@ -258,15 +267,6 @@
 		subscribeEventsIfNotAlready();
 	}
 
-	let allies = derived(allVisualUnitProps, ($allVisualUnitProps) => {
-		let calAllies = $allVisualUnitProps.filter((v, i) => v.side == 'hero' && v.name);
-		// console.log(`allies: ${JSON.stringify(calAllies)}`)
-		return calAllies;
-	});
-	let enemies = derived(allVisualUnitProps, ($allVisualUnitProps) => {
-		return $allVisualUnitProps.filter((p) => p.side == 'enemy');
-	});
-
 	function getLandscape(key:LandscapeImage):string{
 		if(key == 'plains'){
 			return plainsLandscape
@@ -344,7 +344,9 @@
 		>
 			<div class="units">
 				{#each $allies as p (p.id)}
-					<div class="unitHolder" animate:flip>
+				<!-- animate:flip -->
+				<div class="unitHolder" 
+					>
 						<Unit hostId={p.id} />
 					</div>
 				{/each}
@@ -405,7 +407,7 @@
 						<Unit hostId={e.id} />
 					</div>
 				{/each}
-				{#each $visualActionSources.filter((s) => !$lockedHandles.get(s.id)) as s (s.id)}
+				{#each $vases as s (s.id)}
 					<div class="vasSpriteHolder" in:fade|local animate:flip>
 						<VisualActionSource hostId={s.id} />
 						<!-- <img class="vasSprite" src={anySprites[s.sprite]} alt="a place" /> -->
