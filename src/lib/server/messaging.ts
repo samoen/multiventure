@@ -1,7 +1,7 @@
 import type { BattleAnimation, EnemyInClient, GameActionSentToClient, LandscapeImage } from '$lib/utils';
 import { activeEnemies, addAggro, damagePlayer, enemiesInScene, getAggroForPlayer, takePoisonDamage } from './enemies';
 import { items } from './items';
-import { convertServerActionToClientAction, convertVasToClient, scenes, type VisualActionSource, type VisualActionSourceInClient } from './scenes';
+import { convertServerActionToClientAction, convertVasToClient, forest, scenes, type VisualActionSource, type VisualActionSourceInClient } from './scenes';
 import { activePlayers, globalFlags, playerItemStates, users, type HeroName, type Player, type GameAction, activePlayersInScene, type PlayerInClient, type Flag, type GlobalFlag } from './users';
 
 export const FAKE_LATENCY = 50;
@@ -12,6 +12,7 @@ export type MessageFromServer = {
 	triggeredBy: HeroName;
 	yourInfo:PlayerInClient;
 	otherPlayers: PlayerInClient[];
+	userList:HeroName[];
 	sceneTexts: string[];
 	sceneActions: GameActionSentToClient[];
 	itemActions: GameActionSentToClient[];
@@ -40,9 +41,13 @@ export async function sendEveryoneWorld(triggeredBy: HeroName) {
 
 export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): MessageFromServer {
 	// console.log(`sending anims ${JSON.stringify(forPlayer.animations)}`)
+	let scene = scenes.get(forPlayer.currentScene)
+	if(!scene){
+		scene = forest
+	}
 	const nextMsg: MessageFromServer = {
 		triggeredBy: triggeredBy,
-		landscape:scenes.get(forPlayer.currentScene)?.landscape ?? 'plains',
+		landscape: scene.landscape ?? 'plains',
 		yourInfo:{
 			unitId:forPlayer.unitId,
 			heroName: forPlayer.heroName,
@@ -55,11 +60,11 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				utility: forPlayer.inventory.utility,
 				body: forPlayer.inventory.body,
 			},
-			currentScene: forPlayer.currentScene,
+			currentSceneDisplay: scene.displayName,
 			statuses:forPlayer.statuses,
 		},
 		otherPlayers: activePlayers()
-			.filter((u) => u.heroName != forPlayer.heroName)
+			.filter((u) => u.heroName != forPlayer.heroName && u.currentScene == forPlayer.currentScene)
 			.map((u) => {
 				return {
 					unitId:u.unitId,
@@ -73,7 +78,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 						utility: u.inventory.utility,
 						body: u.inventory.body,
 					},
-					currentScene: u.currentScene,
+					currentSceneDisplay: 'somewhere',
 					statuses:u.statuses,
 				} satisfies PlayerInClient;
 			}),
@@ -84,6 +89,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				// target:gameAction.target
 			};
 		}),
+		userList:activePlayers().map(u=>u.heroName),
 		itemActions: forPlayer.itemActions.map((gameAction) => convertServerActionToClientAction(gameAction)),
 		// visualActionSources:[],
 		visualActionSources:forPlayer.visualActionSources.map(s=>{

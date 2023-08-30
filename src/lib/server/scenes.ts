@@ -23,6 +23,7 @@ export type SceneId =
 	| 'dead';
 
 export type Scene = {
+	displayName:string,
 	onEnterScene: (player: Player) => void
 	onBattleJoin?: (player: Player) => void
 	onVictory?: (player: Player) => void
@@ -35,6 +36,7 @@ export type Scene = {
 
 export type VisualActionSource = {
 	unitId: VisualActionSourceId
+	displayName:string
 	sprite: AnySprite
 	portrait?: MiscPortrait
 	actionsWithRequirements?: UnlockableActionData[]
@@ -46,6 +48,7 @@ export type VisualActionSource = {
 }
 
 export type VisualActionSourceInClient = {
+	displayName:string
 	startsLocked?: boolean
 	lockHandle?: string
 	id: VisualActionSourceId
@@ -106,8 +109,11 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 					}
 				}else if(unlockableActData.travelTo){
 					let travelTo = unlockableActData.travelTo
+					let scene = scenes.get(travelTo)
+					if(!scene)continue
+
 					ga = {
-						buttonText: `Travel to ${travelTo}`,
+						buttonText: `Travel to ${scene.displayName}`,
 						performAction() {
 							return {
 								behavior: { kind: 'travel', goTo: travelTo },
@@ -165,6 +171,7 @@ export function convertVasToClient(vas: VisualActionSource, player: Player): Vis
 
 	let result = {
 		id: vas.unitId,
+		displayName:vas.displayName,
 		startText: startText,
 		responses: responses,
 		sprite: vas.sprite,
@@ -221,6 +228,7 @@ export type ConversationResponse = {
 } & Lockability
 
 const dead: Scene = {
+	displayName:'The Halls Of the Dead',
 	onEnterScene(player) {
 		player.sceneTexts.push("You see a bright light and follow it. After a short eternity you decide wandering the halls of the dead is not for you.")
 		player.health = player.maxHealth
@@ -229,6 +237,7 @@ const dead: Scene = {
 
 		player.visualActionSources.push({
 			unitId:'vasDeath',
+			displayName:'Death',
 			sprite:'general',
 			startText:`I'm afraid your dead. Would you like to respawn?`,
 			actionsWithRequirements:[
@@ -251,6 +260,7 @@ const dead: Scene = {
 
 
 const tutorial = {
+	displayName:'Tutorial',
 	onEnterScene(player) {
 		player.lastCheckpoint = `tutorial_${player.heroName}`
 		player.sceneTexts.push(`You are standing at a castle barracks. Soliders mill around swinging swords and grunting in cool morning air. You see Arthur, the captain of the castle guard marching towards you.`)
@@ -258,6 +268,7 @@ const tutorial = {
 	actions(player) {
 		player.visualActionSources.push({
 			unitId: 'vasTutor',
+			displayName:'Arthur',
 			actionsWithRequirements: [
 				{
 					lockHandle: 'wantsToSkip',
@@ -295,6 +306,7 @@ const tutorial = {
 		})
 		player.visualActionSources.push({
 			unitId: 'vasEquipClub',
+			displayName: 'Club',
 			sprite: 'club',
 			startText: 'A club deals a hefty chunk of damage each hit. That makes it effective against unarmored foes like goblins.',
 			startsLocked: true,
@@ -302,6 +314,7 @@ const tutorial = {
 		})
 		player.visualActionSources.push({
 			unitId: 'vasEquipBomb',
+			displayName: 'Bomb',
 			sprite: 'bomb',
 			startText: 'A powderbomb deals splash damage to all nearby enemies. It should clear out the rats nicely.',
 			startsLocked: true,
@@ -309,6 +322,7 @@ const tutorial = {
 		})
 		player.visualActionSources.push({
 			unitId: 'vasGoTrain1',
+			displayName: 'Training Room',
 			sprite: 'castle',
 			startText: `An entrance to a training room`,
 			actionsWithRequirements: [
@@ -323,6 +337,7 @@ const tutorial = {
 } satisfies Scene
 
 const trainingRoom1 = {
+	displayName:'Training Room',
 	solo: true,
 	onEnterScene(player) {
 		// if respawning from checkpoint we already beat the room
@@ -345,6 +360,7 @@ const trainingRoom1 = {
 		if (!enemiesInScene(player.currentScene).length) {
 			player.visualActionSources.push({
 				unitId: 'vasTutor2',
+				displayName: 'Arthur',
 				sprite: 'general',
 				portrait: 'general',
 				startText: `Great job! Let's switch up your equipment. Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you.`,
@@ -359,6 +375,7 @@ const trainingRoom1 = {
 			})
 			player.visualActionSources.push({
 				unitId: 'vasEquipDagger',
+				displayName: 'Dagger',
 				sprite: 'club',
 				startText: 'Hobgoblins wear heavy armor, which limits the amount of damage they take each strike. A dagger strikes multiple times per attack, mitigating their defenses.',
 				startsLocked: true,
@@ -366,6 +383,7 @@ const trainingRoom1 = {
 			})
 			player.visualActionSources.push({
 				unitId: 'vasEquipBandage',
+				displayName: 'Bandage',
 				sprite: 'club',
 				startText: `Use bandages when you get low on health.`,
 				startsLocked: true,
@@ -373,6 +391,7 @@ const trainingRoom1 = {
 			})
 			player.visualActionSources.push({
 				unitId: 'vasGoTrain2',
+				displayName: 'Training Room',
 				sprite: 'castle',
 				startText: `Another door, another training room.`,
 				actionsWithRequirements: [
@@ -394,6 +413,7 @@ const trainingRoom1 = {
 } satisfies Scene
 
 const trainingRoom2: Scene = {
+	displayName:'Training Room',
 	solo: true,
 	onEnterScene(player) {
 		if (player.previousScene == 'dead') {
@@ -452,6 +472,7 @@ const trainingRoom2: Scene = {
 }
 
 const trainingRoom3: Scene = {
+	displayName:'Training Room',
 	solo: true,
 	onEnterScene(player) {
 		player.lastCheckpoint = `trainingRoom2_${player.heroName}`
@@ -479,7 +500,8 @@ const trainingRoom3: Scene = {
 	},
 }
 
-const forest: Scene = {
+export const forest: Scene = {
+	displayName: 'Bramblefoot Woods',
 	landscape:'grimForest',
 	onEnterScene(player) {
 		player.lastCheckpoint = 'forest'
@@ -506,6 +528,7 @@ const forest: Scene = {
 		)
 		player.visualActionSources.push({
 			unitId: 'vascastle',
+			displayName: 'Castle',
 			sprite: 'castle',
 			actionsWithRequirements: [{travelTo:'castle'}],
 			startText: `In the distance you see a castle. You feel you might have seen it before. Perhaps in a dream. Or was it a nightmare?`,
@@ -522,6 +545,7 @@ const forest: Scene = {
 }
 
 const castle: Scene = {
+	displayName:'Castle Bramblemor',
 	landscape: 'castle',
 	onEnterScene(player) {
 		if (player.previousScene == 'throne') {
@@ -555,6 +579,7 @@ const castle: Scene = {
 
 		player.visualActionSources.push({
 			unitId: 'vasHouse',
+			displayName: 'House',
 			sprite: 'castle',
 			actionsWithRequirements: [{travelTo:'house'}],
 			startText: `You see a quaint house`,
@@ -572,6 +597,7 @@ const castle: Scene = {
 };
 
 const house: Scene = {
+	displayName: `Giselle's House`,
 	landscape:'bridge',
 	onEnterScene(player) {
 		if (player.flags.has('killedGoblins')) {
@@ -589,13 +615,14 @@ const house: Scene = {
 	actions(player) {
 		player.visualActionSources.push({
 			unitId: 'vasHouseWoman',
+			displayName: 'Giselle',
 			sprite: 'general',
 			startText: `Traveller, what is it you do here? Do you not see I grieve? My son... he was murdered by Gorlak and his rowdy band of filthy goblin scum. He was barely a man yet had the stars in his eyes. He sought adventure but found his demise far too soon. Will you avenge him on my behalf? I don't have much but I'm sure I can find somethign to reward you`,
 			responses: [
 				{
 					lockHandle: `accepted`,
 					responseText: `I will`,
-					retort: `Thank you, good luck. If you succeed I'll give you this armor`,
+					retort: `Thank you kind traveller. There is a passage in the forest hidden from normal view. My son would often go searching in the lands beyond. Search the dark recesses of the forest and you will come upon this place. ${player.heroName}, find those wretched curs and show them no mercy.`,
 					lock: ['reward', 'rejected'],
 					unlock: ['vasLeatherGift']
 				},
@@ -626,8 +653,9 @@ const house: Scene = {
 		})
 		player.visualActionSources.push({
 			unitId: 'vasGoCastle',
+			displayName: 'Castle',
 			sprite: 'castle',
-			startText: 'go back the the castle grounds',
+			startText: 'Go back to the castle grounds',
 			actionsWithRequirements: [{travelTo:'castle'}]
 		})
 		player.sceneActions.push({ buttonText: 'Leave the house', goTo: 'castle', })
@@ -637,12 +665,12 @@ const house: Scene = {
 				performAction() {
 					player.flags.add('acceptedGoblinQuest')
 					player.sceneTexts.push(`${player.heroName}: 'Good lady. I will do this deed for you. No goblin scum will unpunished for this dark deed. I will return when I have silenced their gibberings.'`)
-					player.sceneTexts.push(`Woman: 'Thank you kind traveller. There is a passage in the forest hidden from normal view. My son would often go searching in the lands beyond. Search the dark recesses of the forest and you will come upon this place. ${player.heroName}, find those wretched curs and show them no mercy.'`)
 				},
 			})
 		}
 		player.visualActionSources.push({
 			unitId: 'vasLeatherGift',
+			displayName: 'Reward',
 			sprite: 'armorStand',
 			startText: `Leather armor reduces the damage of each incoming strike.`,
 			startsLocked: true,
@@ -669,6 +697,7 @@ const house: Scene = {
 scenes.set('house', house)
 
 const throne: Scene = {
+	displayName:'Bramblemoor Throne Room',
 	onEnterScene(player) {
 		if (globalFlags.has('placedMedallion')) {
 			player.sceneTexts.push("The dishevelled king turns to you and opens his arms as if to welcome you back. 'Stranger. You have done my bidding, but your fate is sealed. I have no time for pathetic weaklings like you. Prepare yourself. I am sending you to a place from which there is no return.")
@@ -682,10 +711,6 @@ const throne: Scene = {
 			player.sceneTexts.push("Before you is a great throne. Sitting aside it are two giant sculptures carved from marble. The one of the left depicts an angel, its wings spread to a might span. It wields a sword from which a great fire burns. To the left of the throne is a garoyle, its lips pulled back in a monstrous snarl revealing rows of serrated teeth. One of its arms are raised and it appears to hold a ball of pure electricity which crackles in the dim light. Atop the throne sits an emaciated figure.")
 			player.sceneTexts.push("You approach the throne, but something feels wrong. As you pass between two mighty sculptures of a warring demon and angel, a powerful energy fills the air. The flame from the angel's sword and the electrical charge from the demon's hand begin to grow in size and reach out towards each other. The rotting body of the king suddenly leaps from it's throne. He screams from from the centre of the skeletal form 'You have proven your worth traveller, but there is a greater threat at hand! The forces of good and evil are no longer in balance! You must take this medallion and complete the ritual before it's too late!' The throne appears to cave in on itself, and a path that leads to the depths of castle appears. You feel you have no choice but to enter.")
 		}
-
-
-
-
 	},
 	actions(player: Player) {
 		const hasDoneMedallion = globalFlags.has('smashedMedallion') || globalFlags.has('placedMedallion')
@@ -717,6 +742,7 @@ const throne: Scene = {
 }
 
 const realmOfMadness: Scene = {
+	displayName:'The Realm of Madness',
 	onEnterScene(player) {
 		player.sceneTexts.push('your in the realm')
 	},
@@ -727,6 +753,7 @@ const realmOfMadness: Scene = {
 scenes.set('realmOfMadness', realmOfMadness)
 
 const forestPassage: Scene = {
+	displayName:'Hidden Passage',
 	onEnterScene(player) {
 		if (!player.flags.has('gotFreeStarterWeapon')) {
 			player.sceneTexts.push("After what feels like hours scrambling in the fetid soil and dodging the bites of the foul crawling creatures that call the forest home, you stumble upon an entrace.")
@@ -782,6 +809,7 @@ const forestPassage: Scene = {
 }
 
 const goblinCamp: Scene = {
+	displayName:'Goblin Campsite',
 	onEnterScene(player) {
 		if (!player.flags.has('killedGoblins')) {
 			player.sceneTexts.push("Urged on by by your own fear and by some unknown inspiration, you fumble your way through the darkness towards the light. You are blinded as you step through and are greeted with the sight of a ramshackle encampment")
@@ -828,6 +856,7 @@ const goblinCamp: Scene = {
 }
 
 const tunnelChamber: Scene = {
+	displayName:'Bramblemor Dungeon',
 	onEnterScene(player) {
 		if (player.previousScene == 'throne') {
 			player.sceneTexts.push("You wend your way down a neverending series of corridors and pathways that seem to go on for an enternity. It becomes narrower and narrower, and the heat becomes almost unbearable. The path suddenly opens into a great chamber.")
@@ -885,6 +914,7 @@ const tunnelChamber: Scene = {
 }
 
 const armory: Scene = {
+	displayName:'Dev Room',
 	onEnterScene(player) {
 		player.sceneTexts.push("Grab some equipment!")
 	},

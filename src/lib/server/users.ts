@@ -37,12 +37,13 @@ export type Player = {
 	flags: Set<Flag>;
 	animations: BattleAnimation[];
 	visualActionSources: VisualActionSource[];
+	currentScene: SceneId;
 } & PlayerInClient;
 
 export type PlayerInClient = {
 	unitId:HeroId;
 	heroName: HeroName;
-	currentScene: SceneId;
+	currentSceneDisplay:string;
 	health: number;
 	agility:number;
 	strength:number;
@@ -123,7 +124,7 @@ export function addNewUser(heroName : string) : {id:string,player:Player}{
 		// startScene = 'goblinCamp'
 		// startScene = 'castle'
 		// startScene = 'throne'
-		startScene = 'armory'
+		// startScene = 'armory'
 		
 		let startInventory: Inventory = {
 			weapon: {
@@ -152,6 +153,7 @@ export function addNewUser(heroName : string) : {id:string,player:Player}{
 			previousScene: 'dead',
 			lastCheckpoint: 'forest',
 			currentScene: startScene,
+			currentSceneDisplay: scenes.get(startScene)?.displayName ?? 'Somewhere',
 			inventory: startInventory,
 			health: 100,
 			maxHealth: 100,

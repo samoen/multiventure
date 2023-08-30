@@ -313,7 +313,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         console.log('sync wep wu to '+ lastMsg.yourInfo.inventory.weapon.warmup)
 
         visualLandscape.set(lastMsg.landscape)
-        visualSceneLabel.set(lastMsg.yourInfo.currentScene)
+        visualSceneLabel.set(lastMsg.yourInfo.currentSceneDisplay)
 
         let newVups: VisualUnitProps[] = []
         // console.log(`syncing hero with poison ${lastMsg.yourInfo.statuses.poison}`)
@@ -353,7 +353,6 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
             )
         }
         for (const p of lastMsg.otherPlayers) {
-            if (p.currentScene == lastMsg.yourInfo.currentScene) {
                 newVups.push(
                     {
                         id: p.unitId,
@@ -370,7 +369,6 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                         actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == p.unitId)
                     }
                 )
-            }
 
         }
         allVisualUnitProps.set(newVups)

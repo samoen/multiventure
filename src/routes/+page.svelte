@@ -565,7 +565,7 @@
 				</div>
 				<div class="underPortrait">
 					<strong>
-						{$selectedDetail.entity.id}
+						{$selectedDetail.entity.displayName}
 					</strong>
 				</div>
 			</div>
@@ -578,6 +578,7 @@
 						{#each $selectedDetail.entity.actionsInClient.filter((a) => !a.lockHandle || !$lockedHandles.get(a.lockHandle)) as act}
 							<button
 								type="button"
+								class="vasResponse"
 								disabled={$clientState.waitingForMyEvent || $waitingForMyAnimation}
 								on:click={async () => {
 									if (
@@ -615,6 +616,7 @@
 						{/each}
 						{#each $selectedDetail.entity.responses.filter((r) => !r.lockHandle || !$lockedHandles.get(r.lockHandle)) as c}
 							<button
+								class="vasResponse"
 								type="button"
 								on:click={() => {
 									if (!$selectedDetail) return;
@@ -653,10 +655,10 @@
 			<p>{h}</p>
 		{/each}
 	</div>
-	<h3>Other Players:</h3>
-	{#each $lastMsgFromServer.otherPlayers as p}
+	<h3>Players in world:</h3>
+	{#each $lastMsgFromServer.userList as p}
 		<p>
-			{p.heroName} is in {p.currentScene} with {p.health}hp
+			{p}
 		</p>
 		<p />
 	{/each}
@@ -684,6 +686,7 @@
 		padding: 0;
 		user-select: none;
 		touch-action: manipulation;
+		font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
 	}
 	.wrapGameField :global(.noOpacity) {
 		opacity: 0;
@@ -922,6 +925,8 @@
 		text-align: center;
 		border: 1px solid brown;
 		border-top: none;
+		word-wrap: break-word;
+		font-size: clamp(14px,2vw + 2px,19px);
 	}
 	.vupSelectedRest {
 		flex-basis: 85%;
@@ -953,5 +958,15 @@
 	.vasSpriteHolder {
 		display: grid;
 		place-items: center;
+	}
+	.vasdButtons{
+		margin-top:3px;
+		display: flex;
+		flex-wrap: wrap;
+		gap:3px;
+	}
+	.vasResponse{
+		padding:4px;
+		max-width:30ch;
 	}
 </style>

@@ -104,7 +104,7 @@
 		>
 			<div class="nameAndSprite" class:noOpacity={pickedup}>
 				<div class="nameHolder">
-					<span class="nametag">{$host.id}</span>
+					<span class="nametag">{$host.displayName}</span>
 				</div>
 				<img class="vasSprite flipped" src={anySprites[$host.sprite]} alt="a place" />
 				<div class="healthBarPlaceHolder" />
