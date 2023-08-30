@@ -732,37 +732,9 @@ const armory: Scene = {
 				performAction() {
 					const tId = id as ItemId
 					equipItem(player, items[tId])
-					// player.inventory.weapon.itemId = tId
-					// player.inventory.weapon.warmup = weapons[tId].warmup ?? 0
-					// player.inventory.weapon.cooldown = 0
 				},
 			})
 		}
-		// for (const id in utilityItems) {
-		// 	if (id == 'empty'
-		// 		// || id == player.inventory.utility.itemId
-		// 	) continue
-		// 	player.sceneActions.push({
-		// 		buttonText: `Equip Utility ${id}`,
-		// 		grantsImmunity: true,
-		// 		performAction() {
-		// 			let typedId = id as ItemIdForSlot<'utility'>
-		// 			player.inventory.utility.itemId = typedId
-		// 			let baseItem = utilityItems[typedId]
-		// 			if (baseItem && baseItem.startStock != undefined) player.inventory.utility.stock = baseItem.startStock
-		// 		},
-		// 	})
-		// }
-		// for (const id in bodyItems) {
-		// 	if (id == 'rags' || id == player.inventory.body.itemId) continue
-		// 	player.sceneActions.push({
-		// 		buttonText: `Equip Body ${id}`,
-		// 		grantsImmunity: true,
-		// 		performAction() {
-		// 			player.inventory.body.itemId = id as ItemIdForSlot<'body'>
-		// 		},
-		// 	})
-		// }
 		for (const id in enemyTemplates) {
 			player.sceneActions.push({
 				buttonText: `Spawn ${id}`,

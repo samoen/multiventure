@@ -352,11 +352,12 @@
 	}
 	.placeHolder {
 		border: 2px dashed transparent;
+		border-radius: 10px;
 		width: 50%;
 	}
 	.clickable {
-		border: 2px dashed yellow;
-		/* box-shadow: inset 0 0 10px yellow; */
+		border: 2px dashed rgba(255, 255, 0, 0.4);
+		/* box-shadow: 0 0 10px yellow; */
 		/* outline: 2px dashed yellow; */
 		/* outline-offset: -7px; */
 	

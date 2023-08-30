@@ -858,10 +858,15 @@
 		border: none;
 		background: none;
 		cursor: pointer;
+		border-radius: 10px;
+	}
+	.activeSlotButton {
+		box-shadow: 1px 1px 10px yellow;
+		border-radius: 10px;
 	}
 	.slotImg {
 		display: block;
-		border-radius: 15px;
+		border-radius: 10px;
 	}
 	.slotItemname {
 		position: absolute;
@@ -891,9 +896,6 @@
 		font-size: 30px;
 		font-weight: bold;
 		line-height: 1px;
-	}
-	.activeSlotButton {
-		border: 5px dotted yellow;
 	}
 	.selectedDetails {
 		background-color: burlywood;

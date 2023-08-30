@@ -510,6 +510,7 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 					ga = unlockableActData.serverAct
 				}else if(unlockableActData.pickupItem){
 					let id = unlockableActData.pickupItem
+					// let item = items[id]
 					ga = {
 						buttonText: `Equip ${id}`,
 						performAction() {

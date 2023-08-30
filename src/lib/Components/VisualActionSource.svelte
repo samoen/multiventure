@@ -10,6 +10,7 @@
 		lockedHandles,
 		nextAnimationIndex,
 		receiveMelee,
+		selectedDetail,
 		sendMelee,
 		subAnimationStage,
 		updateUnit,
@@ -94,6 +95,7 @@
 	<div class="unitAndArea">
 		<div
 			class="home placeHolder"
+			class:selected={$selectedDetail && $selectedDetail.kind == 'vas' && $selectedDetail?.entity.id == hostId}
 			on:click|preventDefault|stopPropagation={() => {
 				if (!$host) return;
 				$lastUnitClicked = $host.id;
@@ -157,6 +159,11 @@
 	.placeHolder {
 		border: 2px dashed transparent;
 		width: 50%;
+		border-radius: 10px;
+	}
+	.selected {
+		/* border: 1px dashed yellow; */
+		box-shadow: 0 0 4px yellow;
 	}
 	.unitAndArea {
 		display: flex;
