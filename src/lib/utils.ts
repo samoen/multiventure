@@ -77,7 +77,7 @@ export type AnySprite =
 | 'club'
 | 'armorStand'
 
-export type LandscapeImage = 'plains' | 'castle'
+export type LandscapeImage = 'plains' | 'castle' | 'bridge' | 'grimForest'
 
 export type AnimationBehavior = 
 	| {kind:'missile', extraSprite:AnySprite} 

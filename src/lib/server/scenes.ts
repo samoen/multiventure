@@ -513,6 +513,7 @@ const trainingRoom3: Scene = {
 }
 
 const forest: Scene = {
+	landscape:'grimForest',
 	onEnterScene(player) {
 		player.lastCheckpoint = 'forest'
 		if (player.previousScene == 'dead' || player.previousScene == `tutorial_${player.heroName}` || player.previousScene == `trainingRoom3_${player.heroName}`) {
@@ -626,7 +627,7 @@ const castle: Scene = {
 };
 
 const house: Scene = {
-	landscape:'castle',
+	landscape:'bridge',
 	onEnterScene(player) {
 		if (player.flags.has('killedGoblins')) {
 			player.sceneTexts.push(`Dear Sir ${player.heroName}! You return with the stench of goblin blood about yourself. Thank you for obtaining vengence on my behalf. My son had this set of leather armour. If only he had been wearing it when he went on his adventure.\n\nI bequeath it to you so that his legacy may live on. Good luck out there ${player.heroName}`)

@@ -60,6 +60,8 @@
 	import { derived, writable, type Writable } from 'svelte/store';
 	import plainsLandscape from '$lib/assets/landscapes/landscape-plain.webp';
 	import castleLandscape from '$lib/assets/landscapes/landscape-castle.webp';
+	import grimForestLandscape from '$lib/assets/landscapes/grim-altar.jpg';
+	import bridgeLandscape from '$lib/assets/landscapes/landscape-bridge.webp';
 	import type { BattleAnimation, DataFirstLoad, LandscapeImage } from '$lib/utils';
 	import VisualActionSource from '$lib/Components/VisualActionSource.svelte';
 	import { fade } from 'svelte/transition';
@@ -272,6 +274,10 @@
 			return plainsLandscape
 		}else if(key == 'castle'){
 			return castleLandscape
+		}else if(key == 'grimForest'){
+			return grimForestLandscape
+		}else if(key == 'bridge'){
+			return bridgeLandscape
 		}
 		return plainsLandscape
 	}
@@ -330,11 +336,11 @@
 	<!-- <button on:click={() => {}}>debug something</button> -->
 	<div class="wrapGameField">
 		<span class="yourSceneLabel">{$visualSceneLabel}</span>
+		<!-- style="background-image:url({getLandscape($visualLandscape)});" -->
 		<div
 			class="visual"
 			role="button"
 			tabindex="0"
-			style="background-image:url({getLandscape($visualLandscape)});"
 			on:keydown
 			on:click={() => {
 				console.log('visual clicked');
@@ -342,6 +348,10 @@
 			}}
 			class:noOpacity={$visualOpacity}
 		>
+		<div class="imageBackground">
+			<img  src={getLandscape($visualLandscape)} alt='gb'>
+			<div class="bgGrad" ></div>
+		</div>
 			<div class="units">
 				{#each $allies as p (p.id)}
 				<div class="unitHolder" 
@@ -732,21 +742,50 @@
 		/* position: relative; */
 		/* margin-block: 5px; */
 		/* padding: 3px; */
-		overflow-y: scroll;
+		overflow-y: auto;
 		overflow-x: hidden;
+		overscroll-behavior: contain;
 		background-color: black;
 		/* overflow-x: hidden; */
+	}
+	.imageBackground{
+		display:block;
+		background-color: burlywood;
+		position:absolute;
+		inset:0;
+		overflow:hidden;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: flex-start;
+		
+	}
+	.bgGrad{
+		/* z-index:2 */
+		position:absolute;
+		/* justify-self: flex-end; */
+		margin-top:450px;
+		/* inset:0; */
+		height:100px;
+		width:100%;
+		/* background: linear-gradient(to bottom, transparent 0%, transparent 70%, burlywood 80%,burlywood 100%); */
+		background: linear-gradient(to bottom, transparent 0%, burlywood 100%);
+	}
+	.imageBackground > img{
+		/* display:inline-block; */
+		min-width: 100vw;
+		/* object-fit:cover; */
+		object-position: center;
+		margin-inline:auto;
+		/* width:100%; */
 	}
 	.visual {
 		position:relative;
 		transition: opacity 0.6s ease-in-out;
 		/* background-repeat:no-repeat; */
-		background-size:cover;
-		/* background-attachment:local; */
-		/* background-origin: border-box; */
+		/* background-size:auto auto; */
 		/* background-attachment:scroll; */
-		background-position: center bottom;
-		overscroll-behavior: contain;
+		/* background-position: center center; */
 		background-color: burlywood;
 		display: grid;
 		column-gap:1px;
