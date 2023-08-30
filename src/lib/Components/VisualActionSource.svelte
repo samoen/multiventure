@@ -141,14 +141,13 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		max-width: 3px;
+		margin-inline: auto;
 	}
 	.nametag {
 		opacity: 0.6;
 		color: white;
 		white-space: nowrap;
-		/* text-wrap:balance;
-		word-wrap: break-word;
-		line-break: anywhere; */
 		font-weight: bold;
 		font-size: 13px;
 	}
@@ -172,7 +171,6 @@
 	.vasSprite {
 		display: block;
 		width: 100%;
-		/* background-color: aqua; */
 		aspect-ratio: 1/1;
 	}
 	.guestArea {

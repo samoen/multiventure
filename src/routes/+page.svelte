@@ -758,10 +758,7 @@
 		background-color: beige;
 	}
 	.wrapGameField {
-		height: 40vh;
-		/* position: relative; */
-		/* margin-block: 5px; */
-		/* padding: 3px; */
+		height: 50vh;
 		overflow-y: auto;
 		overflow-x: hidden;
 		overscroll-behavior: contain;
