@@ -25,7 +25,7 @@ import heal from '$lib/assets/extras/heal.png';
 import lighthouse from '$lib/assets/scenery/lighthouse.png';
 import armor from '$lib/assets/scenery/armor.png';
 import club from '$lib/assets/extras/club.png';
-import type { EquipmentSlot, Inventory, ItemId, ItemIdForSlot, ItemState, ItemStateForSlot } from '$lib/server/items';
+import type { EquipmentSlot, Inventory, ItemId, ItemState } from '$lib/server/items';
 import { crossfade } from "svelte/transition";
 import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easing";
 import { tick } from "svelte";
@@ -570,7 +570,7 @@ function checkAnimationValid(ba:BattleAnimation):boolean{
 }
 
 
-export function heroSprite(weapon: ItemIdForSlot<'weapon'>) {
+export function heroSprite(weapon: ItemId) {
     if (weapon == 'club') return 'ruffian';
     if (weapon == 'dagger') return 'theif';
     if (weapon == 'fireStaff') return 'mage';

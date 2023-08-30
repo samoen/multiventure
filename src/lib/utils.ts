@@ -1,7 +1,7 @@
 // This file is for stuff available to both the server and browser
 
 import type { ActiveEnemy, EnemyTemplateId } from './server/enemies';
-import type { EquipmentSlot, ItemId, ItemState, ItemStateForSlot } from './server/items';
+import type { EquipmentSlot, Item, ItemId, ItemState } from './server/items';
 import type { SceneId, VisualActionSource } from './server/scenes';
 import type { Flag, GlobalFlag, HeroName, Player } from './server/users';
 
@@ -20,7 +20,7 @@ export type BattleAnimation = {
 	behavior: AnimationBehavior,
 	alsoDamages?:HealthModifier[],
 	alsoModifiesAggro?:AggroModifier[],
-	takesItem?:{slot:EquipmentSlot, id:ItemId},
+	takesItem?:{slot:EquipmentSlot,id:ItemId},
 }
 
 export type DataFirstLoad = {
@@ -43,7 +43,7 @@ export type BattleEvent = {
 	behavior: AnimationBehavior,
 	alsoDamages?:HealthModifierEvent[],
 	alsoModifiesAggro?:AggroModifierEvent[],
-	takesItem?:{slot:EquipmentSlot, id:ItemId},
+	takesItem?:Item,
 }
 
 export type StatusModifier = {target:UnitId, status:StatusId, remove?:boolean, count?:number}

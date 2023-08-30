@@ -1,6 +1,6 @@
 import type { UnitId, BattleAnimation, StatusEffect, StatusId, BattleEvent, HeroId, AnySprite, VisualActionSourceId } from '$lib/utils';
 import { v4 } from 'uuid';
-import { items, type Inventory, type Item, type ItemState, type EquipmentSlot, type ItemStateForSlot } from './items';
+import { items, type Inventory, type Item, type ItemState, type EquipmentSlot } from './items';
 import { pushHappening } from './messaging';
 import { addSoloScenes, scenes, type SceneId, type VisualActionSource } from './scenes';
 
@@ -123,7 +123,7 @@ export function addNewUser(heroName : string) : {id:string,player:Player}{
 		// startScene = 'goblinCamp'
 		// startScene = 'castle'
 		// startScene = 'throne'
-		// startScene = 'armory'
+		startScene = 'armory'
 		
 		let startInventory: Inventory = {
 			weapon: {

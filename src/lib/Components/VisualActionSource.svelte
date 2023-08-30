@@ -21,7 +21,7 @@
 	import VisualUnit from './VisualUnit.svelte';
 	import { tick } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import type { ItemIdForSlot } from '$lib/server/items';
+	import type { ItemId } from '$lib/server/items';
 
 	export let hostId: VisualActionSourceId;
 	let pickedup = false;
@@ -70,7 +70,7 @@
 				updateUnit($guestId, (vup) => {
 					if ($currentAnimation?.takesItem?.slot == 'weapon') {
 						vup.src =
-							heroSprites[heroSprite($currentAnimation.takesItem.id as ItemIdForSlot<'weapon'>)];
+							heroSprites[heroSprite($currentAnimation.takesItem.id as ItemId)];
 					}
 				});
 				await tick();

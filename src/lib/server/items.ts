@@ -8,40 +8,22 @@ export type EquipmentSlot =
 	| 'utility'
 	| 'body'
 
-export type ItemIdForSlot<T extends EquipmentSlot> =
-	T extends 'weapon' ?
-	| 'unarmed'
-	| 'club'
-	| 'dagger'
-	| 'fireStaff'
-	: T extends 'utility' ?
-	| 'empty'
-	| 'bandage'
-	| 'bomb'
-	| 'poisonDart'
-	: T extends 'body' ?
-	| 'rags'
-	| 'leatherArmor'
-	| 'theifCloak'
-	| 'plateMail'
-	: never
+export type ItemId = keyof typeof items
 
-export type ItemId = ItemIdForSlot<EquipmentSlot>
-
-export type ItemStateForSlot<T extends EquipmentSlot> = {
-	itemId: ItemIdForSlot<T>;
+export type ItemState = {
+	itemId: ItemId;
 	cooldown: number;
 	warmup: number;
 	stock?: number;
 }
 
-export type ItemState = ItemStateForSlot<EquipmentSlot>
-
 export type Inventory = {
-	[T in EquipmentSlot]: ItemStateForSlot<T>
+	[T in EquipmentSlot]: ItemState
 }
 
 export type Item = {
+	id:ItemId
+	slot:EquipmentSlot
 	actions?: (player: Player) => void
 	actionForEnemy?: (player: Player, enemy: ActiveEnemy) => void
 	actionForFriendly?: (player: Player, friend: Player) => void
@@ -54,6 +36,8 @@ export type Item = {
 
 
 const dagger: Item = {
+	id:'dagger',
+	slot:'weapon',
 	actionForEnemy(player, enemy) {
 		player.itemActions.push(
 			{
@@ -77,6 +61,8 @@ const dagger: Item = {
 }
 
 const club: Item = {
+	id:'club',
+	slot:'weapon',
 	actionForEnemy(player, enemy) {
 		player.itemActions.push(
 			{
@@ -99,6 +85,8 @@ const club: Item = {
 }
 
 const fireStaff: Item = {
+	id:'fireStaff',
+	slot:'weapon',
 	warmup: 2,
 	cooldown: 1,
 	actionForEnemy(player, enemy) {
@@ -123,6 +111,8 @@ const fireStaff: Item = {
 }
 
 const bandage: Item = {
+	id:'bandage',
+	slot:'utility',
 	startStock: 2,
 	useableOutOfBattle: true,
 	actionForFriendly(player, friend) {
@@ -158,6 +148,8 @@ const bandage: Item = {
 }
 
 const bomb: Item = {
+	id:'bomb',
+	slot:'utility',
 	startStock: 1,
 	actions(player) {
 		player.itemActions.push({
@@ -193,6 +185,8 @@ const bomb: Item = {
 }
 
 const poisonDart: Item = {
+	id:'poisonDart',
+	slot:'utility',
 	startStock: 2,
 	actionForEnemy(player, enemy) {
 		player.itemActions.push(
@@ -217,6 +211,8 @@ const poisonDart: Item = {
 }
 
 const plateMail: Item = {
+	id:'plateMail',
+	slot:'body',
 	cooldown: 2,
 	actions(player) {
 		player.itemActions.push({
@@ -249,6 +245,8 @@ const plateMail: Item = {
 }
 
 const theifCloak: Item = {
+	id:'theifCloak',
+	slot:'body',
 	cooldown: 3,
 	actions(player) {
 		player.itemActions.push({
@@ -269,6 +267,8 @@ const theifCloak: Item = {
 }
 
 const leatherArmor: Item = {
+	id:'leatherArmor',
+	slot:'body',
 	useableOutOfBattle: true,
 	onTakeDamage(incoming) {
 		if (incoming < 6) {
@@ -309,54 +309,77 @@ const leatherArmor: Item = {
 	}
 }
 
-export const weapons: Record<ItemIdForSlot<'weapon'>, Item> = {
-	unarmed: {},
+const unarmed : Item = {
+	id:'unarmed',
+	slot:'weapon',
+}
+
+const empty : Item = {
+	id:'empty',
+	slot:'utility',
+}
+const rags : Item = {
+	id:'rags',
+	slot:'body'
+}
+
+// export const allItems = new Map<ItemId,Item>()
+// allItems.set(unarmed.id,unarmed)
+// allItems.set(club.id,club)
+// allItems.set(dagger.id,dagger)
+// allItems.set(fireStaff.id,fireStaff)
+// allItems.set(rags.id,rags)
+
+
+export const items = {
+	unarmed: unarmed,
 	dagger: dagger,
 	club: club,
 	fireStaff: fireStaff,
-};
-
-export const utilityItems: Record<ItemIdForSlot<'utility'>, Item> = {
-	empty: {},
+	empty: empty,
 	bandage: bandage,
 	bomb: bomb,
 	poisonDart: poisonDart,
-}
-
-export const bodyItems: Record<ItemIdForSlot<'body'>, Item> = {
-	rags: {},
+	rags: rags,
 	plateMail: plateMail,
 	leatherArmor: leatherArmor,
 	theifCloak: theifCloak,
-}
+} as const satisfies Record<string, Item>;
 
-export const items: Record<ItemId, Item> = {
-	...weapons,
-	...utilityItems,
-	...bodyItems
-} satisfies Record<ItemId, Item>
+// export const utilityItems: Record<ItemIdForSlot<'utility'>, Item> = {
+// }
 
-export function equipItem(player:Player, id:ItemId){
-	if(weapons.hasOwnProperty(id)){
-		player.inventory.weapon.itemId = id as ItemIdForSlot<'weapon'>
-	}
-	if(utilityItems.hasOwnProperty(id)){
-		player.inventory.utility.itemId = id as ItemIdForSlot<'utility'>
-	}
-	if(bodyItems.hasOwnProperty(id)){
-		player.inventory.body.itemId = id as ItemIdForSlot<'body'>
-	}
+// export const bodyItems: Record<ItemIdForSlot<'body'>, Item> = {
+// }
+
+// export const items: Record<ItemId, Item> = {
+// 	...weapons,
+// 	...utilityItems,
+// 	...bodyItems
+// } satisfies Record<ItemId, Item>
+
+export function equipItem(player:Player, item:Item){
+	player.inventory[item.slot].itemId = item.id
+	player.inventory[item.slot].warmup = item.warmup ?? 0
+	player.inventory[item.slot].cooldown = 0
+	// if(weapons.hasOwnProperty(id)){
+	// 	player.inventory.weapon.itemId = id as ItemIdForSlot<'weapon'>
+	// }
+	// if(utilityItems.hasOwnProperty(id)){
+	// 	player.inventory.utility.itemId = id as ItemIdForSlot<'utility'>
+	// }
+	// if(bodyItems.hasOwnProperty(id)){
+	// 	player.inventory.body.itemId = id as ItemIdForSlot<'body'>
+	// }
 }
 
 export function checkHasItem(player:Player, id:ItemId):boolean{
-	if(weapons.hasOwnProperty(id)){
-		return player.inventory.weapon.itemId == id
-	}
-	if(utilityItems.hasOwnProperty(id)){
-		return player.inventory.utility.itemId == id
-	}
-	if(bodyItems.hasOwnProperty(id)){
-		return player.inventory.body.itemId == id
+	if(
+		player.inventory.weapon.itemId == id ||
+		player.inventory.utility.itemId == id ||
+		player.inventory.body.itemId == id	
+		){
+		return true
 	}
 	return false
 }

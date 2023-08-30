@@ -252,12 +252,15 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 
 function preCombatActionPerformed(player: Player, gameAction: GameAction) {
 
+	// Each turn decrement cooldowns, only if time passed ie provoke
 	if (gameAction.provoke != undefined) {
 		for (const cd of playerItemStates(player)) {
 			if (cd.cooldown > 0) cd.cooldown--
 			if (cd.warmup > 0) cd.warmup--
 		}
 	}
+
+	// If we used a slot item set it on cooldown and reduce stock
 	if (gameAction.slot) {
 		let itemState = player.inventory[gameAction.slot]
 		let item = items[itemState.itemId]
@@ -432,7 +435,7 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 	}
 
 	if(battleEvent.takesItem && battleEvent.source.kind == 'player'){
-		equipItem(battleEvent.source.entity,battleEvent.takesItem.id)
+		equipItem(battleEvent.source.entity,battleEvent.takesItem)
 	}
 	let leavingScene = undefined
 	let sceneToPlayAnim = player.currentScene
@@ -464,7 +467,7 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 				remove: m.remove
 			} satisfies StatusModifier
 		}),
-		takesItem:battleEvent.takesItem,
+		takesItem: battleEvent.takesItem ? {slot:battleEvent.takesItem.slot, id:battleEvent.takesItem.id} : undefined,
 	}
 	pushAnimation({
 		sceneId: sceneToPlayAnim,

@@ -1,6 +1,6 @@
 import type { GameActionSentToClient, AnySprite, VisualActionSourceId, BattleEvent, LandscapeImage } from '$lib/utils';
 import { enemiesInScene, enemyTemplates, spawnEnemy, type EnemyTemplateId, type EnemyStatuses } from './enemies';
-import { bodyItems, utilityItems, weapons, type ItemIdForSlot, items, type ItemId, checkHasItem } from './items';
+import { items, type ItemId, checkHasItem, equipItem } from './items';
 import { activePlayersInScene, globalFlags, healPlayer, type GameAction, type HeroName, type MiscPortrait, type Player, type Flag } from './users';
 
 
@@ -37,16 +37,12 @@ export type VisualActionSource = {
 	unitId: VisualActionSourceId
 	sprite: AnySprite
 	portrait?: MiscPortrait
-	actionsWithRequirements?: UnlockableAction[]
+	actionsWithRequirements?: UnlockableActionData[]
 	startText: string,
 	responses?: ConversationResponse[]
 	detect?: { flag: Flag, startText: string, responses: ConversationResponse[] }
 	startsLocked?: boolean
 	lockHandle?: string
-}
-
-export type UnlockableGameActionWithRequirement = {
-	sAction: UnlockableAction,
 }
 
 export type VisualActionSourceInClient = {
@@ -68,7 +64,7 @@ export function getServerActionsMetRequirementsFromVases(vases: VisualActionSour
 	for (const vas of vases) {
 		let acts = getValidUnlockableServerActionsFromVas(vas, player)
 		for (const act of acts) {
-			validActionsFromVases.push(act.serverAct)
+				validActionsFromVases.push(act.serverAct)
 		}
 	}
 	return validActionsFromVases
@@ -78,21 +74,48 @@ export function getServerActionsMetRequirementsFromVases(vases: VisualActionSour
 export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, player: Player): UnlockableAction[] {
 	let validUnlockableActions: UnlockableAction[] = []
 	if (vas.actionsWithRequirements) {
-		for (const awr of vas.actionsWithRequirements) {
+		for (const unlockableActData of vas.actionsWithRequirements) {
 			let passedRequirements = true
-			if (awr.requiresGear) {
-				for (const requiredItem of awr.requiresGear) {
+			if (unlockableActData.requiresGear) {
+				for (const requiredItem of unlockableActData.requiresGear) {
 					if (!checkHasItem(player, requiredItem)) {
 						passedRequirements = false
 						break
 					}
 				}
 			}
-			if (awr.requiresFlag != undefined && !player.flags.has(awr.requiresFlag)) {
+			if (unlockableActData.requiresFlag != undefined && !player.flags.has(unlockableActData.requiresFlag)) {
 				passedRequirements = false
 			}
 			if (passedRequirements) {
-				validUnlockableActions.push(awr)
+				let ga : GameAction
+				if(unlockableActData.serverAct){
+					ga = unlockableActData.serverAct
+				}else if(unlockableActData.pickupItem){
+					let id = unlockableActData.pickupItem
+					ga = {
+						buttonText: `Equip ${id}`,
+						performAction() {
+							return {
+								source: { kind: 'player', entity: player },
+								target: { kind: 'vas', entity: vas },
+								behavior: { kind: 'melee' },
+								takesItem: items[id]
+							} satisfies BattleEvent
+						},	
+					}
+				}else{
+					continue
+				}
+
+				let unlockableAction : UnlockableAction = {
+					serverAct:ga,
+					lock:unlockableActData.lock,
+					lockHandle:unlockableActData.lockHandle,
+					startsLocked:unlockableActData.startsLocked,
+					unlock:unlockableActData.unlock,
+				}
+				validUnlockableActions.push(unlockableAction)
 			}
 		}
 	}
@@ -163,10 +186,15 @@ export type Lockability = {
 	startsLocked?: boolean,
 }
 
-export type UnlockableAction = {
-	serverAct: GameAction
+export type UnlockableActionData = {
+	serverAct?: GameAction
 	requiresFlag?: Flag
 	requiresGear?: ItemId[]
+	pickupItem?: ItemId
+} & Lockability
+
+export type UnlockableAction = {
+	serverAct: GameAction
 } & Lockability
 
 export type UnlockableClientAction = {
@@ -258,17 +286,20 @@ const tutorial = {
 			startsLocked: true,
 			actionsWithRequirements: [
 				{
-					serverAct: {
-						buttonText: 'equip club',
-						performAction() {
-							return {
-								source: { kind: 'player', entity: player },
-								target: { kind: 'vas', entity: { unitId: 'vasEquipClub' } },
-								behavior: { kind: 'melee' },
-								takesItem: { slot: 'weapon', id: 'club' }
-							} satisfies BattleEvent
-						},
-					}
+					pickupItem:'club',
+					// serverAct: {
+					
+					// 	buttonText: 'equip club',
+					// 	performAction() {
+					// 		return {
+					// 			source: { kind: 'player', entity: player },
+					// 			target: { kind: 'vas', entity: { unitId: 'vasEquipClub' } },
+					// 			behavior: { kind: 'melee' },
+					// 			takesItem: { slot: 'weapon', id: 'club' }
+					// 		} satisfies BattleEvent
+					// 	},
+						
+					// }
 				}
 			],
 		})
@@ -968,44 +999,44 @@ const armory: Scene = {
 		player.sceneTexts.push("Grab some equipment!")
 	},
 	actions(player) {
-		for (const id in weapons) {
-			if (id == 'unarmed' || id == player.inventory.weapon.itemId) continue
+		for (const id in items) {
 			player.sceneActions.push({
-				buttonText: `Equip Weapon ${id}`,
+				buttonText: `Equip ${id}`,
 				grantsImmunity: true,
 				performAction() {
-					const tId = id as ItemIdForSlot<'weapon'>
-					player.inventory.weapon.itemId = tId
-					player.inventory.weapon.warmup = weapons[tId].warmup ?? 0
-					player.inventory.weapon.cooldown = 0
+					const tId = id as ItemId
+					equipItem(player,items[tId])
+					// player.inventory.weapon.itemId = tId
+					// player.inventory.weapon.warmup = weapons[tId].warmup ?? 0
+					// player.inventory.weapon.cooldown = 0
 				},
 			})
 		}
-		for (const id in utilityItems) {
-			if (id == 'empty'
-				// || id == player.inventory.utility.itemId
-			) continue
-			player.sceneActions.push({
-				buttonText: `Equip Utility ${id}`,
-				grantsImmunity: true,
-				performAction() {
-					let typedId = id as ItemIdForSlot<'utility'>
-					player.inventory.utility.itemId = typedId
-					let baseItem = utilityItems[typedId]
-					if (baseItem && baseItem.startStock != undefined) player.inventory.utility.stock = baseItem.startStock
-				},
-			})
-		}
-		for (const id in bodyItems) {
-			if (id == 'rags' || id == player.inventory.body.itemId) continue
-			player.sceneActions.push({
-				buttonText: `Equip Body ${id}`,
-				grantsImmunity: true,
-				performAction() {
-					player.inventory.body.itemId = id as ItemIdForSlot<'body'>
-				},
-			})
-		}
+		// for (const id in utilityItems) {
+		// 	if (id == 'empty'
+		// 		// || id == player.inventory.utility.itemId
+		// 	) continue
+		// 	player.sceneActions.push({
+		// 		buttonText: `Equip Utility ${id}`,
+		// 		grantsImmunity: true,
+		// 		performAction() {
+		// 			let typedId = id as ItemIdForSlot<'utility'>
+		// 			player.inventory.utility.itemId = typedId
+		// 			let baseItem = utilityItems[typedId]
+		// 			if (baseItem && baseItem.startStock != undefined) player.inventory.utility.stock = baseItem.startStock
+		// 		},
+		// 	})
+		// }
+		// for (const id in bodyItems) {
+		// 	if (id == 'rags' || id == player.inventory.body.itemId) continue
+		// 	player.sceneActions.push({
+		// 		buttonText: `Equip Body ${id}`,
+		// 		grantsImmunity: true,
+		// 		performAction() {
+		// 			player.inventory.body.itemId = id as ItemIdForSlot<'body'>
+		// 		},
+		// 	})
+		// }
 		for (const id in enemyTemplates) {
 			player.sceneActions.push({
 				buttonText: `Spawn ${id}`,
