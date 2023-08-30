@@ -104,7 +104,20 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 							} satisfies BattleEvent
 						},	
 					}
-				}else{
+				}else if(unlockableActData.travelTo){
+					let travelTo = unlockableActData.travelTo
+					ga = {
+						buttonText: `Travel to ${travelTo}`,
+						performAction() {
+							return {
+								behavior: { kind: 'travel', goTo: travelTo },
+								source: { kind: 'player', entity: player },
+								target: { kind: 'vas', entity: vas }
+							} satisfies BattleEvent
+						},
+					}
+				}
+				else{
 					continue
 				}
 
@@ -191,6 +204,7 @@ export type UnlockableActionData = {
 	requiresFlag?: Flag
 	requiresGear?: ItemId[]
 	pickupItem?: ItemId
+	travelTo?: SceneId
 } & Lockability
 
 export type UnlockableAction = {
@@ -284,45 +298,14 @@ const tutorial = {
 			sprite: 'club',
 			startText: 'A club deals a hefty chunk of damage each hit. That makes it effective against unarmored foes like goblins.',
 			startsLocked: true,
-			actionsWithRequirements: [
-				{
-					pickupItem:'club',
-					// serverAct: {
-					
-					// 	buttonText: 'equip club',
-					// 	performAction() {
-					// 		return {
-					// 			source: { kind: 'player', entity: player },
-					// 			target: { kind: 'vas', entity: { unitId: 'vasEquipClub' } },
-					// 			behavior: { kind: 'melee' },
-					// 			takesItem: { slot: 'weapon', id: 'club' }
-					// 		} satisfies BattleEvent
-					// 	},
-						
-					// }
-				}
-			],
+			actionsWithRequirements: [{pickupItem:'club',}],
 		})
 		player.visualActionSources.push({
 			unitId: 'vasEquipBomb',
 			sprite: 'bomb',
 			startText: 'A powderbomb deals splash damage to all nearby enemies. It should clear out the rats nicely.',
 			startsLocked: true,
-			actionsWithRequirements: [
-				{
-					serverAct: {
-						buttonText: 'equip bomb',
-						performAction() {
-							return {
-								source: { kind: 'player', entity: player },
-								target: { kind: 'vas', entity: { unitId: 'vasEquipBomb' } },
-								behavior: { kind: 'melee' },
-								takesItem: { slot: 'utility', id: 'bomb' }
-							} satisfies BattleEvent
-						},
-					}
-				}
-			],
+			actionsWithRequirements: [{pickupItem:'bomb'}],
 		})
 		player.visualActionSources.push({
 			unitId: 'vasGoTrain1',
@@ -331,17 +314,7 @@ const tutorial = {
 			actionsWithRequirements: [
 				{
 					requiresGear: ['bomb', 'club'],
-					serverAct: {
-						buttonText: "Enter the training room",
-						performAction() {
-							return {
-								behavior: { kind: 'travel', goTo: `trainingRoom1_${player.heroName}` },
-								source: { kind: 'player', entity: player },
-								target: { kind: 'vas', entity: { unitId: 'vasGoTrain1' } }
-
-							} satisfies BattleEvent
-						},
-					},
+					travelTo:`trainingRoom1_${player.heroName}`,
 				},
 			],
 		})
@@ -389,42 +362,14 @@ const trainingRoom1 = {
 				sprite: 'club',
 				startText: 'Hobgoblins wear heavy armor, which limits the amount of damage they take each strike. A dagger strikes multiple times per attack, mitigating their defenses.',
 				startsLocked: true,
-				actionsWithRequirements: [
-					{
-						serverAct: {
-							buttonText: 'Equip Dagger',
-							performAction() {
-								return {
-									source: { kind: 'player', entity: player },
-									target: { kind: 'vas', entity: { unitId: 'vasEquipDagger' } },
-									behavior: { kind: 'melee' },
-									takesItem: { slot: 'weapon', id: 'dagger' }
-								} satisfies BattleEvent
-							},
-						}
-					},
-				]
+				actionsWithRequirements: [{pickupItem:'dagger'},]
 			})
 			player.visualActionSources.push({
 				unitId: 'vasEquipBandage',
 				sprite: 'club',
 				startText: `Use bandages when you get low on health.`,
 				startsLocked: true,
-				actionsWithRequirements: [
-					{
-						serverAct: {
-							buttonText: 'Equip Bandage',
-							performAction() {
-								return {
-									source: { kind: 'player', entity: player },
-									target: { kind: 'vas', entity: { unitId: 'vasEquipBandage' } },
-									behavior: { kind: 'melee' },
-									takesItem: { slot: 'utility', id: 'bandage' }
-								} satisfies BattleEvent
-							},
-						}
-					},
-				]
+				actionsWithRequirements: [{pickupItem:'bandage'}]
 			})
 			player.visualActionSources.push({
 				unitId: 'vasGoTrain2',
@@ -433,16 +378,7 @@ const trainingRoom1 = {
 				actionsWithRequirements: [
 					{
 						requiresGear: ['dagger', 'bandage'],
-						serverAct: {
-							buttonText: 'Go to the next room',
-							performAction() {
-								return {
-									behavior: { kind: 'travel', goTo: `trainingRoom2_${player.heroName}` },
-									source: { kind: 'player', entity: player },
-									target: { kind: 'vas', entity: { unitId: 'vasGoTrain2' } }
-								} satisfies BattleEvent
-							},
-						}
+						travelTo:`trainingRoom2_${player.heroName}`
 					}
 				]
 			})
@@ -571,18 +507,7 @@ const forest: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vascastle',
 			sprite: 'castle',
-			actionsWithRequirements: [{
-				serverAct: {
-					buttonText: 'Slog it towards teh castle',
-					performAction() {
-						return {
-							behavior: { kind: 'travel', goTo: 'castle' },
-							source: { kind: 'player', entity: player },
-							target: { kind: 'vas', entity: { unitId: 'vascastle' } }
-						} satisfies BattleEvent
-					},
-				}
-			}],
+			actionsWithRequirements: [{travelTo:'castle'}],
 			startText: `In the distance you see a castle. You feel you might have seen it before. Perhaps in a dream. Or was it a nightmare?`,
 		})
 		if (player.flags.has('heardAboutHiddenPassage')) {
@@ -631,18 +556,7 @@ const castle: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasHouse',
 			sprite: 'castle',
-			actionsWithRequirements: [{
-				serverAct: {
-					buttonText: 'Enter the house',
-					performAction() {
-						return {
-							behavior: { kind: 'travel', goTo: 'house' },
-							source: { kind: 'player', entity: player },
-							target: { kind: 'vas', entity: { unitId: 'vasHouse' } }
-						} satisfies BattleEvent
-					},
-				}
-			}],
+			actionsWithRequirements: [{travelTo:'house'}],
 			startText: `You see a quaint house`,
 		})
 
@@ -714,21 +628,7 @@ const house: Scene = {
 			unitId: 'vasGoCastle',
 			sprite: 'castle',
 			startText: 'go back the the castle grounds',
-			actionsWithRequirements: [
-				{
-					serverAct: {
-						buttonText: 'Head back outside',
-						performAction() {
-							return {
-								source: { kind: 'player', entity: player },
-								behavior: { kind: 'travel', goTo: 'castle' },
-								target: { kind: 'vas', entity: { unitId: 'vasGoCastle' } }
-							} satisfies BattleEvent
-						},
-
-					}
-				}
-			]
+			actionsWithRequirements: [{travelTo:'castle'}]
 		})
 		player.sceneActions.push({ buttonText: 'Leave the house', goTo: 'castle', })
 		if (!player.flags.has('acceptedGoblinQuest')) {
@@ -750,17 +650,7 @@ const house: Scene = {
 				{
 					lock:['noProbs'],
 					requiresFlag: 'killedGoblins',
-					serverAct: {
-						buttonText: 'Equip',
-						performAction() {
-							return {
-								source: { kind: 'player', entity: player },
-								behavior: { kind: 'melee' },
-								takesItem: { slot: 'body', id: 'leatherArmor' },
-								target: { kind: 'vas', entity: { unitId: 'vasLeatherGift' } },
-							}
-						},
-					}
+					pickupItem:'leatherArmor',
 				}
 			]
 		})
