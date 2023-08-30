@@ -2,7 +2,8 @@ import type { UnitId, BattleAnimation, StatusEffect, StatusId, BattleEvent, Hero
 import { v4 } from 'uuid';
 import { items, type Inventory, type Item, type ItemState, type EquipmentSlot } from './items';
 import { pushHappening } from './messaging';
-import { addSoloScenes, scenes, type SceneId, type VisualActionSource } from './scenes';
+import type { VisualActionSource } from './logic';
+import { type SceneId, scenes, addSoloScenes } from './scenes';
 
 export const users = new Map<UserId, Player>();
 export const globalFlags = new Set<GlobalFlag>();

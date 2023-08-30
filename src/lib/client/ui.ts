@@ -31,7 +31,7 @@ import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easin
 import { tick } from "svelte";
 import type { EnemyTemplateId } from "$lib/server/enemies";
 import type { MessageFromServer } from "$lib/server/messaging";
-import type { ConversationResponse, UnlockableAction, UnlockableClientAction, VisualActionSource, VisualActionSourceInClient } from "$lib/server/scenes";
+import type { VisualActionSourceInClient } from "$lib/server/logic";
 
 
 type UnitDetails = {

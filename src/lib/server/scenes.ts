@@ -1,7 +1,8 @@
-import type { GameActionSentToClient, AnySprite, VisualActionSourceId, BattleEvent, LandscapeImage } from '$lib/utils';
-import { enemiesInScene, enemyTemplates, spawnEnemy, type EnemyTemplateId, type EnemyStatuses } from './enemies';
-import { items, type ItemId, checkHasItem, equipItem } from './items';
-import { activePlayersInScene, globalFlags, healPlayer, type GameAction, type HeroName, type MiscPortrait, type Player, type Flag } from './users';
+import type { LandscapeImage } from '$lib/utils';
+import { enemiesInScene, enemyTemplates, spawnEnemy, type EnemyStatuses, type EnemyTemplateId } from './enemies';
+import { equipItem, items, type ItemId } from './items';
+import type { VisualActionSource } from './logic';
+import { activePlayersInScene, globalFlags, healPlayer, type HeroName, type Player } from './users';
 
 
 export const scenes: Map<SceneId, Scene> = new Map()
@@ -23,7 +24,7 @@ export type SceneId =
 	| 'dead';
 
 export type Scene = {
-	displayName:string,
+	displayName: string,
 	onEnterScene: (player: Player) => void
 	onBattleJoin?: (player: Player) => void
 	onVictory?: (player: Player) => void
@@ -34,201 +35,8 @@ export type Scene = {
 	landscape?: LandscapeImage
 };
 
-export type VisualActionSource = {
-	unitId: VisualActionSourceId
-	displayName:string
-	sprite: AnySprite
-	portrait?: MiscPortrait
-	actionsWithRequirements?: UnlockableActionData[]
-	startText: string,
-	responses?: ConversationResponse[]
-	detect?: { flag: Flag, startText: string, responses: ConversationResponse[] }
-	startsLocked?: boolean
-	lockHandle?: string
-}
-
-export type VisualActionSourceInClient = {
-	displayName:string
-	startsLocked?: boolean
-	lockHandle?: string
-	id: VisualActionSourceId
-	sprite: AnySprite
-	portrait?: MiscPortrait
-	actionsInClient: UnlockableClientAction[]
-	startText: string,
-	responses: ConversationResponse[]
-	detectStep?: Flag
-
-}
-
-
-export function getServerActionsMetRequirementsFromVases(vases: VisualActionSource[], player: Player): GameAction[] {
-	let validActionsFromVases: GameAction[] = []
-	for (const vas of vases) {
-		let acts = getValidUnlockableServerActionsFromVas(vas, player)
-		for (const act of acts) {
-				validActionsFromVases.push(act.serverAct)
-		}
-	}
-	return validActionsFromVases
-}
-
-
-export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, player: Player): UnlockableAction[] {
-	let validUnlockableActions: UnlockableAction[] = []
-	if (vas.actionsWithRequirements) {
-		for (const unlockableActData of vas.actionsWithRequirements) {
-			let passedRequirements = true
-			if (unlockableActData.requiresGear) {
-				for (const requiredItem of unlockableActData.requiresGear) {
-					if (!checkHasItem(player, requiredItem)) {
-						passedRequirements = false
-						break
-					}
-				}
-			}
-			if (unlockableActData.requiresFlag != undefined && !player.flags.has(unlockableActData.requiresFlag)) {
-				passedRequirements = false
-			}
-			if (passedRequirements) {
-				let ga : GameAction
-				if(unlockableActData.serverAct){
-					ga = unlockableActData.serverAct
-				}else if(unlockableActData.pickupItem){
-					let id = unlockableActData.pickupItem
-					ga = {
-						buttonText: `Equip ${id}`,
-						performAction() {
-							return {
-								source: { kind: 'player', entity: player },
-								target: { kind: 'vas', entity: vas },
-								behavior: { kind: 'melee' },
-								takesItem: items[id]
-							} satisfies BattleEvent
-						},	
-					}
-				}else if(unlockableActData.travelTo){
-					let travelTo = unlockableActData.travelTo
-					let scene = scenes.get(travelTo)
-					if(!scene)continue
-
-					ga = {
-						buttonText: `Travel to ${scene.displayName}`,
-						performAction() {
-							return {
-								behavior: { kind: 'travel', goTo: travelTo },
-								source: { kind: 'player', entity: player },
-								target: { kind: 'vas', entity: vas }
-							} satisfies BattleEvent
-						},
-					}
-				}
-				else{
-					continue
-				}
-
-				let unlockableAction : UnlockableAction = {
-					serverAct:ga,
-					lock:unlockableActData.lock,
-					lockHandle:unlockableActData.lockHandle,
-					startsLocked:unlockableActData.startsLocked,
-					unlock:unlockableActData.unlock,
-				}
-				validUnlockableActions.push(unlockableAction)
-			}
-		}
-	}
-	return validUnlockableActions
-}
-
-
-export function convertServerActionToClientAction(sa: GameAction): GameActionSentToClient {
-	return {
-
-		buttonText: sa.buttonText,
-		slot: sa.slot,
-		target: sa.target,
-	}
-}
-
-export function convertVasToClient(vas: VisualActionSource, player: Player): VisualActionSourceInClient {
-	let validUnlockableActions = getValidUnlockableServerActionsFromVas(vas, player)
-
-	let validUnlockableClientActions: UnlockableClientAction[] = []
-	validUnlockableClientActions = convertUnlockableActionsToClient(validUnlockableActions)
-
-	let startText = vas.startText
-	let responses: ConversationResponse[] = []
-	if (vas.responses) responses = vas.responses
-	let detectStep = undefined
-	if (vas.detect) {
-		if (player.flags.has(vas.detect.flag)) {
-			detectStep = vas.detect.flag
-			responses = vas.detect.responses
-			startText = vas.detect.startText
-		}
-	}
-
-	let result = {
-		id: vas.unitId,
-		displayName:vas.displayName,
-		startText: startText,
-		responses: responses,
-		sprite: vas.sprite,
-		portrait: vas.portrait,
-		startsLocked: vas.startsLocked,
-		lockHandle: vas.lockHandle,
-		actionsInClient: validUnlockableClientActions,
-		detectStep: detectStep,
-	} satisfies VisualActionSourceInClient
-	return result
-}
-
-export function convertUnlockableActionsToClient(sUnlockables: (UnlockableAction[] | undefined)): UnlockableClientAction[] {
-	let clientUnlockables: UnlockableClientAction[] = []
-	if (!sUnlockables) return clientUnlockables
-	return sUnlockables.map(u => {
-		let clientUnlockable: UnlockableClientAction = {
-			lock: u.lock,
-			unlock: u.unlock,
-			startsLocked: u.startsLocked,
-			lockHandle: u.lockHandle,
-			clientAct: convertServerActionToClientAction(u.serverAct)
-		}
-		return clientUnlockable
-	})
-}
-
-export type Lockability = {
-	lockHandle?: string,
-	unlock?: string[],
-	lock?: string[]
-	startsLocked?: boolean,
-}
-
-export type UnlockableActionData = {
-	serverAct?: GameAction
-	requiresFlag?: Flag
-	requiresGear?: ItemId[]
-	pickupItem?: ItemId
-	travelTo?: SceneId
-} & Lockability
-
-export type UnlockableAction = {
-	serverAct: GameAction
-} & Lockability
-
-export type UnlockableClientAction = {
-	clientAct: GameActionSentToClient,
-} & Lockability
-
-export type ConversationResponse = {
-	responseText: string,
-	retort: string,
-} & Lockability
-
 const dead: Scene = {
-	displayName:'The Halls Of the Dead',
+	displayName: 'The Halls Of the Dead',
 	onEnterScene(player) {
 		player.sceneTexts.push("You see a bright light and follow it. After a short eternity you decide wandering the halls of the dead is not for you.")
 		player.health = player.maxHealth
@@ -236,19 +44,19 @@ const dead: Scene = {
 	actions(player) {
 
 		player.visualActionSources.push({
-			unitId:'vasDeath',
-			displayName:'Death',
-			sprite:'general',
-			startText:`I'm afraid your dead. Would you like to respawn?`,
-			actionsWithRequirements:[
+			unitId: 'vasDeath',
+			displayName: 'Death',
+			sprite: 'general',
+			startText: `I'm afraid your dead. Would you like to respawn?`,
+			actionsWithRequirements: [
 				{
-					serverAct:{
-						buttonText:'Respawn at armory',
-						goTo:'armory'
+					serverAct: {
+						buttonText: 'Respawn at armory',
+						goTo: 'armory'
 					}
 				},
 				{
-					serverAct:{
+					serverAct: {
 						buttonText: `Reincarnate at checkpoint ${player.lastCheckpoint}`,
 						goTo: player.lastCheckpoint,
 					}
@@ -260,7 +68,7 @@ const dead: Scene = {
 
 
 const tutorial = {
-	displayName:'Tutorial',
+	displayName: 'Tutorial',
 	onEnterScene(player) {
 		player.lastCheckpoint = `tutorial_${player.heroName}`
 		player.sceneTexts.push(`You are standing at a castle barracks. Soliders mill around swinging swords and grunting in cool morning air. You see Arthur, the captain of the castle guard marching towards you.`)
@@ -268,7 +76,7 @@ const tutorial = {
 	actions(player) {
 		player.visualActionSources.push({
 			unitId: 'vasTutor',
-			displayName:'Arthur',
+			displayName: 'Arthur',
 			actionsWithRequirements: [
 				{
 					lockHandle: 'wantsToSkip',
@@ -310,7 +118,7 @@ const tutorial = {
 			sprite: 'club',
 			startText: 'A club deals a hefty chunk of damage each hit. That makes it effective against unarmored foes like goblins.',
 			startsLocked: true,
-			actionsWithRequirements: [{pickupItem:'club',}],
+			actionsWithRequirements: [{ pickupItem: 'club', }],
 		})
 		player.visualActionSources.push({
 			unitId: 'vasEquipBomb',
@@ -318,7 +126,7 @@ const tutorial = {
 			sprite: 'bomb',
 			startText: 'A powderbomb deals splash damage to all nearby enemies. It should clear out the rats nicely.',
 			startsLocked: true,
-			actionsWithRequirements: [{pickupItem:'bomb'}],
+			actionsWithRequirements: [{ pickupItem: 'bomb' }],
 		})
 		player.visualActionSources.push({
 			unitId: 'vasGoTrain1',
@@ -328,16 +136,16 @@ const tutorial = {
 			actionsWithRequirements: [
 				{
 					requiresGear: ['bomb', 'club'],
-					travelTo:`trainingRoom1_${player.heroName}`,
+					travelTo: `trainingRoom1_${player.heroName}`,
 				},
 			],
 		})
-		
+
 	},
 } satisfies Scene
 
 const trainingRoom1 = {
-	displayName:'Training Room',
+	displayName: 'Training Room',
 	solo: true,
 	onEnterScene(player) {
 		// if respawning from checkpoint we already beat the room
@@ -379,7 +187,7 @@ const trainingRoom1 = {
 				sprite: 'club',
 				startText: 'Hobgoblins wear heavy armor, which limits the amount of damage they take each strike. A dagger strikes multiple times per attack, mitigating their defenses.',
 				startsLocked: true,
-				actionsWithRequirements: [{pickupItem:'dagger'},]
+				actionsWithRequirements: [{ pickupItem: 'dagger' },]
 			})
 			player.visualActionSources.push({
 				unitId: 'vasEquipBandage',
@@ -387,7 +195,7 @@ const trainingRoom1 = {
 				sprite: 'club',
 				startText: `Use bandages when you get low on health.`,
 				startsLocked: true,
-				actionsWithRequirements: [{pickupItem:'bandage'}]
+				actionsWithRequirements: [{ pickupItem: 'bandage' }]
 			})
 			player.visualActionSources.push({
 				unitId: 'vasGoTrain2',
@@ -397,7 +205,7 @@ const trainingRoom1 = {
 				actionsWithRequirements: [
 					{
 						requiresGear: ['dagger', 'bandage'],
-						travelTo:`trainingRoom2_${player.heroName}`
+						travelTo: `trainingRoom2_${player.heroName}`
 					}
 				]
 			})
@@ -413,7 +221,7 @@ const trainingRoom1 = {
 } satisfies Scene
 
 const trainingRoom2: Scene = {
-	displayName:'Training Room',
+	displayName: 'Training Room',
 	solo: true,
 	onEnterScene(player) {
 		if (player.previousScene == 'dead') {
@@ -472,7 +280,7 @@ const trainingRoom2: Scene = {
 }
 
 const trainingRoom3: Scene = {
-	displayName:'Training Room',
+	displayName: 'Training Room',
 	solo: true,
 	onEnterScene(player) {
 		player.lastCheckpoint = `trainingRoom2_${player.heroName}`
@@ -502,7 +310,7 @@ const trainingRoom3: Scene = {
 
 export const forest: Scene = {
 	displayName: 'Bramblefoot Woods',
-	landscape:'grimForest',
+	landscape: 'grimForest',
 	onEnterScene(player) {
 		player.lastCheckpoint = 'forest'
 		if (player.previousScene == 'dead' || player.previousScene == `tutorial_${player.heroName}` || player.previousScene == `trainingRoom3_${player.heroName}`) {
@@ -530,7 +338,7 @@ export const forest: Scene = {
 			unitId: 'vascastle',
 			displayName: 'Castle',
 			sprite: 'castle',
-			actionsWithRequirements: [{travelTo:'castle'}],
+			actionsWithRequirements: [{ travelTo: 'castle' }],
 			startText: `In the distance you see a castle. You feel you might have seen it before. Perhaps in a dream. Or was it a nightmare?`,
 		})
 		if (player.flags.has('heardAboutHiddenPassage')) {
@@ -545,7 +353,7 @@ export const forest: Scene = {
 }
 
 const castle: Scene = {
-	displayName:'Castle Bramblemor',
+	displayName: 'Castle Bramblemor',
 	landscape: 'castle',
 	onEnterScene(player) {
 		if (player.previousScene == 'throne') {
@@ -581,7 +389,7 @@ const castle: Scene = {
 			unitId: 'vasHouse',
 			displayName: 'House',
 			sprite: 'castle',
-			actionsWithRequirements: [{travelTo:'house'}],
+			actionsWithRequirements: [{ travelTo: 'house' }],
 			startText: `You see a quaint house`,
 		})
 
@@ -598,7 +406,7 @@ const castle: Scene = {
 
 const house: Scene = {
 	displayName: `Giselle's House`,
-	landscape:'bridge',
+	landscape: 'bridge',
 	onEnterScene(player) {
 		if (player.flags.has('killedGoblins')) {
 			player.sceneTexts.push(`Dear Sir ${player.heroName}! You return with the stench of goblin blood about yourself. Thank you for obtaining vengence on my behalf. My son had this set of leather armour. If only he had been wearing it when he went on his adventure.\n\nI bequeath it to you so that his legacy may live on. Good luck out there ${player.heroName}`)
@@ -656,7 +464,7 @@ const house: Scene = {
 			displayName: 'Castle',
 			sprite: 'castle',
 			startText: 'Go back to the castle grounds',
-			actionsWithRequirements: [{travelTo:'castle'}]
+			actionsWithRequirements: [{ travelTo: 'castle' }]
 		})
 		player.sceneActions.push({ buttonText: 'Leave the house', goTo: 'castle', })
 		if (!player.flags.has('acceptedGoblinQuest')) {
@@ -676,9 +484,9 @@ const house: Scene = {
 			startsLocked: true,
 			actionsWithRequirements: [
 				{
-					lock:['noProbs'],
+					lock: ['noProbs'],
 					requiresFlag: 'killedGoblins',
-					pickupItem:'leatherArmor',
+					pickupItem: 'leatherArmor',
 				}
 			]
 		})
@@ -697,7 +505,7 @@ const house: Scene = {
 scenes.set('house', house)
 
 const throne: Scene = {
-	displayName:'Bramblemoor Throne Room',
+	displayName: 'Bramblemoor Throne Room',
 	onEnterScene(player) {
 		if (globalFlags.has('placedMedallion')) {
 			player.sceneTexts.push("The dishevelled king turns to you and opens his arms as if to welcome you back. 'Stranger. You have done my bidding, but your fate is sealed. I have no time for pathetic weaklings like you. Prepare yourself. I am sending you to a place from which there is no return.")
@@ -742,7 +550,7 @@ const throne: Scene = {
 }
 
 const realmOfMadness: Scene = {
-	displayName:'The Realm of Madness',
+	displayName: 'The Realm of Madness',
 	onEnterScene(player) {
 		player.sceneTexts.push('your in the realm')
 	},
@@ -753,7 +561,7 @@ const realmOfMadness: Scene = {
 scenes.set('realmOfMadness', realmOfMadness)
 
 const forestPassage: Scene = {
-	displayName:'Hidden Passage',
+	displayName: 'Hidden Passage',
 	onEnterScene(player) {
 		if (!player.flags.has('gotFreeStarterWeapon')) {
 			player.sceneTexts.push("After what feels like hours scrambling in the fetid soil and dodging the bites of the foul crawling creatures that call the forest home, you stumble upon an entrace.")
@@ -809,7 +617,7 @@ const forestPassage: Scene = {
 }
 
 const goblinCamp: Scene = {
-	displayName:'Goblin Campsite',
+	displayName: 'Goblin Campsite',
 	onEnterScene(player) {
 		if (!player.flags.has('killedGoblins')) {
 			player.sceneTexts.push("Urged on by by your own fear and by some unknown inspiration, you fumble your way through the darkness towards the light. You are blinded as you step through and are greeted with the sight of a ramshackle encampment")
@@ -856,7 +664,7 @@ const goblinCamp: Scene = {
 }
 
 const tunnelChamber: Scene = {
-	displayName:'Bramblemor Dungeon',
+	displayName: 'Bramblemor Dungeon',
 	onEnterScene(player) {
 		if (player.previousScene == 'throne') {
 			player.sceneTexts.push("You wend your way down a neverending series of corridors and pathways that seem to go on for an enternity. It becomes narrower and narrower, and the heat becomes almost unbearable. The path suddenly opens into a great chamber.")
@@ -914,7 +722,7 @@ const tunnelChamber: Scene = {
 }
 
 const armory: Scene = {
-	displayName:'Dev Room',
+	displayName: 'Dev Room',
 	onEnterScene(player) {
 		player.sceneTexts.push("Grab some equipment!")
 	},
@@ -925,7 +733,7 @@ const armory: Scene = {
 				grantsImmunity: true,
 				performAction() {
 					const tId = id as ItemId
-					equipItem(player,items[tId])
+					equipItem(player, items[tId])
 					// player.inventory.weapon.itemId = tId
 					// player.inventory.weapon.warmup = weapons[tId].warmup ?? 0
 					// player.inventory.weapon.cooldown = 0

@@ -2,7 +2,7 @@
 
 import type { ActiveEnemy, EnemyTemplateId } from './server/enemies';
 import type { EquipmentSlot, Item, ItemId, ItemState } from './server/items';
-import type { SceneId, VisualActionSource } from './server/scenes';
+import type { SceneId } from './server/scenes';
 import type { Flag, GlobalFlag, HeroName, Player } from './server/users';
 
 

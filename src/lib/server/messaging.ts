@@ -1,7 +1,8 @@
 import type { BattleAnimation, EnemyInClient, GameActionSentToClient, LandscapeImage } from '$lib/utils';
 import { activeEnemies, addAggro, damagePlayer, enemiesInScene, getAggroForPlayer, takePoisonDamage } from './enemies';
 import { items } from './items';
-import { convertServerActionToClientAction, convertVasToClient, forest, scenes, type VisualActionSource, type VisualActionSourceInClient } from './scenes';
+import { type VisualActionSourceInClient, convertServerActionToClientAction, convertVasToClient } from './logic';
+import { scenes, forest } from './scenes';
 import { activePlayers, globalFlags, playerItemStates, users, type HeroName, type Player, type GameAction, activePlayersInScene, type PlayerInClient, type Flag, type GlobalFlag } from './users';
 
 export const FAKE_LATENCY = 50;

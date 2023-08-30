@@ -963,10 +963,11 @@
 		margin-top:3px;
 		display: flex;
 		flex-wrap: wrap;
-		gap:3px;
+		gap:5px;
 	}
 	.vasResponse{
-		padding:4px;
-		max-width:30ch;
+		padding-inline:6px;
+		padding-block:2px;
+		/* max-width:30ch; */
 	}
 </style>

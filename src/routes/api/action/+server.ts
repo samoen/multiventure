@@ -1,10 +1,9 @@
-import { handleAction, updateAllPlayerActions, updatePlayerActions } from '$lib/server/logic';
+import { getServerActionsMetRequirementsFromVases, handleAction, updateAllPlayerActions, updatePlayerActions } from '$lib/server/logic';
 import { FAKE_LATENCY, buildNextMessage, pushHappening, sendEveryoneWorld } from '$lib/server/messaging';
 import { users, type GameAction } from '$lib/server/users';
 import { isGameActionSelected } from '$lib/utils';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getServerActionsMetRequirementsFromVases } from '$lib/server/scenes';
 
 export const POST = (async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));

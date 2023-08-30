@@ -1,10 +1,10 @@
 import { goto } from "$app/navigation"
-import type { AggroModifier, BattleAnimation, BattleEvent, HealthModifier, StatusEffect, StatusModifier, UnitId } from "$lib/utils"
+import type { AggroModifier, AnySprite, BattleAnimation, BattleEvent, GameActionSentToClient, HealthModifier, StatusEffect, StatusModifier, UnitId, VisualActionSourceId } from "$lib/utils"
 import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, infightDamage, modifyAggroForPlayer } from "./enemies"
-import { items, type Item, equipItem } from "./items"
+import { items, type Item, equipItem, checkHasItem, type ItemId } from "./items"
 import { pushHappening } from "./messaging"
 import { scenes, type SceneId } from "./scenes"
-import { users, type Player, playerItemStates, activePlayersInScene, type GameAction, healPlayer } from "./users"
+import { users, type Player, playerItemStates, activePlayersInScene, type GameAction, healPlayer, type Flag, type MiscPortrait } from "./users"
 
 export function updateAllPlayerActions() {
 	for (const allPlayer of users.values()) {
@@ -475,3 +475,195 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 		leavingScene:leavingScene,
 	})
 }
+
+export function getServerActionsMetRequirementsFromVases(vases: VisualActionSource[], player: Player): GameAction[] {
+	let validActionsFromVases: GameAction[] = []
+	for (const vas of vases) {
+		let acts = getValidUnlockableServerActionsFromVas(vas, player)
+		for (const act of acts) {
+				validActionsFromVases.push(act.serverAct)
+		}
+	}
+	return validActionsFromVases
+}
+
+
+export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, player: Player): UnlockableAction[] {
+	let validUnlockableActions: UnlockableAction[] = []
+	if (vas.actionsWithRequirements) {
+		for (const unlockableActData of vas.actionsWithRequirements) {
+			let passedRequirements = true
+			if (unlockableActData.requiresGear) {
+				for (const requiredItem of unlockableActData.requiresGear) {
+					if (!checkHasItem(player, requiredItem)) {
+						passedRequirements = false
+						break
+					}
+				}
+			}
+			if (unlockableActData.requiresFlag != undefined && !player.flags.has(unlockableActData.requiresFlag)) {
+				passedRequirements = false
+			}
+			if (passedRequirements) {
+				let ga : GameAction
+				if(unlockableActData.serverAct){
+					ga = unlockableActData.serverAct
+				}else if(unlockableActData.pickupItem){
+					let id = unlockableActData.pickupItem
+					ga = {
+						buttonText: `Equip ${id}`,
+						performAction() {
+							return {
+								source: { kind: 'player', entity: player },
+								target: { kind: 'vas', entity: vas },
+								behavior: { kind: 'melee' },
+								takesItem: items[id]
+							} satisfies BattleEvent
+						},	
+					}
+				}else if(unlockableActData.travelTo){
+					let travelTo = unlockableActData.travelTo
+					let scene = scenes.get(travelTo)
+					if(!scene)continue
+
+					ga = {
+						buttonText: `Travel to ${scene.displayName}`,
+						performAction() {
+							return {
+								behavior: { kind: 'travel', goTo: travelTo },
+								source: { kind: 'player', entity: player },
+								target: { kind: 'vas', entity: vas }
+							} satisfies BattleEvent
+						},
+					}
+				}
+				else{
+					continue
+				}
+
+				let unlockableAction : UnlockableAction = {
+					serverAct:ga,
+					lock:unlockableActData.lock,
+					lockHandle:unlockableActData.lockHandle,
+					startsLocked:unlockableActData.startsLocked,
+					unlock:unlockableActData.unlock,
+				}
+				validUnlockableActions.push(unlockableAction)
+			}
+		}
+	}
+	return validUnlockableActions
+}
+
+
+export function convertServerActionToClientAction(sa: GameAction): GameActionSentToClient {
+	return {
+
+		buttonText: sa.buttonText,
+		slot: sa.slot,
+		target: sa.target,
+	}
+}
+
+export function convertVasToClient(vas: VisualActionSource, player: Player): VisualActionSourceInClient {
+	let validUnlockableActions = getValidUnlockableServerActionsFromVas(vas, player)
+
+	let validUnlockableClientActions: UnlockableClientAction[] = []
+	validUnlockableClientActions = convertUnlockableActionsToClient(validUnlockableActions)
+
+	let startText = vas.startText
+	let responses: ConversationResponse[] = []
+	if (vas.responses) responses = vas.responses
+	let detectStep = undefined
+	if (vas.detect) {
+		if (player.flags.has(vas.detect.flag)) {
+			detectStep = vas.detect.flag
+			responses = vas.detect.responses
+			startText = vas.detect.startText
+		}
+	}
+
+	let result = {
+		id: vas.unitId,
+		displayName:vas.displayName,
+		startText: startText,
+		responses: responses,
+		sprite: vas.sprite,
+		portrait: vas.portrait,
+		startsLocked: vas.startsLocked,
+		lockHandle: vas.lockHandle,
+		actionsInClient: validUnlockableClientActions,
+		detectStep: detectStep,
+	} satisfies VisualActionSourceInClient
+	return result
+}
+
+export function convertUnlockableActionsToClient(sUnlockables: (UnlockableAction[] | undefined)): UnlockableClientAction[] {
+	let clientUnlockables: UnlockableClientAction[] = []
+	if (!sUnlockables) return clientUnlockables
+	return sUnlockables.map(u => {
+		let clientUnlockable: UnlockableClientAction = {
+			lock: u.lock,
+			unlock: u.unlock,
+			startsLocked: u.startsLocked,
+			lockHandle: u.lockHandle,
+			clientAct: convertServerActionToClientAction(u.serverAct)
+		}
+		return clientUnlockable
+	})
+}
+
+export type VisualActionSource = {
+	unitId: VisualActionSourceId
+	displayName:string
+	sprite: AnySprite
+	portrait?: MiscPortrait
+	actionsWithRequirements?: UnlockableActionData[]
+	startText: string,
+	responses?: ConversationResponse[]
+	detect?: { flag: Flag, startText: string, responses: ConversationResponse[] }
+	startsLocked?: boolean
+	lockHandle?: string
+}
+
+export type VisualActionSourceInClient = {
+	displayName:string
+	startsLocked?: boolean
+	lockHandle?: string
+	id: VisualActionSourceId
+	sprite: AnySprite
+	portrait?: MiscPortrait
+	actionsInClient: UnlockableClientAction[]
+	startText: string,
+	responses: ConversationResponse[]
+	detectStep?: Flag
+
+}
+
+export type Lockability = {
+	lockHandle?: string,
+	unlock?: string[],
+	lock?: string[]
+	startsLocked?: boolean,
+}
+
+export type UnlockableActionData = {
+	serverAct?: GameAction
+	requiresFlag?: Flag
+	requiresGear?: ItemId[]
+	pickupItem?: ItemId
+	travelTo?: SceneId
+} & Lockability
+
+export type UnlockableAction = {
+	serverAct: GameAction
+} & Lockability
+
+export type UnlockableClientAction = {
+	clientAct: GameActionSentToClient,
+} & Lockability
+
+export type ConversationResponse = {
+	responseText: string,
+	retort: string,
+} & Lockability
