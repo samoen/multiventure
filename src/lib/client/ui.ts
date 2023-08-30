@@ -24,7 +24,6 @@ import flame from '$lib/assets/extras/flame.png';
 import heal from '$lib/assets/extras/heal.png';
 import lighthouse from '$lib/assets/scenery/lighthouse.png';
 import armor from '$lib/assets/scenery/armor.png';
-import clubSlot from '$lib/assets/equipment/club-small.png';
 import club from '$lib/assets/extras/club.png';
 import type { EquipmentSlot, Inventory, ItemId, ItemIdForSlot, ItemState, ItemStateForSlot } from '$lib/server/items';
 import { crossfade } from "svelte/transition";
@@ -135,14 +134,26 @@ export function actionsForSlot(lm: MessageFromServer | undefined, equipmentSlot:
     if (!lm) return []
     return lm?.itemActions.filter(ia => ia.slot == equipmentSlot)
 }
-export let typedInventory = derived(lastMsgFromServer, ($lastMsgFromServer) => {
-    let map = new Map<EquipmentSlot, ItemState>()
+export let typedInventory = derived([
+    lastMsgFromServer,
+    waitingForMyAnimation,
+    clientState,
+], ([
+    $lastMsgFromServer,
+    $waitingForMyAnimation,
+    $clientState,
+]) => {
+    let map = new Map<EquipmentSlot, ({itemState:ItemState, disabled:boolean})>()
     if (!$lastMsgFromServer) {
         return map
     }
     for (const [key, value] of Object.entries($lastMsgFromServer.yourInfo.inventory)) {
         let tKey = key as EquipmentSlot
-        map.set(tKey, value)
+        let d = (!actionsForSlot($lastMsgFromServer, tKey) ||
+        !actionsForSlot($lastMsgFromServer, tKey).length ||
+        $waitingForMyAnimation ||
+        $clientState.waitingForMyEvent)
+        map.set(tKey, {itemState:value,disabled:d})
     }
     return map
 })
@@ -434,7 +445,6 @@ export const anySprites: Record<AnySprite, string> = {
     castle: lighthouse,
     general: general,
     club: club,
-    clubSlot: clubSlot,
     armorStand: armor,
 }
 

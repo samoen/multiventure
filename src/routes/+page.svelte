@@ -35,29 +35,19 @@
 		wepSlotActions,
 		animationsInWaiting,
 		worldReceived,
-
 		visualLandscape,
-
 		visualOpacity,
-
 		visualSceneLabel,
-
 		allies,
-
 		enemies,
-
 		vases
-
-
-
-
-
-
 	} from '$lib/client/ui';
 	import type { MessageFromServer } from '$lib/server/messaging';
 	import { onMount, tick } from 'svelte';
 	import { flip } from 'svelte/animate';
-	import { derived, writable, type Writable } from 'svelte/store';
+	import clubSlot from '$lib/assets/equipment/club-small.png';
+	import fireballSlot from '$lib/assets/equipment/fireball.png';
+	import daggerSlot from '$lib/assets/equipment/dagger-human.png';
 	import plainsLandscape from '$lib/assets/landscapes/landscape-plain.webp';
 	import castleLandscape from '$lib/assets/landscapes/landscape-castle.webp';
 	import grimForestLandscape from '$lib/assets/landscapes/grim-altar.jpg';
@@ -65,6 +55,7 @@
 	import type { BattleAnimation, DataFirstLoad, LandscapeImage } from '$lib/utils';
 	import VisualActionSource from '$lib/Components/VisualActionSource.svelte';
 	import { fade } from 'svelte/transition';
+	import type { ItemId } from '$lib/server/items';
 
 	export let data: DataFirstLoad;
 	let signupInput: string;
@@ -77,7 +68,6 @@
 	let happenings: HTMLElement;
 	let sceneTexts: HTMLElement;
 	let autoSignup: boolean = true;
-	
 
 	onMount(() => {
 		console.log('mounted with ssr data ' + JSON.stringify(data));
@@ -269,18 +259,27 @@
 		subscribeEventsIfNotAlready();
 	}
 
-	function getLandscape(key:LandscapeImage):string{
-		if(key == 'plains'){
-			return plainsLandscape
-		}else if(key == 'castle'){
-			return castleLandscape
-		}else if(key == 'grimForest'){
-			return grimForestLandscape
-		}else if(key == 'bridge'){
-			return bridgeLandscape
+	function getLandscape(key: LandscapeImage): string {
+		if (key == 'plains') {
+			return plainsLandscape;
+		} else if (key == 'castle') {
+			return castleLandscape;
+		} else if (key == 'grimForest') {
+			return grimForestLandscape;
+		} else if (key == 'bridge') {
+			return bridgeLandscape;
 		}
-		return plainsLandscape
+		return plainsLandscape;
 	}
+	function getSlotImage(id: ItemId): string {
+		if (id == 'club') return clubSlot;
+		if (id == 'dagger') return daggerSlot;
+		if (id == 'fireStaff') return fireballSlot;
+		return clubSlot;
+	}
+	// const itemSlotImages : Record<ItemId,string> = {
+
+	// }
 </script>
 
 <!-- <h3>Status: {clientState.status}</h3> -->
@@ -348,15 +347,13 @@
 			}}
 			class:noOpacity={$visualOpacity}
 		>
-		<div class="imageBackground">
-			<img  src={getLandscape($visualLandscape)} alt='gb'>
-			<div class="bgGrad" ></div>
-		</div>
+			<div class="imageBackground">
+				<img src={getLandscape($visualLandscape)} alt="gb" />
+				<div class="bgGrad" />
+			</div>
 			<div class="units">
 				{#each $allies as p (p.id)}
-				<div class="unitHolder" 
-				animate:flip
-					>
+					<div class="unitHolder" animate:flip>
 						<Unit hostId={p.id} />
 					</div>
 				{/each}
@@ -426,63 +423,23 @@
 			</div>
 		</div>
 	</div>
-	<div class="slotButtons">
-		{#each $typedInventory as [key, value]}
-			{#if actionsForSlot($lastMsgFromServer, key).length || numberShownOnSlot(value)}
-				<button
-					class="slotButton"
-					class:activeSlotButton={$latestSlotButtonInput == key}
-					type="button"
-					disabled={!actionsForSlot($lastMsgFromServer, key) ||
-						!actionsForSlot($lastMsgFromServer, key).length ||
-						$waitingForMyAnimation ||
-						$clientState.waitingForMyEvent}
-					on:click={() => {
-						let wepSlotActions = actionsForSlot($lastMsgFromServer, key);
-						if (!wepSlotActions || !wepSlotActions.length) return;
-						const oneChoice = wepSlotActions.length == 1;
-						const onlyAction = wepSlotActions.at(0);
-						if (oneChoice && onlyAction) {
-							choose(onlyAction);
-							$latestSlotButtonInput = 'none';
-							return;
-						}
-						$latestSlotButtonInput = key;
-					}}
-					>{$lastMsgFromServer.yourInfo.inventory[key].itemId}
-					{numberShownOnSlot($lastMsgFromServer.yourInfo.inventory[key]) ?? ''}
-					{stockDotsOnSlotButton($lastMsgFromServer.yourInfo.inventory[key])}
-				</button>
-			{/if}
-		{/each}
-		{#each $slotlessBattleActions as act}
-			<button
-				class="slotButton"
-				disabled={!$slotlessBattleActions ||
-					$waitingForMyAnimation ||
-					$clientState.waitingForMyEvent}
-				on:click={() => {
-					// if (a) {
-					choose(act);
-					$latestSlotButtonInput = 'none';
-					// }
-				}}>{act.buttonText}</button
-			>
-		{/each}
-	</div>
 	{#if $selectedDetail && $selectedDetail.kind == 'vup'}
 		<div class="selectedDetails">
 			<div class="selectedPortrait">
-				<img class="portrait" src={$selectedDetail.entity.actual.portrait} alt="portrait" />
+				<div class="portrait">
+					<img src={$selectedDetail.entity.actual.portrait} alt="portrait" />
+				</div>
+				<div class="underPortrait">
+					<strong>
+						{$selectedDetail.entity.actual.kind == 'player'
+							? $selectedDetail.entity.actual.info.heroName
+							: $selectedDetail.entity.actual.enemy.name}
+					</strong>
+				</div>
 			</div>
-			<div class="selectedRest">
+			<div class="vupSelectedRest">
 				<div class="selectedStats">
 					{#if $selectedDetail.entity.actual.kind == 'player'}
-						<div>
-							<strong>
-								{$selectedDetail.entity.actual.info.heroName}
-							</strong>
-						</div>
 						<div>
 							{$selectedDetail.entity.displayHp}/{$selectedDetail.entity.maxHp} hp
 						</div>
@@ -508,7 +465,7 @@
 						</div>
 						<!-- <div>
 							<button type="button">show gear</button>
-							</div> -->
+						</div> -->
 					{/if}
 					{#if $selectedDetail.entity.actual.kind == 'enemy'}
 						<div>
@@ -536,18 +493,81 @@
 						</div>
 					{/if}
 				</div>
+				<div class="slotButtons">
+					{#each $typedInventory as [key, value]}
+						<!-- {#if actionsForSlot($lastMsgFromServer, key).length || numberShownOnSlot(value)} -->
+						<button
+							class="slotButton"
+							class:activeSlotButton={$latestSlotButtonInput == key}
+							type="button"
+							disabled={value.disabled}
+							on:click={() => {
+								let wepSlotActions = actionsForSlot($lastMsgFromServer, key);
+								if (!wepSlotActions || !wepSlotActions.length) return;
+								const oneChoice = wepSlotActions.length == 1;
+								const onlyAction = wepSlotActions.at(0);
+								if (oneChoice && onlyAction) {
+									choose(onlyAction);
+									$latestSlotButtonInput = 'none';
+									return;
+								}
+								$latestSlotButtonInput = key;
+							}}
+						>
+							<img
+								class="slotImg"
+								class:halfOpacity={value.disabled}
+								src={getSlotImage($lastMsgFromServer.yourInfo.inventory[key].itemId)}
+								alt="a slot"
+							/>
+							<span class="slotCounter"
+								>{numberShownOnSlot($lastMsgFromServer.yourInfo.inventory[key]) ?? ''}</span
+							>
+							<span class="slotItemname">{$lastMsgFromServer.yourInfo.inventory[key].itemId}</span>
+							<span class="slotStockDots"
+								>{stockDotsOnSlotButton($lastMsgFromServer.yourInfo.inventory[key])}</span
+							>
+						</button>
+						<!-- {/if} -->
+					{/each}
+					{#each $slotlessBattleActions as act}
+						<button
+							class="slotButton"
+							disabled={$waitingForMyAnimation || $clientState.waitingForMyEvent}
+							on:click={() => {
+								choose(act);
+								$latestSlotButtonInput = 'none';
+							}}
+						>
+							<img
+								class="slotImg"
+								class:halfOpacity={$waitingForMyAnimation || $clientState.waitingForMyEvent}
+								src={clubSlot}
+								alt="a slot"
+							/>
+							<span class="slotItemname">{act.buttonText}</span>
+						</button>
+					{/each}
+				</div>
 			</div>
 		</div>
 	{/if}
 	{#if $selectedVisualActionSourceState && $selectedDetail && $selectedDetail.kind == 'vas'}
 		<div class="selectedDetails">
 			<div class="selectedPortrait">
-				<img
-					src={$selectedDetail.entity.portrait
-						? miscPortraits[$selectedDetail.entity.portrait]
-						: anySprites[$selectedDetail.entity.sprite]}
-					alt="place"
-				/>
+				<div class="portrait">
+					<img
+						src={$selectedDetail.entity.portrait
+							? miscPortraits[$selectedDetail.entity.portrait]
+							: anySprites[$selectedDetail.entity.sprite]}
+						alt="place"
+					/>
+				</div>
+				<div class="underPortrait">
+					<strong>
+						{$selectedDetail.entity.id}
+					</strong>
+				</div>
 			</div>
 			<div class="selectedRest">
 				<div class="vasdPromptAndButtons">
@@ -565,7 +585,7 @@
 										$selectedDetail.kind != 'vas' ||
 										$waitingForMyAnimation ||
 										$clientState.waitingForMyEvent
-									){
+									) {
 										return;
 									}
 									$lastUnitClicked = $selectedDetail.entity.id;
@@ -666,12 +686,12 @@
 		touch-action: manipulation;
 	}
 	.wrapGameField :global(.noOpacity) {
-        opacity: 0;
-    }
+		opacity: 0;
+	}
 	.wrapGameField :global(.projectileSized) {
-		height:clamp(25px,5vw + 1px,50px);
-		width:clamp(25px,5vw + 1px,50px);
-    }
+		height: clamp(25px, 5vw + 1px, 50px);
+		width: clamp(25px, 5vw + 1px, 50px);
+	}
 	h3 {
 		margin-top: 15px;
 		margin-bottom: 1px;
@@ -684,9 +704,6 @@
 		border: 1px solid black;
 		overflow-y: auto;
 		min-width: 150px;
-	}
-	button {
-		margin: 5px;
 	}
 	p {
 		margin: 5px;
@@ -715,6 +732,9 @@
 		margin-bottom: 10px;
 		background-color: cadetblue;
 		border: 1px solid black;
+	}
+	.sceneButtons > button {
+		margin: 5px;
 	}
 	/* .actionButtons {
 		display: inline-block;
@@ -748,39 +768,38 @@
 		background-color: black;
 		/* overflow-x: hidden; */
 	}
-	.imageBackground{
-		display:block;
+	.imageBackground {
+		display: block;
 		background-color: burlywood;
-		position:absolute;
-		inset:0;
-		overflow:hidden;
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: flex-start;
-		
 	}
-	.bgGrad{
+	.bgGrad {
 		/* z-index:2 */
-		position:absolute;
+		position: absolute;
 		/* justify-self: flex-end; */
-		margin-top:450px;
+		margin-top: 450px;
 		/* inset:0; */
-		height:100px;
-		width:100%;
+		height: 100px;
+		width: 100%;
 		/* background: linear-gradient(to bottom, transparent 0%, transparent 70%, burlywood 80%,burlywood 100%); */
 		background: linear-gradient(to bottom, transparent 0%, burlywood 100%);
 	}
-	.imageBackground > img{
+	.imageBackground > img {
 		/* display:inline-block; */
 		min-width: 100vw;
 		/* object-fit:cover; */
 		object-position: center;
-		margin-inline:auto;
+		margin-inline: auto;
 		/* width:100%; */
 	}
 	.visual {
-		position:relative;
+		position: relative;
 		transition: opacity 0.6s ease-in-out;
 		/* background-repeat:no-repeat; */
 		/* background-size:auto auto; */
@@ -788,7 +807,7 @@
 		/* background-position: center center; */
 		background-color: burlywood;
 		display: grid;
-		column-gap:1px;
+		column-gap: 1px;
 		grid-template-columns: 1fr 1fr;
 		/* gap:4px; */
 		justify-content: center;
@@ -808,15 +827,15 @@
 		/* background-color: beige; */
 		row-gap: 2px;
 		/* column-gap: 2px; */
-		grid-template-columns: repeat(auto-fit, clamp(100px, 50%, 240px));
+		grid-template-columns: repeat(auto-fit, clamp(100px, 50%, 200px));
 		justify-content: center;
 		/* align-items: start; */
 	}
 	.centerPlaceHolder {
-		position:absolute;
+		position: absolute;
 		/* background-color: aqua; */
-		top:50%;
-		left:50%;
+		top: 50%;
+		left: 50%;
 	}
 	.centerField {
 		height: 100%;
@@ -827,68 +846,102 @@
 		width: 100%;
 	}
 	.slotButtons {
-		background-color: bisque;
 		display: flex;
-		justify-content: center;
-		/* height:5vh; */
-		/* border: 2px solid brown; */
+		flex-wrap: wrap;
+		align-items: flex-start;
+		gap: 2px;
+		border: 1px solid brown;
+		border-left: none;
 	}
 	.slotButton {
-		padding: 4px;
+		position: relative;
+		border: none;
+		background: none;
+		cursor: pointer;
+	}
+	.slotImg {
+		display: block;
+		border-radius: 15px;
+	}
+	.slotItemname {
+		position: absolute;
+		bottom: 0;
+		display: block;
+		color: white;
+	}
+	.slotCounter {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		text-align: center;
+		font-size: 30px;
+		z-index: 2;
+		color: gray;
+	}
+	.halfOpacity {
+		opacity: 0.5;
+	}
+	.slotStockDots {
+		z-index: 2;
+		color: white;
+		position: absolute;
+		top: 0;
+		left: 3px;
+		font-size: 30px;
+		font-weight: bold;
+		line-height: 1px;
 	}
 	.activeSlotButton {
 		border: 5px dotted yellow;
 	}
 	.selectedDetails {
-		background-color: beige;
+		background-color: burlywood;
 		display: flex;
-		align-items: flex-start;
+		position: relative;
 		height: 20vh;
-		/* height:400px; */
 	}
 	.selectedPortrait {
-		/* width: 20vw; */
 		flex-basis: 15%;
-		/* height: 100%; */
-		/* background-color: blueviolet; */
-		/* display:flex; */
-		/* justify-content: center; */
-		/* width:10vw; */
+		display: flex;
+		flex-direction: column;
 		height: 100%;
-		/* place-items: center; */
-		/* overflow:hidden; */
-		/* height: 20vh; */
+		justify-content: flex-start;
+		overflow: hidden;
 	}
-	.selectedPortrait > img {
-		display: block;
-		object-fit: cover;
-		/* height: 100%; */
-		/* background-color: brown; */
-		width: 100%;
+	.portrait {
+		flex-shrink: 1;
+		flex-grow: 1;
+		overflow: hidden;
+		border: 1px solid brown;
+	}
+	.portrait > img {
 		height: 100%;
-		/* width: 100%; */
-		/* max-height: 90%; */
-		/* max-width: 100%; */
+		width: 100%;
+		object-fit: cover;
+	}
+	.underPortrait {
+		text-align: center;
+		border: 1px solid brown;
+		border-top: none;
+	}
+	.vupSelectedRest {
+		flex-basis: 85%;
+		height: 100%;
+		display: flex;
 	}
 	.selectedRest {
 		flex-basis: 85%;
 		height: 100%;
-		/* padding:10px; */
-		/* width:80vw; */
 	}
 	.selectedStats {
 		display: flex;
 		flex-direction: column;
-		flex-wrap: wrap;
 		overflow-y: auto;
 		padding: 5px;
-		/* background-color: aquamarine; */
+		border: 1px solid brown;
+		border-left: none;
 	}
-	/* .visualActionSourceDetail { */
-	/* display: flex; */
-	/* height:15vh; */
-	/* background-color: burlywood; */
-	/* } */
 	.vasdPromptAndButtons {
 		padding: 10px;
 		display: flex;
@@ -896,15 +949,11 @@
 		flex-direction: column;
 		/* justify-content: space-around; */
 		overflow-y: auto;
+		border: 1px solid brown;
+		border-left: none;
 	}
 	.vasSpriteHolder {
 		display: grid;
 		place-items: center;
 	}
-
-	/* .vasdPrompt{
-	}
-	.vasdButtons{
-		display: flex;
-	} */
 </style>

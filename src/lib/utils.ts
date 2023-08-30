@@ -66,7 +66,6 @@ export type AggroModifierEvent = {
 export type AnySprite = 
 | 'castle' 
 | 'general' 
-| 'clubSlot' 
 | 'arrow' 
 | 'bomb' 
 | 'flame' 
