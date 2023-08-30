@@ -830,6 +830,7 @@
 		grid-template-columns: repeat(auto-fit, clamp(100px, 50%, 200px));
 		justify-content: center;
 		/* align-items: start; */
+		z-index:1;
 	}
 	.centerPlaceHolder {
 		position: absolute;
