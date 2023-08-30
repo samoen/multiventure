@@ -286,7 +286,6 @@
 {#if $clientState.loading}
 	<p>loading...</p>
 {/if}
-<br />
 {#if !$clientState.loading && !$lastMsgFromServer}
 	<p>Welcome! Please sign up with your hero name:</p>
 	<input type="text" bind:value={signupInput} />
@@ -322,7 +321,6 @@
 			{/each}
 		</div>
 	{/if}
-	<br />
 	<!-- {#if $lastMsgFromServer.itemActions.length}
 		<div class="actionButtons">
 			{#each $lastMsgFromServer.itemActions as op, i}
@@ -679,6 +677,8 @@
 	:global(body) {
 		background-color: aliceblue;
 		/* padding-inline: 5px; */
+		padding:0;
+		margin:0;
 	}
 	:global(*) {
 		box-sizing: border-box;
@@ -716,10 +716,9 @@
 	}
 	.sceneText {
 		white-space: pre-wrap;
-		margin-top: 0px;
-		margin-bottom: 0px;
 	}
 	.sceneTexts {
+		margin-top:5px;
 		height: calc(20vh);
 		overflow-y: auto;
 		/* height: 5; */
@@ -730,9 +729,9 @@
 	.sceneButtons {
 		/* height: 10vh; */
 		overflow-y: auto;
-		display: inline-block;
-		margin-top: 10px;
-		margin-bottom: 10px;
+		display: block;
+		/* margin-top: 4px; */
+		/* margin-bottom: 10px; */
 		background-color: cadetblue;
 		border: 1px solid black;
 	}
@@ -900,7 +899,7 @@
 		background-color: burlywood;
 		display: flex;
 		position: relative;
-		height: 20vh;
+		height: 25vh;
 	}
 	.selectedPortrait {
 		flex-basis: 15%;
@@ -955,12 +954,16 @@
 		border: 1px solid brown;
 		border-left: none;
 	}
+	.vasdPrompt{
+		white-space: pre-wrap;
+		line-height: 17px;
+	}
 	.vasSpriteHolder {
 		display: grid;
 		place-items: center;
 	}
 	.vasdButtons{
-		margin-top:3px;
+		margin-top:7px;
 		display: flex;
 		flex-wrap: wrap;
 		gap:5px;

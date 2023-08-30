@@ -67,7 +67,7 @@ const dead: Scene = {
 }
 
 
-const tutorial = {
+const tutorial: Scene = {
 	displayName: 'Tutorial',
 	onEnterScene(player) {
 		player.lastCheckpoint = `tutorial_${player.heroName}`
@@ -88,7 +88,7 @@ const tutorial = {
 				}
 
 			],
-			startText: `Look alive recruit! The first day of training can be the most dangerous of a guardsman's life. You must be ${player.heroName}, welcome aboard. In this barracks we wake up early, follow orders, and NEVER skip the tutorial. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.`,
+			startText: `Look alive recruit! The first day of training can be the most dangerous of a guardsman's life.\n\nYou must be ${player.heroName}, welcome aboard. In this barracks we wake up early, follow orders, and NEVER skip the tutorial. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.`,
 			responses: [
 				{
 					lockHandle: 'scared',
@@ -142,10 +142,11 @@ const tutorial = {
 		})
 
 	},
-} satisfies Scene
+}
 
-const trainingRoom1 = {
+const trainingRoom1: Scene = {
 	displayName: 'Training Room',
+	landscape: 'bridge',
 	solo: true,
 	onEnterScene(player) {
 		// if respawning from checkpoint we already beat the room
@@ -218,7 +219,7 @@ const trainingRoom1 = {
 		player.sceneTexts.push("Glornak falls down in a very convincing display.")
 		player.sceneTexts.push("Arthur: 'Great job! Let's switch up your equipment. Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you.'")
 	},
-} satisfies Scene
+}
 
 const trainingRoom2: Scene = {
 	displayName: 'Training Room',
@@ -353,7 +354,7 @@ export const forest: Scene = {
 }
 
 const castle: Scene = {
-	displayName: 'Castle Bramblemor',
+	displayName: 'Castle Bramblemore',
 	landscape: 'castle',
 	onEnterScene(player) {
 		if (player.previousScene == 'throne') {
@@ -408,17 +409,13 @@ const house: Scene = {
 	displayName: `Giselle's House`,
 	landscape: 'bridge',
 	onEnterScene(player) {
-		if (player.flags.has('killedGoblins')) {
-			player.sceneTexts.push(`Dear Sir ${player.heroName}! You return with the stench of goblin blood about yourself. Thank you for obtaining vengence on my behalf. My son had this set of leather armour. If only he had been wearing it when he went on his adventure.\n\nI bequeath it to you so that his legacy may live on. Good luck out there ${player.heroName}`)
-		} else
-			if (!player.flags.has('heardAboutHiddenPassage')) {
-				player.flags.add('heardAboutHiddenPassage')
-				player.sceneTexts.push("You come upon a beautiful little thatched roof cottage. The air is sweet with the smell of flowery perfume, but there is a sense of sadness in the air. You notice the door slightly ajar and knock on it quietly. There is no response.\n\nYou gently push the door open and find a woman sitting at a table alone, sobbing silently. Startled, she jumps from her seat. You hold your hands up as in a sign of concilation.")
-				// player.sceneTexts.push("The figure atop the throne opens its mouth and from it emerges something akin to speech, but with the qualities of a dying whisper. 'I am... or was.. the king of this wretched place.' The figure starts, haltingly. 'I... the forest.... there is a passage. Find it and return to me.' The figure falls silent and returns to its corpselike revery.");
-			}
-			else if (!player.flags.has('killedGoblins')) {
-				player.sceneTexts.push(`${player.heroName}... why do you return without the blood of those foul goblins on your hands? Leave me. I do not wish to see anyone while they still draw breath.`)
-			}
+		if (!player.flags.has('heardAboutHiddenPassage')) {
+			player.flags.add('heardAboutHiddenPassage')
+			player.sceneTexts.push("You come upon a beautiful little thatched roof cottage. The air is sweet with the smell of flowery perfume, but there is a sense of sadness in the air. You notice the door slightly ajar and knock on it quietly. There is no response.\n\nYou gently push the door open and find a woman sitting at a table alone, sobbing silently. Startled, she jumps from her seat. You hold your hands up as in a sign of concilation.")
+		}
+		else if (!player.flags.has('killedGoblins')) {
+			player.sceneTexts.push(`${player.heroName}... why do you return without the blood of those foul goblins on your hands? Leave me. I do not wish to see anyone while they still draw breath.`)
+		}
 	},
 	actions(player) {
 		player.visualActionSources.push({
@@ -442,13 +439,13 @@ const house: Scene = {
 				{
 					lockHandle: `reward`,
 					responseText: `What reward will I get`,
-					retort: `You can have my sons armor. If only he was wearing it`,
+					retort: `My son had this set of leather armour. If only he had been wearing it when he went on his adventure.`,
 					unlock: ['vasLeatherGift']
 				},
 			],
 			detect: {
 				flag: 'killedGoblins',
-				startText: `Dear Sir ${player.heroName}! You return with the stench of goblin blood about yourself. Thank you for obtaining vengence on my behalf. My son had this set of leather armour. If only he had been wearing it when he went on his adventure.\n\nI bequeath it to you so that his legacy may live on. Good luck out there ${player.heroName}`,
+				startText: `Dear Sir ${player.heroName}! You return with the stench of goblin blood about yourself. Thank you for obtaining vengence on my behalf. I bequeath the armor to you so that his legacy may live on. Good luck out there ${player.heroName}`,
 				responses: [
 					{
 						lockHandle: `noProbs`,
@@ -505,7 +502,7 @@ const house: Scene = {
 scenes.set('house', house)
 
 const throne: Scene = {
-	displayName: 'Bramblemoor Throne Room',
+	displayName: 'Bramblemore Throne Room',
 	onEnterScene(player) {
 		if (globalFlags.has('placedMedallion')) {
 			player.sceneTexts.push("The dishevelled king turns to you and opens his arms as if to welcome you back. 'Stranger. You have done my bidding, but your fate is sealed. I have no time for pathetic weaklings like you. Prepare yourself. I am sending you to a place from which there is no return.")
@@ -561,6 +558,7 @@ const realmOfMadness: Scene = {
 scenes.set('realmOfMadness', realmOfMadness)
 
 const forestPassage: Scene = {
+	landscape: 'grimForest',
 	displayName: 'Hidden Passage',
 	onEnterScene(player) {
 		if (!player.flags.has('gotFreeStarterWeapon')) {
@@ -664,7 +662,7 @@ const goblinCamp: Scene = {
 }
 
 const tunnelChamber: Scene = {
-	displayName: 'Bramblemor Dungeon',
+	displayName: 'Bramblemore Dungeon',
 	onEnterScene(player) {
 		if (player.previousScene == 'throne') {
 			player.sceneTexts.push("You wend your way down a neverending series of corridors and pathways that seem to go on for an enternity. It becomes narrower and narrower, and the heat becomes almost unbearable. The path suddenly opens into a great chamber.")
