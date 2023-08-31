@@ -463,7 +463,6 @@ const house: Scene = {
 			startText: 'Go back to the castle grounds',
 			actionsWithRequirements: [{ travelTo: 'castle' }]
 		})
-		player.sceneActions.push({ buttonText: 'Leave the house', goTo: 'castle', })
 		if (!player.flags.has('acceptedGoblinQuest')) {
 			player.sceneActions.push({
 				buttonText: `'I will'`,
@@ -487,16 +486,6 @@ const house: Scene = {
 				}
 			]
 		})
-		if (player.flags.has('killedGoblins') && player.inventory.body.itemId != 'leatherArmor') {
-			player.sceneActions.push({
-				buttonText: 'Accept the gift',
-				performAction() {
-					player.inventory.body.itemId = 'leatherArmor'
-					player.sceneTexts.push(`${player.heroName}: Thank you good lady. I will not let his death be in vain.\n\nYou put on the leather armour and it fits snugly around you.`)
-				},
-			})
-		}
-
 	},
 }
 scenes.set('house', house)

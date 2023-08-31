@@ -362,6 +362,7 @@ export function equipItem(player:Player, item:Item){
 	player.inventory[item.slot].itemId = item.id
 	player.inventory[item.slot].warmup = item.warmup ?? 0
 	player.inventory[item.slot].cooldown = 0
+	player.inventory[item.slot].stock = item.startStock
 	// if(weapons.hasOwnProperty(id)){
 	// 	player.inventory.weapon.itemId = id as ItemIdForSlot<'weapon'>
 	// }

@@ -163,7 +163,7 @@
 	}
 	.selected {
 		/* border: 1px dashed yellow; */
-		box-shadow: 0 0 4px yellow;
+		box-shadow: 0 0 20px rgb(0,0,0,0.4);
 	}
 	.unitAndArea {
 		display: flex;
