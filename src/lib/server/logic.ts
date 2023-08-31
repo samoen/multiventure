@@ -57,11 +57,15 @@ export function updatePlayerActions(player: Player) {
 			{
 				buttonText: 'wait',
 				provoke: 0,
+				speed:999,
+				performAction() {
+					return {
+						behavior:{kind:'selfInflicted',extraSprite:'shield'},
+						source:{kind:'player',entity:player},
+					}satisfies BattleEvent
+				},
 			}
 		)
-		// if (player.currentScene != 'armory') {
-		// 	return
-		// }
 	}
 
 	scenes.get(player.currentScene)?.actions(player)
@@ -611,7 +615,7 @@ export type VisualActionSource = {
 	actionsWithRequirements?: UnlockableActionData[]
 	startText: string,
 	responses?: ConversationResponse[]
-	detect?: { flag: Flag, startText: string, responses?: ConversationResponse[], unlockVasOnDetect:VisualActionSourceId }
+	detect?: { flag: Flag, startText: string, responses?: ConversationResponse[], unlockVasOnDetect?:VisualActionSourceId[] }
 	startsLocked?: boolean
 	lockHandle?: string
 }
@@ -627,7 +631,7 @@ export type VisualActionSourceInClient = {
 	startText: string,
 	responses: ConversationResponse[]
 	detectStep?: Flag
-	unlockOnSee?: VisualActionSourceId
+	unlockOnSee?: VisualActionSourceId[]
 }
 
 export type UnlockableActionData = {

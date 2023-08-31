@@ -448,9 +448,11 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                         isLocked:vas.startsLocked ?? false,
                     })
                     if(vas.unlockOnSee){
-                        let toUnlock = cs.get(vas.unlockOnSee)
-                        if(toUnlock){
-                            toUnlock.isLocked = false
+                        for (const vId of vas.unlockOnSee){
+                            let toUnlock = cs.get(vId)
+                            if(toUnlock){
+                                toUnlock.isLocked = false
+                            }
                         }
                     }
                 }
