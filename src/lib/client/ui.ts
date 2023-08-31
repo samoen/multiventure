@@ -25,6 +25,12 @@ import heal from '$lib/assets/extras/heal.png';
 import lighthouse from '$lib/assets/scenery/lighthouse.png';
 import armor from '$lib/assets/scenery/armor.png';
 import club from '$lib/assets/extras/club.png';
+import clubSlot from '$lib/assets/equipment/club-small.png';
+import shieldSlot from '$lib/assets/equipment/heater-shield.png';
+import blankSlot from '$lib/assets/equipment/blank-attack.png';
+import poisonDartSlot from '$lib/assets/equipment/dagger-thrown-poison-human.png';
+import fireballSlot from '$lib/assets/equipment/fireball.png';
+import daggerSlot from '$lib/assets/equipment/dagger-human.png';
 import type { EquipmentSlot, Inventory, ItemId, ItemState } from '$lib/server/items';
 import { crossfade } from "svelte/transition";
 import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easing";
@@ -116,10 +122,12 @@ export const vases = derived([visualActionSources, convoStateForEachVAS], ([$vis
     })
 });
 
-export function numberShownOnSlot(itemState: ItemState): number | undefined {
-    // if(!$lastMsgFromServer)return undefined
+export function numberShownOnSlot(itemState: ItemState): string | undefined {
+    // if(itemState.stock != undefined && itemState.stock < 1){
+    //     return '-'
+    // }
     const higherOfCooldownOrWarmup = Math.max(itemState.cooldown, itemState.warmup)
-    if (higherOfCooldownOrWarmup > 0) return higherOfCooldownOrWarmup
+    if (higherOfCooldownOrWarmup > 0) return `${higherOfCooldownOrWarmup}`
     return undefined
 }
 
@@ -131,6 +139,18 @@ export function stockDotsOnSlotButton(itemState: ItemState): string {
         }
     }
     return dots
+}
+
+function getSlotImage(id: ItemId): string {
+    if (id == 'club') return clubSlot;
+    if (id == 'dagger') return daggerSlot;
+    if (id == 'fireStaff') return fireballSlot;
+    if (id == 'bomb') return fireballSlot;
+    if (id == 'poisonDart') return poisonDartSlot;
+    if(id == 'bandage') return shieldSlot;
+    if(id == 'leatherArmor') return shieldSlot;
+    if(id == 'plateMail') return shieldSlot;
+    return blankSlot;
 }
 
 
@@ -153,17 +173,16 @@ export let typedInventory = derived([
     $waitingForMyAnimation,
     $clientState,
 ]) => {
-    let map = new Map<EquipmentSlot, ({itemState:ItemState, disabled:boolean})>()
+    let map = new Map<EquipmentSlot, ({itemState:ItemState, disabled:boolean, acts:GameActionSentToClient[], overlayNumber:string|undefined, dots:string, img:string})>()
     if (!$lastMsgFromServer) {
         return map
     }
     for (const [key, value] of Object.entries($lastMsgFromServer.yourInfo.inventory)) {
         let tKey = key as EquipmentSlot
-        let d = (!actionsForSlot($lastMsgFromServer, tKey) ||
-        !actionsForSlot($lastMsgFromServer, tKey).length ||
-        $waitingForMyAnimation ||
-        $clientState.waitingForMyEvent)
-        map.set(tKey, {itemState:value,disabled:d})
+        let acts = actionsForSlot($lastMsgFromServer, tKey) 
+        let d = (!acts.length|| $waitingForMyAnimation || $clientState.waitingForMyEvent)
+
+        map.set(tKey, {itemState:value,disabled:d,acts:acts, overlayNumber:numberShownOnSlot(value),dots:stockDotsOnSlotButton(value),img:getSlotImage(value.itemId)})
     }
     return map
 })

@@ -449,22 +449,6 @@ const house: Scene = {
 			}
 		})
 		player.visualActionSources.push({
-			unitId: 'vasGoCastle',
-			displayName: 'Castle',
-			sprite: 'castle',
-			startText: 'Go back to the castle grounds',
-			actionsWithRequirements: [{ travelTo: 'castle' }]
-		})
-		if (!player.flags.has('acceptedGoblinQuest')) {
-			player.sceneActions.push({
-				buttonText: `'I will'`,
-				performAction() {
-					player.flags.add('acceptedGoblinQuest')
-					player.sceneTexts.push(`${player.heroName}: 'Good lady. I will do this deed for you. No goblin scum will unpunished for this dark deed. I will return when I have silenced their gibberings.'`)
-				},
-			})
-		}
-		player.visualActionSources.push({
 			unitId: 'vasLeatherGift',
 			displayName: 'Reward',
 			sprite: 'armorStand',
@@ -476,6 +460,13 @@ const house: Scene = {
 					pickupItem: 'leatherArmor',
 				}
 			]
+		})
+		player.visualActionSources.push({
+			unitId: 'vasGoCastle',
+			displayName: 'Castle',
+			sprite: 'castle',
+			startText: 'Go back to the castle grounds',
+			actionsWithRequirements: [{ travelTo: 'castle' }]
 		})
 	},
 }

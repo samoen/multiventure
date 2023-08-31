@@ -40,19 +40,13 @@
 		allies,
 		enemies,
 		vases,
-
 		selectedVasResponsesToShow,
-
 		selectedVasActionsToShow
-
-
 	} from '$lib/client/ui';
 	import type { MessageFromServer } from '$lib/server/messaging';
 	import { onMount, tick } from 'svelte';
 	import { flip } from 'svelte/animate';
-	import clubSlot from '$lib/assets/equipment/club-small.png';
-	import fireballSlot from '$lib/assets/equipment/fireball.png';
-	import daggerSlot from '$lib/assets/equipment/dagger-human.png';
+	import blankSlot from '$lib/assets/equipment/blank-attack.png';
 	import plainsLandscape from '$lib/assets/landscapes/landscape-plain.webp';
 	import castleLandscape from '$lib/assets/landscapes/landscape-castle.webp';
 	import grimForestLandscape from '$lib/assets/landscapes/grim-altar.jpg';
@@ -275,15 +269,7 @@
 		}
 		return plainsLandscape;
 	}
-	function getSlotImage(id: ItemId): string {
-		if (id == 'club') return clubSlot;
-		if (id == 'dagger') return daggerSlot;
-		if (id == 'fireStaff') return fireballSlot;
-		return clubSlot;
-	}
-	// const itemSlotImages : Record<ItemId,string> = {
-
-	// }
+	
 </script>
 
 <!-- <h3>Status: {clientState.status}</h3> -->
@@ -497,53 +483,51 @@
 				</div>
 				<div class="slotButtons">
 					{#each $typedInventory as [slot, value]}
-						<!-- {#if actionsForSlot($lastMsgFromServer, key).length || numberShownOnSlot(value)} -->
-						<button
-							class="slotButton"
-							class:activeSlotButton={$latestSlotButtonInput == slot}
-							type="button"
-							disabled={value.disabled}
-							on:click={() => {
-								let slotActions = actionsForSlot($lastMsgFromServer, slot);
-								if (!slotActions || !slotActions.length) return;
-								const oneChoice = slotActions.length == 1;
-								const onlyAction = slotActions.at(0);
-								if (oneChoice && onlyAction) {
-									choose(onlyAction);
-									$latestSlotButtonInput = 'none';
-									return;
-								}
-								if($selectedDetail && $selectedDetail.kind == 'vup'){
-									let actForSelectedMatchingSlot = $selectedDetail.entity.actionsThatCanTargetMe.find(a=>{
-										if(a.slot && a.slot == slot){
-											return true
-										}
-										
-									})
-									if(actForSelectedMatchingSlot){
-										choose(actForSelectedMatchingSlot)
+						{#if value.overlayNumber != undefined || value.acts.length}
+							<button
+								class="slotButton"
+								class:activeSlotButton={$latestSlotButtonInput == slot}
+								type="button"
+								disabled={value.disabled}
+								on:click={() => {
+									let slotActions = value.acts;
+									if (!slotActions || !slotActions.length) return;
+									const oneChoice = slotActions.length == 1;
+									const onlyAction = slotActions.at(0);
+									if (oneChoice && onlyAction) {
+										choose(onlyAction);
 										$latestSlotButtonInput = 'none';
 										return;
 									}
-								}
-								$latestSlotButtonInput = slot;
-							}}
-						>
-							<img
-								class="slotImg"
-								class:halfOpacity={value.disabled}
-								src={getSlotImage($lastMsgFromServer.yourInfo.inventory[slot].itemId)}
-								alt="a slot"
-							/>
-							<span class="slotCounter"
-								>{numberShownOnSlot($lastMsgFromServer.yourInfo.inventory[slot]) ?? ''}</span
+									if ($selectedDetail && $selectedDetail.kind == 'vup') {
+										let actForSelectedMatchingSlot =
+											$selectedDetail.entity.actionsThatCanTargetMe.find((a) => {
+												if (a.slot && a.slot == slot) {
+													return true;
+												}
+											});
+										if (actForSelectedMatchingSlot) {
+											choose(actForSelectedMatchingSlot);
+											$latestSlotButtonInput = 'none';
+											return;
+										}
+									}
+									$latestSlotButtonInput = slot;
+								}}
 							>
-							<span class="slotItemname">{$lastMsgFromServer.yourInfo.inventory[slot].itemId}</span>
-							<span class="slotStockDots"
-								>{stockDotsOnSlotButton($lastMsgFromServer.yourInfo.inventory[slot])}</span
-							>
-						</button>
-						<!-- {/if} -->
+								<img
+									class="slotImg"
+									class:halfOpacity={value.disabled}
+									src={value.img}
+									alt="a slot"
+								/>
+								<span class="slotCounter">{value.overlayNumber ?? ''}</span>
+								<span class="slotItemname"
+									>{$lastMsgFromServer.yourInfo.inventory[slot].itemId}</span
+								>
+								<span class="slotStockDots">{value.dots}</span>
+							</button>
+						{/if}
 					{/each}
 					{#each $slotlessBattleActions as act}
 						<button
@@ -557,7 +541,7 @@
 							<img
 								class="slotImg"
 								class:halfOpacity={$waitingForMyAnimation || $clientState.waitingForMyEvent}
-								src={clubSlot}
+								src={blankSlot}
 								alt="a slot"
 							/>
 							<span class="slotItemname">{act.buttonText}</span>
@@ -614,7 +598,7 @@
 										}
 									}
 
-									$convoStateForEachVAS = $convoStateForEachVAS
+									$convoStateForEachVAS = $convoStateForEachVAS;
 									$visualActionSources = $visualActionSources;
 								}}>{act.buttonText}</button
 							>
@@ -625,7 +609,7 @@
 								type="button"
 								on:click={() => {
 									if (!$selectedDetail) return;
-									if($selectedDetail.kind != 'vas') return
+									if ($selectedDetail.kind != 'vas') return;
 
 									$lastUnitClicked = $selectedDetail.entity.id;
 									// let cs = $convoStateForEachVAS.get($selectedDetail.entity.id)
@@ -633,30 +617,30 @@
 									if (!state) return;
 									if (c.lock) {
 										for (const handleToLock of c.lock) {
-											state.lockedResponseHandles.set(handleToLock,true)
+											state.lockedResponseHandles.set(handleToLock, true);
 										}
 									}
 									if (c.unlock) {
 										for (const handleToUnlock of c.unlock) {
-											state.lockedResponseHandles.set(handleToUnlock,false)
+											state.lockedResponseHandles.set(handleToUnlock, false);
 										}
 									}
 									if (c.responseId) {
-										state.lockedResponseHandles.set(c.responseId,true)
+										state.lockedResponseHandles.set(c.responseId, true);
 									}
 									if (c.unlockVas) {
 										for (const handleToUnlock of c.unlockVas) {
-											let csToUnlock = $convoStateForEachVAS.get(handleToUnlock)
-											if(csToUnlock){
-												csToUnlock.isLocked = false
+											let csToUnlock = $convoStateForEachVAS.get(handleToUnlock);
+											if (csToUnlock) {
+												csToUnlock.isLocked = false;
 											}
 										}
 									}
 									if (c.lockVas) {
 										for (const handleToLock of c.lockVas) {
-											let csToUnlock = $convoStateForEachVAS.get(handleToLock)
-											if(csToUnlock){
-												csToUnlock.isLocked = true
+											let csToUnlock = $convoStateForEachVAS.get(handleToLock);
+											if (csToUnlock) {
+												csToUnlock.isLocked = true;
 											}
 										}
 									}
@@ -703,8 +687,8 @@
 	:global(body) {
 		background-color: aliceblue;
 		/* padding-inline: 5px; */
-		padding:0;
-		margin:0;
+		padding: 0;
+		margin: 0;
 	}
 	:global(*) {
 		box-sizing: border-box;
@@ -712,13 +696,13 @@
 		padding: 0;
 		user-select: none;
 		touch-action: manipulation;
-		font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+		font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
 	}
 	.wrapGameField :global(.noOpacity) {
 		opacity: 0;
 	}
 	.wrapGameField :global(.selected) {
-		box-shadow: 0 0 20px rgb(0,0,0,0.4);
+		box-shadow: 0 0 20px rgb(0, 0, 0, 0.4);
 		border-radius: 10px;
 	}
 	.wrapGameField :global(.projectileSized) {
@@ -748,7 +732,7 @@
 		white-space: pre-wrap;
 	}
 	.sceneTexts {
-		margin-top:5px;
+		margin-top: 5px;
 		height: calc(20vh);
 		overflow-y: auto;
 		/* height: 5; */
@@ -859,7 +843,7 @@
 		grid-template-columns: repeat(auto-fit, clamp(100px, 50%, 200px));
 		justify-content: center;
 		/* align-items: start; */
-		z-index:1;
+		z-index: 1;
 	}
 	.centerPlaceHolder {
 		position: absolute;
@@ -957,7 +941,7 @@
 		border: 1px solid brown;
 		border-top: none;
 		word-wrap: break-word;
-		font-size: clamp(14px,2vw + 2px,19px);
+		font-size: clamp(14px, 2vw + 2px, 19px);
 	}
 	.vupSelectedRest {
 		flex-basis: 85%;
@@ -986,7 +970,7 @@
 		border: 1px solid brown;
 		border-left: none;
 	}
-	.vasdPrompt{
+	.vasdPrompt {
 		white-space: pre-wrap;
 		line-height: 17px;
 	}
@@ -994,15 +978,15 @@
 		display: grid;
 		place-items: center;
 	}
-	.vasdButtons{
-		margin-top:7px;
+	.vasdButtons {
+		margin-top: 7px;
 		display: flex;
 		flex-wrap: wrap;
-		gap:5px;
+		gap: 5px;
 	}
-	.vasResponse{
-		padding-inline:6px;
-		padding-block:2px;
+	.vasResponse {
+		padding-inline: 6px;
+		padding-block: 2px;
 		/* max-width:30ch; */
 	}
 </style>
