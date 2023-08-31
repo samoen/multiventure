@@ -49,46 +49,48 @@
 	);
 
 	async function guestArrived() {
-		if ($currentAnimation != undefined && $host != undefined) {
-			if ($currentAnimation.behavior.kind == 'travel') {
-				$visualOpacity = false;
+		if ($currentAnimation == undefined || $host == undefined || $guestId == undefined || $lastMsgFromServer == undefined) return;
 
-                let travellerIsMe = $guestId == $lastMsgFromServer?.yourInfo.unitId
-                // remove the traveller from visuals
-				$allVisualUnitProps = $allVisualUnitProps.filter((v) => v.id != $guestId);
-				
-                await tick();
-				nextAnimationIndex(false, false);
-                
-                // auto-select something in new scene
-                if(travellerIsMe){
-                    $lastUnitClicked = undefined
-                }
-				return;
+		let guestIsMe = $guestId == $lastMsgFromServer.yourInfo.unitId;
+		if ($currentAnimation.behavior.kind == 'travel') {
+			$visualOpacity = false;
+
+			// remove the traveller from visuals
+			$allVisualUnitProps = $allVisualUnitProps.filter((v) => v.id != $guestId);
+
+			await tick();
+			nextAnimationIndex(false, false);
+
+			// auto-select something in new scene
+			if (guestIsMe) {
+				$lastUnitClicked = undefined;
 			}
-			if ($currentAnimation.takesItem && $guestId) {
-				pickedup = true;
-				updateUnit($guestId, (vup) => {
-					if ($currentAnimation?.takesItem?.slot == 'weapon') {
-						vup.src =
-							heroSprites[heroSprite($currentAnimation.takesItem.id as ItemId)];
-					}
-				});
-				await tick();
-			}
-			$subAnimationStage = 'sentHome';
+			return;
 		}
+		if ($currentAnimation.takesItem) {
+			if(guestIsMe){
+				pickedup = true;
+			}
+			updateUnit($guestId, (vup) => {
+				if ($currentAnimation?.takesItem?.slot == 'weapon') {
+					vup.src = heroSprites[heroSprite($currentAnimation.takesItem.id as ItemId)];
+				}
+			});
+			await tick();
+		}
+		$subAnimationStage = 'sentHome';
 	}
 
 	function guestReturned() {
 		if (!$host || !$currentAnimation) {
 			return;
 		}
-
-		if ($currentAnimation.takesItem) {
-			let cs = $convoStateForEachVAS.get($host.id)
-			if(cs)cs.isLocked = true
-			$convoStateForEachVAS = $convoStateForEachVAS
+		if (pickedup) {
+			let cs = $convoStateForEachVAS.get($host.id);
+			if (cs) {
+				cs.isLocked = true;
+				$convoStateForEachVAS = $convoStateForEachVAS;
+			}
 		}
 	}
 </script>
@@ -97,7 +99,9 @@
 	<div class="unitAndArea">
 		<div
 			class="home placeHolder"
-			class:selected={$selectedDetail && $selectedDetail.kind == 'vas' && $selectedDetail?.entity.id == hostId}
+			class:selected={!pickedup && $selectedDetail &&
+				$selectedDetail.kind == 'vas' &&
+				$selectedDetail?.entity.id == hostId}
 			on:click|preventDefault|stopPropagation={() => {
 				if (!$host) return;
 				$lastUnitClicked = $host.id;
