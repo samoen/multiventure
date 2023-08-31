@@ -105,7 +105,7 @@ const tutorial: Scene = {
 					lockHandle: 'brave',
 					responseText: `I tend to breeze through tutorials pretty easily so.. not worried. Get on with it.`,
 					retort: `Great to hear ${player.heroName}! Our training goblin is ready for you. Also there's a bit of a rat problem in the training room right now.. Click these items and enter that training room!`,
-					unlock: [`readyForTutorial`, 'vasEquipBomb', 'vasEquipClub'],
+					unlockVas: ['vasEquipBomb', 'vasEquipClub'],
 					lock: ['wantsToSkip', 'scared', 'cheeky'],
 				},
 			],
@@ -178,7 +178,7 @@ const trainingRoom1: Scene = {
 						lockHandle: 'gimmie',
 						responseText: `ok, gimmie`,
 						retort: `Gear up and head into the next room. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
-						unlock: ['vasEquipDagger', `vasEquipBandage`]
+						unlockVas: ['vasEquipDagger', `vasEquipBandage`]
 					}
 				]
 			})
@@ -365,6 +365,7 @@ const castle: Scene = {
 		}
 		if (player.previousScene == 'house') {
 			player.sceneTexts.push('You exit the housing of the greiving mother. The castle looms, and the forest beckons.')
+			player.flags.add('killedGoblins')
 		}
 		if (player.flags.has('heardAboutHiddenPassage') && !player.flags.has('metArthur')) {
 			player.flags.add('metArthur')
@@ -429,7 +430,7 @@ const house: Scene = {
 					responseText: `I will`,
 					retort: `Thank you kind traveller. There is a passage in the forest hidden from normal view. My son would often go searching in the lands beyond. Search the dark recesses of the forest and you will come upon this place. ${player.heroName}, find those wretched curs and show them no mercy.`,
 					lock: ['reward', 'rejected'],
-					unlock: ['vasLeatherGift']
+					unlockVas: ['vasLeatherGift']
 				},
 				{
 					lockHandle: `rejected`,
@@ -440,20 +441,13 @@ const house: Scene = {
 					lockHandle: `reward`,
 					responseText: `What reward will I get`,
 					retort: `My son had this set of leather armour. If only he had been wearing it when he went on his adventure.`,
-					unlock: ['vasLeatherGift']
+					unlockVas: ['vasLeatherGift']
 				},
 			],
 			detect: {
 				flag: 'killedGoblins',
 				startText: `Dear Sir ${player.heroName}! You return with the stench of goblin blood about yourself. Thank you for obtaining vengence on my behalf. I bequeath the armor to you so that his legacy may live on. Good luck out there ${player.heroName}`,
-				responses: [
-					{
-						lockHandle: `noProbs`,
-						responseText: `No Problemo`,
-						retort: `You are a great hero`,
-						unlock: ['vasLeatherGift']
-					},
-				]
+				unlockVasOnDetect:'vasLeatherGift',
 			}
 		})
 		player.visualActionSources.push({
@@ -480,7 +474,6 @@ const house: Scene = {
 			startsLocked: true,
 			actionsWithRequirements: [
 				{
-					lock: ['noProbs'],
 					requiresFlag: 'killedGoblins',
 					pickupItem: 'leatherArmor',
 				}

@@ -545,6 +545,7 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 				let unlockableAction : UnlockableAction = {
 					serverAct:ga,
 					lock:unlockableActData.lock,
+					unlockVas:unlockableActData.unlockVas,
 					lockHandle:unlockableActData.lockHandle,
 					startsLocked:unlockableActData.startsLocked,
 					unlock:unlockableActData.unlock,
@@ -576,11 +577,13 @@ export function convertVasToClient(vas: VisualActionSource, player: Player): Vis
 	let responses: ConversationResponse[] = []
 	if (vas.responses) responses = vas.responses
 	let detectStep = undefined
+	let unlockOnSee = undefined
 	if (vas.detect) {
 		if (player.flags.has(vas.detect.flag)) {
 			detectStep = vas.detect.flag
-			responses = vas.detect.responses
+			responses = vas.detect.responses ?? []
 			startText = vas.detect.startText
+			unlockOnSee = vas.detect.unlockVasOnDetect
 		}
 	}
 
@@ -595,6 +598,7 @@ export function convertVasToClient(vas: VisualActionSource, player: Player): Vis
 		lockHandle: vas.lockHandle,
 		actionsInClient: validUnlockableClientActions,
 		detectStep: detectStep,
+		unlockOnSee: unlockOnSee,
 	} satisfies VisualActionSourceInClient
 	return result
 }
@@ -606,6 +610,7 @@ export function convertUnlockableActionsToClient(sUnlockables: (UnlockableAction
 		let clientUnlockable: UnlockableClientAction = {
 			lock: u.lock,
 			unlock: u.unlock,
+			unlockVas:u.unlockVas,
 			startsLocked: u.startsLocked,
 			lockHandle: u.lockHandle,
 			clientAct: convertServerActionToClientAction(u.serverAct)
@@ -622,7 +627,7 @@ export type VisualActionSource = {
 	actionsWithRequirements?: UnlockableActionData[]
 	startText: string,
 	responses?: ConversationResponse[]
-	detect?: { flag: Flag, startText: string, responses: ConversationResponse[] }
+	detect?: { flag: Flag, startText: string, responses?: ConversationResponse[], unlockVasOnDetect:VisualActionSourceId }
 	startsLocked?: boolean
 	lockHandle?: string
 }
@@ -638,13 +643,17 @@ export type VisualActionSourceInClient = {
 	startText: string,
 	responses: ConversationResponse[]
 	detectStep?: Flag
+	unlockOnSee?: VisualActionSourceId
 
 }
+
+// export type LockHandle = {kind:'vas', handle:VisualActionSourceId} | {kind:'response', handle:string}
 
 export type Lockability = {
 	lockHandle?: string,
 	unlock?: string[],
-	lock?: string[]
+	lock?: string[],
+	unlockVas?: VisualActionSourceId[],
 	startsLocked?: boolean,
 }
 

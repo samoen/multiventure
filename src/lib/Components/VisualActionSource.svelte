@@ -2,12 +2,12 @@
 	import {
 		allVisualUnitProps,
 		anySprites,
+		convoStateForEachVAS,
 		currentAnimation,
 		heroSprite,
 		heroSprites,
 		lastMsgFromServer,
 		lastUnitClicked,
-		lockedHandles,
 		nextAnimationIndex,
 		receiveMelee,
 		selectedDetail,
@@ -86,7 +86,9 @@
 		}
 
 		if ($currentAnimation.takesItem) {
-			$lockedHandles.set($host.id, true);
+			let cs = $convoStateForEachVAS.get($host.id)
+			if(cs)cs.isLocked = true
+			$convoStateForEachVAS = $convoStateForEachVAS
 		}
 	}
 </script>

@@ -1,5 +1,5 @@
 import type { Flag, HeroName, MiscPortrait, PlayerInClient } from "$lib/server/users";
-import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient, AnySprite, LandscapeImage } from "$lib/utils";
+import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient, AnySprite, LandscapeImage, VisualActionSourceId } from "$lib/utils";
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 import peasantPortrait from '$lib/assets/portraits/peasant.webp';
 import generalPortrait from '$lib/assets/portraits/general.webp';
@@ -73,6 +73,12 @@ export type ProjectileProps = {
 
 export type Guest = VisualUnitProps | undefined
 export type Projectile = undefined | ProjectileProps
+export type ConvoState = {
+    currentRetort: string,
+    detectStep?:Flag,
+    lockedResponseHandles:Map<string,boolean>
+    isLocked:boolean
+}
 
 
 export let clientState = writable({
@@ -80,14 +86,14 @@ export let clientState = writable({
     status: 'starting up',
     loading: false,
 })
+
 export const lastMsgFromServer: Writable<MessageFromServer | undefined> = writable();
 export const allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 export const visualActionSources: Writable<VisualActionSourceInClient[]> = writable([])
 export const currentAnimationIndex: Writable<number> = writable(999)
 export const currentAnimationsWithData: Writable<BattleAnimation[]> = writable([])
 export const subAnimationStage: Writable<'start' | 'fire' | 'sentHome'> = writable('start')
-export const lockedHandles: Writable<Map<string, boolean>> = writable(new Map())
-export const convoStateForEachVAS: Writable<Map<UnitId, ConvoState>> = writable(new Map())
+export const convoStateForEachVAS: Writable<Map<VisualActionSourceId, ConvoState>> = writable(new Map())
 export const latestSlotButtonInput: Writable<EquipmentSlot | 'none'> = writable('none')
 export const lastUnitClicked: Writable<UnitId | undefined> = writable()
 export const visualLandscape: Writable<LandscapeImage> = writable('plains')
@@ -102,8 +108,12 @@ export const allies = derived(allVisualUnitProps, ($allVisualUnitProps) => {
 export const enemies = derived(allVisualUnitProps, ($allVisualUnitProps) => {
     return $allVisualUnitProps.filter((p) => p.side == 'enemy');
 });
-export const vases = derived([visualActionSources, lockedHandles], ([$visualActionSources,$lockedHandles]) => {
-    return $visualActionSources.filter((s) => !$lockedHandles.get(s.id))
+export const vases = derived([visualActionSources, convoStateForEachVAS], ([$visualActionSources,$convoStateForEachVAS]) => {
+    return $visualActionSources.filter((s) =>{
+        let cs = $convoStateForEachVAS.get(s.id)
+        if(!cs)return false
+        return !cs.isLocked
+    })
 });
 
 export function numberShownOnSlot(itemState: ItemState): number | undefined {
@@ -179,11 +189,11 @@ export const selectedDetail: Readable<DetailWindow | undefined> = derived([
     lastUnitClicked,
     allVisualUnitProps,
     vases,
-    lockedHandles,
+    convoStateForEachVAS,
 ], ([$lastUnitClicked,
     $allVisualUnitProps,
     $vases,
-    $lockedHandles,
+    $convoStateForEachVAS,
 ]) => {
 
     let vupAt = $allVisualUnitProps.find(v => v.id == $lastUnitClicked)
@@ -196,15 +206,17 @@ export const selectedDetail: Readable<DetailWindow | undefined> = derived([
         let firstVas = undefined
         // find unlocked vas with an unlocked action or response
         outer: for (const vas of $vases) {
-            if ($lockedHandles.get(vas.id) == true) continue
+            // if ($lockedHandles.get(vas.id) == true) continue
+            let cs = $convoStateForEachVAS.get(vas.id)
+            if(!cs)continue
             for (const act of vas.actionsInClient) {
-                if (!act.lockHandle || $lockedHandles.get(act.lockHandle) == false) {
+                if (!act.lockHandle || cs.lockedResponseHandles.get(act.lockHandle) == false) {
                     firstVas = vas
                     break outer
                 }
             }
             for (const r of vas.responses) {
-                if (!r.lockHandle || $lockedHandles.get(r.lockHandle) == false) {
+                if (!r.lockHandle || cs.lockedResponseHandles.get(r.lockHandle) == false) {
                     firstVas = vas
                     break outer
                 }
@@ -223,10 +235,6 @@ export const selectedDetail: Readable<DetailWindow | undefined> = derived([
 })
 
 
-export type ConvoState = {
-    currentRetort: string,
-    detectStep?:Flag,
-}
 
 
 export const selectedVisualActionSourceState = derived([
@@ -250,6 +258,26 @@ export const selectedVisualActionSourceState = derived([
     }
     return state
 })
+
+export const selectedVasResponsesToShow = derived([selectedVisualActionSourceState,selectedDetail],([$selectedVisualActionSourceState,$selectedDetail])=>{
+    if(!$selectedDetail || !$selectedVisualActionSourceState || $selectedDetail.kind != 'vas') return []
+
+    return $selectedDetail.entity.responses.filter((r) => {
+        if(!r.lockHandle)return true
+        let locked = $selectedVisualActionSourceState.lockedResponseHandles.get(r.lockHandle)
+        return !locked
+    })
+})
+export const selectedVasActionsToShow = derived([selectedVisualActionSourceState,selectedDetail],([$selectedVisualActionSourceState,$selectedDetail])=>{
+    if(!$selectedDetail || !$selectedVisualActionSourceState || $selectedDetail.kind != 'vas') return []
+
+    return $selectedDetail.entity.actionsInClient.filter((r) => {
+        if(!r.lockHandle)return true
+        let locked = $selectedVisualActionSourceState.lockedResponseHandles.get(r.lockHandle)
+        return !locked
+    })
+})
+
 export const [sendMelee, receiveMelee] = crossfade({
     duration: 500,
     easing: quintInOut,
@@ -381,51 +409,42 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                 // also reset it if it's a new conversation
                 if (!existing || existing.detectStep != vas.detectStep) {
                     // console.log(`init vas state ${vas.id} with unlockable`)
+                    let startResponsesLocked = new Map<string,boolean>()
+                    for (const uAct of vas.actionsInClient) {
+                        if (uAct.lockHandle) {
+                                if (uAct.startsLocked) {
+                                    startResponsesLocked.set(uAct.lockHandle, true)
+                                } else {
+                                    startResponsesLocked.set(uAct.lockHandle, false)
+                                }
+                        }
+                    }
+                    for (const resp of vas.responses) {
+                        if (resp.lockHandle) {
+                                if (resp.startsLocked) {
+                                    startResponsesLocked.set(resp.lockHandle, true)
+                                } else {
+                                    startResponsesLocked.set(resp.lockHandle, false)
+                                }
+                        }
+                    }
+
+
                     cs.set(vas.id, {
                         currentRetort: vas.startText,
-                        detectStep:vas.detectStep
+                        detectStep:vas.detectStep,
+                        lockedResponseHandles:startResponsesLocked,
+                        isLocked:vas.startsLocked ?? false,
                     })
+                    if(vas.unlockOnSee){
+                        let toUnlock = cs.get(vas.unlockOnSee)
+                        if(toUnlock){
+                            toUnlock.isLocked = false
+                        }
+                    }
                 }
                 return cs
             })
-            lockedHandles.update((lh) => {
-                // console.log(`new msg, current lockhandles: ${[...lh.entries()]}`)
-                let existing = lh.get(vas.id)
-                if (existing == undefined) {
-                    if (vas.startsLocked) {
-                        lh.set(vas.id, true)
-                    } else {
-                        lh.set(vas.id, false)
-                    }
-                }
-                for (const uAct of vas.actionsInClient) {
-                    if (uAct.lockHandle) {
-                        let existing = lh.get(uAct.lockHandle)
-                        if (existing == undefined) {
-                            if (uAct.startsLocked) {
-                                lh.set(uAct.lockHandle, true)
-                            } else {
-                                lh.set(uAct.lockHandle, false)
-                            }
-                        }
-
-                    }
-                }
-                for (const resp of vas.responses) {
-                    if (resp.lockHandle) {
-                        let existing = lh.get(resp.lockHandle)
-                        if (existing == undefined) {
-                            if (resp.startsLocked) {
-                                lh.set(resp.lockHandle, true)
-                            } else {
-                                lh.set(resp.lockHandle, false)
-                            }
-                        }
-                    }
-                }
-                return lh
-            })
-
         }
         visualActionSources.set(lastMsg.visualActionSources)
     }

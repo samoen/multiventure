@@ -8,7 +8,6 @@
 		bodySlotActions,
 		centerFieldTarget,
 		choose,
-		lockedHandles,
 		clientState,
 		currentAnimation,
 		currentAnimationIndex,
@@ -40,7 +39,13 @@
 		visualSceneLabel,
 		allies,
 		enemies,
-		vases
+		vases,
+
+		selectedVasResponsesToShow,
+
+		selectedVasActionsToShow
+
+
 	} from '$lib/client/ui';
 	import type { MessageFromServer } from '$lib/server/messaging';
 	import { onMount, tick } from 'svelte';
@@ -189,7 +194,6 @@
 		$convoStateForEachVAS.clear();
 		$visualActionSources = [];
 		$allVisualUnitProps = [];
-		$lockedHandles.clear();
 		$latestSlotButtonInput = 'none';
 		$lastUnitClicked = undefined;
 	}
@@ -573,7 +577,7 @@
 						{$selectedVisualActionSourceState.currentRetort ?? 'selected vas has no current retort'}
 					</div>
 					<div class="vasdButtons">
-						{#each $selectedDetail.entity.actionsInClient.filter((a) => !a.lockHandle || !$lockedHandles.get(a.lockHandle)) as act}
+						{#each $selectedVasActionsToShow as act}
 							<button
 								type="button"
 								class="vasResponse"
@@ -597,44 +601,74 @@
 										}
 									}
 
-									if (act.lock) {
-										for (const handleToLock of act.lock) {
-											$lockedHandles.set(handleToLock, true);
-										}
-									}
-									if (act.unlock) {
-										for (const handleToUnlock of act.unlock) {
-											$lockedHandles.set(handleToUnlock, false);
-										}
-									}
-									$lockedHandles = $lockedHandles;
+									
+									// if (act.lock) {
+									// 	for (const handleToLock of act.lock) {
+									// 		$lockedHandles.set(handleToLock, true);
+									// 	}
+									// }
+									// if (act.unlock) {
+									// 	for (const handleToUnlock of act.unlock) {
+									// 		$lockedHandles.set(handleToUnlock, false);
+									// 	}
+									// }
+
+									// if (act.lock) {
+									// 	for (const handleToUnlock of act.unlock) {
+									// 			let convoState = $convoStateForEachVAS.get(handleToUnlock)
+									// 			if(convoState){
+									// 				convoState.isLocked = false
+									// 			}
+									// 	}
+									// }
+									// if (act.unlockVas) {
+									// 	for (const handleToUnlock of act.unlockVas) {
+									// 			let convoState = $convoStateForEachVAS.get(handleToUnlock)
+									// 			if(convoState){
+									// 				convoState.isLocked = false
+									// 			}
+									// 	}
+									// }
+
+									$convoStateForEachVAS = $convoStateForEachVAS
 									$visualActionSources = $visualActionSources;
 								}}>{act.clientAct.buttonText}</button
 							>
 						{/each}
-						{#each $selectedDetail.entity.responses.filter((r) => !r.lockHandle || !$lockedHandles.get(r.lockHandle)) as c}
+						{#each $selectedVasResponsesToShow as c}
 							<button
 								class="vasResponse"
 								type="button"
 								on:click={() => {
 									if (!$selectedDetail) return;
+									if($selectedDetail.kind != 'vas') return
+
 									$lastUnitClicked = $selectedDetail.entity.id;
+									// let cs = $convoStateForEachVAS.get($selectedDetail.entity.id)
+									let state = $selectedVisualActionSourceState;
+									if (!state) return;
 									if (c.lock) {
 										for (const handleToLock of c.lock) {
-											$lockedHandles.set(handleToLock, true);
+											state.lockedResponseHandles.set(handleToLock,true)
 										}
-									}
-									if (c.lockHandle) {
-										$lockedHandles.set(c.lockHandle, true);
 									}
 									if (c.unlock) {
 										for (const handleToUnlock of c.unlock) {
-											$lockedHandles.set(handleToUnlock, false);
+											state.lockedResponseHandles.set(handleToUnlock,false)
+										}
+									}
+									if (c.lockHandle) {
+										state.lockedResponseHandles.set(c.lockHandle,true)
+									}
+									if (c.unlockVas) {
+										for (const handleToUnlock of c.unlockVas) {
+											let csToUnlock = $convoStateForEachVAS.get(handleToUnlock)
+											if(csToUnlock){
+												csToUnlock.isLocked = false
+											}
 										}
 									}
 
-									let state = $selectedVisualActionSourceState;
-									if (!state) return;
 									state.currentRetort = c.retort;
 									$visualActionSources = $visualActionSources;
 									$convoStateForEachVAS = $convoStateForEachVAS;
