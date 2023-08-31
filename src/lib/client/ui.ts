@@ -210,13 +210,13 @@ export const selectedDetail: Readable<DetailWindow | undefined> = derived([
             let cs = $convoStateForEachVAS.get(vas.id)
             if(!cs)continue
             for (const act of vas.actionsInClient) {
-                if (!act.lockHandle || cs.lockedResponseHandles.get(act.lockHandle) == false) {
+                // if (!act.lockHandle || cs.lockedResponseHandles.get(act.lockHandle) == false) {
                     firstVas = vas
                     break outer
-                }
+                // }
             }
             for (const r of vas.responses) {
-                if (!r.lockHandle || cs.lockedResponseHandles.get(r.lockHandle) == false) {
+                if (!r.responseId || cs.lockedResponseHandles.get(r.responseId) == false) {
                     firstVas = vas
                     break outer
                 }
@@ -263,8 +263,8 @@ export const selectedVasResponsesToShow = derived([selectedVisualActionSourceSta
     if(!$selectedDetail || !$selectedVisualActionSourceState || $selectedDetail.kind != 'vas') return []
 
     return $selectedDetail.entity.responses.filter((r) => {
-        if(!r.lockHandle)return true
-        let locked = $selectedVisualActionSourceState.lockedResponseHandles.get(r.lockHandle)
+        if(!r.responseId)return true
+        let locked = $selectedVisualActionSourceState.lockedResponseHandles.get(r.responseId)
         return !locked
     })
 })
@@ -272,9 +272,10 @@ export const selectedVasActionsToShow = derived([selectedVisualActionSourceState
     if(!$selectedDetail || !$selectedVisualActionSourceState || $selectedDetail.kind != 'vas') return []
 
     return $selectedDetail.entity.actionsInClient.filter((r) => {
-        if(!r.lockHandle)return true
-        let locked = $selectedVisualActionSourceState.lockedResponseHandles.get(r.lockHandle)
-        return !locked
+        return true
+        // if(!r.lockHandle)return true
+        // let locked = $selectedVisualActionSourceState.lockedResponseHandles.get(r.lockHandle)
+        // return !locked
     })
 })
 
@@ -410,21 +411,12 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                 if (!existing || existing.detectStep != vas.detectStep) {
                     // console.log(`init vas state ${vas.id} with unlockable`)
                     let startResponsesLocked = new Map<string,boolean>()
-                    for (const uAct of vas.actionsInClient) {
-                        if (uAct.lockHandle) {
-                                if (uAct.startsLocked) {
-                                    startResponsesLocked.set(uAct.lockHandle, true)
-                                } else {
-                                    startResponsesLocked.set(uAct.lockHandle, false)
-                                }
-                        }
-                    }
                     for (const resp of vas.responses) {
-                        if (resp.lockHandle) {
+                        if (resp.responseId) {
                                 if (resp.startsLocked) {
-                                    startResponsesLocked.set(resp.lockHandle, true)
+                                    startResponsesLocked.set(resp.responseId, true)
                                 } else {
-                                    startResponsesLocked.set(resp.lockHandle, false)
+                                    startResponsesLocked.set(resp.responseId, false)
                                 }
                         }
                     }

@@ -593,7 +593,7 @@
 									}
 									$lastUnitClicked = $selectedDetail.entity.id;
 									$selectedDetail.entity;
-									await choose(act.clientAct);
+									await choose(act);
 									if ($currentAnimation != undefined) {
 										if ($currentAnimation.behavior.kind == 'travel') {
 											$visualOpacity = true;
@@ -601,38 +601,9 @@
 										}
 									}
 
-									
-									// if (act.lock) {
-									// 	for (const handleToLock of act.lock) {
-									// 		$lockedHandles.set(handleToLock, true);
-									// 	}
-									// }
-									// if (act.unlock) {
-									// 	for (const handleToUnlock of act.unlock) {
-									// 		$lockedHandles.set(handleToUnlock, false);
-									// 	}
-									// }
-
-									// if (act.lock) {
-									// 	for (const handleToUnlock of act.unlock) {
-									// 			let convoState = $convoStateForEachVAS.get(handleToUnlock)
-									// 			if(convoState){
-									// 				convoState.isLocked = false
-									// 			}
-									// 	}
-									// }
-									// if (act.unlockVas) {
-									// 	for (const handleToUnlock of act.unlockVas) {
-									// 			let convoState = $convoStateForEachVAS.get(handleToUnlock)
-									// 			if(convoState){
-									// 				convoState.isLocked = false
-									// 			}
-									// 	}
-									// }
-
 									$convoStateForEachVAS = $convoStateForEachVAS
 									$visualActionSources = $visualActionSources;
-								}}>{act.clientAct.buttonText}</button
+								}}>{act.buttonText}</button
 							>
 						{/each}
 						{#each $selectedVasResponsesToShow as c}
@@ -657,14 +628,22 @@
 											state.lockedResponseHandles.set(handleToUnlock,false)
 										}
 									}
-									if (c.lockHandle) {
-										state.lockedResponseHandles.set(c.lockHandle,true)
+									if (c.responseId) {
+										state.lockedResponseHandles.set(c.responseId,true)
 									}
 									if (c.unlockVas) {
 										for (const handleToUnlock of c.unlockVas) {
 											let csToUnlock = $convoStateForEachVAS.get(handleToUnlock)
 											if(csToUnlock){
 												csToUnlock.isLocked = false
+											}
+										}
+									}
+									if (c.lockVas) {
+										for (const handleToLock of c.lockVas) {
+											let csToUnlock = $convoStateForEachVAS.get(handleToLock)
+											if(csToUnlock){
+												csToUnlock.isLocked = true
 											}
 										}
 									}

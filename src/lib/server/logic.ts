@@ -481,15 +481,15 @@ export function getServerActionsMetRequirementsFromVases(vases: VisualActionSour
 	for (const vas of vases) {
 		let acts = getValidUnlockableServerActionsFromVas(vas, player)
 		for (const act of acts) {
-				validActionsFromVases.push(act.serverAct)
+				validActionsFromVases.push(act)
 		}
 	}
 	return validActionsFromVases
 }
 
 
-export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, player: Player): UnlockableAction[] {
-	let validUnlockableActions: UnlockableAction[] = []
+export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, player: Player): GameAction[] {
+	let validUnlockableActions: GameAction[] = []
 	if (vas.actionsWithRequirements) {
 		for (const unlockableActData of vas.actionsWithRequirements) {
 			let passedRequirements = true
@@ -542,15 +542,7 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 					continue
 				}
 
-				let unlockableAction : UnlockableAction = {
-					serverAct:ga,
-					lock:unlockableActData.lock,
-					unlockVas:unlockableActData.unlockVas,
-					lockHandle:unlockableActData.lockHandle,
-					startsLocked:unlockableActData.startsLocked,
-					unlock:unlockableActData.unlock,
-				}
-				validUnlockableActions.push(unlockableAction)
+				validUnlockableActions.push(ga)
 			}
 		}
 	}
@@ -570,7 +562,7 @@ export function convertServerActionToClientAction(sa: GameAction): GameActionSen
 export function convertVasToClient(vas: VisualActionSource, player: Player): VisualActionSourceInClient {
 	let validUnlockableActions = getValidUnlockableServerActionsFromVas(vas, player)
 
-	let validUnlockableClientActions: UnlockableClientAction[] = []
+	let validUnlockableClientActions: GameActionSentToClient[] = []
 	validUnlockableClientActions = convertUnlockableActionsToClient(validUnlockableActions)
 
 	let startText = vas.startText
@@ -603,19 +595,11 @@ export function convertVasToClient(vas: VisualActionSource, player: Player): Vis
 	return result
 }
 
-export function convertUnlockableActionsToClient(sUnlockables: (UnlockableAction[] | undefined)): UnlockableClientAction[] {
-	let clientUnlockables: UnlockableClientAction[] = []
+export function convertUnlockableActionsToClient(sUnlockables: (GameAction[] | undefined)): GameActionSentToClient[] {
+	let clientUnlockables: GameActionSentToClient[] = []
 	if (!sUnlockables) return clientUnlockables
 	return sUnlockables.map(u => {
-		let clientUnlockable: UnlockableClientAction = {
-			lock: u.lock,
-			unlock: u.unlock,
-			unlockVas:u.unlockVas,
-			startsLocked: u.startsLocked,
-			lockHandle: u.lockHandle,
-			clientAct: convertServerActionToClientAction(u.serverAct)
-		}
-		return clientUnlockable
+		return convertServerActionToClientAction(u)
 	})
 }
 
@@ -639,22 +623,11 @@ export type VisualActionSourceInClient = {
 	id: VisualActionSourceId
 	sprite: AnySprite
 	portrait?: MiscPortrait
-	actionsInClient: UnlockableClientAction[]
+	actionsInClient: GameActionSentToClient[]
 	startText: string,
 	responses: ConversationResponse[]
 	detectStep?: Flag
 	unlockOnSee?: VisualActionSourceId
-
-}
-
-// export type LockHandle = {kind:'vas', handle:VisualActionSourceId} | {kind:'response', handle:string}
-
-export type Lockability = {
-	lockHandle?: string,
-	unlock?: string[],
-	lock?: string[],
-	unlockVas?: VisualActionSourceId[],
-	startsLocked?: boolean,
 }
 
 export type UnlockableActionData = {
@@ -663,17 +636,15 @@ export type UnlockableActionData = {
 	requiresGear?: ItemId[]
 	pickupItem?: ItemId
 	travelTo?: SceneId
-} & Lockability
-
-export type UnlockableAction = {
-	serverAct: GameAction
-} & Lockability
-
-export type UnlockableClientAction = {
-	clientAct: GameActionSentToClient,
-} & Lockability
+}
 
 export type ConversationResponse = {
+	responseId: string,
+	unlock?: string[],
+	lock?: string[],
+	unlockVas?: VisualActionSourceId[],
+	lockVas?: VisualActionSourceId[],
+	startsLocked?: boolean,
 	responseText: string,
 	retort: string,
-} & Lockability
+}

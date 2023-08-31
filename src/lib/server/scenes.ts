@@ -75,37 +75,35 @@ const tutorial: Scene = {
 	},
 	actions(player) {
 		player.visualActionSources.push({
+			unitId:'vasSkipTutorial',
+			displayName:'Skip Tutorial',
+			sprite:'castle',
+			startText:'This portal will take you to the real world',
+			startsLocked:true,
+			actionsWithRequirements:[{travelTo:'forest',}]
+		})
+		player.visualActionSources.push({
 			unitId: 'vasTutor',
 			displayName: 'Arthur',
-			actionsWithRequirements: [
-				{
-					lockHandle: 'wantsToSkip',
-					startsLocked: true,
-					serverAct: {
-						buttonText: 'Skip Tutorial',
-						goTo: 'forest',
-					},
-				}
-
-			],
 			startText: `Look alive recruit! The first day of training can be the most dangerous of a guardsman's life.\n\nYou must be ${player.heroName}, welcome aboard. In this barracks we wake up early, follow orders, and NEVER skip the tutorial. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.`,
 			responses: [
 				{
-					lockHandle: 'scared',
+					responseId: 'scared',
 					responseText: `Huh? Danger... Early mornings?? I didn't sign up for any of this!`,
 					retort: `Hmmf, if you think you can weasel your way through this game without enduring hardship you're in for a rude awakening.. anyway it's just a quick tutorial, skip it only with good reason.`,
-					unlock: ['wantsToSkip']
+					unlockVas:['vasSkipTutorial']
 				},
 				{
-					lockHandle: 'cheeky',
+					responseId: 'cheeky',
 					responseText: `I would rather you didn't break the fourth wall, I'm into more serious RPGs.`,
 					retort: `Lighten up recruit. Things will get plenty dark and gritty soon enough. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.`
 				},
 				{
-					lockHandle: 'brave',
+					responseId: 'brave',
 					responseText: `I tend to breeze through tutorials pretty easily so.. not worried. Get on with it.`,
 					retort: `Great to hear ${player.heroName}! Our training goblin is ready for you. Also there's a bit of a rat problem in the training room right now.. Click these items and enter that training room!`,
 					unlockVas: ['vasEquipBomb', 'vasEquipClub'],
+					lockVas:['vasSkipTutorial'],
 					lock: ['wantsToSkip', 'scared', 'cheeky'],
 				},
 			],
@@ -175,7 +173,7 @@ const trainingRoom1: Scene = {
 				startText: `Great job! Let's switch up your equipment. Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you.`,
 				responses: [
 					{
-						lockHandle: 'gimmie',
+						responseId: 'gimmie',
 						responseText: `ok, gimmie`,
 						retort: `Gear up and head into the next room. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
 						unlockVas: ['vasEquipDagger', `vasEquipBandage`]
@@ -426,19 +424,19 @@ const house: Scene = {
 			startText: `Traveller, what is it you do here? Do you not see I grieve? My son... he was murdered by Gorlak and his rowdy band of filthy goblin scum. He was barely a man yet had the stars in his eyes. He sought adventure but found his demise far too soon. Will you avenge him on my behalf? I don't have much but I'm sure I can find somethign to reward you`,
 			responses: [
 				{
-					lockHandle: `accepted`,
+					responseId: `accepted`,
 					responseText: `I will`,
 					retort: `Thank you kind traveller. There is a passage in the forest hidden from normal view. My son would often go searching in the lands beyond. Search the dark recesses of the forest and you will come upon this place. ${player.heroName}, find those wretched curs and show them no mercy.`,
 					lock: ['reward', 'rejected'],
 					unlockVas: ['vasLeatherGift']
 				},
 				{
-					lockHandle: `rejected`,
+					responseId: `rejected`,
 					responseText: `I won't`,
 					retort: `Not much of a hero are you?`,
 				},
 				{
-					lockHandle: `reward`,
+					responseId: `reward`,
 					responseText: `What reward will I get`,
 					retort: `My son had this set of leather armour. If only he had been wearing it when he went on his adventure.`,
 					unlockVas: ['vasLeatherGift']
