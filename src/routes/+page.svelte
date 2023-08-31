@@ -496,38 +496,51 @@
 					{/if}
 				</div>
 				<div class="slotButtons">
-					{#each $typedInventory as [key, value]}
+					{#each $typedInventory as [slot, value]}
 						<!-- {#if actionsForSlot($lastMsgFromServer, key).length || numberShownOnSlot(value)} -->
 						<button
 							class="slotButton"
-							class:activeSlotButton={$latestSlotButtonInput == key}
+							class:activeSlotButton={$latestSlotButtonInput == slot}
 							type="button"
 							disabled={value.disabled}
 							on:click={() => {
-								let wepSlotActions = actionsForSlot($lastMsgFromServer, key);
-								if (!wepSlotActions || !wepSlotActions.length) return;
-								const oneChoice = wepSlotActions.length == 1;
-								const onlyAction = wepSlotActions.at(0);
+								let slotActions = actionsForSlot($lastMsgFromServer, slot);
+								if (!slotActions || !slotActions.length) return;
+								const oneChoice = slotActions.length == 1;
+								const onlyAction = slotActions.at(0);
 								if (oneChoice && onlyAction) {
 									choose(onlyAction);
 									$latestSlotButtonInput = 'none';
 									return;
 								}
-								$latestSlotButtonInput = key;
+								if($selectedDetail && $selectedDetail.kind == 'vup'){
+									let actForSelectedMatchingSlot = $selectedDetail.entity.actionsThatCanTargetMe.find(a=>{
+										if(a.slot && a.slot == slot){
+											return true
+										}
+										
+									})
+									if(actForSelectedMatchingSlot){
+										choose(actForSelectedMatchingSlot)
+										$latestSlotButtonInput = 'none';
+										return;
+									}
+								}
+								$latestSlotButtonInput = slot;
 							}}
 						>
 							<img
 								class="slotImg"
 								class:halfOpacity={value.disabled}
-								src={getSlotImage($lastMsgFromServer.yourInfo.inventory[key].itemId)}
+								src={getSlotImage($lastMsgFromServer.yourInfo.inventory[slot].itemId)}
 								alt="a slot"
 							/>
 							<span class="slotCounter"
-								>{numberShownOnSlot($lastMsgFromServer.yourInfo.inventory[key]) ?? ''}</span
+								>{numberShownOnSlot($lastMsgFromServer.yourInfo.inventory[slot]) ?? ''}</span
 							>
-							<span class="slotItemname">{$lastMsgFromServer.yourInfo.inventory[key].itemId}</span>
+							<span class="slotItemname">{$lastMsgFromServer.yourInfo.inventory[slot].itemId}</span>
 							<span class="slotStockDots"
-								>{stockDotsOnSlotButton($lastMsgFromServer.yourInfo.inventory[key])}</span
+								>{stockDotsOnSlotButton($lastMsgFromServer.yourInfo.inventory[slot])}</span
 							>
 						</button>
 						<!-- {/if} -->
@@ -703,6 +716,10 @@
 	}
 	.wrapGameField :global(.noOpacity) {
 		opacity: 0;
+	}
+	.wrapGameField :global(.selected) {
+		box-shadow: 0 0 20px rgb(0,0,0,0.4);
+		border-radius: 10px;
 	}
 	.wrapGameField :global(.projectileSized) {
 		height: clamp(25px, 5vw + 1px, 50px);

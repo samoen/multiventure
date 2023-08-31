@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { allVisualUnitProps, lastMsgFromServer, type VisualUnitProps } from '$lib/client/ui';
+	import { allVisualUnitProps, lastMsgFromServer, selectedDetail, type VisualUnitProps } from '$lib/client/ui';
 	import { fade } from 'svelte/transition';
 	import rage from '$lib/assets/extras/rage.png';
 	import bomb from '$lib/assets/extras/bomb.png';
@@ -65,7 +65,10 @@
 </script>
 
 {#if vu}
-	<div class="top" class:noOpacity={shouldDie}>
+	<div class="top" 
+	class:noOpacity={shouldDie}
+	class:selected={!shouldDie && $selectedDetail && $selectedDetail.kind == 'vup' && $selectedDetail?.entity.id == hostId}
+	>
 		<div class="nameHolder">
 			<span class="selfIndicator"
 				>{vu.name == $lastMsgFromServer?.yourInfo.heroName ? '👤' : ''}</span

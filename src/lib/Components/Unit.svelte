@@ -355,6 +355,7 @@
 		border-radius: 10px;
 		width: 50%;
 	}
+
 	.clickable {
 		border: 2px dashed rgba(255, 255, 0, 0.4);
 		/* box-shadow: 0 0 10px yellow; */
