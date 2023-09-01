@@ -164,51 +164,49 @@ const trainingRoom1: Scene = {
 		spawnEnemy('Nibbles', 'rat', `trainingRoom1_${player.heroName}`)
 	},
 	actions(player) {
-		if (!enemiesInScene(player.currentScene).length) {
-			player.visualActionSources.push({
-				unitId: 'vasTutor2',
-				displayName: 'Arthur',
-				sprite: 'general',
-				portrait: 'general',
-				startText: `Great job! Let's switch up your equipment. Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you.`,
-				responses: [
-					{
-						responseId: 'gimmie',
-						responseText: `ok, gimmie`,
-						retort: `Gear up and head into the next room. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
-						unlockVas: ['vasEquipDagger', `vasEquipBandage`]
-					}
-				]
-			})
-			player.visualActionSources.push({
-				unitId: 'vasEquipDagger',
-				displayName: 'Dagger',
-				sprite: 'club',
-				startText: 'Hobgoblins wear heavy armor, which limits the amount of damage they take each strike. A dagger strikes multiple times per attack, mitigating their defenses.',
-				startsLocked: true,
-				actionsWithRequirements: [{ pickupItem: 'dagger' },]
-			})
-			player.visualActionSources.push({
-				unitId: 'vasEquipBandage',
-				displayName: 'Bandage',
-				sprite: 'club',
-				startText: `Use bandages when you get low on health.`,
-				startsLocked: true,
-				actionsWithRequirements: [{ pickupItem: 'bandage' }]
-			})
-			player.visualActionSources.push({
-				unitId: 'vasGoTrain2',
-				displayName: 'Training Room',
-				sprite: 'castle',
-				startText: `Another door, another training room.`,
-				actionsWithRequirements: [
-					{
-						requiresGear: ['dagger', 'bandage'],
-						travelTo: `trainingRoom2_${player.heroName}`
-					}
-				]
-			})
-		}
+		player.visualActionSources.push({
+			unitId: 'vasTutor2',
+			displayName: 'Arthur',
+			sprite: 'general',
+			portrait: 'general',
+			startText: `Great job! Let's switch up your equipment. Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you.`,
+			responses: [
+				{
+					responseId: 'gimmie',
+					responseText: `ok, gimmie`,
+					retort: `Gear up and head into the next room. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
+					unlockVas: ['vasEquipDagger', `vasEquipBandage`]
+				}
+			]
+		})
+		player.visualActionSources.push({
+			unitId: 'vasEquipDagger',
+			displayName: 'Dagger',
+			sprite: 'club',
+			startText: 'Hobgoblins wear heavy armor, which limits the amount of damage they take each strike. A dagger strikes multiple times per attack, mitigating their defenses.',
+			startsLocked: true,
+			actionsWithRequirements: [{ pickupItem: 'dagger' },]
+		})
+		player.visualActionSources.push({
+			unitId: 'vasEquipBandage',
+			displayName: 'Bandage',
+			sprite: 'club',
+			startText: `Use bandages when you get low on health.`,
+			startsLocked: true,
+			actionsWithRequirements: [{ pickupItem: 'bandage' }]
+		})
+		player.visualActionSources.push({
+			unitId: 'vasGoTrain2',
+			displayName: 'Training Room',
+			sprite: 'castle',
+			startText: `Another door, another training room.`,
+			actionsWithRequirements: [
+				{
+					requiresGear: ['dagger', 'bandage'],
+					travelTo: `trainingRoom2_${player.heroName}`
+				}
+			]
+		})
 	},
 	onVictory(player) {
 		player.lastCheckpoint = `trainingRoom1_${player.heroName}`
@@ -238,59 +236,57 @@ const trainingRoom2: Scene = {
 		spawnEnemy('Scorchy', 'fireGremlin', `trainingRoom2_${player.heroName}`)
 	},
 	actions(player) {
-		if (!enemiesInScene(player.currentScene).length) {
-			player.visualActionSources.push({
-				unitId: 'vasTutor3',
-				displayName: 'Arthur',
-				sprite: 'general',
-				portrait: 'general',
-				startText: `Brilliant work recruit! Alright, last one. We don't normally do this but I see something great in you. You are going to fight a cave troll.`,
-				responses: [
-					{
-						responseId: 'ok',
-						responseText: `I ain't 'fraid of no troll`,
-						retort: `Trolls have very high damage and health, this equipment will let you handle him.`,
-						unlockVas: ['vasEquipDart', `vasEquipCloak`, `vasEquipStaff`]
-					}
-				]
-			})
-			player.visualActionSources.push({
-				unitId: 'vasEquipStaff',
-				displayName: 'Fire Staff',
-				sprite: 'club',
-				startText: `A fire staff takes 3 turns before you can use it. Trolls are slow, so it won't get a chance to retaliate once you land that finishing blast!`,
-				startsLocked: true,
-				actionsWithRequirements: [{ pickupItem: 'fireStaff' },]
-			})
-			player.visualActionSources.push({
-				unitId: 'vasEquipDart',
-				displayName: 'Poison Dart',
-				sprite: 'club',
-				startText: `Poison deals more damage the bigger the enemy. It deals it's damage over 3 turns, so you need to be able to survive that long.`,
-				startsLocked: true,
-				actionsWithRequirements: [{ pickupItem: 'poisonDart' }]
-			})
-			player.visualActionSources.push({
-				unitId: 'vasEquipCloak',
-				displayName: 'Theif Cloak',
-				sprite: 'club',
-				startText: `A theif's cloak lets you hide for a turn, preventing retaliation from enemies. It's a good way to wait for your magic to warm up. Poison your enemy first to get extra value!`,
-				startsLocked: true,
-				actionsWithRequirements: [{ pickupItem: 'theifCloak' }]
-			})
-			player.visualActionSources.push({
-				unitId: 'vasGoTrain3',
-				displayName: 'Training Room',
-				sprite: 'castle',
-				startText: `The final room`,
-				actionsWithRequirements: [
-					{
-						requiresGear: ['fireStaff', 'poisonDart', 'theifCloak'],
-						travelTo: `trainingRoom3_${player.heroName}`
-					}
-				]
-			})
-		}
+		player.visualActionSources.push({
+			unitId: 'vasTutor3',
+			displayName: 'Arthur',
+			sprite: 'general',
+			portrait: 'general',
+			startText: `Brilliant work recruit! Alright, last one. We don't normally do this but I see something great in you. You are going to fight a cave troll.`,
+			responses: [
+				{
+					responseId: 'ok',
+					responseText: `I ain't 'fraid of no troll`,
+					retort: `Trolls have very high damage and health, this equipment will let you handle him.`,
+					unlockVas: ['vasEquipDart', `vasEquipCloak`, `vasEquipStaff`]
+				}
+			]
+		})
+		player.visualActionSources.push({
+			unitId: 'vasEquipStaff',
+			displayName: 'Fire Staff',
+			sprite: 'club',
+			startText: `A fire staff takes 3 turns before you can use it. Trolls are slow, so it won't get a chance to retaliate once you land that finishing blast!`,
+			startsLocked: true,
+			actionsWithRequirements: [{ pickupItem: 'fireStaff' },]
+		})
+		player.visualActionSources.push({
+			unitId: 'vasEquipDart',
+			displayName: 'Poison Dart',
+			sprite: 'club',
+			startText: `Poison deals more damage the bigger the enemy. It deals it's damage over 3 turns, so you need to be able to survive that long.`,
+			startsLocked: true,
+			actionsWithRequirements: [{ pickupItem: 'poisonDart' }]
+		})
+		player.visualActionSources.push({
+			unitId: 'vasEquipCloak',
+			displayName: 'Theif Cloak',
+			sprite: 'club',
+			startText: `A theif's cloak lets you hide for a turn, preventing retaliation from enemies. It's a good way to wait for your magic to warm up. Poison your enemy first to get extra value!`,
+			startsLocked: true,
+			actionsWithRequirements: [{ pickupItem: 'theifCloak' }]
+		})
+		player.visualActionSources.push({
+			unitId: 'vasGoTrain3',
+			displayName: 'Training Room',
+			sprite: 'castle',
+			startText: `The final room`,
+			actionsWithRequirements: [
+				{
+					requiresGear: ['fireStaff', 'poisonDart', 'theifCloak'],
+					travelTo: `trainingRoom3_${player.heroName}`
+				}
+			]
+		})
 	},
 	onVictory(player) {
 		player.lastCheckpoint = `trainingRoom2_${player.heroName}`
@@ -311,35 +307,33 @@ const trainingRoom3: Scene = {
 		spawnEnemy('Ragor', 'troll', `trainingRoom3_${player.heroName}`)
 	},
 	actions(player) {
-		if (!enemiesInScene(player.currentScene).length) {
-			player.visualActionSources.push({
-				unitId: 'vasTutor4',
-				displayName: 'Arthur',
-				sprite: 'general',
-				portrait: 'general',
-				startText: `Well done ${player.heroName}! You may be the chosen one after all.. Head through this passage and enjoy the game!`,
-				responses: [{
-					responseId: 'go',
-					responseText: 'Thanks Arthur',
-					retort: 'Now to teach the next recruit..',
-					unlockVas: ['vasLeaveTutorial'],
-				}]
-			})
-			player.visualActionSources.push({
-				unitId: 'vasLeaveTutorial',
-				displayName: 'The Game',
-				sprite: 'castle',
-				startText: 'This passage leads to the real game. Have fun :)',
-				startsLocked: true,
-				actionsWithRequirements: [{ travelTo: 'forest' }]
-			})
-		}
+		player.visualActionSources.push({
+			unitId: 'vasTutor4',
+			displayName: 'Arthur',
+			sprite: 'general',
+			portrait: 'general',
+			startText: `Well done ${player.heroName}! You may be the chosen one after all.. Head through this passage and enjoy the game!`,
+			responses: [{
+				responseId: 'go',
+				responseText: 'Thanks Arthur',
+				retort: 'Now to teach the next recruit..',
+				unlockVas: ['vasLeaveTutorial'],
+			}]
+		})
+		player.visualActionSources.push({
+			unitId: 'vasLeaveTutorial',
+			displayName: 'The Game',
+			sprite: 'castle',
+			startText: 'This passage leads to the real game. Have fun :)',
+			startsLocked: true,
+			actionsWithRequirements: [{ travelTo: 'forest' }]
+		})
 	},
 	onVictory(player) {
 		player.sceneTexts.push('The mighty beast falls as Arthur finally gets the door open')
-		equipItem(player,items.rags)
-		equipItem(player,items.empty)
-		equipItem(player,items.unarmed)
+		equipItem(player, items.rags)
+		equipItem(player, items.empty)
+		equipItem(player, items.unarmed)
 		player.health = player.maxHealth
 	},
 }
@@ -370,14 +364,14 @@ export const forest: Scene = {
 			actionsWithRequirements: [{ travelTo: 'castle' }],
 			startText: `In the distance you see a castle`,
 		})
-			player.visualActionSources.push({
-				unitId: 'vasForestPassageFromForest',
-				displayName: 'Hidden Passage',
-				sprite: 'castle',
-				startsLocked:true,
-				actionsWithRequirements: [{ requiresFlag:'heardAboutHiddenPassage', travelTo: 'forestPassage' }],
-				startText: `Delve into the secret passage`,
-			})
+		player.visualActionSources.push({
+			unitId: 'vasForestPassageFromForest',
+			displayName: 'Hidden Passage',
+			sprite: 'castle',
+			startsLocked: true,
+			actionsWithRequirements: [{ requiresFlags: ['heardAboutHiddenPassage'], travelTo: 'forestPassage' }],
+			startText: `Delve into the secret passage`,
+		})
 	}
 }
 
@@ -465,13 +459,13 @@ const house: Scene = {
 					responseText: `I will`,
 					retort: `Thank you kind traveller. There is a passage in the forest hidden from normal view. My son would often go searching in the lands beyond. Search the dark recesses of the forest and you will come upon this place. ${player.heroName}, find those wretched curs and show them no mercy.`,
 					lock: ['reward', 'rejected'],
-					unlockVas: ['vasLeatherGift','vasForestPassageFromForest']
+					unlockVas: ['vasLeatherGift', 'vasForestPassageFromForest']
 				},
 				{
 					responseId: `rejected`,
 					responseText: `I won't`,
 					retort: `Not much of a hero are you?`,
-					lock:['accepted'],
+					lock: ['accepted'],
 					unlockVas: ['vasForestPassageFromForest']
 				},
 				{
@@ -502,7 +496,7 @@ const house: Scene = {
 			startsLocked: true,
 			actionsWithRequirements: [
 				{
-					requiresFlag: 'killedGoblins',
+					requiresFlags: ['killedGoblins'],
 					pickupItem: 'leatherArmor',
 				}
 			]
@@ -606,7 +600,7 @@ const throne: Scene = {
 			startText: 'You are drawn into the portal by the kings magic',
 			actionsWithRequirements: [{ travelTo: 'realmOfMadness' }]
 		})
-		if(!player.flags.has('smashedMedallion')){
+		if (!player.flags.has('smashedMedallion')) {
 			player.visualActionSources.push({
 				unitId: 'vasChamberFromThrone',
 				startsLocked: true,
@@ -621,7 +615,7 @@ const throne: Scene = {
 				sprite: 'castle',
 				startText: 'Go back to the castle grounds',
 				actionsWithRequirements: [{
-					travelTo: 'castle' 
+					travelTo: 'castle'
 				}]
 			})
 		}
@@ -681,9 +675,9 @@ const forestPassage: Scene = {
 			sprite: 'club',
 			startText: 'A well worn club',
 			startsLocked: true,
-			actionsWithRequirements: [{ 
-				requiresGear:['unarmed'],
-				pickupItem: 'club', 
+			actionsWithRequirements: [{
+				requiresGear: ['unarmed'],
+				pickupItem: 'club',
 			}],
 		})
 		player.visualActionSources.push({
@@ -693,10 +687,10 @@ const forestPassage: Scene = {
 			startText: 'An old rusty dagger',
 			startsLocked: true,
 			actionsWithRequirements: [
-			{
-				requiresGear:['unarmed'],
-				pickupItem: 'dagger' 
-			}
+				{
+					requiresGear: ['unarmed'],
+					pickupItem: 'dagger'
+				}
 			],
 		})
 		player.visualActionSources.push({
@@ -753,15 +747,13 @@ const goblinCamp: Scene = {
 		player.flags.add('killedGoblins')
 	},
 	actions(player: Player) {
-		if (!enemiesInScene(player.currentScene).length) {
-			player.visualActionSources.push({
-				unitId: 'vasCastleFromCamp',
-				displayName: 'Castle',
-				sprite: 'castle',
-				startText: 'Hike all the way back to Bramblemore Castle',
-				actionsWithRequirements: [{ travelTo: 'castle' }],
-			})
-		}
+		player.visualActionSources.push({
+			unitId: 'vasCastleFromCamp',
+			displayName: 'Castle',
+			sprite: 'castle',
+			startText: 'With the goblins slain you are free to travel about the lands',
+			actionsWithRequirements: [{ travelTo: 'forestPassage' }, { travelTo: 'castle' }],
+		})
 	}
 }
 
@@ -776,56 +768,54 @@ const tunnelChamber: Scene = {
 		}
 	},
 	actions(player: Player) {
-		const medallionDone = player.flags.has('smashedMedallion') || player.flags.has('placedMedallion')
-		if (!medallionDone) {
-			player.visualActionSources.push({
-				unitId: 'vasDungeonAltar',
-				displayName: 'Altar',
-				sprite: 'armorStand',
-				startText: `It's the altar the king told me about`,
-				actionsWithRequirements: [{
-					serverAct: {
-						buttonText: "Place the medallion upon the altar",
-						performAction() {
-							player.flags.add('placedMedallion')
-							for (const allPlayer of activePlayersInScene('tunnelChamber')) {
-								allPlayer.sceneTexts.push("The medallion is placed into the altar. The hooded figure turns upon you in a rage")
-							}
-							for (const allPlayer of activePlayersInScene('throne')) {
-								allPlayer.sceneTexts.push("You hear a rumbling from below. The king says 'yay someone placed the medallion. If I just told you to do that, never mind..'  that explains why your actions just changed mid scene. Stragglers can still get their ealier quests from here still. hopefully it makes sense.")
-							}
-							spawnEnemy('Hooded Figure', 'hobGoblin', 'tunnelChamber')
-							spawnEnemy('Skritter', 'rat', 'tunnelChamber')
-							spawnEnemy('Snivels', 'darter', 'tunnelChamber')
-						},
-					}
-				}, {
-					serverAct: {
-						buttonText: "Smash the medallion",
-						performAction() {
-							player.flags.add('smashedMedallion')
-							for (const playerInChamber of activePlayersInScene('tunnelChamber')) {
-								playerInChamber.sceneTexts.push("The medallion got smashed. The hooded figure is pleased with you. You can leave the chamber now")
-							}
-							for (const playerInThrone of activePlayersInScene('throne')) {
-								playerInThrone.sceneTexts.push("You hear the sound of a medallion gettin smashed down below. The situation in here changes.. but not so much that it wouldn't make sense to come here for your earlier quests.. anyway, a new action button probably appeared just now")
-							}
-						},
-					}
+		// const medallionDone = player.flags.has('smashedMedallion') || player.flags.has('placedMedallion')
+		player.visualActionSources.push({
+			unitId: 'vasDungeonAltar',
+			displayName: 'Altar',
+			sprite: 'armorStand',
+			startText: `It's the altar the king told me about`,
+			actionsWithRequirements: [{
+				requiresNotFlags: ['placedMedallion', 'smashedMedallion'],
+				serverAct: {
+					buttonText: "Place the medallion upon the altar",
+					performAction() {
+						player.flags.add('placedMedallion')
+						for (const allPlayer of activePlayersInScene('tunnelChamber')) {
+							allPlayer.sceneTexts.push("The medallion is placed into the altar. The hooded figure turns upon you in a rage")
+						}
+						for (const allPlayer of activePlayersInScene('throne')) {
+							allPlayer.sceneTexts.push("You hear a rumbling from below. The king says 'yay someone placed the medallion. If I just told you to do that, never mind..'  that explains why your actions just changed mid scene. Stragglers can still get their ealier quests from here still. hopefully it makes sense.")
+						}
+						spawnEnemy('Hooded Figure', 'hobGoblin', 'tunnelChamber')
+						spawnEnemy('Skritter', 'rat', 'tunnelChamber')
+						spawnEnemy('Snivels', 'darter', 'tunnelChamber')
+					},
 				}
-				]
-			})
-		}
+			}, {
+				requiresNotFlags: ['placedMedallion', 'smashedMedallion'],
+				serverAct: {
+					buttonText: "Smash the medallion",
+					performAction() {
+						player.flags.add('smashedMedallion')
+						for (const playerInChamber of activePlayersInScene('tunnelChamber')) {
+							playerInChamber.sceneTexts.push("The medallion got smashed. The hooded figure is pleased with you. You can leave the chamber now")
+						}
+						for (const playerInThrone of activePlayersInScene('throne')) {
+							playerInThrone.sceneTexts.push("You hear the sound of a medallion gettin smashed down below. The situation in here changes.. but not so much that it wouldn't make sense to come here for your earlier quests.. anyway, a new action button probably appeared just now")
+						}
+					},
+				}
+			}
+			]
+		})
 
-		if (medallionDone && !enemiesInScene(player.currentScene).length) {
-			player.visualActionSources.push({
-				unitId: 'vasThroneFromDungeon',
-				displayName: 'Throne Room',
-				sprite: 'castle',
-				startText: 'Head back up to the throne room',
-				actionsWithRequirements: [{ travelTo: 'throne' }]
-			})
-		}
+		player.visualActionSources.push({
+			unitId: 'vasThroneFromDungeon',
+			displayName: 'Throne Room',
+			sprite: 'castle',
+			startText: 'Head back up to the throne room',
+			actionsWithRequirements: [{ travelTo: 'throne' }]
+		})
 	},
 }
 

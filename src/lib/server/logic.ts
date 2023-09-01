@@ -30,10 +30,11 @@ export function updatePlayerActions(player: Player) {
 			}
 			player.itemActions.push(ga)
 		}
-
 		return
 	}
-	if (enemiesInScene(player.currentScene).length) {
+	let sceneEnemies = enemiesInScene(player.currentScene)
+	let scenePlayers = activePlayersInScene(player.currentScene)
+	if (sceneEnemies.length) {
 		if (items.wait.actions) {
 			let ga: GameAction = {
 				buttonText: 'Wait',
@@ -50,7 +51,7 @@ export function updatePlayerActions(player: Player) {
 
 	for (const cd of playerItemStates(player)) {
 		const i = items[cd.itemId]
-		if (i.useableOutOfBattle || enemiesInScene(player.currentScene).length) {
+		if (i.useableOutOfBattle || sceneEnemies.length) {
 			if (cd.cooldown < 1 && cd.warmup < 1 && (cd.stock == undefined || cd.stock > 0)) {
 				if (i.actions) {
 					let ga: GameAction = {
@@ -65,7 +66,7 @@ export function updatePlayerActions(player: Player) {
 					player.itemActions.push(ga)
 				}
 				if (i.actionForEnemy) {
-					for (const enemy of enemiesInScene(player.currentScene)) {
+					for (const enemy of sceneEnemies) {
 						let ga: GameAction = {
 							buttonText: `use ${i.id} on ${enemy.unitId}`,
 							performAction() {
@@ -80,7 +81,7 @@ export function updatePlayerActions(player: Player) {
 					}
 				}
 				if (i.actionForFriendly) {
-					for (const friend of activePlayersInScene(player.currentScene).filter(f => f.unitId != player.unitId)) {
+					for (const friend of scenePlayers.filter(f => f.unitId != player.unitId)) {
 						if (
 							(!i.requiresHealth || friend.health < friend.maxHealth && friend.health > 0) &&
 							(!i.requiresStatus || friend.statuses[i.requiresStatus] > 0)
@@ -121,8 +122,9 @@ export function updatePlayerActions(player: Player) {
 		}
 	}
 
-
-	scenes.get(player.currentScene)?.actions(player)
+	if(!sceneEnemies.length){
+		scenes.get(player.currentScene)?.actions(player)
+	}
 }
 
 export function enterSceneOrWakeup(player: Player) {
@@ -593,8 +595,19 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 					}
 				}
 			}
-			if (unlockableActData.requiresFlag != undefined && !player.flags.has(unlockableActData.requiresFlag)) {
-				passedRequirements = false
+			if (unlockableActData.requiresFlags != undefined) {
+				for (const flagRequired of unlockableActData.requiresFlags){
+					if(!player.flags.has(flagRequired)){
+						passedRequirements = false
+					}
+				}
+			}
+			if (unlockableActData.requiresNotFlags != undefined) {
+				for (const flagNotAllowed of unlockableActData.requiresNotFlags){
+					if(player.flags.has(flagNotAllowed)){
+						passedRequirements = false
+					}
+				}
 			}
 			if (passedRequirements) {
 				let ga: GameAction
@@ -723,7 +736,8 @@ export type VisualActionSourceInClient = {
 
 export type UnlockableActionData = {
 	serverAct?: GameAction
-	requiresFlag?: Flag
+	requiresFlags?: Flag[]
+	requiresNotFlags?: Flag[]
 	requiresGear?: ItemId[]
 	pickupItem?: ItemId
 	travelTo?: SceneId
