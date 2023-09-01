@@ -55,7 +55,6 @@ export type GameAction = {
 	goTo?:SceneId;
 	performAction?: () => BattleEvent | void;
 	buttonText: string;
-	grantsImmunity?:boolean;
 	slot?:QuickbarSlot;
 	target?: UnitId;
 };

@@ -838,7 +838,6 @@ const armory: Scene = {
 		for (const id in items) {
 			player.sceneActions.push({
 				buttonText: `Equip ${id}`,
-				grantsImmunity: true,
 				performAction() {
 					const tId = id as ItemId
 					equipItem(player, items[tId])
@@ -848,7 +847,6 @@ const armory: Scene = {
 		for (const id in enemyTemplates) {
 			player.sceneActions.push({
 				buttonText: `Spawn ${id}`,
-				grantsImmunity: true,
 				performAction() {
 					spawnEnemy(`${id}${Math.round(Math.random() * 100)}`, id as EnemyTemplateId, 'armory')
 				},

@@ -39,6 +39,7 @@ export type Item = {
 	slot: QuickbarSlot
 	speed: number
 	provoke?: number
+	grantsImmunity?:boolean;
 	actions?: (player: Player) => GameAction
 	actionForEnemy?: (player: Player, enemy: ActiveEnemy) => GameAction
 	actionForFriendly?: (player: Player, friend: Player) => GameAction
@@ -294,10 +295,10 @@ const leatherArmor: Item = {
 	requiresStatus: 'poison',
 	speed: 5,
 	provoke: 0,
+	grantsImmunity: true,
 	actionForFriendly(player, friend) {
 		return {
 			buttonText: `Cure ${friend.heroName} with ranger's herbs`,
-			grantsImmunity: true,
 			slot: 'body',
 			target: friend.unitId,
 			performAction: () => {
@@ -308,12 +309,11 @@ const leatherArmor: Item = {
 					putsStatuses: [{ targetPlayer: friend, status: 'poison', remove: true }]
 				} satisfies BattleEvent
 			},
-		}
+		} satisfies GameAction
 	},
 	actionForSelf(player) {
 		return {
 			buttonText: `Cure myself with ranger's herbs`,
-			grantsImmunity: true,
 			slot: 'body',
 			target: player.unitId,
 			performAction: () => {
@@ -324,7 +324,7 @@ const leatherArmor: Item = {
 				} satisfies BattleEvent
 
 			},
-		}
+		} satisfies GameAction
 	}
 }
 
@@ -372,9 +372,9 @@ const succumb: Item = {
 	id: 'succumb',
 	slot: 'succumb',
 	speed: -999,
+	grantsImmunity: true,
 	actions(player) {
 		return {
-			grantsImmunity: true,
 			slot: 'succumb',
 			buttonText: 'succumb to your wounds',
 			performAction() {
@@ -384,7 +384,7 @@ const succumb: Item = {
 					succumb:true,
 				} satisfies BattleEvent
 			},
-		}
+		} satisfies GameAction
 	}
 }
 

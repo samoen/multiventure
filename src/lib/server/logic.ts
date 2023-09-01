@@ -292,7 +292,7 @@ function preCombatActionPerformed(player: Player, gameAction: GameAction, itemUs
 }
 
 export function handleRetaliations(player: Player, postAction: boolean, action: GameAction, itemUsed:Item) {
-	if (action.grantsImmunity || player.statuses.hidden > 0) return
+	if (itemUsed.grantsImmunity || player.statuses.hidden > 0) return
 	let playerHitSpeed = player.agility
 	if (itemUsed.speed) {
 		playerHitSpeed += itemUsed.speed
