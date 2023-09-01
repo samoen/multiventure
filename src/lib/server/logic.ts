@@ -19,10 +19,13 @@ export function updatePlayerActions(player: Player) {
 
 	if (player.health < 1) {
 		if(items.succumb.actions){
-			let itemAct = items.succumb.actions(player)
 			let ga : GameAction = {
 				buttonText:'Succumb',
-				performAction: itemAct.performAction,
+				performAction(){
+					if(items.succumb.actions){
+						return items.succumb.actions(player)
+					}
+				},
 				slot: items.succumb.slot,
 			}
 			player.itemActions.push(ga)
@@ -32,10 +35,13 @@ export function updatePlayerActions(player: Player) {
 	}
 	if (enemiesInScene(player.currentScene).length) {
 		if(items.wait.actions){
-			let itemAct = items.wait.actions(player)
 			let ga : GameAction = {
 				buttonText:'Wait',
-				performAction: itemAct.performAction,
+				performAction(){
+					if(items.wait.actions){
+						return items.wait.actions(player)
+					}
+				},
 				slot: items.wait.slot,
 			}
 			player.itemActions.push(ga)
@@ -47,20 +53,26 @@ export function updatePlayerActions(player: Player) {
 		if (i.useableOutOfBattle || enemiesInScene(player.currentScene).length) {
 			if (cd.cooldown < 1 && cd.warmup < 1 && (cd.stock == undefined || cd.stock > 0)) {
 				if (i.actions) {
-					let itemAct = i.actions(player)
 					let ga : GameAction = {
 						buttonText:`use ${i.id}`,
-						performAction: itemAct.performAction,
+						performAction(){
+							if(i.actions){
+								return i.actions(player)
+							}
+						},
 						slot:i.slot,
 					}
 					player.itemActions.push(ga)
 				}
 				if (i.actionForEnemy) {
 					for (const enemy of enemiesInScene(player.currentScene)) {
-						let itemAct = i.actionForEnemy(player,enemy)
 						let ga : GameAction = {
 							buttonText:`use ${i.id} on ${enemy.unitId}`,
-							performAction: itemAct.performAction,
+							performAction(){
+								if(i.actionForEnemy){
+									return i.actionForEnemy(player,enemy)
+								}
+							},
 							slot:i.slot,
 							target:enemy.unitId,
 						}
@@ -73,10 +85,13 @@ export function updatePlayerActions(player: Player) {
 							(!i.requiresHealth || friend.health < friend.maxHealth && friend.health > 0) &&
 							(!i.requiresStatus || friend.statuses[i.requiresStatus] > 0)
 							) {
-							let itemAct = i.actionForFriendly(player, friend)
 							let ga : GameAction = {
 								buttonText:`use ${i.id} on ${friend.unitId}`,
-								performAction: itemAct.performAction,
+								performAction(){
+									if(i.actionForFriendly){
+										return i.actionForFriendly(player, friend)
+									}
+								},
 								slot:i.slot,
 								target:friend.unitId,
 							}
@@ -89,10 +104,13 @@ export function updatePlayerActions(player: Player) {
 							(!i.requiresHealth || player.health < player.maxHealth && player.health > 0) &&
 							(!i.requiresStatus || player.statuses[i.requiresStatus] > 0)
 							) {
-							let itemAct = i.actionForSelf(player)
 							let ga : GameAction = {
 								buttonText:`use ${i.id} on self`,
-								performAction: itemAct.performAction,
+								performAction(){
+									if(i.actionForSelf){
+										return i.actionForSelf(player)
+									}
+								},
 								slot:i.slot,
 								target:player.unitId,
 							}

@@ -120,7 +120,7 @@ export function addNewUser(heroName : string) : {id:string,player:Player}{
 		// startScene = 'goblinCamp'
 		// startScene = 'castle'
 		// startScene = 'throne'
-		startScene = 'armory'
+		// startScene = 'armory'
 		
 		let startWep = items.unarmed
 		let startUtil = items.empty
@@ -129,7 +129,6 @@ export function addNewUser(heroName : string) : {id:string,player:Player}{
 		let startInventory: Inventory = {
 			weapon: {
 				itemId: startWep.id,
-				// itemId: 'club',
 				cooldown: 0,
 				warmup: startWep.warmup ?? 0,
 				stock: startWep.startStock
