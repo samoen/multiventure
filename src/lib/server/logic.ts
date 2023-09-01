@@ -18,11 +18,11 @@ export function updatePlayerActions(player: Player) {
 	player.visualActionSources = []
 
 	if (player.health < 1) {
-		if(items.succumb.actions){
-			let ga : GameAction = {
-				buttonText:'Succumb',
-				performAction(){
-					if(items.succumb.actions){
+		if (items.succumb.actions) {
+			let ga: GameAction = {
+				buttonText: 'Succumb',
+				performAction() {
+					if (items.succumb.actions) {
 						return items.succumb.actions(player)
 					}
 				},
@@ -30,15 +30,15 @@ export function updatePlayerActions(player: Player) {
 			}
 			player.itemActions.push(ga)
 		}
-		
+
 		return
 	}
 	if (enemiesInScene(player.currentScene).length) {
-		if(items.wait.actions){
-			let ga : GameAction = {
-				buttonText:'Wait',
-				performAction(){
-					if(items.wait.actions){
+		if (items.wait.actions) {
+			let ga: GameAction = {
+				buttonText: 'Wait',
+				performAction() {
+					if (items.wait.actions) {
 						return items.wait.actions(player)
 					}
 				},
@@ -47,75 +47,75 @@ export function updatePlayerActions(player: Player) {
 			player.itemActions.push(ga)
 		}
 	}
-	
+
 	for (const cd of playerItemStates(player)) {
 		const i = items[cd.itemId]
 		if (i.useableOutOfBattle || enemiesInScene(player.currentScene).length) {
 			if (cd.cooldown < 1 && cd.warmup < 1 && (cd.stock == undefined || cd.stock > 0)) {
 				if (i.actions) {
-					let ga : GameAction = {
-						buttonText:`use ${i.id}`,
-						performAction(){
-							if(i.actions){
+					let ga: GameAction = {
+						buttonText: `use ${i.id}`,
+						performAction() {
+							if (i.actions) {
 								return i.actions(player)
 							}
 						},
-						slot:i.slot,
+						slot: i.slot,
 					}
 					player.itemActions.push(ga)
 				}
 				if (i.actionForEnemy) {
 					for (const enemy of enemiesInScene(player.currentScene)) {
-						let ga : GameAction = {
-							buttonText:`use ${i.id} on ${enemy.unitId}`,
-							performAction(){
-								if(i.actionForEnemy){
-									return i.actionForEnemy(player,enemy)
+						let ga: GameAction = {
+							buttonText: `use ${i.id} on ${enemy.unitId}`,
+							performAction() {
+								if (i.actionForEnemy) {
+									return i.actionForEnemy(player, enemy)
 								}
 							},
-							slot:i.slot,
-							target:enemy.unitId,
+							slot: i.slot,
+							target: enemy.unitId,
 						}
 						player.itemActions.push(ga)
 					}
 				}
 				if (i.actionForFriendly) {
-					for (const friend of activePlayersInScene(player.currentScene).filter(f=>f.unitId != player.unitId)) {
+					for (const friend of activePlayersInScene(player.currentScene).filter(f => f.unitId != player.unitId)) {
 						if (
 							(!i.requiresHealth || friend.health < friend.maxHealth && friend.health > 0) &&
 							(!i.requiresStatus || friend.statuses[i.requiresStatus] > 0)
-							) {
-							let ga : GameAction = {
-								buttonText:`use ${i.id} on ${friend.unitId}`,
-								performAction(){
-									if(i.actionForFriendly){
+						) {
+							let ga: GameAction = {
+								buttonText: `use ${i.id} on ${friend.unitId}`,
+								performAction() {
+									if (i.actionForFriendly) {
 										return i.actionForFriendly(player, friend)
 									}
 								},
-								slot:i.slot,
-								target:friend.unitId,
+								slot: i.slot,
+								target: friend.unitId,
 							}
 							player.itemActions.push(ga)
 						}
 					}
 				}
 				if (i.actionForSelf) {
-						if (
-							(!i.requiresHealth || player.health < player.maxHealth && player.health > 0) &&
-							(!i.requiresStatus || player.statuses[i.requiresStatus] > 0)
-							) {
-							let ga : GameAction = {
-								buttonText:`use ${i.id} on self`,
-								performAction(){
-									if(i.actionForSelf){
-										return i.actionForSelf(player)
-									}
-								},
-								slot:i.slot,
-								target:player.unitId,
-							}
-							player.itemActions.push(ga)
+					if (
+						(!i.requiresHealth || player.health < player.maxHealth && player.health > 0) &&
+						(!i.requiresStatus || player.statuses[i.requiresStatus] > 0)
+					) {
+						let ga: GameAction = {
+							buttonText: `use ${i.id} on self`,
+							performAction() {
+								if (i.actionForSelf) {
+									return i.actionForSelf(player)
+								}
+							},
+							slot: i.slot,
+							target: player.unitId,
 						}
+						player.itemActions.push(ga)
+					}
 				}
 			}
 		}
@@ -171,7 +171,7 @@ export function enterSceneOrWakeup(player: Player) {
 	enteringScene.hasEntered.add(player.heroName)
 }
 
-export function changeScene(player:Player, goTo:SceneId){
+export function changeScene(player: Player, goTo: SceneId) {
 	player.previousScene = player.currentScene
 	player.currentScene = goTo
 
@@ -208,7 +208,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		return
 	}
 
-	if(!actionFromId.slot || actionFromId.slot == 'succumb'){
+	if (!actionFromId.slot || actionFromId.slot == 'succumb') {
 		if (actionFromId.performAction) {
 			let battleEvent = actionFromId.performAction();
 			if (battleEvent) {
@@ -217,11 +217,11 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		}
 		return
 	}
-	
-	let itemUsed : Item | undefined = undefined
-	if(actionFromId.slot == 'wait'){
+
+	let itemUsed: Item | undefined = undefined
+	if (actionFromId.slot == 'wait') {
 		itemUsed = items.wait
-	}else{
+	} else {
 		const itemState = player.inventory[actionFromId.slot]
 		itemUsed = items[itemState.itemId]
 	}
@@ -234,7 +234,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 			sceneId: player.currentScene,
 			battleAnimation: {
 				source: player.unitId,
-				behavior: {kind:'selfInflicted',extraSprite: 'smoke',},
+				behavior: { kind: 'selfInflicted', extraSprite: 'smoke', },
 				putsStatuses: [{ status: 'hidden', target: player.unitId, remove: true }]
 			}
 		})
@@ -285,8 +285,8 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 					battleAnimation: {
 						source: player.unitId,
 						damageToSource: dmg,
-						behavior: {kind:'selfInflicted',extraSprite: 'poison',}
-						
+						behavior: { kind: 'selfInflicted', extraSprite: 'poison', }
+
 					}
 				}
 			)
@@ -320,7 +320,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 }
 
-function preCombatActionPerformed(player: Player, gameAction: GameAction, itemUsed:Item) {
+function preCombatActionPerformed(player: Player, gameAction: GameAction, itemUsed: Item) {
 
 	// Each turn decrement cooldowns, only if time passed ie provoke
 	if (itemUsed.provoke != undefined) {
@@ -344,7 +344,7 @@ function preCombatActionPerformed(player: Player, gameAction: GameAction, itemUs
 
 }
 
-export function handleRetaliations(player: Player, postAction: boolean, action: GameAction, itemUsed:Item) {
+export function handleRetaliations(player: Player, postAction: boolean, action: GameAction, itemUsed: Item) {
 	if (itemUsed.grantsImmunity || player.statuses.hidden > 0) return
 	let playerHitSpeed = player.agility
 	if (itemUsed.speed) {
@@ -359,10 +359,9 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 			let aggroForActor = getAggroForPlayer(enemyInScene, player)
 			if (aggroForActor) {
 				if ((Math.random() < (aggroForActor / 100))) {
-					if(enemyInScene.template.battleEvent){
-						processBattleEvent(enemyInScene.template.battleEvent(enemyInScene,player),player)
-					}else {
-						// for(const _ of Array.from({length:enemyInScene.template.strikes ?? 1})){
+					if (enemyInScene.template.battleEvent) {
+						processBattleEvent(enemyInScene.template.battleEvent(enemyInScene, player), player)
+					} else {
 						let r = damagePlayer(enemyInScene, player, enemyInScene.damage)
 						if (r.dmgDone > 0) {
 							pushAnimation(
@@ -372,14 +371,13 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 										source: enemyInScene.unitId,
 										target: player.unitId,
 										damageToTarget: r.dmgDone,
-										behavior: enemyInScene.template.behavior ?? {kind:'melee'},
+										behavior: enemyInScene.template.behavior ?? { kind: 'melee' },
 									}
 								})
 						}
-						// }
 					}
 
-					// enemyInScene.aggros.clear()
+					// enemy aggro to all players goes to zero when it succeeds an aggro roll
 					for (const key of enemyInScene.aggros.keys()) {
 						enemyInScene.aggros.set(key, 0);
 					}
@@ -390,7 +388,15 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 
 }
 
-function processBattleEvent(battleEvent : BattleEvent, player:Player){
+function processBattleEvent(battleEvent: BattleEvent, player: Player) {
+
+	if (
+		(battleEvent.target && battleEvent.target.kind == 'enemy' && battleEvent.target.entity.currentHealth < 1) ||
+		(battleEvent.target && battleEvent.target.kind == 'player' && battleEvent.target.entity.health < 1)
+	) {
+		return
+	}
+
 	let dmgToSource = 0
 	let dmgToTarget = 0
 	if (battleEvent.source.kind == 'player' && battleEvent.baseHealingToSource) {
@@ -464,7 +470,7 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 						})
 					}
 				}
-				if (battleEvent.source.kind=='enemy') {
+				if (battleEvent.source.kind == 'enemy') {
 					if (healthModifyEvent.baseDamage) {
 						let r = infightDamage(battleEvent.source.entity, healthModifyEvent.targetEnemy, healthModifyEvent.baseDamage)
 						alsoDmgedAnimation.push({
@@ -480,22 +486,22 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 	if (battleEvent.alsoModifiesAggro) {
 		for (const modifyEvent of battleEvent.alsoModifiesAggro) {
 			if (modifyEvent.setTo) {
-				for(const hero of modifyEvent.forHeros){
+				for (const hero of modifyEvent.forHeros) {
 					modifyEvent.targetEnemy.aggros.set(hero.heroName, modifyEvent.setTo)
 				}
-							aggroModifiedAnimations.push({
-					forHeros: modifyEvent.forHeros.map(h=>h.unitId),
+				aggroModifiedAnimations.push({
+					forHeros: modifyEvent.forHeros.map(h => h.unitId),
 					target: modifyEvent.targetEnemy.unitId,
 					setTo: modifyEvent.setTo,
 				})
 			}
 			if (modifyEvent.baseAmount) {
-				for(const hero of modifyEvent.forHeros){
+				for (const hero of modifyEvent.forHeros) {
 					let r = modifyAggroForPlayer(hero.heroName, modifyEvent.targetEnemy, modifyEvent.baseAmount)
 				}
 
 				aggroModifiedAnimations.push({
-					forHeros: modifyEvent.forHeros.map(h=>h.unitId),
+					forHeros: modifyEvent.forHeros.map(h => h.unitId),
 					target: modifyEvent.targetEnemy.unitId,
 					amount: modifyEvent.baseAmount,
 				})
@@ -504,18 +510,18 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 		}
 	}
 
-	if(battleEvent.takesItem && battleEvent.source.kind == 'player'){
-		equipItem(battleEvent.source.entity,battleEvent.takesItem)
+	if (battleEvent.takesItem && battleEvent.source.kind == 'player') {
+		equipItem(battleEvent.source.entity, battleEvent.takesItem)
 	}
 	let leavingScene = undefined
 	let sceneToPlayAnim = player.currentScene
-	if(battleEvent.behavior.kind == 'travel'){
+	if (battleEvent.behavior.kind == 'travel') {
 		leavingScene = player
 		changeScene(player, battleEvent.behavior.goTo)
 	}
-	if(battleEvent.succumb){
+	if (battleEvent.succumb) {
 		leavingScene = player
-		changeScene(player,'dead')
+		changeScene(player, 'dead')
 	}
 
 	let battleAnimation: BattleAnimation = {
@@ -541,12 +547,12 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 				remove: m.remove
 			} satisfies StatusModifier
 		}),
-		takesItem: battleEvent.takesItem && battleEvent.takesItem.slot != 'wait' && battleEvent.takesItem.slot != 'succumb' ? {slot:battleEvent.takesItem.slot, id:battleEvent.takesItem.id} : undefined,
+		takesItem: battleEvent.takesItem && battleEvent.takesItem.slot != 'wait' && battleEvent.takesItem.slot != 'succumb' ? { slot: battleEvent.takesItem.slot, id: battleEvent.takesItem.id } : undefined,
 	}
 	pushAnimation({
 		sceneId: sceneToPlayAnim,
 		battleAnimation: battleAnimation,
-		leavingScene:leavingScene,
+		leavingScene: leavingScene,
 	})
 }
 
@@ -555,7 +561,7 @@ export function getServerActionsMetRequirementsFromVases(vases: VisualActionSour
 	for (const vas of vases) {
 		let acts = getValidUnlockableServerActionsFromVas(vas, player)
 		for (const act of acts) {
-				validActionsFromVases.push(act)
+			validActionsFromVases.push(act)
 		}
 	}
 	return validActionsFromVases
@@ -579,10 +585,10 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 				passedRequirements = false
 			}
 			if (passedRequirements) {
-				let ga : GameAction
-				if(unlockableActData.serverAct){
+				let ga: GameAction
+				if (unlockableActData.serverAct) {
 					ga = unlockableActData.serverAct
-				}else if(unlockableActData.pickupItem){
+				} else if (unlockableActData.pickupItem) {
 					let id = unlockableActData.pickupItem
 					// let item = items[id]
 					ga = {
@@ -594,12 +600,12 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 								behavior: { kind: 'melee' },
 								takesItem: items[id]
 							} satisfies BattleEvent
-						},	
+						},
 					}
-				}else if(unlockableActData.travelTo){
+				} else if (unlockableActData.travelTo) {
 					let travelTo = unlockableActData.travelTo
 					let scene = scenes.get(travelTo)
-					if(!scene)continue
+					if (!scene) continue
 
 					ga = {
 						buttonText: `Travel to ${scene.displayName}`,
@@ -612,7 +618,7 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 						},
 					}
 				}
-				else{
+				else {
 					continue
 				}
 
@@ -654,7 +660,7 @@ export function convertVasToClient(vas: VisualActionSource, player: Player): Vis
 
 	let result = {
 		id: vas.unitId,
-		displayName:vas.displayName,
+		displayName: vas.displayName,
 		startText: startText,
 		responses: responses,
 		sprite: vas.sprite,
@@ -678,19 +684,19 @@ export function convertUnlockableActionsToClient(sUnlockables: (GameAction[] | u
 
 export type VisualActionSource = {
 	unitId: VisualActionSourceId
-	displayName:string
+	displayName: string
 	sprite: AnySprite
 	portrait?: MiscPortrait
 	actionsWithRequirements?: UnlockableActionData[]
 	startText: string,
 	responses?: ConversationResponse[]
-	detect?: { flag: Flag, startText: string, responses?: ConversationResponse[], unlockVasOnDetect?:VisualActionSourceId[] }
+	detect?: { flag: Flag, startText: string, responses?: ConversationResponse[], unlockVasOnDetect?: VisualActionSourceId[] }
 	startsLocked?: boolean
 	lockHandle?: string
 }
 
 export type VisualActionSourceInClient = {
-	displayName:string
+	displayName: string
 	startsLocked?: boolean
 	lockHandle?: string
 	id: VisualActionSourceId
