@@ -46,7 +46,7 @@ export function updatePlayerActions(player: Player) {
 					}
 				}
 				if (i.actionForFriendly) {
-					for (const friend of activePlayersInScene(player.currentScene)) {
+					for (const friend of activePlayersInScene(player.currentScene).filter(f=>f.unitId != player.unitId)) {
 						if (
 							(!i.requiresHealth || friend.health < friend.maxHealth && friend.health > 0) &&
 							(!i.requiresStatus || friend.statuses[i.requiresStatus] > 0)
@@ -56,24 +56,23 @@ export function updatePlayerActions(player: Player) {
 						}
 					}
 				}
+				if (i.actionForSelf) {
+						if (
+							(!i.requiresHealth || player.health < player.maxHealth && player.health > 0) &&
+							(!i.requiresStatus || player.statuses[i.requiresStatus] > 0)
+							) {
+							let itemAct = i.actionForSelf(player)
+							player.itemActions.push(itemAct)
+						}
+				}
 			}
 		}
 	}
 
 	if (enemiesInScene(player.currentScene).length) {
-		player.itemActions.push(
-			{
-				buttonText: 'wait',
-				provoke: 0,
-				speed:999,
-				performAction() {
-					return {
-						behavior:{kind:'selfInflicted',extraSprite:'shield'},
-						source:{kind:'player',entity:player},
-					}satisfies BattleEvent
-				},
-			}
-		)
+		if(items.wait.actions){
+			player.itemActions.push(items.wait.actions(player))
+		}
 	}
 
 	scenes.get(player.currentScene)?.actions(player)
@@ -168,10 +167,27 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	// 	}
 	// 	return
 	// }
+	if(!actionFromId.slot){
+		if (actionFromId.performAction) {
+			let battleEvent = actionFromId.performAction();
+			if (battleEvent) {
+				processBattleEvent(battleEvent, player)
+			}
+		}
+		return
+	}
+	
+	let itemUsed : Item | undefined = undefined
+	if(actionFromId.slot != 'noSlot'){
+		const itemState = player.inventory[actionFromId.slot]
+		itemUsed = items[itemState.itemId]
+	}else{
+		itemUsed = items.wait
+	}
 
 	pushHappening('----');
 
-	if (actionFromId.provoke && actionFromId.provoke > 0 && player.statuses.hidden > 0) {
+	if (itemUsed.provoke && itemUsed.provoke > 0 && player.statuses.hidden > 0) {
 		player.statuses.hidden = 0
 		pushAnimation({
 			sceneId: player.currentScene,
@@ -183,9 +199,9 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		})
 	}
 
-	handleRetaliations(player, false, actionFromId)
+	handleRetaliations(player, false, actionFromId, itemUsed)
 	if (player.health > 0) {
-		preCombatActionPerformed(player, actionFromId)
+		preCombatActionPerformed(player, actionFromId, itemUsed)
 		if (actionFromId.performAction) {
 			let battleEvent = actionFromId.performAction();
 			if (battleEvent) {
@@ -195,9 +211,9 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 
 	if (player.health > 0) {
-		handleRetaliations(player, true, actionFromId)
+		handleRetaliations(player, true, actionFromId, itemUsed)
 	}
-	if (actionFromId.provoke != undefined) {
+	if (itemUsed.provoke != undefined) {
 		for (const enemy of enemiesInScene(player.currentScene)) {
 			let statusForPlayer = enemy.statuses.get(player.unitId)
 			if (!statusForPlayer) continue
@@ -216,7 +232,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		}
 	}
 
-	if (player.health > 0 && actionFromId.provoke != undefined) {
+	if (player.health > 0 && itemUsed.provoke != undefined) {
 		if (player.statuses.poison > 0) {
 			let dmg = Math.floor(player.maxHealth * 0.1)
 			player.health -= dmg
@@ -245,8 +261,8 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 
 
-	if (actionFromId.provoke != undefined && player.health > 0) {
-		addAggro(player, actionFromId.provoke)
+	if (itemUsed.provoke != undefined && player.health > 0) {
+		addAggro(player, itemUsed.provoke)
 	}
 
 
@@ -262,10 +278,10 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 }
 
-function preCombatActionPerformed(player: Player, gameAction: GameAction) {
+function preCombatActionPerformed(player: Player, gameAction: GameAction, itemUsed:Item) {
 
 	// Each turn decrement cooldowns, only if time passed ie provoke
-	if (gameAction.provoke != undefined) {
+	if (itemUsed.provoke != undefined) {
 		for (const cd of playerItemStates(player)) {
 			if (cd.cooldown > 0) cd.cooldown--
 			if (cd.warmup > 0) cd.warmup--
@@ -273,7 +289,7 @@ function preCombatActionPerformed(player: Player, gameAction: GameAction) {
 	}
 
 	// If we used a slot item set it on cooldown and reduce stock
-	if (gameAction.slot) {
+	if (gameAction.slot && gameAction.slot != 'noSlot') {
 		let itemState = player.inventory[gameAction.slot]
 		let item = items[itemState.itemId]
 		if (item.cooldown) {
@@ -286,11 +302,11 @@ function preCombatActionPerformed(player: Player, gameAction: GameAction) {
 
 }
 
-export function handleRetaliations(player: Player, postAction: boolean, action: GameAction) {
+export function handleRetaliations(player: Player, postAction: boolean, action: GameAction, itemUsed:Item) {
 	if (action.grantsImmunity || player.statuses.hidden > 0) return
 	let playerHitSpeed = player.agility
-	if (action.speed) {
-		playerHitSpeed += action.speed
+	if (itemUsed.speed) {
+		playerHitSpeed += itemUsed.speed
 	}
 	for (const enemyInScene of enemiesInScene(player.currentScene).sort((a, b) => b.template.speed - a.template.speed)) {
 		if (enemyInScene.currentHealth < 1) continue
@@ -479,7 +495,7 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 				remove: m.remove
 			} satisfies StatusModifier
 		}),
-		takesItem: battleEvent.takesItem ? {slot:battleEvent.takesItem.slot, id:battleEvent.takesItem.id} : undefined,
+		takesItem: battleEvent.takesItem && battleEvent.takesItem.slot != 'noSlot' ? {slot:battleEvent.takesItem.slot, id:battleEvent.takesItem.id} : undefined,
 	}
 	pushAnimation({
 		sceneId: sceneToPlayAnim,
@@ -566,7 +582,7 @@ export function convertServerActionToClientAction(sa: GameAction): GameActionSen
 	return {
 
 		buttonText: sa.buttonText,
-		slot: sa.slot,
+		slot: sa.slot != 'noSlot' ? sa.slot : undefined,
 		target: sa.target,
 	}
 }

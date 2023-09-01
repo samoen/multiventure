@@ -1,6 +1,6 @@
 import type { UnitId, BattleAnimation, StatusEffect, StatusId, BattleEvent, HeroId, AnySprite, VisualActionSourceId } from '$lib/utils';
 import { v4 } from 'uuid';
-import { items, type Inventory, type Item, type ItemState, type EquipmentSlot } from './items';
+import { items, type Inventory, type Item, type ItemState, type EquipmentSlot, type SlotOrNone } from './items';
 import { pushHappening } from './messaging';
 import type { VisualActionSource } from './logic';
 import { type SceneId, scenes, addSoloScenes } from './scenes';
@@ -55,10 +55,10 @@ export type GameAction = {
 	goTo?:SceneId;
 	performAction?: () => BattleEvent | void;
 	buttonText: string;
-	speed?:number;
-	provoke?:number;
+	// speed?:number;
+	// provoke?:number;
 	grantsImmunity?:boolean;
-	slot?:EquipmentSlot
+	slot?:SlotOrNone;
 	target?: UnitId;
 };
 
@@ -123,26 +123,31 @@ export function addNewUser(heroName : string) : {id:string,player:Player}{
 		// startScene = 'goblinCamp'
 		// startScene = 'castle'
 		// startScene = 'throne'
-		// startScene = 'armory'
+		startScene = 'armory'
 		
+		let startWep = items.unarmed
+		let startUtil = items.empty
+		let startBody = items.rags
+
 		let startInventory: Inventory = {
 			weapon: {
-				itemId: 'unarmed',
+				itemId: startWep.id,
 				// itemId: 'club',
 				cooldown: 0,
-				warmup: 0,
+				warmup: startWep.warmup ?? 0,
+				stock: startWep.startStock
 			},
 			utility: {
-				itemId: 'empty',
-				// itemId: 'bomb',
+				itemId: startUtil.id,
 				cooldown: 0,
-				warmup: 0,
+				warmup: startBody.warmup ?? 0,
+				stock: startUtil.startStock
 			},
 			body: {
-				itemId: 'rags',
-				// itemId: 'leatherArmor',
+				itemId: startBody.id,
 				cooldown: 0,
-				warmup: 0,
+				warmup: startBody.warmup ?? 0,
+				stock: startBody.startStock
 			}
 		}
 		

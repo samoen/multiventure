@@ -8,6 +8,8 @@ export type EquipmentSlot =
 	| 'utility'
 	| 'body'
 
+export type SlotOrNone = EquipmentSlot | 'noSlot'
+
 export type ItemId = keyof typeof items
 
 export type ItemState = {
@@ -17,22 +19,30 @@ export type ItemState = {
 	stock?: number;
 }
 
+// export type Inventory = {
+// 	weapon:ItemState
+// 	utility:ItemState
+// 	body:ItemState
+// }
+
 export type Inventory = {
 	[T in EquipmentSlot]: ItemState
 }
 
 // type ItemActionData = {
 // 	validator:string,
-	
 
 // }
 
 export type Item = {
-	id:ItemId
-	slot:EquipmentSlot
+	id: ItemId
+	slot: SlotOrNone
+	speed: number
+	provoke: number
 	actions?: (player: Player) => GameAction
 	actionForEnemy?: (player: Player, enemy: ActiveEnemy) => GameAction
 	actionForFriendly?: (player: Player, friend: Player) => GameAction
+	actionForSelf?: (player: Player) => GameAction
 	onTakeDamage?: (incoming: number) => number
 	warmup?: number
 	cooldown?: number
@@ -44,119 +54,124 @@ export type Item = {
 
 
 const dagger: Item = {
-	id:'dagger',
-	slot:'weapon',
+	id: 'dagger',
+	slot: 'weapon',
+	provoke: 7,
+	speed: 8,
 	actionForEnemy(player, enemy) {
-			return {
-				buttonText: `Attack ${enemy.name} with Dagger`,
-				provoke: 7,
-				speed: 8,
-				slot: 'weapon',
-				target: enemy.unitId,
-				performAction() {
-					return {
-						source: { kind: 'player', entity: player },
-						target: {kind:'enemy',entity:enemy},
-						baseDamageToTarget: 7,
-						strikes: 3,
-						behavior: { kind: 'melee' },
-					} satisfies BattleEvent
-				}
+		return {
+			buttonText: `Attack ${enemy.name} with Dagger`,
+			slot: 'weapon',
+			target: enemy.unitId,
+			performAction() {
+				return {
+					source: { kind: 'player', entity: player },
+					target: { kind: 'enemy', entity: enemy },
+					baseDamageToTarget: 7,
+					strikes: 3,
+					behavior: { kind: 'melee' },
+				} satisfies BattleEvent
 			}
+		}
 	}
 }
 
 const club: Item = {
-	id:'club',
-	slot:'weapon',
+	id: 'club',
+	slot: 'weapon',
+	provoke: 40,
+	speed: 2,
 	actionForEnemy(player, enemy) {
 		return {
-				buttonText: `Hit ${enemy.name} with Club`,
-				provoke: 40,
-				speed: 2,
-				slot: 'weapon',
-				target: enemy.unitId,
-				performAction() {
-					return {
-						source: { kind: 'player', entity: player },
-						target: {kind:'enemy',entity:enemy},
-						baseDamageToTarget: 25,
-						behavior: { kind: 'melee' },
-					} satisfies BattleEvent
-				}
+			buttonText: `Hit ${enemy.name} with Club`,
+			slot: 'weapon',
+			target: enemy.unitId,
+			performAction() {
+				return {
+					source: { kind: 'player', entity: player },
+					target: { kind: 'enemy', entity: enemy },
+					baseDamageToTarget: 25,
+					behavior: { kind: 'melee' },
+				} satisfies BattleEvent
 			}
+		}
 	}
 }
 
 const fireStaff: Item = {
-	id:'fireStaff',
-	slot:'weapon',
+	id: 'fireStaff',
+	slot: 'weapon',
 	warmup: 2,
 	cooldown: 1,
+	provoke: 60,
+	speed: 1,
 	actionForEnemy(player, enemy) {
-		
-		return	{
-				buttonText: `Blast ${enemy.name} with Firebolt`,
-				provoke: 60,
-				speed: 1,
-				slot: 'weapon',
-				target: enemy.unitId,
-				performAction() {
-					return {
-						source: { kind: 'player', entity: player },
-						target: {kind:'enemy',entity:enemy},
-						baseDamageToTarget: 100,
-						behavior: { kind: 'missile', extraSprite: 'flame' },
-					} satisfies BattleEvent
-				}
+
+		return {
+			buttonText: `Blast ${enemy.name} with Firebolt`,
+			slot: 'weapon',
+			target: enemy.unitId,
+			performAction() {
+				return {
+					source: { kind: 'player', entity: player },
+					target: { kind: 'enemy', entity: enemy },
+					baseDamageToTarget: 100,
+					behavior: { kind: 'missile', extraSprite: 'flame' },
+				} satisfies BattleEvent
 			}
-		
+		}
+
 	}
 }
 
 const bandage: Item = {
-	id:'bandage',
-	slot:'utility',
+	id: 'bandage',
+	slot: 'utility',
 	startStock: 2,
 	useableOutOfBattle: true,
-	requiresHealth:true,
+	requiresHealth: true,
+	speed: 15,
+	provoke: 1,
 	actionForFriendly(player, friend) {
+		return {
+			buttonText: `Heal ${friend.heroName} with bandage`,
+			slot: 'utility',
+			target: friend.unitId,
+			performAction: () => {
 				return {
-					buttonText: `Heal ${friend.heroName == player.heroName ? 'myself' : friend.heroName} with bandage`,
-					speed: 15,
-					provoke: 1,
-					slot: 'utility',
-					target: friend.unitId,
-					performAction: () => {
-						if (friend.heroName != player.heroName) {
-							return {
-								source: { kind: 'player', entity: player },
-								target: {kind:'player',entity:friend},
-								baseHealingToTarget: 90,
-								behavior: { kind: 'melee' },
-							} satisfies BattleEvent
-						} else {
-							return {
-								source: { kind: 'player', entity: player },
-								baseHealingToSource: 90,
-								behavior: { kind: 'selfInflicted', extraSprite: 'heal' },
-
-							}
-						}
-					},
+					source: { kind: 'player', entity: player },
+					target: { kind: 'player', entity: friend },
+					baseHealingToTarget: 90,
+					behavior: { kind: 'melee' },
+				} satisfies BattleEvent
+			},
+		}
+	},
+	actionForSelf(player) {
+		return {
+			buttonText: `Heal myself with bandage`,
+			slot: 'utility',
+			target: player.unitId,
+			performAction: () => {
+				return {
+					source: { kind: 'player', entity: player },
+					baseHealingToSource: 90,
+					behavior: { kind: 'selfInflicted', extraSprite: 'heal' },
 				}
+			},
+		}
 	}
 }
 
 const bomb: Item = {
-	id:'bomb',
-	slot:'utility',
+	id: 'bomb',
+	slot: 'utility',
 	startStock: 1,
+	speed: 12,
+	provoke: 5,
 	actions(player) {
-		return{
+		return {
 			buttonText: 'Throw Powderbomb',
-			speed: 12,
-			provoke: 5,
 			slot: 'utility',
 			performAction() {
 				let dmgModifies: HealthModifierEvent[] = []
@@ -186,40 +201,40 @@ const bomb: Item = {
 }
 
 const poisonDart: Item = {
-	id:'poisonDart',
-	slot:'utility',
+	id: 'poisonDart',
+	slot: 'utility',
 	startStock: 2,
+	provoke: 40,
+	speed: 20,
 	actionForEnemy(player, enemy) {
 		return {
-				buttonText: `Throw poison dart at ${enemy.name}`,
-				provoke: 40,
-				speed: 20,
-				slot: 'utility',
-				target: enemy.unitId,
-				performAction() {
-					return {
-						source: { kind: 'player', entity: player },
-						target: {kind:'enemy',entity:enemy},
-						putsStatuses: [{ targetEnemy: enemy, status: 'poison', count: 3 }],
-						baseDamageToTarget: 3,
-						behavior: { kind: 'missile', extraSprite: 'arrow' },
-					} satisfies BattleEvent
-				},
-			}
-		
+			buttonText: `Throw poison dart at ${enemy.name}`,
+			slot: 'utility',
+			target: enemy.unitId,
+			performAction() {
+				return {
+					source: { kind: 'player', entity: player },
+					target: { kind: 'enemy', entity: enemy },
+					putsStatuses: [{ targetEnemy: enemy, status: 'poison', count: 3 }],
+					baseDamageToTarget: 3,
+					behavior: { kind: 'missile', extraSprite: 'arrow' },
+				} satisfies BattleEvent
+			},
+		}
+
 	},
 }
 
 const plateMail: Item = {
-	id:'plateMail',
-	slot:'body',
+	id: 'plateMail',
+	slot: 'body',
 	cooldown: 2,
+	provoke: 5,
+	speed: 999,
 	actions(player) {
 		return {
-			provoke: 5,
 			buttonText: 'Taunt',
 			slot: 'body',
-			speed: 999,
 			performAction() {
 				pushHappening(`${player.heroName} infuriates enemies!`)
 				return {
@@ -245,15 +260,15 @@ const plateMail: Item = {
 }
 
 const theifCloak: Item = {
-	id:'theifCloak',
-	slot:'body',
+	id: 'theifCloak',
+	slot: 'body',
 	cooldown: 3,
+	speed: 999,
+	provoke: 30,
 	actions(player) {
 		return {
 			buttonText: 'Hide in shadows',
-			speed: 999,
 			slot: 'body',
-			provoke: 30,
 			performAction() {
 				pushHappening(`${player.heroName} hid in shadows`)
 				return {
@@ -267,8 +282,8 @@ const theifCloak: Item = {
 }
 
 const leatherArmor: Item = {
-	id:'leatherArmor',
-	slot:'body',
+	id: 'leatherArmor',
+	slot: 'body',
 	useableOutOfBattle: true,
 	onTakeDamage(incoming) {
 		if (incoming < 6) {
@@ -276,63 +291,95 @@ const leatherArmor: Item = {
 		}
 		return incoming - 5
 	},
-	requiresStatus:'poison',
+	requiresStatus: 'poison',
+	speed: 5,
+	provoke: 0,
 	actionForFriendly(player, friend) {
+		return {
+			buttonText: `Cure ${friend.heroName} with ranger's herbs`,
+			grantsImmunity: true,
+			slot: 'body',
+			target: friend.unitId,
+			performAction: () => {
 				return {
-					buttonText: `Cure ${friend.heroName == player.heroName ? 'myself' : friend.heroName} with ranger's herbs`,
-					grantsImmunity: true,
-					speed: 5,
-					provoke: 0,
-					slot: 'body',
-					target: friend.unitId,
-					performAction: () => {
-						if (friend.heroName != player.heroName) {
-							return {
-								source: { kind: 'player', entity: player },
-								target: {kind:'player',entity:friend},
-								behavior: { kind: 'melee' },
-								putsStatuses: [{ targetPlayer: friend, status: 'poison', remove: true }]
-							} satisfies BattleEvent
-						} else {
-							return {
-								source: { kind: 'player', entity: player },
-								behavior: { kind: 'selfInflicted', extraSprite: 'heal' },
-								putsStatuses: [{ targetPlayer: player, status: 'poison', remove: true }]
-							} satisfies BattleEvent
-						}
-					},
-				}
+					source: { kind: 'player', entity: player },
+					target: { kind: 'player', entity: friend },
+					behavior: { kind: 'melee' },
+					putsStatuses: [{ targetPlayer: friend, status: 'poison', remove: true }]
+				} satisfies BattleEvent
+			},
+		}
+	},
+	actionForSelf(player) {
+		return {
+			buttonText: `Cure myself with ranger's herbs`,
+			grantsImmunity: true,
+			slot: 'body',
+			target: player.unitId,
+			performAction: () => {
+				return {
+					source: { kind: 'player', entity: player },
+					behavior: { kind: 'selfInflicted', extraSprite: 'heal' },
+					putsStatuses: [{ targetPlayer: player, status: 'poison', remove: true }]
+				} satisfies BattleEvent
+
+			},
+		}
 	}
 }
 
-const unarmed : Item = {
-	id:'unarmed',
-	slot:'weapon',
+const unarmed: Item = {
+	id: 'unarmed',
+	slot: 'weapon',
+	provoke: 1,
+	speed: 10,
 	actionForEnemy(player, enemy) {
-		return{
-			buttonText:`Punch ${enemy.name}`,
-			target:enemy.unitId,
-			provoke:1,
-			slot:'weapon',
+		return {
+			buttonText: `Punch ${enemy.name}`,
+			target: enemy.unitId,
+			slot: 'weapon',
 			performAction() {
-				return{
-					behavior:{kind:'melee'},
-					source:{kind:'player', entity:player},
-					target:{kind:'enemy',entity:enemy},
-					baseDamageToTarget:5,
-				}satisfies BattleEvent
+				return {
+					behavior: { kind: 'melee' },
+					source: { kind: 'player', entity: player },
+					target: { kind: 'enemy', entity: enemy },
+					baseDamageToTarget: 5,
+				} satisfies BattleEvent
 			},
 		}
 	},
 }
 
-const empty : Item = {
-	id:'empty',
-	slot:'utility',
+const wait: Item = {
+	id: 'wait',
+	slot: 'noSlot',
+	speed: 999,
+	provoke: 0,
+	actions(player) {
+		return {
+			slot: 'noSlot',
+			buttonText: 'wait',
+			performAction() {
+				return {
+					behavior: { kind: 'selfInflicted', extraSprite: 'shield' },
+					source: { kind: 'player', entity: player },
+				} satisfies BattleEvent
+			},
+		}
+	}
 }
-const rags : Item = {
-	id:'rags',
-	slot:'body'
+
+const empty: Item = {
+	id: 'empty',
+	slot: 'utility',
+	speed: 0,
+	provoke: 0,
+}
+const rags: Item = {
+	id: 'rags',
+	slot: 'body',
+	speed: 0,
+	provoke: 0,
 }
 
 // export const allItems = new Map<ItemId,Item>()
@@ -344,6 +391,7 @@ const rags : Item = {
 
 
 export const items = {
+	wait: wait,
 	unarmed: unarmed,
 	dagger: dagger,
 	club: club,
@@ -359,19 +407,20 @@ export const items = {
 } as const satisfies Record<string, Item>;
 
 
-export function equipItem(player:Player, item:Item){
+export function equipItem(player: Player, item: Item) {
+	if (item.slot == 'noSlot') return
 	player.inventory[item.slot].itemId = item.id
 	player.inventory[item.slot].warmup = item.warmup ?? 0
 	player.inventory[item.slot].cooldown = 0
 	player.inventory[item.slot].stock = item.startStock
 }
 
-export function checkHasItem(player:Player, id:ItemId):boolean{
-	if(
+export function checkHasItem(player: Player, id: ItemId): boolean {
+	if (
 		player.inventory.weapon.itemId == id ||
 		player.inventory.utility.itemId == id ||
-		player.inventory.body.itemId == id	
-		){
+		player.inventory.body.itemId == id
+	) {
 		return true
 	}
 	return false
