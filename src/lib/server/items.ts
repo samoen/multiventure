@@ -1,6 +1,7 @@
 import type { AggroModifier, AggroModifierEvent, BattleEvent, HealthModifier, HealthModifierEvent, StatusId, UnitId } from '$lib/utils';
 import { damageEnemy, enemiesInScene, pushAnimation, takePoisonDamage, type ActiveEnemy } from './enemies';
 import { pushHappening } from './messaging';
+import type { SceneId } from './scenes';
 import { activePlayersInScene, type GameAction, type Player } from './users';
 
 export type EquipmentSlot =
@@ -19,20 +20,13 @@ export type ItemState = {
 	stock?: number;
 }
 
-// export type Inventory = {
-// 	weapon:ItemState
-// 	utility:ItemState
-// 	body:ItemState
-// }
-
 export type Inventory = {
 	[T in EquipmentSlot]: ItemState
 }
 
-// type ItemActionData = {
-// 	validator:string,
-
-// }
+type ItemActionData = {
+	performAction?: () => BattleEvent | void;
+}
 
 export type Item = {
 	id: ItemId
@@ -40,10 +34,10 @@ export type Item = {
 	speed: number
 	provoke?: number
 	grantsImmunity?:boolean;
-	actions?: (player: Player) => GameAction
-	actionForEnemy?: (player: Player, enemy: ActiveEnemy) => GameAction
-	actionForFriendly?: (player: Player, friend: Player) => GameAction
-	actionForSelf?: (player: Player) => GameAction
+	actions?: (player: Player) => ItemActionData
+	actionForEnemy?: (player: Player, enemy: ActiveEnemy) => ItemActionData
+	actionForFriendly?: (player: Player, friend: Player) => ItemActionData
+	actionForSelf?: (player: Player) => ItemActionData
 	onTakeDamage?: (incoming: number) => number
 	warmup?: number
 	cooldown?: number
@@ -61,9 +55,6 @@ const dagger: Item = {
 	speed: 8,
 	actionForEnemy(player, enemy) {
 		return {
-			buttonText: `Attack ${enemy.name} with Dagger`,
-			slot: 'weapon',
-			target: enemy.unitId,
 			performAction() {
 				return {
 					source: { kind: 'player', entity: player },
@@ -73,7 +64,7 @@ const dagger: Item = {
 					behavior: { kind: 'melee' },
 				} satisfies BattleEvent
 			}
-		}
+		} satisfies ItemActionData
 	}
 }
 
@@ -84,9 +75,6 @@ const club: Item = {
 	speed: 2,
 	actionForEnemy(player, enemy) {
 		return {
-			buttonText: `Hit ${enemy.name} with Club`,
-			slot: 'weapon',
-			target: enemy.unitId,
 			performAction() {
 				return {
 					source: { kind: 'player', entity: player },
@@ -95,7 +83,7 @@ const club: Item = {
 					behavior: { kind: 'melee' },
 				} satisfies BattleEvent
 			}
-		}
+		} satisfies ItemActionData
 	}
 }
 
@@ -109,9 +97,6 @@ const fireStaff: Item = {
 	actionForEnemy(player, enemy) {
 
 		return {
-			buttonText: `Blast ${enemy.name} with Firebolt`,
-			slot: 'weapon',
-			target: enemy.unitId,
 			performAction() {
 				return {
 					source: { kind: 'player', entity: player },
@@ -120,7 +105,7 @@ const fireStaff: Item = {
 					behavior: { kind: 'missile', extraSprite: 'flame' },
 				} satisfies BattleEvent
 			}
-		}
+		} satisfies ItemActionData
 
 	}
 }
@@ -135,9 +120,6 @@ const bandage: Item = {
 	provoke: 1,
 	actionForFriendly(player, friend) {
 		return {
-			buttonText: `Heal ${friend.heroName} with bandage`,
-			slot: 'utility',
-			target: friend.unitId,
 			performAction: () => {
 				return {
 					source: { kind: 'player', entity: player },
@@ -146,13 +128,10 @@ const bandage: Item = {
 					behavior: { kind: 'melee' },
 				} satisfies BattleEvent
 			},
-		}
+		} satisfies ItemActionData
 	},
 	actionForSelf(player) {
 		return {
-			buttonText: `Heal myself with bandage`,
-			slot: 'utility',
-			target: player.unitId,
 			performAction: () => {
 				return {
 					source: { kind: 'player', entity: player },
@@ -160,7 +139,7 @@ const bandage: Item = {
 					behavior: { kind: 'selfInflicted', extraSprite: 'heal' },
 				}
 			},
-		}
+		} satisfies ItemActionData
 	}
 }
 
@@ -172,8 +151,6 @@ const bomb: Item = {
 	provoke: 5,
 	actions(player) {
 		return {
-			buttonText: 'Throw Powderbomb',
-			slot: 'utility',
 			performAction() {
 				let dmgModifies: HealthModifierEvent[] = []
 				let aggroModifies: AggroModifierEvent[] = []
@@ -197,7 +174,7 @@ const bomb: Item = {
 					alsoModifiesAggro: aggroModifies
 				} satisfies BattleEvent
 			},
-		}
+		} satisfies ItemActionData
 	},
 }
 
@@ -209,9 +186,6 @@ const poisonDart: Item = {
 	speed: 20,
 	actionForEnemy(player, enemy) {
 		return {
-			buttonText: `Throw poison dart at ${enemy.name}`,
-			slot: 'utility',
-			target: enemy.unitId,
 			performAction() {
 				return {
 					source: { kind: 'player', entity: player },
@@ -221,7 +195,7 @@ const poisonDart: Item = {
 					behavior: { kind: 'missile', extraSprite: 'arrow' },
 				} satisfies BattleEvent
 			},
-		}
+		} satisfies ItemActionData
 
 	},
 }
@@ -234,8 +208,6 @@ const plateMail: Item = {
 	speed: 999,
 	actions(player) {
 		return {
-			buttonText: 'Taunt',
-			slot: 'body',
 			performAction() {
 				pushHappening(`${player.heroName} infuriates enemies!`)
 				return {
@@ -250,7 +222,7 @@ const plateMail: Item = {
 					})
 				} satisfies BattleEvent
 			},
-		}
+		} satisfies ItemActionData
 	},
 	onTakeDamage(incoming) {
 		if (incoming > 20) {
@@ -268,8 +240,6 @@ const theifCloak: Item = {
 	provoke: 30,
 	actions(player) {
 		return {
-			buttonText: 'Hide in shadows',
-			slot: 'body',
 			performAction() {
 				pushHappening(`${player.heroName} hid in shadows`)
 				return {
@@ -278,7 +248,7 @@ const theifCloak: Item = {
 					putsStatuses: [{ targetPlayer: player, status: 'hidden', count: 2 }],
 				} satisfies BattleEvent
 			},
-		}
+		} satisfies ItemActionData
 	},
 }
 
@@ -298,9 +268,6 @@ const leatherArmor: Item = {
 	grantsImmunity: true,
 	actionForFriendly(player, friend) {
 		return {
-			buttonText: `Cure ${friend.heroName} with ranger's herbs`,
-			slot: 'body',
-			target: friend.unitId,
 			performAction: () => {
 				return {
 					source: { kind: 'player', entity: player },
@@ -309,13 +276,10 @@ const leatherArmor: Item = {
 					putsStatuses: [{ targetPlayer: friend, status: 'poison', remove: true }]
 				} satisfies BattleEvent
 			},
-		} satisfies GameAction
+		} satisfies ItemActionData
 	},
 	actionForSelf(player) {
 		return {
-			buttonText: `Cure myself with ranger's herbs`,
-			slot: 'body',
-			target: player.unitId,
 			performAction: () => {
 				return {
 					source: { kind: 'player', entity: player },
@@ -324,7 +288,7 @@ const leatherArmor: Item = {
 				} satisfies BattleEvent
 
 			},
-		} satisfies GameAction
+		} satisfies ItemActionData
 	}
 }
 
@@ -335,9 +299,6 @@ const unarmed: Item = {
 	speed: 10,
 	actionForEnemy(player, enemy) {
 		return {
-			buttonText: `Punch ${enemy.name}`,
-			target: enemy.unitId,
-			slot: 'weapon',
 			performAction() {
 				return {
 					behavior: { kind: 'melee' },
@@ -346,7 +307,7 @@ const unarmed: Item = {
 					baseDamageToTarget: 5,
 				} satisfies BattleEvent
 			},
-		}
+		} satisfies ItemActionData
 	},
 }
 
@@ -357,15 +318,13 @@ const wait: Item = {
 	provoke: 0,
 	actions(player) {
 		return {
-			slot: 'wait',
-			buttonText: 'wait',
 			performAction() {
 				return {
 					behavior: { kind: 'selfInflicted', extraSprite: 'shield' },
 					source: { kind: 'player', entity: player },
 				} satisfies BattleEvent
 			},
-		}
+		} satisfies ItemActionData
 	}
 }
 const succumb: Item = {
@@ -375,8 +334,6 @@ const succumb: Item = {
 	grantsImmunity: true,
 	actions(player) {
 		return {
-			slot: 'succumb',
-			buttonText: 'succumb to your wounds',
 			performAction() {
 				return {
 					behavior: { kind: 'selfInflicted', extraSprite: 'smoke' },
@@ -384,7 +341,7 @@ const succumb: Item = {
 					succumb:true,
 				} satisfies BattleEvent
 			},
-		} satisfies GameAction
+		} satisfies ItemActionData
 	}
 }
 
