@@ -36,16 +36,24 @@ export function updatePlayerActions(player: Player) {
 		if (i.useableOutOfBattle || enemiesInScene(player.currentScene).length) {
 			if (cd.cooldown < 1 && cd.warmup < 1 && (cd.stock == undefined || cd.stock > 0)) {
 				if (i.actions) {
-					i.actions(player)
+					let itemAct = i.actions(player)
+					player.itemActions.push(itemAct)
 				}
 				if (i.actionForEnemy) {
 					for (const enemy of enemiesInScene(player.currentScene)) {
-						i.actionForEnemy(player, enemy)
+						let itemAct = i.actionForEnemy(player,enemy)
+						player.itemActions.push(itemAct)
 					}
 				}
 				if (i.actionForFriendly) {
 					for (const friend of activePlayersInScene(player.currentScene)) {
-						i.actionForFriendly(player, friend)
+						if (
+							(!i.requiresHealth || friend.health < friend.maxHealth && friend.health > 0) &&
+							(!i.requiresStatus || friend.statuses[i.requiresStatus] > 0)
+							) {
+							let itemAct = i.actionForFriendly(player, friend)
+							player.itemActions.push(itemAct)
+						}
 					}
 				}
 			}
