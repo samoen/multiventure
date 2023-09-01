@@ -1,6 +1,6 @@
 import { goto } from "$app/navigation"
 import type { AggroModifier, AnySprite, BattleAnimation, BattleEvent, GameActionSentToClient, HealthModifier, StatusEffect, StatusModifier, UnitId, VisualActionSourceId } from "$lib/utils"
-import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, infightDamage, modifyAggroForPlayer } from "./enemies"
+import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, infightDamage, modifyAggroForPlayer, modifiedEnemyHealth } from "./enemies"
 import { items, type Item, equipItem, checkHasItem, type ItemId } from "./items"
 import { pushHappening } from "./messaging"
 import { scenes, type SceneId } from "./scenes"
@@ -163,12 +163,24 @@ export function enterSceneOrWakeup(player: Player) {
 		&& wasEnemiesPreEnter
 		&& !enteringScene.hasEntered.has(player.heroName)
 	) {
+		scaleEnemyHealthInScene(player.currentScene)
 		enteringScene.onBattleJoin(player)
 	}
 
 
 	// Remember this player has entered
 	enteringScene.hasEntered.add(player.heroName)
+}
+
+export function scaleEnemyHealthInScene(sceneId: SceneId) {
+	let eScene = scenes.get(sceneId)
+	if (eScene && eScene.solo) return
+
+	for (const enemy of enemiesInScene(sceneId)) {
+		let percentHealthBefore = enemy.currentHealth / enemy.maxHealth
+		enemy.maxHealth = Math.floor(modifiedEnemyHealth(enemy.template.baseHealth, activePlayersInScene(sceneId).length))
+		enemy.currentHealth = Math.floor(percentHealthBefore * enemy.maxHealth)
+	}
 }
 
 export function changeScene(player: Player, goTo: SceneId) {

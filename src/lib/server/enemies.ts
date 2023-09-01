@@ -123,9 +123,9 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 
 export const PERCENT_OF_BASE_ADDED_PER_PLAYER = 0.5
 
-export function modifiedEnemyHealth(h: number): number {
-	if (activePlayers().length < 2) return h
-	return h + Math.floor(((activePlayers().length - 1) * PERCENT_OF_BASE_ADDED_PER_PLAYER * h))
+export function modifiedEnemyHealth(baseHealth: number, numPlayers:number): number {
+	if (numPlayers < 2) return baseHealth
+	return baseHealth + Math.floor(((numPlayers - 1) * PERCENT_OF_BASE_ADDED_PER_PLAYER * baseHealth))
 }
 
 export function spawnEnemy(
@@ -133,8 +133,14 @@ export function spawnEnemy(
 	template: EnemyTemplateId, 
 	where: SceneId, 
 	statuses: EnemyStatuses = new Map()) {
-	const baseHealth = enemyTemplates[template].baseHealth
-	let modifiedBaseHealth = scenes.get(where)?.solo ? baseHealth : modifiedEnemyHealth(baseHealth)
+	let modifiedBaseHealth = enemyTemplates[template].baseHealth
+	let scene = scenes.get(where)
+	if(scene && !scene.solo){
+		let playersInScene = activePlayersInScene(where).length
+		modifiedBaseHealth = modifiedEnemyHealth(modifiedBaseHealth,playersInScene)
+	}
+
+	// let modifiedBaseHealth = scenes.get(where)?.solo ? baseHealth : modifiedEnemyHealth(baseHealth)
 	activeEnemies.push({
 		unitId: `enemy${name}`,
 		name: name,
