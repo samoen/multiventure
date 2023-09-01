@@ -83,11 +83,11 @@ export type ProjectileProps = {
 export type Guest = VisualUnitProps | undefined
 export type Projectile = undefined | ProjectileProps
 export type ConvoState = {
-    kind:'seen' | 'notSeen'
+    kind: 'seen' | 'notSeen'
     currentRetort: string,
-    detectStep?:Flag,
-    lockedResponseHandles:Map<string,boolean>
-    isLocked:boolean
+    detectStep?: Flag,
+    lockedResponseHandles: Map<string, boolean>
+    isLocked: boolean
 }
 
 
@@ -118,10 +118,10 @@ export const allies = derived(allVisualUnitProps, ($allVisualUnitProps) => {
 export const enemies = derived(allVisualUnitProps, ($allVisualUnitProps) => {
     return $allVisualUnitProps.filter((p) => p.side == 'enemy');
 });
-export const vases = derived([visualActionSources, convoStateForEachVAS], ([$visualActionSources,$convoStateForEachVAS]) => {
-    return $visualActionSources.filter((s) =>{
+export const vases = derived([visualActionSources, convoStateForEachVAS], ([$visualActionSources, $convoStateForEachVAS]) => {
+    return $visualActionSources.filter((s) => {
         let cs = $convoStateForEachVAS.get(s.id)
-        if(!cs || cs.kind!='seen')return false
+        if (!cs || cs.kind != 'seen') return false
         return !cs.isLocked
     })
 });
@@ -151,9 +151,9 @@ function getSlotImage(id: ItemId): string {
     if (id == 'fireStaff') return fireballSlot;
     if (id == 'bomb') return fireballSlot;
     if (id == 'poisonDart') return poisonDartSlot;
-    if(id == 'bandage') return shieldSlot;
-    if(id == 'leatherArmor') return shieldSlot;
-    if(id == 'plateMail') return shieldSlot;
+    if (id == 'bandage') return shieldSlot;
+    if (id == 'leatherArmor') return shieldSlot;
+    if (id == 'plateMail') return shieldSlot;
     return blankSlot;
 }
 
@@ -177,16 +177,16 @@ export let typedInventory = derived([
     $waitingForMyAnimation,
     $clientState,
 ]) => {
-    let map = new Map<EquipmentSlot, ({itemState:ItemState, disabled:boolean, acts:GameActionSentToClient[], overlayNumber:string|undefined, dots:string, img:string})>()
+    let map = new Map<EquipmentSlot, ({ itemState: ItemState, disabled: boolean, acts: GameActionSentToClient[], overlayNumber: string | undefined, dots: string, img: string })>()
     if (!$lastMsgFromServer) {
         return map
     }
     for (const [key, value] of Object.entries($lastMsgFromServer.yourInfo.inventory)) {
         let tKey = key as EquipmentSlot
-        let acts = actionsForSlot($lastMsgFromServer, tKey) 
-        let d = (!acts.length|| $waitingForMyAnimation || $clientState.waitingForMyEvent)
+        let acts = actionsForSlot($lastMsgFromServer, tKey)
+        let d = (!acts.length || $waitingForMyAnimation || $clientState.waitingForMyEvent)
 
-        map.set(tKey, {itemState:value,disabled:d,acts:acts, overlayNumber:numberShownOnSlot(value),dots:stockDotsOnSlotButton(value),img:getSlotImage(value.itemId)})
+        map.set(tKey, { itemState: value, disabled: d, acts: acts, overlayNumber: numberShownOnSlot(value), dots: stockDotsOnSlotButton(value), img: getSlotImage(value.itemId) })
     }
     return map
 })
@@ -221,40 +221,40 @@ export const selectedDetail: Readable<DetailWindow | undefined> = derived([
 
     let vupAt = $allVisualUnitProps.find(v => v.id == $lastUnitClicked)
     if (vupAt) return { kind: 'vup', entity: vupAt } satisfies DetailWindow
-    
+
     let vasAt = $vases.find(v => v.id == $lastUnitClicked)
     if (vasAt) return { kind: 'vas', entity: vasAt } satisfies DetailWindow
 
-    // if (!$lastUnitClicked) {
-        let firstVas = undefined
-        // find unlocked vas with an unlocked action or response
-        outer: for (const vas of $vases) {
-            // if ($lockedHandles.get(vas.id) == true) continue
-            let cs = $convoStateForEachVAS.get(vas.id)
-            if(!cs)continue
-            if(cs.kind != 'seen')continue
-            for (const act of vas.actionsInClient) {
-                // if (!act.lockHandle || cs.lockedResponseHandles.get(act.lockHandle) == false) {
-                    firstVas = vas
-                    break outer
-                // }
-            }
-            for (const r of vas.responses) {
-                if (cs.lockedResponseHandles.get(r.responseId) == false) {
-                    firstVas = vas
-                    break outer
-                }
+    // if last unit clicked not valid, fall back to first enemy
+    let firstEnemy = $allVisualUnitProps.find(v => v.side == 'enemy')
+    if (firstEnemy) return { kind: 'vup', entity: firstEnemy }
+
+    // if no enemies fall back to first unlocked vas with an unlock action or response
+
+    let firstVas = undefined
+    outer: for (const vas of $vases) {
+        let cs = $convoStateForEachVAS.get(vas.id)
+        if (!cs) continue
+        if (cs.kind != 'seen') continue
+        for (const act of vas.actionsInClient) {
+            firstVas = vas
+            break outer
+        }
+        for (const r of vas.responses) {
+            if (cs.lockedResponseHandles.get(r.responseId) == false) {
+                firstVas = vas
+                break outer
             }
         }
-        if (firstVas) {
-            return { kind: 'vas', entity: firstVas } satisfies DetailWindow
-        }
-    // }
-    
-    
+    }
+    if (firstVas) {
+        return { kind: 'vas', entity: firstVas } satisfies DetailWindow
+    }
+
+    // if no unlocked vas fall back to self
     let me = $allVisualUnitProps.at(0)
     if (me) return { kind: 'vup', entity: me } satisfies DetailWindow
-    
+
     return undefined
 })
 
@@ -283,17 +283,17 @@ export const selectedVisualActionSourceState = derived([
     return state
 })
 
-export const selectedVasResponsesToShow = derived([selectedVisualActionSourceState,selectedDetail],([$selectedVisualActionSourceState,$selectedDetail])=>{
-    if(!$selectedDetail || !$selectedVisualActionSourceState || $selectedDetail.kind != 'vas') return []
+export const selectedVasResponsesToShow = derived([selectedVisualActionSourceState, selectedDetail], ([$selectedVisualActionSourceState, $selectedDetail]) => {
+    if (!$selectedDetail || !$selectedVisualActionSourceState || $selectedDetail.kind != 'vas') return []
 
     return $selectedDetail.entity.responses.filter((r) => {
-        if(!r.responseId)return true
+        if (!r.responseId) return true
         let locked = $selectedVisualActionSourceState.lockedResponseHandles.get(r.responseId)
         return !locked
     })
 })
-export const selectedVasActionsToShow = derived([selectedVisualActionSourceState,selectedDetail],([$selectedVisualActionSourceState,$selectedDetail])=>{
-    if(!$selectedDetail || !$selectedVisualActionSourceState || $selectedDetail.kind != 'vas') return []
+export const selectedVasActionsToShow = derived([selectedVisualActionSourceState, selectedDetail], ([$selectedVisualActionSourceState, $selectedDetail]) => {
+    if (!$selectedDetail || !$selectedVisualActionSourceState || $selectedDetail.kind != 'vas') return []
 
     return $selectedDetail.entity.actionsInClient.filter((r) => {
         return true
@@ -363,7 +363,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         console.log('tried to sync with bad msg')
     }
     if (lastMsg) {
-        console.log('sync wep wu to '+ lastMsg.yourInfo.inventory.weapon.warmup)
+        console.log('sync wep wu to ' + lastMsg.yourInfo.inventory.weapon.warmup)
 
         visualLandscape.set(lastMsg.landscape)
         visualSceneLabel.set(lastMsg.yourInfo.currentSceneDisplay)
@@ -406,27 +406,27 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
             )
         }
         for (const p of lastMsg.otherPlayers) {
-                newVups.push(
-                    {
-                        id: p.unitId,
-                        name: p.heroName,
-                        src: heroSprites[heroSprite(p.inventory.weapon.itemId)],
-                        displayHp: p.health,
-                        maxHp: p.maxHealth,
-                        side: 'hero',
-                        actual: {
-                            kind: 'player',
-                            portrait: peasantPortrait,
-                            info: p,
-                        },
-                        actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == p.unitId)
-                    }
-                )
+            newVups.push(
+                {
+                    id: p.unitId,
+                    name: p.heroName,
+                    src: heroSprites[heroSprite(p.inventory.weapon.itemId)],
+                    displayHp: p.health,
+                    maxHp: p.maxHealth,
+                    side: 'hero',
+                    actual: {
+                        kind: 'player',
+                        portrait: peasantPortrait,
+                        info: p,
+                    },
+                    actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == p.unitId)
+                }
+            )
 
         }
         allVisualUnitProps.set(newVups)
         // console.log(`${JSON.stringify(lastMsg.visualActionSources.map(v=>v.id))}`)
-        
+
         for (const vas of lastMsg.visualActionSources) {
             convoStateForEachVAS.update(cs => {
                 let existing = cs.get(vas.id)
@@ -436,58 +436,58 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                 // or if it exists but only unseen
                 if (!existing || (existing && existing.detectStep != vas.detectStep) || existing.kind == 'notSeen') {
                     // console.log(`init vas state ${vas.id} with unlockable`)
-                    let startResponsesLocked = new Map<string,boolean>()
+                    let startResponsesLocked = new Map<string, boolean>()
                     for (const resp of vas.responses) {
                         if (resp.responseId) {
-                                if (resp.startsLocked) {
-                                    startResponsesLocked.set(resp.responseId, true)
-                                } else {
-                                    startResponsesLocked.set(resp.responseId, false)
-                                }
+                            if (resp.startsLocked) {
+                                startResponsesLocked.set(resp.responseId, true)
+                            } else {
+                                startResponsesLocked.set(resp.responseId, false)
+                            }
                         }
                     }
-                    
+
                     // default startsLocked handling
                     let startLocked = vas.startsLocked ?? false
-                    
+
                     // if it's been unlocked already before it's been seen, carry over the locked state
-                    if(existing && existing.kind == 'notSeen'){
+                    if (existing && existing.kind == 'notSeen') {
                         startLocked = existing.isLocked
                     }
 
                     // If it's a new detect step or it wasn't existing and already has a detect step, consider it advanced
                     let detectStepAdvance = (existing && existing.detectStep != vas.detectStep) || (!existing && vas.detectStep)
-                    
+
                     // vas with advanced detect step always unlocked
-                    if(detectStepAdvance){
+                    if (detectStepAdvance) {
                         startLocked = false
                     }
 
                     //  handle the unlocks on detect step advance
-                    if(detectStepAdvance && vas.unlockOnSee){
-                        for (const vId of vas.unlockOnSee){
+                    if (detectStepAdvance && vas.unlockOnSee) {
+                        for (const vId of vas.unlockOnSee) {
                             let toUnlock = cs.get(vId)
-                            if(toUnlock){
+                            if (toUnlock) {
                                 console.log('unlocking on see ' + vId)
                                 toUnlock.isLocked = false
-                            }else{
+                            } else {
                                 console.log('setting a not seen state ' + vId)
-                                cs.set(vId,{
-                                    kind:'notSeen',
-                                    currentRetort:'I have not been seen yet',
-                                    isLocked:false,
-                                    lockedResponseHandles:new Map(),
+                                cs.set(vId, {
+                                    kind: 'notSeen',
+                                    currentRetort: 'I have not been seen yet',
+                                    isLocked: false,
+                                    lockedResponseHandles: new Map(),
                                 })
                             }
                         }
                     }
 
                     cs.set(vas.id, {
-                        kind:'seen',
+                        kind: 'seen',
                         currentRetort: vas.startText,
-                        detectStep:vas.detectStep,
-                        lockedResponseHandles:startResponsesLocked,
-                        isLocked:startLocked,  
+                        detectStep: vas.detectStep,
+                        lockedResponseHandles: startResponsesLocked,
+                        isLocked: startLocked,
                     })
                 }
                 return cs
@@ -581,7 +581,7 @@ export async function nextAnimationIndex(
         cai++
     }
     currentAnimationIndex.set(cai)
-    
+
     if (cai > curAnimations.length - 1) {
         if (!animsInWaiting) {
             // give some time for enemies slain on the last animation to fade out.
@@ -602,20 +602,20 @@ export async function nextAnimationIndex(
             await tick()
             subAnimationStage.set('fire')
         }
-        
+
         return
     }
-    
+
     let nextAnim = curAnimations.at(cai)
-    if(!nextAnim || !checkAnimationValid(nextAnim)){
+    if (!nextAnim || !checkAnimationValid(nextAnim)) {
         console.log('invalid next anim!')
         currentAnimationIndex.set(999)
         waitingForMyAnimation.set(false)
         syncVisualsToMsg(latest)
         return
     }
-    
-    
+
+
 
     subAnimationStage.set('start')
 
@@ -625,14 +625,14 @@ export async function nextAnimationIndex(
     subAnimationStage.set('fire')
 }
 
-function checkAnimationValid(ba:BattleAnimation):boolean{
+function checkAnimationValid(ba: BattleAnimation): boolean {
     let valid = true
     let enemiesToCheck = get(enemies)
     let alliesToCheck = get(allies)
     let vasesToCheck = get(vases)
 
-    let foundSource = enemiesToCheck.some(e=>e.id == ba.source) || alliesToCheck.some(a=>a.id == ba.source)
-    let foundTarget = ba.target == undefined || enemiesToCheck.some(e=>e.id == ba.target) || alliesToCheck.some(a=>a.id == ba.target) || vasesToCheck.some(v=>v.id == ba.target)
+    let foundSource = enemiesToCheck.some(e => e.id == ba.source) || alliesToCheck.some(a => a.id == ba.source)
+    let foundTarget = ba.target == undefined || enemiesToCheck.some(e => e.id == ba.target) || alliesToCheck.some(a => a.id == ba.target) || vasesToCheck.some(v => v.id == ba.target)
 
     return foundSource && foundTarget
 }
