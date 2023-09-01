@@ -213,7 +213,6 @@ const trainingRoom1: Scene = {
 		player.health = player.maxHealth
 		player.sceneTexts.push("Glornak: 'Ohhhh nooooo. How could I underestimate this recruit. Surely they are the chosen one.'")
 		player.sceneTexts.push("Glornak falls down in a very convincing display.")
-		player.sceneTexts.push("Arthur: 'Great job! Let's switch up your equipment. Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you.'")
 	},
 }
 
@@ -523,7 +522,7 @@ const throne: Scene = {
 			player.sceneTexts.push(`You approach the throne room's mighty doors. Before it stands a guard with a look on his face that could kill a troll'`)
 		} else {
 
-			player.sceneTexts.push('At the end of the entrance hall to this eldritch structure, you approach a mighty door guarded by a fearsome warrior.\n\nGuard: Ah. You have returned, traveller. Word of your deeds has reached the king and he has decided to give you and audience.\n\nAs you approach, the door seems to crack apart, revealing a dazzling light. You step inside.')
+			player.sceneTexts.push('At the end of the entrance hall to this eldritch structure, you approach a mighty door guarded by a fearsome warrior.\n\nAs you approach, the door seems to crack apart, revealing a dazzling light. You step inside.')
 			player.sceneTexts.push("Before you is a great throne. Sitting aside it are two giant sculptures carved from marble. The one of the left depicts an angel, its wings spread to a might span. It wields a sword from which a great fire burns. To the left of the throne is a garoyle, its lips pulled back in a monstrous snarl revealing rows of serrated teeth. One of its arms are raised and it appears to hold a ball of pure electricity which crackles in the dim light. Atop the throne sits an emaciated figure.")
 			player.sceneTexts.push("You approach the throne, but something feels wrong. As you pass between two mighty sculptures of a warring demon and angel, a powerful energy fills the air. The flame from the angel's sword and the electrical charge from the demon's hand begin to grow in size and reach out towards each other. The rotting body of the king suddenly leaps from it's throne. He screams from from the centre of the skeletal form. The throne appears to cave in on itself, and a path that leads to the depths of castle appears. You feel you have no choice but to enter.")
 		}
@@ -547,7 +546,7 @@ const throne: Scene = {
 			],
 			detect: {
 				flag: 'killedGoblins',
-				startText: `Ah, an upstanding member of the community. The King will see you now.`,
+				startText: `Word of your deeds has reached the king and he has decided to give you and audience.`,
 				responses: [{
 					responseId: 'thanks',
 					responseText: `Great`,

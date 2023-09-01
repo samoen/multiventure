@@ -295,13 +295,7 @@
 {/if}
 
 {#if $lastMsgFromServer}
-	<!-- <h3>Scene Texts:</h3> -->
-	<div class="sceneTexts" bind:this={sceneTexts}>
-		{#each $lastMsgFromServer.sceneTexts as t}
-			<p class="sceneText">{t}</p>
-			<br />
-		{/each}
-	</div>
+	
 	{#if $lastMsgFromServer.sceneActions.length}
 		<div class="sceneButtons">
 			{#each $lastMsgFromServer.sceneActions as op, i}
@@ -332,6 +326,7 @@
 			on:click={() => {
 				console.log('visual clicked');
 				$latestSlotButtonInput = 'none';
+				$lastUnitClicked = 'background'
 			}}
 			class:noOpacity={$visualOpacity}
 		>
@@ -657,6 +652,14 @@
 		</div>
 		<div />
 	{/if}
+	{#if $selectedDetail && $selectedDetail.kind == 'bg'}
+		<div class="sceneTexts" bind:this={sceneTexts}>
+			{#each $lastMsgFromServer.sceneTexts as t}
+				<p class="sceneText">{t}</p>
+				<br />
+			{/each}
+		</div>	
+	{/if}
 	<h3>Recent happenings:</h3>
 	<div class="happenings" bind:this={happenings}>
 		{#each $lastMsgFromServer.happenings as h}
@@ -732,12 +735,11 @@
 		white-space: pre-wrap;
 	}
 	.sceneTexts {
-		margin-top: 5px;
-		height: calc(20vh);
+		/* margin-top: 5px; */
+		border: 1px solid brown;
+		height: 25vh;
 		overflow-y: auto;
-		/* height: 5; */
-		border: 1px solid black;
-		background-color: lightblue;
+		background-color: burlywood;
 		padding: 10px;
 	}
 	.sceneButtons {

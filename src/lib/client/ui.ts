@@ -106,7 +106,7 @@ export const currentAnimationsWithData: Writable<BattleAnimation[]> = writable([
 export const subAnimationStage: Writable<'start' | 'fire' | 'sentHome'> = writable('start')
 export const convoStateForEachVAS: Writable<Map<VisualActionSourceId, ConvoState>> = writable(new Map())
 export const latestSlotButtonInput: Writable<EquipmentSlot | 'none'> = writable('none')
-export const lastUnitClicked: Writable<UnitId | undefined> = writable()
+export const lastUnitClicked: Writable<UnitId | 'background' | undefined> = writable()
 export const visualLandscape: Writable<LandscapeImage> = writable('plains')
 export const visualOpacity = writable(false)
 export const visualSceneLabel = writable('nowhere')
@@ -207,7 +207,7 @@ export let slotlessBattleActions = derived(lastMsgFromServer, ($lastMsgFromServe
 })
 
 
-export type DetailWindow = { kind: 'vup', entity: VisualUnitProps } | { kind: 'vas', entity: VisualActionSourceInClient }
+export type DetailWindow = { kind: 'vup', entity: VisualUnitProps } | { kind: 'vas', entity: VisualActionSourceInClient } | {kind:'bg'}
 
 
 export const selectedDetail: Readable<DetailWindow | undefined> = derived([
@@ -220,6 +220,10 @@ export const selectedDetail: Readable<DetailWindow | undefined> = derived([
     $vases,
     $convoStateForEachVAS,
 ]) => {
+
+    if($lastUnitClicked == 'background'){
+        return {kind:'bg'} satisfies DetailWindow
+    }
 
     let vupAt = $allVisualUnitProps.find(v => v.id == $lastUnitClicked)
     if (vupAt) return { kind: 'vup', entity: vupAt } satisfies DetailWindow
