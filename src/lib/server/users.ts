@@ -11,7 +11,6 @@ export const globalFlags = new Set<GlobalFlag>();
 export type UserId = string;
 export type HeroName = string;
 export type Flag =
-	| 'approachedRack'
 	| 'metArthur'
 	| 'heardAboutHiddenPassage'
 	| 'gotFreeStarterWeapon'
@@ -20,9 +19,7 @@ export type Flag =
 	| 'smashedMedallion'
 	| 'placedMedallion';
 
-export type GlobalFlag =
-	| 'smashedMedallion'
-	| 'placedMedallion';
+export type GlobalFlag = 'unused';
 
 
 export type Player = {
@@ -115,23 +112,23 @@ export function cleanConnections(){
 
 export function addNewUser(heroName : string) : {id:string,player:Player}{
 	const startflags: Set<Flag> = new Set()
-		startflags.add('heardAboutHiddenPassage')
+		// startflags.add('heardAboutHiddenPassage')
 		// startflags.add('gotFreeStarterWeapon')
-		startflags.add('killedGoblins')
+		// startflags.add('killedGoblins')
 		
 		let startScene: SceneId = `tutorial_${heroName}`
 		// startScene = `trainingRoom1_${heroName}`
 		// startScene = `forest`
 		// startScene = 'forestPassage'
 		// startScene = 'goblinCamp'
-		startScene = 'castle'
+		// startScene = 'castle'
 		// startScene = 'throne'
 		// startScene = 'armory'
 		
 		let startInventory: Inventory = {
 			weapon: {
-				// itemId: 'unarmed',
-				itemId: 'club',
+				itemId: 'unarmed',
+				// itemId: 'club',
 				cooldown: 0,
 				warmup: 0,
 			},
@@ -142,8 +139,8 @@ export function addNewUser(heroName : string) : {id:string,player:Player}{
 				warmup: 0,
 			},
 			body: {
-				// itemId: 'rags',
-				itemId: 'leatherArmor',
+				itemId: 'rags',
+				// itemId: 'leatherArmor',
 				cooldown: 0,
 				warmup: 0,
 			}

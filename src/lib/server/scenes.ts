@@ -370,15 +370,14 @@ export const forest: Scene = {
 			actionsWithRequirements: [{ travelTo: 'castle' }],
 			startText: `In the distance you see a castle`,
 		})
-		if (player.flags.has('heardAboutHiddenPassage')) {
 			player.visualActionSources.push({
-				unitId: 'vasForetPassageFromForest',
+				unitId: 'vasForestPassageFromForest',
 				displayName: 'Hidden Passage',
 				sprite: 'castle',
-				actionsWithRequirements: [{ travelTo: 'forestPassage' }],
+				startsLocked:true,
+				actionsWithRequirements: [{ requiresFlag:'heardAboutHiddenPassage', travelTo: 'forestPassage' }],
 				startText: `Delve into the secret passage`,
 			})
-		}
 	}
 }
 
@@ -458,7 +457,7 @@ const house: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasHouseWoman',
 			displayName: 'Giselle',
-			sprite: 'general',
+			sprite: 'lady',
 			startText: `Traveller, what is it you do here? Do you not see I grieve? My son... he was murdered by Gorlak and his rowdy band of filthy goblin scum. He was barely a man yet had the stars in his eyes. He sought adventure but found his demise far too soon. Will you avenge him on my behalf? I don't have much but I'm sure I can find somethign to reward you`,
 			responses: [
 				{
@@ -466,12 +465,14 @@ const house: Scene = {
 					responseText: `I will`,
 					retort: `Thank you kind traveller. There is a passage in the forest hidden from normal view. My son would often go searching in the lands beyond. Search the dark recesses of the forest and you will come upon this place. ${player.heroName}, find those wretched curs and show them no mercy.`,
 					lock: ['reward', 'rejected'],
-					unlockVas: ['vasLeatherGift']
+					unlockVas: ['vasLeatherGift','vasForestPassageFromForest']
 				},
 				{
 					responseId: `rejected`,
 					responseText: `I won't`,
 					retort: `Not much of a hero are you?`,
+					lock:['accepted'],
+					unlockVas: ['vasForestPassageFromForest']
 				},
 				{
 					responseId: `reward`,
@@ -520,9 +521,9 @@ scenes.set('house', house)
 const throne: Scene = {
 	displayName: 'Bramblemore Throne Room',
 	onEnterScene(player) {
-		if (globalFlags.has('placedMedallion')) {
+		if (player.flags.has('placedMedallion')) {
 			player.sceneTexts.push("The dishevelled king turns to you and opens his arms as if to welcome you back. 'Stranger. You have done my bidding, but your fate is sealed. I have no time for pathetic weaklings like you. Prepare yourself. I am sending you to a place from which there is no return.")
-		} else if (globalFlags.has('smashedMedallion')) {
+		} else if (player.flags.has('smashedMedallion')) {
 			player.sceneTexts.push("The dishevelled king turns to you with something akin to a smile on his rotting visage.")
 		} else if (!player.flags.has('killedGoblins')) {
 			player.sceneTexts.push(`You approach the throne room's mighty doors. Before it stands a guard with a look on his face that could kill a troll'`)
@@ -552,11 +553,11 @@ const throne: Scene = {
 			],
 			detect: {
 				flag: 'killedGoblins',
-				startText: `Ah, an upstanding member of the community, go on through.`,
+				startText: `Ah, an upstanding member of the community. The King will see you now.`,
 				responses: [{
 					responseId: 'thanks',
-					responseText: `Thanks`,
-					retort: `No problemo`,
+					responseText: `Great`,
+					retort: `You don't see this retort`,
 					unlockVas: ['vasKing'],
 					lockVas: ['vasThroneGuard']
 				}]
@@ -567,7 +568,7 @@ const throne: Scene = {
 			unitId: 'vasKing',
 			displayName: 'The King',
 			startsLocked: true,
-			sprite: 'general',
+			sprite: 'necromancer',
 			startText: `You have proven your worth traveller, but there is a greater threat at hand! The forces of good and evil are no longer in balance! You must take this medallion and complete the ritual before it's too late!`,
 			responses: [
 				{
@@ -594,7 +595,7 @@ const throne: Scene = {
 					responseText: `Oh noooo`,
 					retort: 'hehehehe',
 				}],
-				unlockVasOnDetect: ['vasRealmFromThrone','vasKing']
+				unlockVasOnDetect: ['vasRealmFromThrone']
 			},
 		})
 		player.visualActionSources.push({
@@ -672,8 +673,7 @@ const forestPassage: Scene = {
 					lock: ['freeClub'],
 				},
 			],
-			sprite: 'general',
-			portrait: 'general',
+			sprite: 'druid',
 		})
 		player.visualActionSources.push({
 			unitId: 'vasFreeClub',
@@ -773,7 +773,7 @@ const tunnelChamber: Scene = {
 		if (player.previousScene == 'throne') {
 			player.sceneTexts.push("You wend your way down a neverending series of corridors and pathways that seem to go on for an enternity. It becomes narrower and narrower, and the heat becomes almost unbearable. The path suddenly opens into a great chamber.")
 		}
-		if (!globalFlags.has('placedMedallion') && !globalFlags.has('smashedMedallion')) {
+		if (!player.flags.has('placedMedallion') && !player.flags.has('smashedMedallion')) {
 			player.sceneTexts.push("The walls are adorned with arcane symbols that are beyond your comprehension. In the centre of the room is a great altar. You approach it and notice that upon it is an recess that appears to be in the shape of the medallian that was given to you by the king. Suddenly, a great booming voice echoes throughout the chamber. 'STOP TRAVELLER! Stay your hand!'. You stop in your tracks and look over your shoulder. It is a hooded figure. 'Do not heed the call of the mad king! He knows not what he does and acts in accord with a dark force! If you place the medallion upon the altar, you will be bound to the very same forces of evil for all time. Or maybe you'll just die...' He trailed off. You can see the face of the rotting monarch in your minds eye. His face is twisted into a bitter smile that coaxes you to do his bidding. You have a choice.")
 		}
 	},
@@ -789,7 +789,6 @@ const tunnelChamber: Scene = {
 					serverAct: {
 						buttonText: "Place the medallion upon the altar",
 						performAction() {
-							globalFlags.add('placedMedallion')
 							player.flags.add('placedMedallion')
 							for (const allPlayer of activePlayersInScene('tunnelChamber')) {
 								allPlayer.sceneTexts.push("The medallion is placed into the altar. The hooded figure turns upon you in a rage")
@@ -806,7 +805,6 @@ const tunnelChamber: Scene = {
 					serverAct: {
 						buttonText: "Smash the medallion",
 						performAction() {
-							globalFlags.add('smashedMedallion')
 							player.flags.add('smashedMedallion')
 							for (const playerInChamber of activePlayersInScene('tunnelChamber')) {
 								playerInChamber.sceneTexts.push("The medallion got smashed. The hooded figure is pleased with you. You can leave the chamber now")

@@ -5,6 +5,9 @@ import peasantPortrait from '$lib/assets/portraits/peasant.webp';
 import generalPortrait from '$lib/assets/portraits/general.webp';
 import peasant from '$lib/assets/units/peasant.png';
 import general from '$lib/assets/units/general.png';
+import druid from '$lib/assets/units/druid.png';
+import lady from '$lib/assets/units/lady.png';
+import necromancer from '$lib/assets/units/necromancer.png';
 import gruntPortrait from '$lib/assets/portraits/grunt.webp';
 import spearman from '$lib/assets/units/spearman.png';
 import rat from '$lib/assets/units/giant-rat.png';
@@ -80,6 +83,7 @@ export type ProjectileProps = {
 export type Guest = VisualUnitProps | undefined
 export type Projectile = undefined | ProjectileProps
 export type ConvoState = {
+    kind:'seen' | 'notSeen'
     currentRetort: string,
     detectStep?:Flag,
     lockedResponseHandles:Map<string,boolean>
@@ -117,7 +121,7 @@ export const enemies = derived(allVisualUnitProps, ($allVisualUnitProps) => {
 export const vases = derived([visualActionSources, convoStateForEachVAS], ([$visualActionSources,$convoStateForEachVAS]) => {
     return $visualActionSources.filter((s) =>{
         let cs = $convoStateForEachVAS.get(s.id)
-        if(!cs)return false
+        if(!cs || cs.kind!='seen')return false
         return !cs.isLocked
     })
 });
@@ -228,6 +232,7 @@ export const selectedDetail: Readable<DetailWindow | undefined> = derived([
             // if ($lockedHandles.get(vas.id) == true) continue
             let cs = $convoStateForEachVAS.get(vas.id)
             if(!cs)continue
+            if(cs.kind != 'seen')continue
             for (const act of vas.actionsInClient) {
                 // if (!act.lockHandle || cs.lockedResponseHandles.get(act.lockHandle) == false) {
                     firstVas = vas
@@ -235,7 +240,7 @@ export const selectedDetail: Readable<DetailWindow | undefined> = derived([
                 // }
             }
             for (const r of vas.responses) {
-                if (!r.responseId || cs.lockedResponseHandles.get(r.responseId) == false) {
+                if (cs.lockedResponseHandles.get(r.responseId) == false) {
                     firstVas = vas
                     break outer
                 }
@@ -421,13 +426,15 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         }
         allVisualUnitProps.set(newVups)
         // console.log(`${JSON.stringify(lastMsg.visualActionSources.map(v=>v.id))}`)
+        
         for (const vas of lastMsg.visualActionSources) {
             convoStateForEachVAS.update(cs => {
                 let existing = cs.get(vas.id)
 
-                // if we can't find this vas in the state, initialize it
-                // also reset it if it's a new conversation
-                if (!existing || existing.detectStep != vas.detectStep) {
+                // Do something if no state for this vas,
+                // or if exists with a new detect step
+                // or if it exists but only unseen
+                if (!existing || (existing && existing.detectStep != vas.detectStep) || existing.kind == 'notSeen') {
                     // console.log(`init vas state ${vas.id} with unlockable`)
                     let startResponsesLocked = new Map<string,boolean>()
                     for (const resp of vas.responses) {
@@ -439,26 +446,54 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                                 }
                         }
                     }
+                    
+                    // default startsLocked handling
+                    let startLocked = vas.startsLocked ?? false
+                    
+                    // if it's been unlocked already before it's been seen, carry over the locked state
+                    if(existing && existing.kind == 'notSeen'){
+                        startLocked = existing.isLocked
+                    }
 
+                    // If it's a new detect step or it wasn't existing and already has a detect step, consider it advanced
+                    let detectStepAdvance = (existing && existing.detectStep != vas.detectStep) || (!existing && vas.detectStep)
+                    
+                    // vas with advanced detect step always unlocked
+                    if(detectStepAdvance){
+                        startLocked = false
+                    }
 
-                    cs.set(vas.id, {
-                        currentRetort: vas.startText,
-                        detectStep:vas.detectStep,
-                        lockedResponseHandles:startResponsesLocked,
-                        isLocked:vas.startsLocked ?? false,
-                    })
-                    if(vas.unlockOnSee){
+                    //  handle the unlocks on detect step advance
+                    if(detectStepAdvance && vas.unlockOnSee){
                         for (const vId of vas.unlockOnSee){
                             let toUnlock = cs.get(vId)
                             if(toUnlock){
+                                console.log('unlocking on see ' + vId)
                                 toUnlock.isLocked = false
+                            }else{
+                                console.log('setting a not seen state ' + vId)
+                                cs.set(vId,{
+                                    kind:'notSeen',
+                                    currentRetort:'I have not been seen yet',
+                                    isLocked:false,
+                                    lockedResponseHandles:new Map(),
+                                })
                             }
                         }
                     }
+
+                    cs.set(vas.id, {
+                        kind:'seen',
+                        currentRetort: vas.startText,
+                        detectStep:vas.detectStep,
+                        lockedResponseHandles:startResponsesLocked,
+                        isLocked:startLocked,  
+                    })
                 }
                 return cs
             })
         }
+
         visualActionSources.set(lastMsg.visualActionSources)
     }
 }
@@ -473,9 +508,12 @@ export const anySprites: Record<AnySprite, string> = {
     heal: heal,
     poison: greenDrip,
     castle: lighthouse,
-    general: general,
     club: club,
     armorStand: armor,
+    general: general,
+    druid: druid,
+    lady: lady,
+    necromancer: necromancer,
 }
 
 export function handlePutsStatuses(anim: BattleAnimation) {
