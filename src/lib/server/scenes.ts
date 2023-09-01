@@ -656,7 +656,7 @@ const forestPassage: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasDweller',
 			displayName: 'Forest Dweller',
-			startText: `You have made it further than most. Please. I mean you no harm. You will need a weapon if you want to continue through this passage. Would you like a dagger, or are you more the clubbing sort?`,
+			startText: `I mean you no harm. You will need a weapon if you want to continue through this passage. Would you like a dagger, or are you more the clubbing sort?`,
 			responses: [
 				{
 					responseId: 'freeDagger',
@@ -666,11 +666,11 @@ const forestPassage: Scene = {
 					lock: ['freeClub'],
 				},
 				{
-					responseId: 'freeDagger',
+					responseId: 'freeClub',
 					responseText: `I choose the club`,
 					retort: `A fine choice! Bludgeon those enemies!`,
 					unlockVas: ['vasFreeClub'],
-					lock: ['freeClub'],
+					lock: ['freeDagger'],
 				},
 			],
 			sprite: 'druid',
@@ -681,7 +681,10 @@ const forestPassage: Scene = {
 			sprite: 'club',
 			startText: 'A well worn club',
 			startsLocked: true,
-			actionsWithRequirements: [{ pickupItem: 'club', }],
+			actionsWithRequirements: [{ 
+				requiresGear:['unarmed'],
+				pickupItem: 'club', 
+			}],
 		})
 		player.visualActionSources.push({
 			unitId: 'vasFreeDagger',
@@ -689,29 +692,24 @@ const forestPassage: Scene = {
 			sprite: 'club',
 			startText: 'An old rusty dagger',
 			startsLocked: true,
-			actionsWithRequirements: [{ pickupItem: 'dagger' }],
+			actionsWithRequirements: [
+			{
+				requiresGear:['unarmed'],
+				pickupItem: 'dagger' 
+			}
+			],
 		})
-		if (player.inventory.weapon.itemId != 'unarmed') {
-			player.visualActionSources.push({
-				unitId: 'vasCampFromPassage',
-				displayName: 'Goblin Camp',
-				sprite: 'castle',
-				startText: `From the end of the passage you see a goblin camp`,
-				actionsWithRequirements: [
-					{
-						travelTo: `goblinCamp`,
-					},
-				],
-			})
-		}
 		player.visualActionSources.push({
-			unitId: 'vasForestFromPassage',
-			displayName: 'Forest',
+			unitId: 'vasPassageTravel',
+			displayName: 'Travel',
 			sprite: 'castle',
-			startText: `Go back to Bramblefoot Woods`,
+			startText: `You are in a passage. At one end you see Bramblefoot Woods. At the other, a campsite`,
 			actionsWithRequirements: [
 				{
 					travelTo: 'forest',
+				},
+				{
+					travelTo: 'goblinCamp',
 				},
 			],
 		})

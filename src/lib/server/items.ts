@@ -312,6 +312,22 @@ const leatherArmor: Item = {
 const unarmed : Item = {
 	id:'unarmed',
 	slot:'weapon',
+	actionForEnemy(player, enemy) {
+		player.itemActions.push({
+			buttonText:`Punch ${enemy.name}`,
+			target:enemy.unitId,
+			provoke:1,
+			slot:'weapon',
+			performAction() {
+				return{
+					behavior:{kind:'melee'},
+					source:{kind:'player', entity:player},
+					target:{kind:'enemy',entity:enemy},
+					baseDamageToTarget:5,
+				}satisfies BattleEvent
+			},
+		})
+	},
 }
 
 const empty : Item = {
@@ -346,32 +362,12 @@ export const items = {
 	theifCloak: theifCloak,
 } as const satisfies Record<string, Item>;
 
-// export const utilityItems: Record<ItemIdForSlot<'utility'>, Item> = {
-// }
-
-// export const bodyItems: Record<ItemIdForSlot<'body'>, Item> = {
-// }
-
-// export const items: Record<ItemId, Item> = {
-// 	...weapons,
-// 	...utilityItems,
-// 	...bodyItems
-// } satisfies Record<ItemId, Item>
 
 export function equipItem(player:Player, item:Item){
 	player.inventory[item.slot].itemId = item.id
 	player.inventory[item.slot].warmup = item.warmup ?? 0
 	player.inventory[item.slot].cooldown = 0
 	player.inventory[item.slot].stock = item.startStock
-	// if(weapons.hasOwnProperty(id)){
-	// 	player.inventory.weapon.itemId = id as ItemIdForSlot<'weapon'>
-	// }
-	// if(utilityItems.hasOwnProperty(id)){
-	// 	player.inventory.utility.itemId = id as ItemIdForSlot<'utility'>
-	// }
-	// if(bodyItems.hasOwnProperty(id)){
-	// 	player.inventory.body.itemId = id as ItemIdForSlot<'body'>
-	// }
 }
 
 export function checkHasItem(player:Player, id:ItemId):boolean{

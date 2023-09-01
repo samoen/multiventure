@@ -29,6 +29,7 @@ import lighthouse from '$lib/assets/scenery/lighthouse.png';
 import armor from '$lib/assets/scenery/armor.png';
 import club from '$lib/assets/extras/club.png';
 import clubSlot from '$lib/assets/equipment/club-small.png';
+import fistSlot from '$lib/assets/equipment/fist-human.png';
 import shieldSlot from '$lib/assets/equipment/heater-shield.png';
 import blankSlot from '$lib/assets/equipment/blank-attack.png';
 import poisonDartSlot from '$lib/assets/equipment/dagger-thrown-poison-human.png';
@@ -146,6 +147,7 @@ export function stockDotsOnSlotButton(itemState: ItemState): string {
 }
 
 function getSlotImage(id: ItemId): string {
+    if(id == 'unarmed') return fistSlot;
     if (id == 'club') return clubSlot;
     if (id == 'dagger') return daggerSlot;
     if (id == 'fireStaff') return fireballSlot;
@@ -227,7 +229,7 @@ export const selectedDetail: Readable<DetailWindow | undefined> = derived([
 
     // if last unit clicked not valid, fall back to first enemy
     let firstEnemy = $allVisualUnitProps.find(v => v.side == 'enemy')
-    if (firstEnemy) return { kind: 'vup', entity: firstEnemy }
+    if (firstEnemy) return { kind: 'vup', entity: firstEnemy } satisfies DetailWindow
 
     // if no enemies fall back to first unlocked vas with an unlock action or response
 
