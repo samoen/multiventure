@@ -1,6 +1,6 @@
 import type { UnitId, BattleAnimation, StatusEffect, StatusId, BattleEvent, HeroId, AnySprite, VisualActionSourceId } from '$lib/utils';
 import { v4 } from 'uuid';
-import { items, type Inventory, type Item, type ItemState, type EquipmentSlot, type SlotOrNone } from './items';
+import { items, type Inventory, type Item, type ItemState, type EquipmentSlot, type QuickbarSlot } from './items';
 import { pushHappening } from './messaging';
 import type { VisualActionSource } from './logic';
 import { type SceneId, scenes, addSoloScenes } from './scenes';
@@ -55,10 +55,8 @@ export type GameAction = {
 	goTo?:SceneId;
 	performAction?: () => BattleEvent | void;
 	buttonText: string;
-	// speed?:number;
-	// provoke?:number;
 	grantsImmunity?:boolean;
-	slot?:SlotOrNone;
+	slot?:QuickbarSlot;
 	target?: UnitId;
 };
 

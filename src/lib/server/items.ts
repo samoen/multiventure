@@ -8,7 +8,7 @@ export type EquipmentSlot =
 	| 'utility'
 	| 'body'
 
-export type SlotOrNone = EquipmentSlot | 'noSlot'
+export type QuickbarSlot = EquipmentSlot | 'wait' | 'succumb'
 
 export type ItemId = keyof typeof items
 
@@ -36,9 +36,9 @@ export type Inventory = {
 
 export type Item = {
 	id: ItemId
-	slot: SlotOrNone
+	slot: QuickbarSlot
 	speed: number
-	provoke: number
+	provoke?: number
 	actions?: (player: Player) => GameAction
 	actionForEnemy?: (player: Player, enemy: ActiveEnemy) => GameAction
 	actionForFriendly?: (player: Player, friend: Player) => GameAction
@@ -352,17 +352,36 @@ const unarmed: Item = {
 
 const wait: Item = {
 	id: 'wait',
-	slot: 'noSlot',
+	slot: 'wait',
 	speed: 999,
 	provoke: 0,
 	actions(player) {
 		return {
-			slot: 'noSlot',
+			slot: 'wait',
 			buttonText: 'wait',
 			performAction() {
 				return {
 					behavior: { kind: 'selfInflicted', extraSprite: 'shield' },
 					source: { kind: 'player', entity: player },
+				} satisfies BattleEvent
+			},
+		}
+	}
+}
+const succumb: Item = {
+	id: 'succumb',
+	slot: 'succumb',
+	speed: -999,
+	actions(player) {
+		return {
+			grantsImmunity: true,
+			slot: 'succumb',
+			buttonText: 'succumb to your wounds',
+			performAction() {
+				return {
+					behavior: { kind: 'selfInflicted', extraSprite: 'smoke' },
+					source: { kind: 'player', entity: player },
+					succumb:true,
 				} satisfies BattleEvent
 			},
 		}
@@ -392,6 +411,7 @@ const rags: Item = {
 
 export const items = {
 	wait: wait,
+	succumb:succumb,
 	unarmed: unarmed,
 	dagger: dagger,
 	club: club,
@@ -408,7 +428,7 @@ export const items = {
 
 
 export function equipItem(player: Player, item: Item) {
-	if (item.slot == 'noSlot') return
+	if (item.slot == 'wait' || item.slot == 'succumb') return
 	player.inventory[item.slot].itemId = item.id
 	player.inventory[item.slot].warmup = item.warmup ?? 0
 	player.inventory[item.slot].cooldown = 0

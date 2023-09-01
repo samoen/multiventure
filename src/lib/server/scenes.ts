@@ -337,9 +337,9 @@ const trainingRoom3: Scene = {
 	},
 	onVictory(player) {
 		player.sceneTexts.push('The mighty beast falls as Arthur finally gets the door open')
-		player.inventory.body.itemId = 'rags'
-		player.inventory.utility.itemId = 'empty'
-		player.inventory.weapon.itemId = 'unarmed'
+		equipItem(player,items.rags)
+		equipItem(player,items.empty)
+		equipItem(player,items.unarmed)
 		player.health = player.maxHealth
 	},
 }

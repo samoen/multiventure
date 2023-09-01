@@ -18,19 +18,18 @@ export function updatePlayerActions(player: Player) {
 	player.visualActionSources = []
 
 	if (player.health < 1) {
-		player.itemActions.push({
-			buttonText: 'Succumb to your wounds',
-			goTo: 'dead',
-			// performAction() {
-				// return {
-				// 	behavior:{kind:'fadeOut'}
-				// }satisfies
-			// },
-		})
+		if(items.succumb.actions){
+			player.itemActions.push(items.succumb.actions(player))
+		}
 
 		return
 	}
-
+	if (enemiesInScene(player.currentScene).length) {
+		if(items.wait.actions){
+			player.itemActions.push(items.wait.actions(player))
+		}
+	}
+	
 	for (const cd of playerItemStates(player)) {
 		const i = items[cd.itemId]
 		if (i.useableOutOfBattle || enemiesInScene(player.currentScene).length) {
@@ -69,11 +68,6 @@ export function updatePlayerActions(player: Player) {
 		}
 	}
 
-	if (enemiesInScene(player.currentScene).length) {
-		if(items.wait.actions){
-			player.itemActions.push(items.wait.actions(player))
-		}
-	}
 
 	scenes.get(player.currentScene)?.actions(player)
 }
@@ -161,13 +155,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		return
 	}
 
-	// if (!enemiesInScene(player.currentScene).length) {
-	// 	if (actionFromId.performAction) {
-	// 		actionFromId.performAction();
-	// 	}
-	// 	return
-	// }
-	if(!actionFromId.slot){
+	if(!actionFromId.slot || actionFromId.slot == 'succumb'){
 		if (actionFromId.performAction) {
 			let battleEvent = actionFromId.performAction();
 			if (battleEvent) {
@@ -178,11 +166,11 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 	
 	let itemUsed : Item | undefined = undefined
-	if(actionFromId.slot != 'noSlot'){
+	if(actionFromId.slot == 'wait'){
+		itemUsed = items.wait
+	}else{
 		const itemState = player.inventory[actionFromId.slot]
 		itemUsed = items[itemState.itemId]
-	}else{
-		itemUsed = items.wait
 	}
 
 	pushHappening('----');
@@ -200,6 +188,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 
 	handleRetaliations(player, false, actionFromId, itemUsed)
+
 	if (player.health > 0) {
 		preCombatActionPerformed(player, actionFromId, itemUsed)
 		if (actionFromId.performAction) {
@@ -288,8 +277,8 @@ function preCombatActionPerformed(player: Player, gameAction: GameAction, itemUs
 		}
 	}
 
-	// If we used a slot item set it on cooldown and reduce stock
-	if (gameAction.slot && gameAction.slot != 'noSlot') {
+	// If we used an equipment item set it on cooldown and reduce stock
+	if (gameAction.slot && gameAction.slot != 'wait' && gameAction.slot != 'succumb') {
 		let itemState = player.inventory[gameAction.slot]
 		let item = items[itemState.itemId]
 		if (item.cooldown) {
@@ -471,6 +460,10 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 		leavingScene = player
 		changeScene(player, battleEvent.behavior.goTo)
 	}
+	if(battleEvent.succumb){
+		leavingScene = player
+		changeScene(player,'dead')
+	}
 
 	let battleAnimation: BattleAnimation = {
 		source: battleEvent.source.entity.unitId,
@@ -495,7 +488,7 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 				remove: m.remove
 			} satisfies StatusModifier
 		}),
-		takesItem: battleEvent.takesItem && battleEvent.takesItem.slot != 'noSlot' ? {slot:battleEvent.takesItem.slot, id:battleEvent.takesItem.id} : undefined,
+		takesItem: battleEvent.takesItem && battleEvent.takesItem.slot != 'wait' && battleEvent.takesItem.slot != 'succumb' ? {slot:battleEvent.takesItem.slot, id:battleEvent.takesItem.id} : undefined,
 	}
 	pushAnimation({
 		sceneId: sceneToPlayAnim,
@@ -580,9 +573,8 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 
 export function convertServerActionToClientAction(sa: GameAction): GameActionSentToClient {
 	return {
-
 		buttonText: sa.buttonText,
-		slot: sa.slot != 'noSlot' ? sa.slot : undefined,
+		slot: sa.slot != 'wait' && sa.slot != 'succumb' ? sa.slot : undefined,
 		target: sa.target,
 	}
 }

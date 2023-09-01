@@ -44,6 +44,7 @@ export type BattleEvent = {
 	alsoDamages?:HealthModifierEvent[],
 	alsoModifiesAggro?:AggroModifierEvent[],
 	takesItem?:Item,
+	succumb?:boolean,
 }
 
 export type StatusModifier = {target:UnitId, status:StatusId, remove?:boolean, count?:number}
