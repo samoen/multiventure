@@ -363,7 +363,7 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 						processBattleEvent(enemyInScene.template.battleEvent(enemyInScene,player),player)
 					}else {
 						// for(const _ of Array.from({length:enemyInScene.template.strikes ?? 1})){
-						let r = damagePlayer(enemyInScene, player)
+						let r = damagePlayer(enemyInScene, player, enemyInScene.damage)
 						if (r.dmgDone > 0) {
 							pushAnimation(
 								{
@@ -407,11 +407,11 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 			dmgToTarget = r.dmgDone
 		}
 		if (battleEvent.target?.kind == 'player' && battleEvent.source.kind == 'enemy') {
-			const r = damagePlayer(battleEvent.source.entity, battleEvent.target.entity)
+			const r = damagePlayer(battleEvent.source.entity, battleEvent.target.entity, battleEvent.baseDamageToTarget)
 			dmgToTarget = r.dmgDone
 		}
 		if (battleEvent.target?.kind == 'enemy' && battleEvent.source.kind == 'enemy') {
-			const r = infightDamage(battleEvent.source.entity, battleEvent.target.entity)
+			const r = infightDamage(battleEvent.source.entity, battleEvent.target.entity, battleEvent.baseDamageToTarget)
 			dmgToTarget = r.dmgDone
 		}
 	}
@@ -453,22 +453,22 @@ function processBattleEvent(battleEvent : BattleEvent, player:Player){
 	}
 	let alsoDmgedAnimation: HealthModifier[] = []
 	if (battleEvent.alsoDamages) {
-		for (const dmged of battleEvent.alsoDamages) {
-			if (dmged.targetEnemy) {
+		for (const healthModifyEvent of battleEvent.alsoDamages) {
+			if (healthModifyEvent.targetEnemy) {
 				if (battleEvent.source.kind == 'player') {
-					if (dmged.baseDamage) {
-						let r = damageEnemy(battleEvent.source.entity, dmged.targetEnemy, dmged.baseDamage)
+					if (healthModifyEvent.baseDamage) {
+						let r = damageEnemy(battleEvent.source.entity, healthModifyEvent.targetEnemy, healthModifyEvent.baseDamage)
 						alsoDmgedAnimation.push({
-							target: dmged.targetEnemy.unitId,
+							target: healthModifyEvent.targetEnemy.unitId,
 							amount: r.dmgDone,
 						})
 					}
 				}
 				if (battleEvent.source.kind=='enemy') {
-					if (dmged.baseDamage) {
-						let r = infightDamage(battleEvent.source.entity, dmged.targetEnemy)
+					if (healthModifyEvent.baseDamage) {
+						let r = infightDamage(battleEvent.source.entity, healthModifyEvent.targetEnemy, healthModifyEvent.baseDamage)
 						alsoDmgedAnimation.push({
-							target: dmged.targetEnemy.unitId,
+							target: healthModifyEvent.targetEnemy.unitId,
 							amount: r.dmgDone,
 						})
 					}

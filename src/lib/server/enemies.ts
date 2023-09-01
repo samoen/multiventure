@@ -1,4 +1,4 @@
-import type { AnimationBehavior, UnitId, BattleAnimation, EnemyName, StatusEffect, StatusId, EnemyId, BattleEvent, StatusModifierEvent, HeroId } from "$lib/utils";
+import type { AnimationBehavior, UnitId, BattleAnimation, EnemyName, StatusEffect, StatusId, EnemyId, BattleEvent, StatusModifierEvent, HeroId, HealthModifierEvent } from "$lib/utils";
 import { pushHappening } from "./messaging";
 import { scenes, type SceneId } from "./scenes";
 import { playerEquipped, type HeroName, type Player, activePlayers, activePlayersInScene } from "./users";
@@ -100,11 +100,11 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		battleEvent(me, player) {
 			return {
 				behavior:{kind:'missile',extraSprite:'flame'},
-				alsoDamages:enemiesInScene(me.currentScene).filter(e=>e.name!=me.name).map(e=>{
+				alsoDamages:enemiesInScene(me.currentScene).filter(e=>e.name!=me.name && e.currentHealth > 0).map(e=>{
 					return {
-						baseDamage:5,
+						baseDamage:10,
 						targetEnemy:e,
-					}
+					} satisfies HealthModifierEvent
 				}),
 				target:{kind:'player',entity:player},
 				baseDamageToTarget:5,
@@ -184,12 +184,12 @@ export function enemiesInScene(sceneKey: SceneId): ActiveEnemy[] {
 	return activeEnemies.filter(e => e.currentScene == sceneKey)
 }
 
-export function damagePlayer(enemy: ActiveEnemy, player: Player): { dmgDone: number } {
+export function damagePlayer(enemy: ActiveEnemy, player: Player, baseDmg:number): { dmgDone: number } {
 	if (player.health < 1) return { dmgDone: 0 }
 	let dmgDone = 0
 	let strikes = enemy.template.strikes ?? 1
 	for (const _ of Array.from({ length: strikes })) {
-		let dmg = enemy.damage
+		let dmg = baseDmg
 		for (const item of playerEquipped(player)) {
 			if (item.onTakeDamage) {
 				dmg = item.onTakeDamage(dmg)
@@ -234,9 +234,12 @@ export function pushAnimation(
 	}
 }
 
-export function infightDamage(actor: ActiveEnemy, target: ActiveEnemy): { dmgDone: number } {
+export function infightDamage(actor: ActiveEnemy, target: ActiveEnemy, baseDmg:number): { dmgDone: number } {
 	if (target.currentHealth < 1) return { dmgDone: 0 }
-	let damage = target.template.onTakeDamage?.(actor.damage) ?? actor.damage
+	let damage = baseDmg
+	if(target.template.onTakeDamage){
+		damage = target.template.onTakeDamage(baseDmg)
+	}
 	target.currentHealth -= damage
 	pushHappening(`${actor.name} accidentally hit ${target.name} for ${damage} damage`)
 	let result = checkEnemyDeath(target)
