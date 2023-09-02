@@ -676,12 +676,14 @@ export function convertVasToClient(vas: VisualActionSource, player: Player): Vis
 	let unlockOnSee = undefined
 	let lockOnSee = undefined
 	if (vas.detect) {
-		if (player.flags.has(vas.detect.flag)) {
-			detectStep = vas.detect.flag
-			responses = vas.detect.responses ?? []
-			startText = vas.detect.startText
-			unlockOnSee = vas.detect.unlockVasOnDetect
-			lockOnSee = vas.detect.lockVasOnDetect
+		for(const detected of vas.detect){
+			if (player.flags.has(detected.flag)) {
+				detectStep = detected.flag
+				responses = detected.responses ?? []
+				startText = detected.startText
+				unlockOnSee = detected.unlockVasOnDetect
+				lockOnSee = detected.lockVasOnDetect
+			}
 		}
 	}
 
@@ -718,7 +720,7 @@ export type VisualActionSource = {
 	actionsWithRequirements?: UnlockableActionData[]
 	startText: string,
 	responses?: ConversationResponse[]
-	detect?: { flag: Flag, startText: string, responses?: ConversationResponse[], unlockVasOnDetect?: VisualActionSourceId[], lockVasOnDetect?:VisualActionSourceId[]}
+	detect?: { flag: Flag, startText: string, responses?: ConversationResponse[], unlockVasOnDetect?: VisualActionSourceId[], lockVasOnDetect?:VisualActionSourceId[]}[]
 	startsLocked?: boolean
 	lockHandle?: string
 }

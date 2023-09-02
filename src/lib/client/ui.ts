@@ -163,7 +163,7 @@ function getSlotImage(id: ItemId): string {
     if (id == 'fireStaff') return fireballSlot;
     if (id == 'bomb') return fireballSlot;
     if (id == 'poisonDart') return poisonDartSlot;
-    if (id == 'bandage') return shieldSlot;
+    if (id == 'bandage') return potion;
     if (id == 'leatherArmor') return shieldSlot;
     if (id == 'plateMail') return shieldSlot;
     return blankSlot;

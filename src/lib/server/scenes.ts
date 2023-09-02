@@ -129,7 +129,7 @@ const tutorial: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasGoTrain1',
 			displayName: 'Training Room',
-			sprite: 'stoneDoor',
+			sprite: 'castle',
 			startText: `An entrance to a training room`,
 			actionsWithRequirements: [
 				{
@@ -277,7 +277,7 @@ const trainingRoom2: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasGoTrain3',
 			displayName: 'Training Room',
-			sprite: 'castle',
+			sprite: 'stoneDoor',
 			startText: `The final room`,
 			actionsWithRequirements: [
 				{
@@ -358,8 +358,8 @@ export const forest: Scene = {
 	actions(player: Player) {
 		player.visualActionSources.push({
 			unitId: 'vascastle',
-			displayName: 'Castle',
-			sprite: 'castle',
+			displayName: 'Travel',
+			sprite: 'signpost',
 			actionsWithRequirements: [{ travelTo: 'castle' }],
 			startText: `In the distance you see a castle`,
 		})
@@ -410,13 +410,13 @@ const castle: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasHouse',
 			displayName: 'Castle Grounds',
-			sprite: 'signpost',
-			responses:[{
-				responseId:'rummage',
-				responseText:'Search around the old barracks',
-				unlockVas:['vasCastleBandage'],
+			sprite: 'castle',
+			responses: [{
+				responseId: 'rummage',
+				responseText: 'Search around the old barracks',
+				unlockVas: ['vasCastleBandage'],
 			}],
-			actionsWithRequirements: [{ travelTo: 'house' },{travelTo: 'throne'}],
+			actionsWithRequirements: [{ travelTo: 'house' }, { travelTo: 'throne' }],
 			startText: `In the castle grounds you see a house. The door is open and someone is inside. Further on there are steps leading up to the Bramblemore throne room. There is a long abandoned barracks with broken gear strewn around.`,
 		})
 		player.visualActionSources.push({
@@ -477,7 +477,7 @@ const house: Scene = {
 					unlockVas: ['vasLeatherGift']
 				},
 			],
-			detect: {
+			detect: [{
 				flag: 'killedGoblins',
 				unlockVasOnDetect: ['vasLeatherGift'],
 				startText: `Dear Sir ${player.heroName}! You return with the stench of goblin blood about yourself. Thank you for obtaining vengence on my behalf.`,
@@ -488,7 +488,7 @@ const house: Scene = {
 						retort: `I bequeath the armor to you so that my son's legacy may live on. Good luck out there ${player.heroName}`,
 					}
 				]
-			}
+			}]
 		})
 		player.visualActionSources.push({
 			unitId: 'vasLeatherGift',
@@ -505,10 +505,10 @@ const house: Scene = {
 		})
 		player.visualActionSources.push({
 			unitId: 'vasGoCastle',
-			displayName: 'Door',
-			sprite: 'castle',
-			startText: 'Go back to the castle grounds',
-			actionsWithRequirements: [{ travelTo: 'castle' }]
+			displayName: 'Travel',
+			sprite: 'signpost',
+			startText: 'Leave the house',
+			actionsWithRequirements: [{ travelTo: 'castle' }, { travelTo: 'forest' }]
 		})
 	},
 }
@@ -518,7 +518,7 @@ const throne: Scene = {
 	displayName: 'Bramblemore Throne Room',
 	onEnterScene(player) {
 		if (player.flags.has('placedMedallion')) {
-			player.sceneTexts.push("The dishevelled king turns to you and opens his arms as if to welcome you back. 'Stranger. You have done my bidding, but your fate is sealed. I have no time for pathetic weaklings like you. Prepare yourself. I am sending you to a place from which there is no return.")
+			player.sceneTexts.push("The dishevelled king turns to you and opens his arms as if to welcome you back.")
 		} else if (player.flags.has('smashedMedallion')) {
 			player.sceneTexts.push("The dishevelled king turns to you with something akin to a smile on his rotting visage.")
 		} else if (!player.flags.has('killedGoblins')) {
@@ -547,7 +547,7 @@ const throne: Scene = {
 					retort: 'Go do a quest or something',
 				}
 			],
-			detect: {
+			detect: [{
 				flag: 'killedGoblins',
 				startText: `Word of your deeds has reached the king and he has decided to give you and audience.`,
 				responses: [{
@@ -557,7 +557,7 @@ const throne: Scene = {
 					unlockVas: ['vasKing'],
 					lockVas: ['vasThroneGuard']
 				}]
-			},
+			}],
 		})
 
 		player.visualActionSources.push({
@@ -583,17 +583,29 @@ const throne: Scene = {
 					lockVas: ['vasCastleFromThrone']
 				}
 			],
-			detect: {
-				flag: 'smashedMedallion',
-				startText: `You have betrayed me stranger. And after I put my faith in you. You will suffer. Prepare yourself, I am sending you to the realm of madness.`,
-				responses: [{
-					responseId: 'ohno',
-					responseText: `Oh noooo`,
-					retort: 'hehehehe',
-				}],
-				unlockVasOnDetect: ['vasRealmFromThrone'],
-				lockVasOnDetect:['vasChamberFromThrone','vasCastleFromThrone']
-			},
+			detect: [
+				{
+					flag: 'smashedMedallion',
+					startText: `You have betrayed me stranger. And after I put my faith in you. You will suffer. Prepare yourself, I am sending you to a place from which there is no return.`,
+					responses: [{
+						responseId: 'ohno',
+						responseText: `Oh noooo`,
+						retort: 'hehehehe',
+					}],
+					unlockVasOnDetect: ['vasRealmFromThrone'],
+					lockVasOnDetect: ['vasChamberFromThrone', 'vasCastleFromThrone']
+				},
+				{
+					flag: 'placedMedallion',
+					startText: `'Stranger. You have done my bidding, I thank you.`,
+					responses: [{
+						responseId: 'yep',
+						responseText: `Happy to help.`,
+						retort: 'I have more tasks for you. I have opened a portal to a place where great treasures are. Go gather some treasure.',
+					}],
+					unlockVasOnDetect: ['vasRealmFromThrone'],
+				},
+			],
 		})
 		player.visualActionSources.push({
 			unitId: 'vasRealmFromThrone',
@@ -609,18 +621,18 @@ const throne: Scene = {
 			displayName: 'Dungeon',
 			sprite: 'temple',
 			startText: 'A musty staircase down into the depths of the castle',
-			actionsWithRequirements: [{ requiresNotFlags:['smashedMedallion'], travelTo: 'tunnelChamber' }]
+			actionsWithRequirements: [{ requiresNotFlags: ['smashedMedallion'], travelTo: 'tunnelChamber' }]
 		})
-			player.visualActionSources.push({
-				unitId: 'vasCastleFromThrone',
-				displayName: 'Castle Grounds',
-				sprite: 'castle',
-				startText: 'Go back to the castle grounds',
-				actionsWithRequirements: [{
-					requiresNotFlags:['smashedMedallion'],
-					travelTo: 'castle'
-				}]
-			})
+		player.visualActionSources.push({
+			unitId: 'vasCastleFromThrone',
+			displayName: 'Castle Grounds',
+			sprite: 'castle',
+			startText: 'Go back to the castle grounds',
+			actionsWithRequirements: [{
+				requiresNotFlags: ['smashedMedallion'],
+				travelTo: 'castle'
+			}]
+		})
 	}
 }
 
@@ -728,6 +740,7 @@ const goblinCamp: Scene = {
 				playerInScene.sceneTexts.push(`Suddendly, A pair of goblins rush out of a tent.. "Hey Gorlak, looks like lunch!" "Right you are Murk. Let's eat!"`)
 			}
 			spawnEnemy('Gorlak', 'goblin', 'goblinCamp')
+			spawnEnemy('Dartah', 'darter', 'goblinCamp')
 			spawnEnemy(
 				'Murk',
 				'goblin',

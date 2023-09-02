@@ -120,7 +120,7 @@ Preparation tactics:
 defensive (counter with greed) - immune, heal
 cheese (counter with defensive) - stock attacks
 greed (counter with cheese) - warmup, summons, growing buffs
-many hits (multihit, enemy high aggro gain) vs big hits (cooldown, low aggro gain)
+many hits (ie multihit good against heavy armor. low provoke good against low enemy aggro gain) vs big hits (ie burst/cooldown. good against light armor and high aggro gain)
 swarm vs goliath
 
 battle tactics:
