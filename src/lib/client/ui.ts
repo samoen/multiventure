@@ -3,6 +3,7 @@ import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, GameActionSentT
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 import peasantPortrait from '$lib/assets/portraits/peasant.webp';
 import generalPortrait from '$lib/assets/portraits/general.webp';
+import ladyPortrait from '$lib/assets/portraits/lady.webp';
 import peasant from '$lib/assets/units/peasant.png';
 import general from '$lib/assets/units/general.png';
 import druid from '$lib/assets/units/druid.png';
@@ -107,6 +108,8 @@ export let clientState = writable({
     status: 'starting up',
     loading: false,
 })
+
+export let triedSignupButTaken : Writable<string|undefined> = writable(undefined)
 
 export const lastMsgFromServer: Writable<MessageFromServer | undefined> = writable();
 export const allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
@@ -360,6 +363,7 @@ let enemyPortraits = {
 export const miscPortraits = {
     peasant: peasantPortrait,
     general: generalPortrait,
+    lady: ladyPortrait,
 } satisfies Record<MiscPortrait, string>;
 
 export function updateUnit(index: UnitId, run: (vup: VisualUnitProps) => void) {

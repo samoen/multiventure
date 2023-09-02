@@ -41,7 +41,13 @@
 		enemies,
 		vases,
 		selectedVasResponsesToShow,
-		selectedVasActionsToShow
+		selectedVasActionsToShow,
+
+		heroSprites,
+
+		triedSignupButTaken
+
+
 	} from '$lib/client/ui';
 	import type { MessageFromServer } from '$lib/server/messaging';
 	import { onMount, tick } from 'svelte';
@@ -192,6 +198,37 @@
 		$lastUnitClicked = undefined;
 	}
 
+	async function guestSignUp() {
+		let joincall = await fetch('/api/guestsignup', {
+			method: 'POST',
+			body: JSON.stringify({ hi: 'yes' }),
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+		let res = await joincall.json();
+		if (
+			typeof res == 'object' &&
+			'alreadyConnected' in res &&
+			typeof res.alreadyConnected == 'boolean' &&
+			res.alreadyConnected
+		) {
+			console.log('login response says already connected');
+			// location.reload()
+		}
+
+
+		if (joincall.ok) {
+			// if we were to re-mount (hot-reload) after this point, page data would be misleading
+			invalidateAll();
+			$clientState.status = 'waiting for first event';
+			subscribeEventsIfNotAlready();
+		} else {
+			console.log('joincall not ok');
+			$clientState.status = 'signup failed, need manual';
+			$clientState.loading = false;
+		}
+	}
 	async function signUp(usrName: string) {
 		let joincall = await fetch('/api/signup', {
 			method: 'POST',
@@ -218,13 +255,23 @@
 			// joinedAs = usrName
 			$clientState.status = 'waiting for first event';
 			subscribeEventsIfNotAlready();
+		}else if(res.needAuth){
+			signInNameInput = res.needAuth
+			$triedSignupButTaken = res.needAuth
+			$clientState.status = 'signup name taken, can try login';
+			$clientState.loading = false;
 		} else {
-			console.log('joincall not ok');
+			console.log('joincall not ok, no recourse');
 			$clientState.status = 'signup failed, need manual';
 			$clientState.loading = false;
 		}
 	}
 
+	function guestSignUpButtonClicked() {
+		$clientState.loading = true;
+		$clientState.status = 'submitting guest sign up';
+		guestSignUp();
+	}
 	function signUpButtonClicked() {
 		if (!signupInput) return;
 		$clientState.loading = true;
@@ -277,17 +324,45 @@
 	<p>loading...</p>
 {/if}
 {#if !$clientState.loading && !$lastMsgFromServer}
-	<p>Welcome! Please sign up with your hero name:</p>
-	<input type="text" bind:value={signupInput} />
-	<button disabled={!signupInput} on:click={signUpButtonClicked}>Sign Up</button>
+	<div class='landing' style="background-image:url({getLandscape($visualLandscape)});">
+		<div class='landingUnits'>
+			<img class="landingHero" src={anySprites.general} alt='a bg'>
+			<img class="landingHero flipped" src={anySprites.lady} alt='a bg'>
 
-	<p>Or Login with your hero name and the userID generated when you signed up:</p>
-	<label for="signInName">name</label>
-	<input id="signInName" type="text" bind:value={signInNameInput} />
-	<label for="signInId">Id</label>
-	<input id="signInId" type="text" bind:value={signInIdInput} />
-	<button disabled={!signInNameInput || !signInIdInput} on:click={signInButtonClicked}>Login</button
-	>
+		</div>
+		<div class="landingPortraitAndDialog">
+			<div class='landingPortrait textAlignRight'>
+				<img src={miscPortraits.general} alt='a portrait'>
+			</div>
+			<div class="landingDialog">
+				<span>
+					Welcome hero! What is your name?
+				</span>
+				<div class="landingResponses">	
+					<button on:click={guestSignUpButtonClicked}>My name is Guest</button>
+					<div class="myNameIs">
+						<button disabled={!signupInput} on:click={signUpButtonClicked}>My name is</button>
+						<input type="text" bind:value={signupInput} />
+					</div>
+					{#if $triedSignupButTaken}
+						<p>That name is already taken. If it's you, provide the userID:</p>
+						<!-- <label for="signInName">name</label> -->
+						<input id="signInName" disabled={true} type="text" bind:value={signInNameInput} />
+						<!-- <label for="signInId">Id</label> -->
+						<input id="signInId" type="text" bind:value={signInIdInput} />
+						<button disabled={!signInNameInput || !signInIdInput} on:click={signInButtonClicked}>Login</button>
+					{/if}
+				</div>
+			</div>
+			<div class='landingPortrait'>
+				<img class="flipped" src={miscPortraits.lady} alt='a portrait'>
+			</div>
+		</div>
+		
+	</div>
+	<!-- <input type="text" bind:value={signupInput} /> -->
+	<!-- <button disabled={!signupInput} on:click={signUpButtonClicked}>Sign Up</button> -->
+
 {/if}
 
 {#if $lastMsgFromServer && (!source || source.readyState != source.OPEN)}
@@ -674,7 +749,7 @@
 		</p>
 		<p />
 	{/each}
-	<p>
+	<p class="textSelectable">
 		Logged in as {$lastMsgFromServer.yourInfo.heroName} uid: {data.userId}
 		<button
 			on:click={() => {
@@ -713,6 +788,107 @@
 		height: clamp(25px, 5vw + 1px, 50px);
 		width: clamp(25px, 5vw + 1px, 50px);
 	}
+
+	.textSelectable{
+		user-select: text;
+	}
+
+	.landing{
+		height:100vh;
+		background-repeat: no-repeat;
+		background-size: cover;
+		display: flex;
+		flex-direction: column;
+		/* align-items: center; */
+		justify-content: center;
+	}
+	.landingUnits{
+		/* background-color: aqua; */
+		text-align: center;
+		white-space: nowrap;
+		height:clamp(80px, 30vw, 200px);
+	}
+	.landingUnits img{
+		height:100%;
+	}
+	
+	.flipped{
+		transform: scaleX(-1);
+	}
+	.landingPortraitAndDialog{
+		/* border:2px solid brown; */
+		display: flex;
+		justify-content: center;
+		height:30vh;
+		/* width:fit-content; */
+		/* max-width:100%; */
+		background-color: rgb(0, 0, 0, 0.4);
+	}
+	.landingPortrait{
+		/* flex-basis:auto; */
+		/* background-color: aqua; */
+		flex-shrink:1;
+		flex-grow:1;
+		max-width:300px;
+	}
+	.textAlignRight{
+		text-align: right;
+
+	}
+	.landingPortrait > img{
+		/* background-color: red; */
+		width:100%;
+		height:100%;
+		object-fit: cover;
+
+	}
+	.landingDialog{
+		
+		/* flex-grow:0; */
+		/* flex-basis: 30%; */
+		/* border:2px solid brown; */
+		/* background-color: aqua; */
+		/* flex-basis:0; */
+		flex-shrink: 1;
+		font-weight: bold;
+		color:white;
+		/* display: inline-block; */
+		padding:10px;
+	}
+	.landingResponses{
+		margin-top:10px;
+		display: flex;
+		gap:10px;
+		flex-direction: column;
+		align-items: flex-start;
+	}
+	.landingResponses button{
+		padding-inline:5px;
+		padding-block:4px;
+		white-space: nowrap;
+		border-radius: 5px;
+	}
+	.myNameIs{
+		/* margin:0; */
+		/* padding:0; */
+		display: inline-flex;
+		width:100%;
+		justify-content: flex-start;
+		gap:5px;
+		margin-top:5px;
+	}
+	/* .myNameIs button{
+
+	} */
+	.myNameIs input{
+		flex-shrink:1;
+		flex-grow:1;
+		flex-basis:0;
+		min-width:10px;
+		max-width:150px;
+		width:100%;
+	}
+	
 	h3 {
 		margin-top: 15px;
 		margin-bottom: 1px;

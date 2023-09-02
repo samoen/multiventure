@@ -22,7 +22,7 @@ export const POST: RequestHandler = async (r) => {
 	let nameTaken = Array.from(users.values()).some(p => p.heroName == msg.join)
 	if (nameTaken) {
 		console.log('name already taken')
-		return json({error:'hero name taken'}, { status: 400 });
+		return json({error:'hero name taken', needAuth:msg.join}, { status: 400 });
 	}
 	// r.cookies.get('uid')
 	// let player = users.get(msg.join)
