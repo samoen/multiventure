@@ -1,11 +1,9 @@
 <script lang="ts">
 	import {
 		allVisualUnitProps,
-		anySprites,
 		convoStateForEachVAS,
 		currentAnimation,
 		heroSprite,
-		heroSprites,
 		lastMsgFromServer,
 		lastUnitClicked,
 		nextAnimationIndex,
@@ -23,6 +21,7 @@
 	import { tick } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import type { ItemId } from '$lib/server/items';
+	import { anySprites, heroSprites } from '$lib/client/assets';
 
 	export let hostId: VisualActionSourceId;
 	let pickedup = false;

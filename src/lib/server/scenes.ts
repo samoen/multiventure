@@ -46,7 +46,7 @@ const dead: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasDeath',
 			displayName: 'Death',
-			sprite: 'general',
+			sprite: 'spectre',
 			startText: `I'm afraid your dead. Would you like to respawn?`,
 			actionsWithRequirements: [
 				{
@@ -351,9 +351,9 @@ export const forest: Scene = {
 		if (player.previousScene == 'forestPassage') {
 			player.sceneTexts.push('You get out the passage, and stumble into the surrounding overgrowth')
 		}
-		if (!player.flags.has('heardAboutHiddenPassage')) {
+		// if (!player.flags.has('heardAboutHiddenPassage')) {
 			player.sceneTexts.push(`You are surrounded by dense undergrowth. With every slight movement you feel sharp foliage digging into your flesh. The forest is green and verdent. It teems with life. The sound of insects buzzing fills the air like the distant screams of the innocent. Unseen creatures shuffle just out of sight, their eyes fixed firmly upon you: the unwanted visitor. There is something distinctly unwell about this place.`)
-		}
+		// }
 	},
 	actions(player: Player) {
 		player.visualActionSources.push({

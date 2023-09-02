@@ -72,6 +72,7 @@ export type AnySprite =
 | 'portal'
 | 'signpost'
 | 'general' 
+| 'spectre' 
 | 'druid' 
 | 'lady' 
 | 'necromancer' 

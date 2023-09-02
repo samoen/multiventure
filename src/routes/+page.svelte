@@ -16,11 +16,9 @@
 		lastMsgFromServer,
 		lastUnitClicked,
 		latestSlotButtonInput,
-		miscPortraits,
 		nextAnimationIndex,
 		numberShownOnSlot,
 		receiveCenter,
-		anySprites,
 		selectedDetail,
 		selectedVisualActionSourceState,
 		stockDotsOnSlotButton,
@@ -43,7 +41,6 @@
 		selectedVasResponsesToShow,
 		selectedVasActionsToShow,
 
-		heroSprites,
 
 		triedSignupButTaken
 
@@ -53,14 +50,12 @@
 	import { onMount, tick } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import blankSlot from '$lib/assets/equipment/blank-attack.png';
-	import plainsLandscape from '$lib/assets/landscapes/landscape-plain.webp';
-	import castleLandscape from '$lib/assets/landscapes/landscape-castle.webp';
-	import grimForestLandscape from '$lib/assets/landscapes/grim-altar.jpg';
-	import bridgeLandscape from '$lib/assets/landscapes/landscape-bridge.webp';
+	
 	import type { BattleAnimation, DataFirstLoad, LandscapeImage } from '$lib/utils';
 	import VisualActionSource from '$lib/Components/VisualActionSource.svelte';
 	import { fade } from 'svelte/transition';
 	import type { ItemId } from '$lib/server/items';
+	import { anySprites, getLandscape, miscPortraits } from '$lib/client/assets';
 
 	export let data: DataFirstLoad;
 	let signupInput: string;
@@ -157,17 +152,6 @@
 		}
 		worldReceived(sMsg);
 		$clientState.loading = false;
-	}
-
-	async function cancelAnimations() {
-		console.log(`cancelling animations`);
-		// $animationCancelled = true;
-		// $currentAnimationIndex = 999;
-
-		// let transitions reach their end
-		// await tick();
-
-		// $animationCancelled = false;
 	}
 
 	async function deleteHero() {
@@ -302,19 +286,6 @@
 		invalidateAll();
 		$clientState.status = 'waiting for first event';
 		subscribeEventsIfNotAlready();
-	}
-
-	function getLandscape(key: LandscapeImage): string {
-		if (key == 'plains') {
-			return plainsLandscape;
-		} else if (key == 'castle') {
-			return castleLandscape;
-		} else if (key == 'grimForest') {
-			return grimForestLandscape;
-		} else if (key == 'bridge') {
-			return bridgeLandscape;
-		}
-		return plainsLandscape;
 	}
 	
 </script>
@@ -953,7 +924,7 @@
 		background-color: beige;
 	}
 	.wrapGameField {
-		height: 50vh;
+		height: 75vh;
 		overflow-y: auto;
 		overflow-x: hidden;
 		overscroll-behavior: contain;

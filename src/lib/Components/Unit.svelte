@@ -26,7 +26,6 @@
 
 		handlePutsStatuses,
 
-		anySprites,
 
 		animationsInWaiting,
 
@@ -42,6 +41,7 @@
 	import VisualUnit from './VisualUnit.svelte';
 	import { stringify } from 'uuid';
 	import type { BattleAnimation, UnitId } from '$lib/utils';
+	import { anySprites } from '$lib/client/assets';
 
 	export let hostId: UnitId;
 

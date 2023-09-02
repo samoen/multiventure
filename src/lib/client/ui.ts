@@ -1,51 +1,7 @@
 import type { Flag, HeroName, MiscPortrait, PlayerInClient } from "$lib/server/users";
 import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient, AnySprite, LandscapeImage, VisualActionSourceId } from "$lib/utils";
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
-import peasantPortrait from '$lib/assets/portraits/peasant.webp';
-import generalPortrait from '$lib/assets/portraits/general.webp';
-import ladyPortrait from '$lib/assets/portraits/lady.webp';
-import peasant from '$lib/assets/units/peasant.png';
-import general from '$lib/assets/units/general.png';
-import druid from '$lib/assets/units/druid.png';
-import lady from '$lib/assets/units/lady.png';
-import necromancer from '$lib/assets/units/necromancer.png';
-import gruntPortrait from '$lib/assets/portraits/grunt.webp';
-import spearman from '$lib/assets/units/spearman.png';
-import rat from '$lib/assets/units/giant-rat.png';
-import grunt from '$lib/assets/units/grunt.png';
-import troll from '$lib/assets/units/young-ogre.png';
-import greenDrip from '$lib/assets/extras/green-drip.png';
-import ruffian from '$lib/assets/units/ruffian.png';
-import rogue from '$lib/assets/units/rogue.png';
-import fireghost from '$lib/assets/units/fireghost.png';
-import theif from '$lib/assets/units/thief.png';
-import mage from '$lib/assets/units/mage.png';
-import arrow from '$lib/assets/extras/arrow.png';
-import bomb from '$lib/assets/extras/bomb.png';
-import shield from '$lib/assets/extras/shield.png';
-import smoke from '$lib/assets/extras/smoke.png';
-import flame from '$lib/assets/extras/flame.png';
-import heal from '$lib/assets/extras/heal.png';
-import lighthouse from '$lib/assets/scenery/lighthouse.png';
-import forest from '$lib/assets/scenery/mixed-summer-small.png';
-import stoneDoor from '$lib/assets/scenery/dwarven-doors-closed.png';
-import portal from '$lib/assets/scenery/summoning-center.png';
-import signpost from '$lib/assets/scenery/signpost.png';
-import temple from '$lib/assets/scenery/temple1.png';
-import armor from '$lib/assets/scenery/armor.png';
-import bombpad from '$lib/assets/scenery/bomb-pad.png';
-import altar from '$lib/assets/scenery/altar.png';
-import staff from '$lib/assets/scenery/staff-magic.png';
-import dagger from '$lib/assets/scenery/dagger.png';
-import potion from '$lib/assets/scenery/potion-red.png';
-import club from '$lib/assets/extras/club.png';
-import clubSlot from '$lib/assets/equipment/club-small.png';
-import fistSlot from '$lib/assets/equipment/fist-human.png';
-import shieldSlot from '$lib/assets/equipment/heater-shield.png';
-import blankSlot from '$lib/assets/equipment/blank-attack.png';
-import poisonDartSlot from '$lib/assets/equipment/dagger-thrown-poison-human.png';
-import fireballSlot from '$lib/assets/equipment/fireball.png';
-import daggerSlot from '$lib/assets/equipment/dagger-human.png';
+
 import type { EquipmentSlot, Inventory, ItemId, ItemState } from '$lib/server/items';
 import { crossfade } from "svelte/transition";
 import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easing";
@@ -53,6 +9,7 @@ import { tick } from "svelte";
 import type { EnemyTemplateId } from "$lib/server/enemies";
 import type { MessageFromServer } from "$lib/server/messaging";
 import type { VisualActionSourceInClient } from "$lib/server/logic";
+import { anySprites, enemyPortraits, enemySprites, getHeroPortrait, getSlotImage, heroSprites } from "./assets";
 
 
 type UnitDetails = {
@@ -79,14 +36,7 @@ export type VisualUnitProps = {
     actionsThatCanTargetMe: GameActionSentToClient[]
 }
 
-export const enemySprites: Record<EnemyTemplateId, string> = {
-    goblin: spearman,
-    rat: rat,
-    darter: spearman,
-    hobGoblin: grunt,
-    troll: troll,
-    fireGremlin: fireghost
-};
+
 
 export type ProjectileProps = {
     projectileImg: string
@@ -159,18 +109,6 @@ export function stockDotsOnSlotButton(itemState: ItemState): string {
     return dots
 }
 
-function getSlotImage(id: ItemId): string {
-    if(id == 'unarmed') return fistSlot;
-    if (id == 'club') return clubSlot;
-    if (id == 'dagger') return daggerSlot;
-    if (id == 'fireStaff') return fireballSlot;
-    if (id == 'bomb') return fireballSlot;
-    if (id == 'poisonDart') return poisonDartSlot;
-    if (id == 'bandage') return potion;
-    if (id == 'leatherArmor') return shieldSlot;
-    if (id == 'plateMail') return shieldSlot;
-    return blankSlot;
-}
 
 
 export let currentAnimation = derived([currentAnimationIndex, currentAnimationsWithData], ([$currentAnimationIndex, $currentAnimationsWithData]) => {
@@ -351,20 +289,7 @@ export const [sendCenter, receiveCenter] = crossfade({
 });
 
 
-let enemyPortraits = {
-    hobGoblin: gruntPortrait,
-    rat: gruntPortrait,
-    goblin: gruntPortrait,
-    darter: gruntPortrait,
-    fireGremlin: gruntPortrait,
-    troll: gruntPortrait
-} satisfies Record<EnemyTemplateId, string>;
 
-export const miscPortraits = {
-    peasant: peasantPortrait,
-    general: generalPortrait,
-    lady: ladyPortrait,
-} satisfies Record<MiscPortrait, string>;
 
 export function updateUnit(index: UnitId, run: (vup: VisualUnitProps) => void) {
     allVisualUnitProps.update((old) => {
@@ -399,7 +324,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
             side: 'hero',
             actual: {
                 kind: 'player',
-                portrait: peasantPortrait,
+                portrait: getHeroPortrait(lastMsg.yourInfo),
                 info: lastMsg.yourInfo,
             },
             actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == lastMsg.yourInfo.unitId)
@@ -436,7 +361,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                     side: 'hero',
                     actual: {
                         kind: 'player',
-                        portrait: peasantPortrait,
+                        portrait: getHeroPortrait(p),
                         info: p,
                     },
                     actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == p.unitId)
@@ -529,34 +454,6 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
 
         visualActionSources.set(lastMsg.visualActionSources)
     }
-}
-
-
-export const anySprites: Record<AnySprite, string> = {
-    arrow: arrow,
-    bomb: bomb,
-    smoke: smoke,
-    shield: shield,
-    flame: flame,
-    heal: heal,
-    poison: greenDrip,
-    castle: lighthouse,
-    forest: forest,
-    stoneDoor: stoneDoor,
-    portal:portal,
-    signpost: signpost,
-    temple: temple,
-    club: club,
-    dagger: dagger,
-    staff: staff,
-    potion: potion,
-    altar: altar,
-    bombPadded: bombpad,
-    armorStand: armor,
-    general: general,
-    druid: druid,
-    lady: lady,
-    necromancer: necromancer,
 }
 
 export function handlePutsStatuses(anim: BattleAnimation) {
@@ -687,13 +584,6 @@ export function heroSprite(weapon: ItemId) {
     if (weapon == 'fireStaff') return 'mage';
     return 'peasant';
 }
-export const heroSprites = {
-    peasant: peasant,
-    rogue: rogue,
-    theif: theif,
-    ruffian: ruffian,
-    mage: mage
-};
 
 export async function choose(chosen: GameActionSentToClient): Promise<MessageFromServer | undefined> {
     clientState.update((s) => {
