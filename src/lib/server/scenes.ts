@@ -77,7 +77,7 @@ const tutorial: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasSkipTutorial',
 			displayName: 'Skip Tutorial',
-			sprite: 'castle',
+			sprite: 'portal',
 			startText: 'This portal will take you to the real world',
 			startsLocked: true,
 			actionsWithRequirements: [{ travelTo: 'forest', }]
@@ -121,7 +121,7 @@ const tutorial: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasEquipBomb',
 			displayName: 'Bomb',
-			sprite: 'bomb',
+			sprite: 'bombPadded',
 			startText: 'A powderbomb deals splash damage to all nearby enemies. It should clear out the rats nicely.',
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'bomb' }],
@@ -129,7 +129,7 @@ const tutorial: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasGoTrain1',
 			displayName: 'Training Room',
-			sprite: 'castle',
+			sprite: 'stoneDoor',
 			startText: `An entrance to a training room`,
 			actionsWithRequirements: [
 				{
@@ -173,7 +173,7 @@ const trainingRoom1: Scene = {
 			responses: [
 				{
 					responseId: 'gimmie',
-					responseText: `ok, gimmie`,
+					responseText: `Alright show me the gear`,
 					retort: `Gear up and head into the next room. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
 					unlockVas: ['vasEquipDagger', `vasEquipBandage`]
 				}
@@ -182,16 +182,16 @@ const trainingRoom1: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasEquipDagger',
 			displayName: 'Dagger',
-			sprite: 'club',
+			sprite: 'dagger',
 			startText: 'Hobgoblins wear heavy armor, which limits the amount of damage they take each strike. A dagger strikes multiple times per attack, mitigating their defenses.',
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'dagger' },]
 		})
 		player.visualActionSources.push({
 			unitId: 'vasEquipBandage',
-			displayName: 'Bandage',
-			sprite: 'club',
-			startText: `Use bandages when you get low on health.`,
+			displayName: 'Potion',
+			sprite: 'potion',
+			startText: `Use potions when you get low on health.`,
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'bandage' }]
 		})
@@ -253,7 +253,7 @@ const trainingRoom2: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasEquipStaff',
 			displayName: 'Fire Staff',
-			sprite: 'club',
+			sprite: 'staff',
 			startText: `A fire staff takes 3 turns before you can use it. Trolls are slow, so it won't get a chance to retaliate once you land that finishing blast!`,
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'fireStaff' },]
@@ -261,7 +261,7 @@ const trainingRoom2: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasEquipDart',
 			displayName: 'Poison Dart',
-			sprite: 'club',
+			sprite: 'arrow',
 			startText: `Poison deals more damage the bigger the enemy. It deals it's damage over 3 turns, so you need to be able to survive that long.`,
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'poisonDart' }]
@@ -269,7 +269,7 @@ const trainingRoom2: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasEquipCloak',
 			displayName: 'Theif Cloak',
-			sprite: 'club',
+			sprite: 'armorStand',
 			startText: `A theif's cloak lets you hide for a turn, preventing retaliation from enemies. It's a good way to wait for your magic to warm up. Poison your enemy first to get extra value!`,
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'theifCloak' }]
@@ -321,9 +321,9 @@ const trainingRoom3: Scene = {
 		})
 		player.visualActionSources.push({
 			unitId: 'vasLeaveTutorial',
-			displayName: 'The Game',
-			sprite: 'castle',
-			startText: 'This passage leads to the real game. Have fun :)',
+			displayName: 'Finish Tutorial',
+			sprite: 'portal',
+			startText: 'Take this portal to enter the world. Have fun :)',
 			startsLocked: true,
 			actionsWithRequirements: [{ travelTo: 'forest' }]
 		})
@@ -366,7 +366,7 @@ export const forest: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasForestPassageFromForest',
 			displayName: 'Hidden Passage',
-			sprite: 'castle',
+			sprite: 'stoneDoor',
 			startsLocked: true,
 			actionsWithRequirements: [{ requiresFlags: ['heardAboutHiddenPassage'], travelTo: 'forestPassage' }],
 			startText: `Delve into the secret passage`,
@@ -400,42 +400,45 @@ const castle: Scene = {
 		if (!player.flags.has('heardAboutHiddenPassage')) {
 			player.sceneTexts.push("This castle contains the memory of great beauty, but it feels long gone. In its place is an emptiness. A confusion. Wherevery ou turn, it feels as though there is an entity just at the periphery of your visual. The sense of something obscene inhabits this place. What should be a structure of strength and security, has become something maddening to the senses.")
 		}
-		if (player.flags.has('killedGoblins') && !player.flags.has('sawArthurAfterBattle')) {
-			player.flags.add('sawArthurAfterBattle')
-			healPlayer(player, 50)
-			player.sceneTexts.push("The soldier you passed earlier watches you approach and a smile grows on his face.\n\nArthur: I can smell battle on ye traveller! So you've had your first taste of blood in this foul land? Well I've learnt a trick or two in my time roaming this insane world. Hold still a minute...\n\nThe soldier's face becomes blank for a moment, and in an instant you feel a burning heat passing through your body. As it subsides, you feel energised and repaired.\n\nArthur:That'll set you straight for a bit traveller! As he trundles on his way he calls back to you.\n\nArthur: You may be wanting to see the King! Word of your victory travels fast around here.")
-		}
+		// if (player.flags.has('killedGoblins') && !player.flags.has('sawArthurAfterBattle')) {
+		// 	player.flags.add('sawArthurAfterBattle')
+		// 	player.sceneTexts.push("The soldier you passed earlier watches you approach and a smile grows on his face.\n\nArthur: I can smell battle on ye traveller! So you've had your first taste of blood in this foul land?")
+		// }
 	},
 	actions(player: Player) {
 
 		player.visualActionSources.push({
 			unitId: 'vasHouse',
-			displayName: 'House',
-			sprite: 'castle',
-			actionsWithRequirements: [{ travelTo: 'house' }],
-			startText: `You see a quaint house`,
+			displayName: 'Castle Grounds',
+			sprite: 'signpost',
+			responses:[{
+				responseId:'rummage',
+				responseText:'Search around the old barracks',
+				unlockVas:['vasCastleBandage'],
+			}],
+			actionsWithRequirements: [{ travelTo: 'house' },{travelTo: 'throne'}],
+			startText: `In the castle grounds you see a house. The door is open and someone is inside. Further on there are steps leading up to the Bramblemore throne room. There is a long abandoned barracks with broken gear strewn around.`,
+		})
+		player.visualActionSources.push({
+			unitId: 'vasCastleBandage',
+			displayName: 'Potion',
+			sprite: 'potion',
+			startText: `You find a potion!`,
+			startsLocked: true,
+			actionsWithRequirements: [{ pickupItem: 'bandage' }]
 		})
 		player.visualActionSources.push({
 			unitId: 'vasForestFromCastle',
 			displayName: 'Forest',
-			sprite: 'castle',
+			sprite: 'forest',
 			actionsWithRequirements: [{ travelTo: 'forest' }],
-			startText: `Delve back into the forest`,
+			startText: `Outside the castle grounds is a forest`,
 		})
-		// if(player.flags.has('killedGoblins')){
-		player.visualActionSources.push({
-			unitId: 'vasThroneFromCastle',
-			displayName: 'Throne',
-			sprite: 'castle',
-			actionsWithRequirements: [{ travelTo: 'throne' }],
-			startText: `It's the Bramblemore throne room`,
-		})
-		// }
 	}
 };
 
 const house: Scene = {
-	displayName: `Giselle's House`,
+	displayName: `House`,
 	landscape: 'bridge',
 	onEnterScene(player) {
 		if (!player.flags.has('heardAboutHiddenPassage')) {
@@ -502,7 +505,7 @@ const house: Scene = {
 		})
 		player.visualActionSources.push({
 			unitId: 'vasGoCastle',
-			displayName: 'Castle',
+			displayName: 'Door',
 			sprite: 'castle',
 			startText: 'Go back to the castle grounds',
 			actionsWithRequirements: [{ travelTo: 'castle' }]
@@ -595,19 +598,19 @@ const throne: Scene = {
 			unitId: 'vasRealmFromThrone',
 			startsLocked: true,
 			displayName: 'Portal',
-			sprite: 'castle',
+			sprite: 'portal',
 			startText: 'You are drawn into the portal by the kings magic',
 			actionsWithRequirements: [{ travelTo: 'realmOfMadness' }]
 		})
+		player.visualActionSources.push({
+			unitId: 'vasChamberFromThrone',
+			startsLocked: true,
+			displayName: 'Dungeon',
+			sprite: 'temple',
+			startText: 'A musty staircase down into the depths of the castle',
+			actionsWithRequirements: [{ travelTo: 'tunnelChamber' }]
+		})
 		if (!player.flags.has('smashedMedallion')) {
-			player.visualActionSources.push({
-				unitId: 'vasChamberFromThrone',
-				startsLocked: true,
-				displayName: 'Dungeon',
-				sprite: 'castle',
-				startText: 'A musty staircase down into the depths of the castle',
-				actionsWithRequirements: [{ travelTo: 'tunnelChamber' }]
-			})
 			player.visualActionSources.push({
 				unitId: 'vasCastleFromThrone',
 				displayName: 'Castle Grounds',
@@ -682,7 +685,7 @@ const forestPassage: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasFreeDagger',
 			displayName: 'Dagger',
-			sprite: 'club',
+			sprite: 'dagger',
 			startText: 'An old rusty dagger',
 			startsLocked: true,
 			actionsWithRequirements: [
@@ -695,7 +698,7 @@ const forestPassage: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasPassageTravel',
 			displayName: 'Travel',
-			sprite: 'castle',
+			sprite: 'forest',
 			startText: `You are in a passage. At one end you see Bramblefoot Woods. At the other, a campsite`,
 			actionsWithRequirements: [
 				{
@@ -748,8 +751,8 @@ const goblinCamp: Scene = {
 	actions(player: Player) {
 		player.visualActionSources.push({
 			unitId: 'vasCastleFromCamp',
-			displayName: 'Castle',
-			sprite: 'castle',
+			displayName: 'Travel',
+			sprite: 'signpost',
 			startText: 'With the goblins slain you are free to travel about the lands',
 			actionsWithRequirements: [{ travelTo: 'forestPassage' }, { travelTo: 'castle' }],
 		})

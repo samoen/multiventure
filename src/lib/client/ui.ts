@@ -26,7 +26,17 @@ import smoke from '$lib/assets/extras/smoke.png';
 import flame from '$lib/assets/extras/flame.png';
 import heal from '$lib/assets/extras/heal.png';
 import lighthouse from '$lib/assets/scenery/lighthouse.png';
+import forest from '$lib/assets/scenery/mixed-summer-small.png';
+import stoneDoor from '$lib/assets/scenery/dwarven-doors-closed.png';
+import portal from '$lib/assets/scenery/summoning-center.png';
+import signpost from '$lib/assets/scenery/signpost.png';
+import temple from '$lib/assets/scenery/temple1.png';
 import armor from '$lib/assets/scenery/armor.png';
+import bombpad from '$lib/assets/scenery/bomb-pad.png';
+import altar from '$lib/assets/scenery/altar.png';
+import staff from '$lib/assets/scenery/staff-magic.png';
+import dagger from '$lib/assets/scenery/dagger.png';
+import potion from '$lib/assets/scenery/potion-red.png';
 import club from '$lib/assets/extras/club.png';
 import clubSlot from '$lib/assets/equipment/club-small.png';
 import fistSlot from '$lib/assets/equipment/fist-human.png';
@@ -514,7 +524,17 @@ export const anySprites: Record<AnySprite, string> = {
     heal: heal,
     poison: greenDrip,
     castle: lighthouse,
+    forest: forest,
+    stoneDoor: stoneDoor,
+    portal:portal,
+    signpost: signpost,
+    temple: temple,
     club: club,
+    dagger: dagger,
+    staff: staff,
+    potion: potion,
+    altar: altar,
+    bombPadded: bombpad,
     armorStand: armor,
     general: general,
     druid: druid,

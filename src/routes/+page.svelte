@@ -639,8 +639,9 @@
 											}
 										}
 									}
-
-									state.currentRetort = c.retort;
+									if(c.retort){
+										state.currentRetort = c.retort;
+									}
 									$visualActionSources = $visualActionSources;
 									$convoStateForEachVAS = $convoStateForEachVAS;
 								}}>{c.responseText}</button

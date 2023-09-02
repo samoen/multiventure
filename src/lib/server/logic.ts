@@ -751,5 +751,5 @@ export type ConversationResponse = {
 	lockVas?: VisualActionSourceId[],
 	startsLocked?: boolean,
 	responseText: string,
-	retort: string,
+	retort?: string,
 }
