@@ -29,7 +29,7 @@ export type Scene = {
 	onBattleJoin?: (player: Player) => void
 	onVictory?: (player: Player) => void
 	actions: (player: Player) => void
-	vases?: VisualActionSource[]
+	// vases?: VisualActionSource[]
 	solo?: boolean
 	hasEntered?: Set<HeroName>
 	landscape?: LandscapeImage
@@ -85,23 +85,23 @@ const tutorial: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasTutor',
 			displayName: 'Arthur',
-			startText: `Look alive recruit! The first day of training can be the most dangerous of a guardsman's life.\n\nYou must be ${player.heroName}, welcome aboard. In this barracks we wake up early, follow orders, and NEVER skip the tutorial. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.`,
+			startText: `Look alive recruit! The first day of training can be the most dangerous of a guardsman's life.\n\nYou must be ${player.heroName}, welcome aboard. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.`,
 			responses: [
 				{
 					responseId: 'scared',
-					responseText: `Huh? Danger... Early mornings?? I didn't sign up for any of this!`,
-					retort: `Hmmf, if you think you can weasel your way through this game without enduring hardship you're in for a rude awakening.. anyway it's just a quick tutorial, skip it only with good reason.`,
+					responseText: `Huh? Danger? I didn't sign up for this!`,
+					retort: `Hmmf, think you can weasel your way through this game without enduring hardship? Maybe you can.. here's a portal.`,
 					unlockVas: ['vasSkipTutorial']
 				},
 				{
 					responseId: 'cheeky',
-					responseText: `I would rather you didn't break the fourth wall, I'm into more serious RPGs.`,
-					retort: `Lighten up recruit. Things will get plenty dark and gritty soon enough. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.`
+					responseText: `Don't break the fourth wall Arthur, I'm into serious RPGs.`,
+					retort: `Things will get plenty dark and gritty soon enough. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.`
 				},
 				{
 					responseId: 'brave',
-					responseText: `I tend to breeze through tutorials pretty easily so.. not worried. Get on with it.`,
-					retort: `Great to hear ${player.heroName}! Our training goblin is ready for you. Also there's a bit of a rat problem in the training room right now.. Click these items and enter that training room!`,
+					responseText: `I tend to breeze through tutorials pretty easily so get on with it.`,
+					retort: `Great to hear ${player.heroName}! Our training goblin is ready for you. Also there's a bit of a rat problem in the training room right now.. Equip these items and enter that training room!`,
 					unlockVas: ['vasEquipBomb', 'vasEquipClub'],
 					lockVas: ['vasSkipTutorial'],
 					lock: ['wantsToSkip', 'scared', 'cheeky'],

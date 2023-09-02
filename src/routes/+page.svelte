@@ -341,16 +341,6 @@
 {/if}
 
 {#if $lastMsgFromServer}
-	
-	{#if $lastMsgFromServer.sceneActions.length}
-		<div class="sceneButtons">
-			{#each $lastMsgFromServer.sceneActions as op, i}
-				<button on:click={() => choose(op)} disabled={$clientState.waitingForMyEvent}>
-					{op.buttonText}
-				</button>
-			{/each}
-		</div>
-	{/if}
 	<!-- {#if $lastMsgFromServer.itemActions.length}
 		<div class="actionButtons">
 			{#each $lastMsgFromServer.itemActions as op, i}
@@ -377,8 +367,10 @@
 			class:noOpacity={$visualOpacity}
 		>
 			<div class="imageBackground">
-				<img src={getLandscape($visualLandscape)} alt="gb" />
-				<div class="bgGrad" />
+				<div class="bgAndGrad">
+					<img src={getLandscape($visualLandscape)} alt="a landscape" />
+					<div class="bgGrad" />
+				</div>
 			</div>
 			<div class="units">
 				{#each $allies as p (p.id)}
@@ -707,6 +699,15 @@
 			{/each}
 		</div>	
 	{/if}
+	{#if $lastMsgFromServer.sceneActions.length}
+		<div class="sceneButtons">
+			{#each $lastMsgFromServer.sceneActions as op, i}
+				<button on:click={() => choose(op)} disabled={$clientState.waitingForMyEvent}>
+					{op.buttonText}
+				</button>
+			{/each}
+		</div>
+	{/if}
 	<h3>Recent happenings:</h3>
 	<div class="happenings" bind:this={happenings}>
 		{#each $lastMsgFromServer.happenings as h}
@@ -924,41 +925,37 @@
 		background-color: beige;
 	}
 	.wrapGameField {
-		height: 75vh;
+		height: 70vh;
 		overflow-y: auto;
 		overflow-x: hidden;
-		overscroll-behavior: contain;
+		/* overscroll-behavior: contain; */
 		background-color: black;
 		/* overflow-x: hidden; */
 	}
 	.imageBackground {
-		display: block;
 		background-color: burlywood;
-		position: absolute;
-		inset: 0;
+		position:absolute;
+		top:0;
 		overflow: hidden;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: flex-start;
+		height:100%;
+		width:100%;
+	}
+	.bgAndGrad{
+		position:relative
 	}
 	.bgGrad {
 		/* z-index:2 */
 		position: absolute;
-		/* justify-self: flex-end; */
-		margin-top: 450px;
-		/* inset:0; */
-		height: 100px;
+		height: 50px;
+		bottom:0;
 		width: 100%;
-		/* background: linear-gradient(to bottom, transparent 0%, transparent 70%, burlywood 80%,burlywood 100%); */
-		background: linear-gradient(to bottom, transparent 0%, burlywood 100%);
+		background: linear-gradient(to bottom, transparent 0%, burlywood 90%);
 	}
-	.imageBackground > img {
-		/* display:inline-block; */
+	.imageBackground img {
 		min-width: 100vw;
 		/* object-fit:cover; */
-		object-position: center;
-		margin-inline: auto;
+		/* object-position: center; */
+		/* margin-inline: auto; */
 		/* width:100%; */
 	}
 	.visual {
@@ -1065,7 +1062,7 @@
 		background-color: burlywood;
 		display: flex;
 		position: relative;
-		height: 25vh;
+		height: 30vh;
 	}
 	.selectedPortrait {
 		flex-basis: 15%;
