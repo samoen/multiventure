@@ -484,14 +484,27 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                         for (const vId of vas.unlockOnSee) {
                             let toUnlock = cs.get(vId)
                             if (toUnlock) {
-                                console.log('unlocking on see ' + vId)
                                 toUnlock.isLocked = false
                             } else {
-                                console.log('setting a not seen state ' + vId)
                                 cs.set(vId, {
                                     kind: 'notSeen',
                                     currentRetort: 'I have not been seen yet',
                                     isLocked: false,
+                                    lockedResponseHandles: new Map(),
+                                })
+                            }
+                        }
+                    }
+                    if (detectStepAdvance && vas.lockOnSee) {
+                        for (const vId of vas.lockOnSee) {
+                            let toLock = cs.get(vId)
+                            if (toLock) {
+                                toLock.isLocked = true
+                            } else {
+                                cs.set(vId, {
+                                    kind: 'notSeen',
+                                    currentRetort: 'I have not been seen yet',
+                                    isLocked: true,
                                     lockedResponseHandles: new Map(),
                                 })
                             }

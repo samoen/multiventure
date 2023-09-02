@@ -591,7 +591,8 @@ const throne: Scene = {
 					responseText: `Oh noooo`,
 					retort: 'hehehehe',
 				}],
-				unlockVasOnDetect: ['vasRealmFromThrone']
+				unlockVasOnDetect: ['vasRealmFromThrone'],
+				lockVasOnDetect:['vasChamberFromThrone','vasCastleFromThrone']
 			},
 		})
 		player.visualActionSources.push({
@@ -608,19 +609,18 @@ const throne: Scene = {
 			displayName: 'Dungeon',
 			sprite: 'temple',
 			startText: 'A musty staircase down into the depths of the castle',
-			actionsWithRequirements: [{ travelTo: 'tunnelChamber' }]
+			actionsWithRequirements: [{ requiresNotFlags:['smashedMedallion'], travelTo: 'tunnelChamber' }]
 		})
-		if (!player.flags.has('smashedMedallion')) {
 			player.visualActionSources.push({
 				unitId: 'vasCastleFromThrone',
 				displayName: 'Castle Grounds',
 				sprite: 'castle',
 				startText: 'Go back to the castle grounds',
 				actionsWithRequirements: [{
+					requiresNotFlags:['smashedMedallion'],
 					travelTo: 'castle'
 				}]
 			})
-		}
 	}
 }
 
