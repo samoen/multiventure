@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import Unit from '$lib/Components/Unit.svelte';
+	import minimap from '$lib/assets/ui/minimap.png'
+	import sidebar from '$lib/assets/ui/sidebar.png'
 	import {
 		convoStateForEachVAS,
 		actionsForSlot,
@@ -446,7 +448,7 @@
 	</div>
 	{#if $selectedDetail && $selectedDetail.kind == 'vup'}
 		<div class="selectedDetails">
-			<div class="selectedPortrait">
+			<div class="selectedPortrait"  style="background-image:url({minimap})">
 				<div class="portrait">
 					<img src={$selectedDetail.entity.actual.portrait} alt="portrait" />
 				</div>
@@ -458,7 +460,7 @@
 					</strong>
 				</div>
 			</div>
-			<div class="vupSelectedRest">
+			<div class="vupSelectedRest"  style="background-image:url({sidebar})">
 				<div class="selectedStats">
 					{#if $selectedDetail.entity.actual.kind == 'player'}
 						<div>
@@ -489,11 +491,6 @@
 						</div> -->
 					{/if}
 					{#if $selectedDetail.entity.actual.kind == 'enemy'}
-						<div>
-							<strong>
-								{$selectedDetail.entity.actual.enemy.name}
-							</strong>
-						</div>
 						<div>
 							{$selectedDetail.entity.displayHp}/{$selectedDetail.entity.maxHp} hp
 						</div>
@@ -586,7 +583,7 @@
 	{/if}
 	{#if $selectedVisualActionSourceState && $selectedDetail && $selectedDetail.kind == 'vas'}
 		<div class="selectedDetails">
-			<div class="selectedPortrait">
+			<div class="selectedPortrait" style="background-image:url({minimap})">
 				<div class="portrait">
 					<img
 						src={$selectedDetail.entity.portrait
@@ -601,7 +598,7 @@
 					</strong>
 				</div>
 			</div>
-			<div class="selectedRest">
+			<div class="selectedRest" style="background-image:url({sidebar})">
 				<div class="vasdPromptAndButtons">
 					<div class="vasdPrompt">
 						{$selectedVisualActionSourceState.currentRetort ?? 'selected vas has no current retort'}
@@ -886,7 +883,7 @@
 	.sceneTexts {
 		/* margin-top: 5px; */
 		border: 1px solid brown;
-		height: 25vh;
+		height: 30vh;
 		overflow-y: auto;
 		background-color: burlywood;
 		padding: 10px;
@@ -933,7 +930,7 @@
 		/* overflow-x: hidden; */
 	}
 	.imageBackground {
-		background-color: burlywood;
+		/* background-color: burlywood; */
 		position:absolute;
 		top:0;
 		overflow: hidden;
@@ -949,7 +946,7 @@
 		height: 50px;
 		bottom:0;
 		width: 100%;
-		background: linear-gradient(to bottom, transparent 0%, burlywood 90%);
+		background: linear-gradient(to bottom, transparent 0%, black 90%);
 	}
 	.imageBackground img {
 		min-width: 100vw;
@@ -965,7 +962,7 @@
 		/* background-size:auto auto; */
 		/* background-attachment:scroll; */
 		/* background-position: center center; */
-		background-color: burlywood;
+		background-color: black;
 		display: grid;
 		column-gap: 1px;
 		grid-template-columns: 1fr 1fr;
@@ -1011,7 +1008,7 @@
 		flex-wrap: wrap;
 		align-items: flex-start;
 		gap: 2px;
-		border: 1px solid brown;
+		/* border: 1px solid brown; */
 		border-left: none;
 	}
 	.slotButton {
@@ -1059,12 +1056,15 @@
 		line-height: 1px;
 	}
 	.selectedDetails {
-		background-color: burlywood;
+		/* background-color: burlywood; */
 		display: flex;
 		position: relative;
 		height: 30vh;
 	}
 	.selectedPortrait {
+		background-repeat: no-repeat;
+		background-size: 100% 100%;
+		min-width:100px;
 		flex-basis: 15%;
 		display: flex;
 		flex-direction: column;
@@ -1076,45 +1076,72 @@
 		flex-shrink: 1;
 		flex-grow: 1;
 		overflow: hidden;
-		border: 1px solid brown;
+		display: block;
+		height:10vh;
+		/* text-align: center; */
+		/* margin-bottom: 0; */
+		/* vertical-align: bottom; */
+		/* border: 1px solid brown; */
+		padding-top:4px;
+		padding-inline:4px;
 	}
 	.portrait > img {
+		display: block;
 		height: 100%;
 		width: 100%;
+		/* margin-inline:auto; */
 		object-fit: cover;
 	}
 	.underPortrait {
 		text-align: center;
-		border: 1px solid brown;
+		/* vertical-align: middle; */
+		/* border: 1px solid yellow; */
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		height:4vh;
+		z-index:2;
+		color:white;
 		border-top: none;
 		word-wrap: break-word;
-		font-size: clamp(14px, 2vw + 2px, 19px);
+		/* font-size: clamp(14px, 2vw + 2px, 19px); */
 	}
 	.vupSelectedRest {
 		flex-basis: 85%;
+
 		height: 100%;
 		display: flex;
+		background-repeat: no-repeat;
+		background-size: calc(max(100%,700px)) 100%;
+		background-position: left;
 	}
 	.selectedRest {
 		flex-basis: 85%;
 		height: 100%;
+		background-repeat: no-repeat;
+		background-size: calc(max(100%,700px)) 100%;
+		background-position: left;
+		/* background-color: aqua; */
 	}
 	.selectedStats {
 		display: flex;
 		flex-direction: column;
 		overflow-y: auto;
 		padding: 5px;
-		border: 1px solid brown;
+		min-width:20vw;
+		/* border: 1px solid brown; */
 		border-left: none;
+		color:white;
 	}
 	.vasdPromptAndButtons {
 		padding: 10px;
 		display: flex;
 		height: 100%;
 		flex-direction: column;
+		color:white;
 		/* justify-content: space-around; */
 		overflow-y: auto;
-		border: 1px solid brown;
+		/* border: 1px solid brown; */
 		border-left: none;
 	}
 	.vasdPrompt {

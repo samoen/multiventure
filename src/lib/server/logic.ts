@@ -122,9 +122,9 @@ export function updatePlayerActions(player: Player) {
 		}
 	}
 
-	// if(!sceneEnemies.length){
+	if(!sceneEnemies.length || player.currentScene == 'armory'){
 		scenes.get(player.currentScene)?.actions(player)
-	// }
+	}
 }
 
 export function enterSceneOrWakeup(player: Player) {
