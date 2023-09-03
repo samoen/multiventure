@@ -1009,14 +1009,14 @@
 		align-items: flex-start;
 		gap: 2px;
 		/* border: 1px solid brown; */
-		border-left: none;
+		align-self:flex-start;
 	}
 	.slotButton {
 		position: relative;
 		border: none;
 		background: none;
 		cursor: pointer;
-		border-radius: 10px;
+		/* border-radius: 10px; */
 	}
 	.activeSlotButton {
 		box-shadow: 1px 1px 10px yellow;

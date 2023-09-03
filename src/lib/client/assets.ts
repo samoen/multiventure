@@ -41,6 +41,7 @@ import staff from '$lib/assets/scenery/staff-magic.png';
 import dagger from '$lib/assets/scenery/dagger.png';
 import potion from '$lib/assets/scenery/potion-red.png';
 import club from '$lib/assets/extras/club.png';
+import potionSlot from '$lib/assets/equipment/potion-slot.png';
 import clubSlot from '$lib/assets/equipment/club-small.png';
 import fistSlot from '$lib/assets/equipment/fist-human.png';
 import shieldSlot from '$lib/assets/equipment/heater-shield.png';
@@ -69,7 +70,7 @@ export function getSlotImage(id: ItemId): string {
     if (id == 'fireStaff') return fireballSlot;
     if (id == 'bomb') return fireballSlot;
     if (id == 'poisonDart') return poisonDartSlot;
-    if (id == 'bandage') return potion;
+    if (id == 'bandage') return potionSlot;
     if (id == 'leatherArmor') return shieldSlot;
     if (id == 'plateMail') return shieldSlot;
     return blankSlot;

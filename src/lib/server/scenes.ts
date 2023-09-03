@@ -47,20 +47,29 @@ const dead: Scene = {
 			unitId: 'vasDeath',
 			displayName: 'Death',
 			sprite: 'spectre',
-			startText: `I'm afraid your dead. Would you like to respawn?`,
+			startText: `I'm afraid your dead. Take a portal to go back to the world of the living.`,
+			responses:[
+				{
+					responseId:'howAreYou',
+					responseText:`Hows running the underworld treating you?`,
+					retort:`Oh you know, same old.`
+				}
+			],
+			actionsWithRequirements: []
+		})
+		player.visualActionSources.push({
+			unitId: 'vasCheckpoint',
+			displayName: 'Portal',
+			sprite: 'portal',
+			startText: `A portal`,
 			actionsWithRequirements: [
 				{
 					serverAct: {
-						buttonText: 'Respawn at armory',
+						buttonText: 'Go to dev room',
 						goTo: 'armory'
 					}
 				},
-				{
-					serverAct: {
-						buttonText: `Reincarnate at checkpoint ${player.lastCheckpoint}`,
-						goTo: player.lastCheckpoint,
-					}
-				}
+				{travelTo:player.lastCheckpoint}
 			]
 		})
 	}
@@ -176,7 +185,12 @@ const trainingRoom1: Scene = {
 					responseText: `Alright show me the gear`,
 					retort: `Gear up and head into the next room. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
 					unlockVas: ['vasEquipDagger', `vasEquipBandage`]
-				}
+				},
+				{
+					responseId: 'explainAggro',
+					responseText: `What's that purple bar beneath the enemies health bar?`,
+					retort: `That is the enemy's aggression towards you. It indicates the likelihood of it attacking you on your next action.`,
+				},
 			]
 		})
 		player.visualActionSources.push({
