@@ -215,13 +215,6 @@
 				out:projectileSendTransition={{ key: $projectileSend.key }}
 				class:startAlignSelf={!$hostIsNotHero}
 				class:endAlignSelf={$hostIsNotHero}
-				on:outroend={() => {
-					if($host?.side == 'enemy'){
-						updateUnit(hostId, (vup) => {
-							vup.aggro = 0;
-						});
-					}
-				}}
 			>
 				<img
 					class="projectile"
@@ -269,13 +262,21 @@
 				on:introend={async () => {
 					if ($currentAnimation != undefined) {
 						let anim = $currentAnimation;
-						let someoneDied = false;
+						let delayNextStep = false;
 						updateUnit(hostId, (vup) => {
 							vup.displayHp -= anim.damageToTarget ?? 0;
 							if (vup.displayHp < 1) {
-								someoneDied = true;
+								delayNextStep = true;
 							}
 						});
+
+						updateUnit(anim.source, (vup) => {
+							if(vup.side == 'enemy'){
+								vup.aggro = 0;
+								delayNextStep = true
+							}
+						});
+
 						handlePutsStatuses(anim)
 
 						if ($currentAnimation.alsoDamages) {
@@ -283,7 +284,7 @@
 								updateUnit(other.target, (vup) => {
 									vup.displayHp -= other.amount;
 									if (vup.displayHp < 1) {
-										someoneDied = true;
+										delayNextStep = true;
 									}
 								});
 							}
@@ -312,7 +313,7 @@
 						}
 						nextAnimationIndex(
 							false,
-							someoneDied,
+							delayNextStep,
 						);
 					}
 				}}

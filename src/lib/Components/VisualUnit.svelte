@@ -199,7 +199,8 @@
 	.healthbar_health {
 		border-radius: 5px;
 		background-color: green;
-		width: 60%;
+		/* width: 60%; */
+		transition: width 0.3s ease-in-out;
 		/* position: absolute; */
 		/* z-index: 5; */
 		height: 100%;
@@ -218,6 +219,7 @@
 	}
 	.aggro {
 		background-color: purple;
+		transition: width 0.3s ease-in-out;
 		/* width: 60%; */
 		height: 100%;
 	}

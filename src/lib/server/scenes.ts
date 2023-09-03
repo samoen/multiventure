@@ -325,7 +325,7 @@ const trainingRoom3: Scene = {
 			displayName: 'Arthur',
 			sprite: 'general',
 			portrait: 'general',
-			startText: `Well done ${player.heroName}! You may be the chosen one after all.. Head through this passage and enjoy the game!`,
+			startText: `Well done ${player.heroName}! You may be the chosen one after all.. Head through this portal to start the game.`,
 			responses: [{
 				responseId: 'go',
 				responseText: 'Thanks Arthur',
