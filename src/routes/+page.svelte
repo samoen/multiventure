@@ -1010,6 +1010,7 @@
 		gap: 2px;
 		/* border: 1px solid brown; */
 		align-self:flex-start;
+		margin-top:7px;
 	}
 	.slotButton {
 		position: relative;
@@ -1056,7 +1057,7 @@
 		line-height: 1px;
 	}
 	.selectedDetails {
-		/* background-color: burlywood; */
+		/* background-color: transparent; */
 		display: flex;
 		position: relative;
 		height: 30vh;
@@ -1111,16 +1112,18 @@
 
 		height: 100%;
 		display: flex;
+		gap:5px;
 		background-repeat: no-repeat;
 		background-size: calc(max(100%,700px)) 100%;
-		background-position: left;
+		background-position: left top;
+		/* padding:5px; */
 	}
 	.selectedRest {
 		flex-basis: 85%;
 		height: 100%;
 		background-repeat: no-repeat;
 		background-size: calc(max(100%,700px)) 100%;
-		background-position: left;
+		background-position: left top;
 		/* background-color: aqua; */
 	}
 	.selectedStats {

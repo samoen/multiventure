@@ -1,10 +1,7 @@
 <script lang="ts">
+	import { statusImages } from '$lib/client/assets';
 	import { allVisualUnitProps, lastMsgFromServer, selectedDetail, type VisualUnitProps } from '$lib/client/ui';
-	import { fade } from 'svelte/transition';
-	import rage from '$lib/assets/extras/rage.png';
-	import bomb from '$lib/assets/extras/bomb.png';
-	import shield from '$lib/assets/extras/shield.png';
-	import greenDrip from '$lib/assets/extras/green-drip.png';
+
 	import type { StatusEffect, StatusId, UnitId } from '$lib/utils';
 	import { tick } from 'svelte';
 
@@ -57,11 +54,6 @@
 		}
 	}
 
-	const statusImages: Record<StatusId, string> = {
-		poison: greenDrip,
-		rage: rage,
-		hidden: shield
-	};
 </script>
 
 {#if vu}
@@ -200,7 +192,7 @@
 		border-radius: 5px;
 		background-color: green;
 		/* width: 60%; */
-		transition: width 0.3s ease-in-out;
+		transition: width 0.2s ease-in-out;
 		/* position: absolute; */
 		/* z-index: 5; */
 		height: 100%;
@@ -219,7 +211,7 @@
 	}
 	.aggro {
 		background-color: purple;
-		transition: width 0.3s ease-in-out;
+		transition: width 0.2s ease-in-out;
 		/* width: 60%; */
 		height: 100%;
 	}

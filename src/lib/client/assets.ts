@@ -1,3 +1,5 @@
+import rage from '$lib/assets/extras/rage.png';
+import hidden from '$lib/assets/extras/hidden.png';
 import plainsLandscape from '$lib/assets/landscapes/landscape-plain.webp';
 import castleLandscape from '$lib/assets/landscapes/landscape-castle.webp';
 import grimForestLandscape from '$lib/assets/landscapes/grim-altar.jpg';
@@ -42,6 +44,8 @@ import dagger from '$lib/assets/scenery/dagger.png';
 import potion from '$lib/assets/scenery/potion-red.png';
 import club from '$lib/assets/extras/club.png';
 import potionSlot from '$lib/assets/equipment/potion-slot.png';
+import dressSlot from '$lib/assets/equipment/dress_silk_green.png';
+import tunicSlot from '$lib/assets/equipment/tunic_elven.png';
 import clubSlot from '$lib/assets/equipment/club-small.png';
 import fistSlot from '$lib/assets/equipment/fist-human.png';
 import shieldSlot from '$lib/assets/equipment/heater-shield.png';
@@ -52,7 +56,7 @@ import daggerSlot from '$lib/assets/equipment/dagger-human.png';
 import type { EnemyTemplateId } from '$lib/server/enemies';
 import type { ItemId } from '$lib/server/items';
 import type { MiscPortrait, PlayerInClient } from '$lib/server/users';
-import type { AnySprite, LandscapeImage } from '$lib/utils';
+import type { AnySprite, LandscapeImage, StatusId } from '$lib/utils';
 
 export const enemySprites: Record<EnemyTemplateId, string> = {
     goblin: spearman,
@@ -71,7 +75,8 @@ export function getSlotImage(id: ItemId): string {
     if (id == 'bomb') return fireballSlot;
     if (id == 'poisonDart') return poisonDartSlot;
     if (id == 'bandage') return potionSlot;
-    if (id == 'leatherArmor') return shieldSlot;
+    if (id == 'leatherArmor') return tunicSlot;
+    if (id == 'theifCloak') return dressSlot;
     if (id == 'plateMail') return shieldSlot;
     return blankSlot;
 }
@@ -97,6 +102,12 @@ export const miscPortraits = {
     general: generalPortrait,
     lady: ladyPortrait,
 } satisfies Record<MiscPortrait, string>;
+
+export const statusImages: Record<StatusId, string> = {
+    poison: greenDrip,
+    rage: rage,
+    hidden: hidden,
+};
 
 export const anySprites: Record<AnySprite, string> = {
     arrow: arrow,

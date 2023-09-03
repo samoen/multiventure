@@ -52,7 +52,7 @@ export type StatusModifierEvent = {targetPlayer?:Player, targetEnemy?:ActiveEnem
 export type HealthModifier = {target:UnitId,amount:number}
 export type HealthModifierEvent = {targetPlayer?:Player,targetEnemy?:ActiveEnemy,baseDamage?:number,baseHeal?:number}
 export type AggroModifier = {
-	target:UnitId,
+	target:EnemyId,
 	amount?:number,
 	setTo?:number,
 	forHeros:HeroId[]

@@ -284,7 +284,7 @@ const trainingRoom2: Scene = {
 			unitId: 'vasEquipCloak',
 			displayName: 'Theif Cloak',
 			sprite: 'armorStand',
-			startText: `A theif's cloak lets you hide for a turn, preventing retaliation from enemies. It's a good way to wait for your magic to warm up. Poison your enemy first to get extra value!`,
+			startText: `A theif's cloak lets you become hidden, preventing retaliation from enemies. It's a good way to wait for your magic to warm up. Poison your enemy first to get extra value!`,
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'theifCloak' }]
 		})

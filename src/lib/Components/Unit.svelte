@@ -23,17 +23,9 @@
 		updateUnit,
 		currentAnimationIndex,
 		currentAnimationsWithData,
-
 		handlePutsStatuses,
-
-
 		animationsInWaiting,
-
 		visualOpacity
-
-
-
-
 	} from '$lib/client/ui';
 	import { tick } from 'svelte';
 	import { derived, writable, type Writable } from 'svelte/store';
@@ -55,11 +47,14 @@
 		return $host.side != 'hero';
 	});
 
-	const highlightedForAct = derived([latestSlotButtonInput, host], ([$latestSlotButtonInput, $host]) => {
-		if ($latestSlotButtonInput == 'none') return undefined;
-		let found = $host?.actionsThatCanTargetMe.find((a) => a.slot == $latestSlotButtonInput);
-		return found;
-	});
+	const highlightedForAct = derived(
+		[latestSlotButtonInput, host],
+		([$latestSlotButtonInput, $host]) => {
+			if ($latestSlotButtonInput == 'none') return undefined;
+			let found = $host?.actionsThatCanTargetMe.find((a) => a.slot == $latestSlotButtonInput);
+			return found;
+		}
+	);
 
 	const hostHome = derived(
 		[currentAnimation, subAnimationStage],
@@ -72,7 +67,7 @@
 				$currentAnim.source == hostId &&
 				$subAnimationStage == 'fire'
 			) {
-				console.log('host leave')
+				console.log('host leave');
 				return false;
 			}
 			return true;
@@ -99,7 +94,8 @@
 		([$currentAnimation, $subAnimationStage]) => {
 			if (!$currentAnimation) return undefined;
 			if (
-				($currentAnimation.behavior.kind == 'missile' || $currentAnimation.behavior.kind == 'center') &&
+				($currentAnimation.behavior.kind == 'missile' ||
+					$currentAnimation.behavior.kind == 'center') &&
 				$currentAnimation.source == hostId &&
 				$subAnimationStage == 'start'
 			) {
@@ -109,14 +105,13 @@
 		}
 	);
 
-	const projectileSend = derived(
-		[currentAnimation],
-		([$currentAnimation]) => {
-			if ($currentAnimation?.behavior.kind == 'missile') return { key: 'missile', transition: sendProj };
-			if ($currentAnimation?.behavior.kind == 'center') return { key: 'center', transition: sendCenter };
-			return { key: 'cancelSend', transition: sendProj };
-		}
-	);
+	const projectileSend = derived([currentAnimation], ([$currentAnimation]) => {
+		if ($currentAnimation?.behavior.kind == 'missile')
+			return { key: 'missile', transition: sendProj };
+		if ($currentAnimation?.behavior.kind == 'center')
+			return { key: 'center', transition: sendCenter };
+		return { key: 'cancelSend', transition: sendProj };
+	});
 	$: projectileSendTransition = $projectileSend.transition;
 
 	const missileTarget = derived(
@@ -147,8 +142,6 @@
 			return undefined;
 		}
 	);
-
-	
 </script>
 
 <div class="unitAndArea">
@@ -171,9 +164,7 @@
 				out:sendMelee={{ key: 'movehero' }}
 				in:receiveMelee={{ key: 'movehero' }}
 				on:introend={() => {
-					if ($currentAnimation != undefined 
-					&&$subAnimationStage == 'sentHome'
-					 ) {
+					if ($currentAnimation != undefined && $subAnimationStage == 'sentHome') {
 						nextAnimationIndex(false, false);
 					}
 				}}
@@ -194,10 +185,10 @@
 						updateUnit(hostId, (vup) => {
 							vup.displayHp -= anim.damageToTarget ?? 0;
 						});
-						handlePutsStatuses(anim)
+						handlePutsStatuses(anim);
 						if ($guestId == undefined) return;
 						updateUnit($guestId, (vup) => {
-							if(vup.side == 'enemy'){
+							if (vup.side == 'enemy') {
 								vup.aggro = 0;
 							}
 						});
@@ -215,6 +206,16 @@
 				out:projectileSendTransition={{ key: $projectileSend.key }}
 				class:startAlignSelf={!$hostIsNotHero}
 				class:endAlignSelf={$hostIsNotHero}
+				in:fade={{ duration: 0 }}
+				on:introstart={() => {
+					let anim = $currentAnimation;
+					if (!anim) return;
+					updateUnit(anim.source, (vup) => {
+						if (vup.side == 'enemy') {
+							vup.aggro = 0;
+						}
+					});
+				}}
 			>
 				<img
 					class="projectile"
@@ -231,19 +232,15 @@
 				class:endAlignSelf={$hostIsNotHero}
 				out:fly|local={{ delay: 0, duration: 600, x: 0, y: -30 }}
 				on:outrostart={() => {
-					if ($currentAnimation != undefined) {
-						const anim = $currentAnimation;
-						updateUnit(hostId, (vup) => {
-							vup.displayHp -= anim.damageToSource ?? 0;
-						});
-						handlePutsStatuses(anim)
-					}
+					const anim = $currentAnimation;
+					if (!anim) return;
+					updateUnit(hostId, (vup) => {
+						vup.displayHp -= anim.damageToSource ?? 0;
+					});
+					handlePutsStatuses(anim);
 				}}
-				on:outroend={()=>{
-					nextAnimationIndex(
-						false,
-						false,
-					);
+				on:outroend={() => {
+					nextAnimationIndex(false, false);
 				}}
 			>
 				<img
@@ -255,67 +252,56 @@
 			</div>
 		{/if}
 		{#if $missileTarget}
-			<div class="projHolder projectileSized"
+			<div
+				class="projHolder projectileSized"
 				class:startAlignSelf={!$hostIsNotHero}
 				class:endAlignSelf={$hostIsNotHero}
 				in:receiveProj={{ key: 'missile' }}
 				on:introend={async () => {
-					if ($currentAnimation != undefined) {
-						let anim = $currentAnimation;
-						let delayNextStep = false;
-						updateUnit(hostId, (vup) => {
-							vup.displayHp -= anim.damageToTarget ?? 0;
-							if (vup.displayHp < 1) {
-								delayNextStep = true;
-							}
-						});
+					const anim = $currentAnimation;
+					if (!anim) return;
+					let delayNextStep = false;
+					updateUnit(hostId, (vup) => {
+						vup.displayHp -= anim.damageToTarget ?? 0;
+						if (vup.displayHp < 1) {
+							delayNextStep = true;
+						}
+					});
 
-						updateUnit(anim.source, (vup) => {
-							if(vup.side == 'enemy'){
-								vup.aggro = 0;
-								delayNextStep = true
-							}
-						});
+					handlePutsStatuses(anim);
 
-						handlePutsStatuses(anim)
-
-						if ($currentAnimation.alsoDamages) {
-							for (const other of $currentAnimation.alsoDamages) {
+					if (anim.alsoDamages) {
+						for (const other of anim.alsoDamages) {
+							updateUnit(other.target, (vup) => {
+								vup.displayHp -= other.amount;
+								if (vup.displayHp < 1) {
+									delayNextStep = true;
+								}
+							});
+						}
+					}
+					if (anim.alsoModifiesAggro) {
+						for (const other of anim.alsoModifiesAggro) {
+							if (
+								$lastMsgFromServer &&
+								other.forHeros.includes($lastMsgFromServer.yourInfo.unitId)
+							) {
 								updateUnit(other.target, (vup) => {
-									vup.displayHp -= other.amount;
-									if (vup.displayHp < 1) {
-										delayNextStep = true;
+									if (vup.aggro != undefined) {
+										if (other.amount != undefined) {
+											vup.aggro += other.amount;
+											if (vup.aggro > 100) vup.aggro = 100;
+											if (vup.aggro < 0) vup.aggro = 0;
+										}
+										if (other.setTo != undefined) {
+											vup.aggro = other.setTo;
+										}
 									}
 								});
 							}
 						}
-						if($currentAnimation.alsoModifiesAggro){
-							for (const other of $currentAnimation.alsoModifiesAggro) {
-								if (
-									$lastMsgFromServer &&
-									other.forHeros.includes($lastMsgFromServer.yourInfo.unitId)
-								) {
-									updateUnit(other.target, (vup) => {
-										if (vup.aggro != undefined) {
-											if (other.amount != undefined) {
-												vup.aggro += other.amount;
-												if(vup.aggro > 100)vup.aggro = 100
-												if(vup.aggro < 0)vup.aggro = 0
-											}
-											if (other.setTo != undefined) {
-												vup.aggro = other.setTo;
-											}
-										}
-									});
-								}
-							}
-
-						}
-						nextAnimationIndex(
-							false,
-							delayNextStep,
-						);
 					}
+					nextAnimationIndex(false, delayNextStep);
 				}}
 			>
 				<img
@@ -347,7 +333,7 @@
 		/* display: flex; */
 		/* flex-direction: column; */
 		z-index: 2;
-		position:relative;
+		position: relative;
 		/* overflow: hidden; */
 		/* width:50%; */
 	}
@@ -362,7 +348,6 @@
 		/* box-shadow: 0 0 10px yellow; */
 		/* outline: 2px dashed yellow; */
 		/* outline-offset: -7px; */
-	
 	}
 	.projHolder {
 		/* background-color: aquamarine; */
@@ -370,12 +355,12 @@
 		/* opacity: 0; */
 		z-index: 3;
 		display: inline;
-		top:40%;
-		position:absolute;
+		top: 40%;
+		position: absolute;
 	}
 	/* .selfInflictSource { */
-		/* justify-self: flex-start; */
-		/* background-color: chartreuse; */
+	/* justify-self: flex-start; */
+	/* background-color: chartreuse; */
 	/* } */
 	.projectile {
 		/* background-color: chartreuse; */
@@ -385,10 +370,10 @@
 	}
 	.startAlignSelf {
 		/* align-self: flex-start; */
-		left:0;
+		left: 0;
 	}
 	.endAlignSelf {
 		align-self: flex-end;
-		right:0;
+		right: 0;
 	}
 </style>
