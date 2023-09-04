@@ -3,8 +3,6 @@ import type { RequestHandler } from './$types';
 import { isJoin } from '$lib/utils';
 import { FAKE_LATENCY } from '$lib/server/messaging';
 import { users, type Player, type Flag, globalFlags, addNewUser } from '$lib/server/users';
-import { scenes, type SceneId, addSoloScenes } from '$lib/server/scenes';
-import { v4 } from 'uuid';
 
 export const POST: RequestHandler = async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));

@@ -169,6 +169,12 @@ export function scaleEnemyHealthInScene(sceneId: SceneId) {
 }
 
 export function changeScene(player: Player, goTo: SceneId) {
+	let left = scenes.get(player.currentScene)
+	if(!left)return
+	if(left.onLeaveScene){
+		left.onLeaveScene(player)
+	}
+
 	player.previousScene = player.currentScene
 	player.currentScene = goTo
 
@@ -657,19 +663,17 @@ export function convertVasToClient(vas: VisualActionSource, player: Player): Vis
 	validUnlockableClientActions = convertUnlockableActionsToClient(validUnlockableActions)
 
 	let startText = vas.startText
+	let startLocked = vas.startsLocked
 	let responses: ConversationResponse[] = []
 	if (vas.responses) responses = vas.responses
 	let detectStep = undefined
-	let unlockOnSee = undefined
-	let lockOnSee = undefined
 	if (vas.detect) {
 		for(const detected of vas.detect){
 			if (player.flags.has(detected.flag)) {
 				detectStep = detected.flag
+				startLocked = detected.locked
 				responses = detected.responses ?? []
-				startText = detected.startText
-				unlockOnSee = detected.unlockVasOnDetect
-				lockOnSee = detected.lockVasOnDetect
+				startText = detected.startText ?? vas.startText
 			}
 		}
 	}
@@ -681,12 +685,10 @@ export function convertVasToClient(vas: VisualActionSource, player: Player): Vis
 		responses: responses,
 		sprite: vas.sprite,
 		portrait: vas.portrait,
-		startsLocked: vas.startsLocked,
+		startsLocked: startLocked,
 		lockHandle: vas.lockHandle,
 		actionsInClient: validUnlockableClientActions,
 		detectStep: detectStep,
-		unlockOnSee: unlockOnSee,
-		lockOnSee: lockOnSee,
 	} satisfies VisualActionSourceInClient
 	return result
 }
@@ -707,7 +709,7 @@ export type VisualActionSource = {
 	actionsWithRequirements?: UnlockableActionData[]
 	startText: string,
 	responses?: ConversationResponse[]
-	detect?: { flag: Flag, startText: string, responses?: ConversationResponse[], unlockVasOnDetect?: VisualActionSourceId[], lockVasOnDetect?:VisualActionSourceId[]}[]
+	detect?: { flag: Flag, startText?: string, responses?: ConversationResponse[], locked?:boolean}[]
 	startsLocked?: boolean
 	lockHandle?: string
 }
@@ -723,8 +725,6 @@ export type VisualActionSourceInClient = {
 	startText: string,
 	responses: ConversationResponse[]
 	detectStep?: Flag
-	unlockOnSee?: VisualActionSourceId[]
-	lockOnSee?: VisualActionSourceId[]
 }
 
 export type UnlockableActionData = {

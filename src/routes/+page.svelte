@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import Unit from '$lib/Components/Unit.svelte';
-	import minimap from '$lib/assets/ui/minimap.png'
-	import sidebar from '$lib/assets/ui/sidebar.png'
+	import minimap from '$lib/assets/ui/minimap.png';
+	import sidebar from '$lib/assets/ui/sidebar.png';
 	import {
 		convoStateForEachVAS,
 		actionsForSlot,
@@ -39,20 +39,18 @@
 		visualSceneLabel,
 		allies,
 		enemies,
-		vases,
+		vasesToShow,
 		selectedVasResponsesToShow,
 		selectedVasActionsToShow,
-
-
-		triedSignupButTaken
-
-
+		triedSignupButTaken,
+		syncConvoStateToVas,
+		changeVasLocked
 	} from '$lib/client/ui';
 	import type { MessageFromServer } from '$lib/server/messaging';
 	import { onMount, tick } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import blankSlot from '$lib/assets/equipment/blank-attack.png';
-	
+
 	import type { BattleAnimation, DataFirstLoad, LandscapeImage } from '$lib/utils';
 	import VisualActionSource from '$lib/Components/VisualActionSource.svelte';
 	import { fade } from 'svelte/transition';
@@ -203,7 +201,6 @@
 			// location.reload()
 		}
 
-
 		if (joincall.ok) {
 			// if we were to re-mount (hot-reload) after this point, page data would be misleading
 			invalidateAll();
@@ -241,9 +238,9 @@
 			// joinedAs = usrName
 			$clientState.status = 'waiting for first event';
 			subscribeEventsIfNotAlready();
-		}else if(res.needAuth){
-			signInNameInput = res.needAuth
-			$triedSignupButTaken = res.needAuth
+		} else if (res.needAuth) {
+			signInNameInput = res.needAuth;
+			$triedSignupButTaken = res.needAuth;
 			$clientState.status = 'signup name taken, can try login';
 			$clientState.loading = false;
 		} else {
@@ -289,7 +286,6 @@
 		$clientState.status = 'waiting for first event';
 		subscribeEventsIfNotAlready();
 	}
-	
 </script>
 
 <!-- <h3>Status: {clientState.status}</h3> -->
@@ -297,21 +293,18 @@
 	<p>loading...</p>
 {/if}
 {#if !$clientState.loading && !$lastMsgFromServer}
-	<div class='landing' style="background-image:url({getLandscape($visualLandscape)});">
-		<div class='landingUnits'>
-			<img class="landingHero" src={anySprites.general} alt='a bg'>
-			<img class="landingHero flipped" src={anySprites.lady} alt='a bg'>
-
+	<div class="landing" style="background-image:url({getLandscape($visualLandscape)});">
+		<div class="landingUnits">
+			<img class="landingHero" src={anySprites.general} alt="a bg" />
+			<img class="landingHero flipped" src={anySprites.lady} alt="a bg" />
 		</div>
 		<div class="landingPortraitAndDialog">
-			<div class='landingPortrait textAlignRight'>
-				<img src={miscPortraits.general} alt='a portrait'>
+			<div class="landingPortrait textAlignRight">
+				<img src={miscPortraits.general} alt="a portrait" />
 			</div>
 			<div class="landingDialog">
-				<span>
-					Welcome hero! What is your name?
-				</span>
-				<div class="landingResponses">	
+				<span> Welcome hero! What is your name? </span>
+				<div class="landingResponses">
 					<button on:click={guestSignUpButtonClicked}>My name is Guest</button>
 					<div class="myNameIs">
 						<button disabled={!signupInput} on:click={signUpButtonClicked}>My name is</button>
@@ -323,19 +316,19 @@
 						<input id="signInName" disabled={true} type="text" bind:value={signInNameInput} />
 						<!-- <label for="signInId">Id</label> -->
 						<input id="signInId" type="text" bind:value={signInIdInput} />
-						<button disabled={!signInNameInput || !signInIdInput} on:click={signInButtonClicked}>Login</button>
+						<button disabled={!signInNameInput || !signInIdInput} on:click={signInButtonClicked}
+							>Login</button
+						>
 					{/if}
 				</div>
 			</div>
-			<div class='landingPortrait'>
-				<img class="flipped" src={miscPortraits.lady} alt='a portrait'>
+			<div class="landingPortrait">
+				<img class="flipped" src={miscPortraits.lady} alt="a portrait" />
 			</div>
 		</div>
-		
 	</div>
 	<!-- <input type="text" bind:value={signupInput} /> -->
 	<!-- <button disabled={!signupInput} on:click={signUpButtonClicked}>Sign Up</button> -->
-
 {/if}
 
 {#if $lastMsgFromServer && (!source || source.readyState != source.OPEN)}
@@ -364,7 +357,7 @@
 			on:click={() => {
 				// console.log('visual clicked');
 				$latestSlotButtonInput = undefined;
-				$lastUnitClicked = 'background'
+				$lastUnitClicked = 'background';
 			}}
 			class:noOpacity={$visualOpacity}
 		>
@@ -437,7 +430,7 @@
 						<Unit hostId={e.id} />
 					</div>
 				{/each}
-				{#each $vases as s (s.id)}
+				{#each $vasesToShow as s (s.id)}
 					<div class="vasSpriteHolder" in:fade|local animate:flip>
 						<VisualActionSource hostId={s.id} />
 						<!-- <img class="vasSprite" src={anySprites[s.sprite]} alt="a place" /> -->
@@ -448,7 +441,7 @@
 	</div>
 	{#if $selectedDetail && $selectedDetail.kind == 'vup'}
 		<div class="selectedDetails">
-			<div class="selectedPortrait"  style="background-image:url({minimap})">
+			<div class="selectedPortrait" style="background-image:url({minimap})">
 				<div class="portrait">
 					<img src={$selectedDetail.entity.actual.portrait} alt="portrait" />
 				</div>
@@ -460,7 +453,7 @@
 					</strong>
 				</div>
 			</div>
-			<div class="vupSelectedRest"  style="background-image:url({sidebar})">
+			<div class="vupSelectedRest" style="background-image:url({sidebar})">
 				<div class="selectedStats">
 					{#if $selectedDetail.entity.actual.kind == 'player'}
 						<div>
@@ -532,7 +525,6 @@
 									if ($selectedDetail && $selectedDetail.kind == 'vup') {
 										let actForSelectedMatchingSlot =
 											$selectedDetail.entity.actionsThatCanTargetMe.find((a) => {
-												
 												if (a.itemId && a.itemId == value.itemState.itemId) {
 													return true;
 												}
@@ -553,9 +545,7 @@
 									alt="a slot"
 								/>
 								<span class="slotCounter">{value.overlayNumber ?? ''}</span>
-								<span class="slotItemname"
-									>{value.itemState.itemId}</span
-								>
+								<span class="slotItemname">{value.itemState.itemId}</span>
 								<span class="slotStockDots">{value.dots}</span>
 							</button>
 						{/if}
@@ -567,7 +557,24 @@
 	{#if $selectedVisualActionSourceState && $selectedDetail && $selectedDetail.kind == 'vas'}
 		<div class="selectedDetails">
 			<div class="selectedPortrait" style="background-image:url({minimap})">
-				<div class="portrait">
+				<div
+					class="portrait"
+					on:click={() => {
+						if (
+							!(
+								$selectedVisualActionSourceState &&
+								$selectedDetail &&
+								$selectedDetail.kind == 'vas'
+							)
+						)
+							return;
+						$convoStateForEachVAS.delete($selectedDetail.entity.id);
+						syncConvoStateToVas($selectedDetail.entity, true);
+					}}
+					role="button"
+					tabindex="0"
+					on:keydown
+				>
 					<img
 						src={$selectedDetail.entity.portrait
 							? miscPortraits[$selectedDetail.entity.portrait]
@@ -620,9 +627,15 @@
 							<button
 								class="vasResponse"
 								type="button"
+								disabled={$clientState.waitingForMyEvent || $waitingForMyAnimation}
 								on:click={() => {
-									if (!$selectedDetail) return;
-									if ($selectedDetail.kind != 'vas') return;
+									if (
+										!$selectedDetail ||
+										$selectedDetail.kind != 'vas' ||
+										$clientState.waitingForMyEvent ||
+										$waitingForMyAnimation
+									)
+										return;
 
 									$lastUnitClicked = $selectedDetail.entity.id;
 									// let cs = $convoStateForEachVAS.get($selectedDetail.entity.id)
@@ -643,21 +656,21 @@
 									}
 									if (c.unlockVas) {
 										for (const handleToUnlock of c.unlockVas) {
-											let csToUnlock = $convoStateForEachVAS.get(handleToUnlock);
-											if (csToUnlock) {
-												csToUnlock.isLocked = false;
-											}
+											// let csToUnlock = $convoStateForEachVAS.get(handleToUnlock);
+											// if (csToUnlock) {
+												changeVasLocked(handleToUnlock, true);
+											// }
 										}
 									}
 									if (c.lockVas) {
 										for (const handleToLock of c.lockVas) {
-											let csToUnlock = $convoStateForEachVAS.get(handleToLock);
-											if (csToUnlock) {
-												csToUnlock.isLocked = true;
-											}
+											// let csToUnlock = $convoStateForEachVAS.get(handleToLock);
+											// if (csToUnlock) {
+												changeVasLocked(handleToLock, false);
+											// }
 										}
 									}
-									if(c.retort){
+									if (c.retort) {
 										state.currentRetort = c.retort;
 									}
 									$visualActionSources = $visualActionSources;
@@ -677,7 +690,7 @@
 				<p class="sceneText">{t}</p>
 				<br />
 			{/each}
-		</div>	
+		</div>
 	{/if}
 	{#if $lastMsgFromServer.sceneActions.length}
 		<div class="sceneButtons">
@@ -711,7 +724,10 @@
 		>
 		<button on:click={deleteHero}>Delete Hero</button>
 	</p>
-	{JSON.stringify($lastMsgFromServer.playerFlags)}
+	<p>
+
+		{JSON.stringify($lastMsgFromServer.playerFlags)}
+	</p>
 {/if}
 
 <style>
@@ -720,6 +736,7 @@
 		/* padding-inline: 5px; */
 		padding: 0;
 		margin: 0;
+		word-wrap: break-word;
 	}
 	:global(*) {
 		box-sizing: border-box;
@@ -741,12 +758,12 @@
 		width: clamp(25px, 5vw + 1px, 50px);
 	}
 
-	.textSelectable{
+	.textSelectable {
 		user-select: text;
 	}
 
-	.landing{
-		height:100vh;
+	.landing {
+		height: 100vh;
 		background-repeat: no-repeat;
 		background-size: cover;
 		display: flex;
@@ -754,48 +771,45 @@
 		/* align-items: center; */
 		justify-content: center;
 	}
-	.landingUnits{
+	.landingUnits {
 		/* background-color: aqua; */
 		text-align: center;
 		white-space: nowrap;
-		height:clamp(80px, 30vw, 200px);
+		height: clamp(80px, 30vw, 200px);
 	}
-	.landingUnits img{
-		height:100%;
+	.landingUnits img {
+		height: 100%;
 	}
-	
-	.flipped{
+
+	.flipped {
 		transform: scaleX(-1);
 	}
-	.landingPortraitAndDialog{
+	.landingPortraitAndDialog {
 		/* border:2px solid brown; */
 		display: flex;
 		justify-content: center;
-		height:30vh;
+		height: 30vh;
 		/* width:fit-content; */
 		/* max-width:100%; */
 		background-color: rgb(0, 0, 0, 0.4);
 	}
-	.landingPortrait{
+	.landingPortrait {
 		/* flex-basis:auto; */
 		/* background-color: aqua; */
-		flex-shrink:1;
-		flex-grow:1;
-		max-width:300px;
+		flex-shrink: 1;
+		flex-grow: 1;
+		max-width: 300px;
 	}
-	.textAlignRight{
+	.textAlignRight {
 		text-align: right;
-
 	}
-	.landingPortrait > img{
+	.landingPortrait > img {
 		/* background-color: red; */
-		width:100%;
-		height:100%;
+		width: 100%;
+		height: 100%;
 		object-fit: cover;
-
 	}
-	.landingDialog{
-		
+	.landingDialog {
 		/* flex-grow:0; */
 		/* flex-basis: 30%; */
 		/* border:2px solid brown; */
@@ -803,44 +817,44 @@
 		/* flex-basis:0; */
 		flex-shrink: 1;
 		font-weight: bold;
-		color:white;
+		color: white;
 		/* display: inline-block; */
-		padding:10px;
+		padding: 10px;
 	}
-	.landingResponses{
-		margin-top:10px;
+	.landingResponses {
+		margin-top: 10px;
 		display: flex;
-		gap:10px;
+		gap: 10px;
 		flex-direction: column;
 		align-items: flex-start;
 	}
-	.landingResponses button{
-		padding-inline:5px;
-		padding-block:4px;
+	.landingResponses button {
+		padding-inline: 5px;
+		padding-block: 4px;
 		white-space: nowrap;
 		border-radius: 5px;
 	}
-	.myNameIs{
+	.myNameIs {
 		/* margin:0; */
 		/* padding:0; */
 		display: inline-flex;
-		width:100%;
+		width: 100%;
 		justify-content: flex-start;
-		gap:5px;
-		margin-top:5px;
+		gap: 5px;
+		margin-top: 5px;
 	}
 	/* .myNameIs button{
 
 	} */
-	.myNameIs input{
-		flex-shrink:1;
-		flex-grow:1;
-		flex-basis:0;
-		min-width:10px;
-		max-width:150px;
-		width:100%;
+	.myNameIs input {
+		flex-shrink: 1;
+		flex-grow: 1;
+		flex-basis: 0;
+		min-width: 10px;
+		max-width: 150px;
+		width: 100%;
 	}
-	
+
 	h3 {
 		margin-top: 15px;
 		margin-bottom: 1px;
@@ -914,20 +928,20 @@
 	}
 	.imageBackground {
 		/* background-color: burlywood; */
-		position:absolute;
-		top:0;
+		position: absolute;
+		top: 0;
 		overflow: hidden;
-		height:100%;
-		width:100%;
+		height: 100%;
+		width: 100%;
 	}
-	.bgAndGrad{
-		position:relative
+	.bgAndGrad {
+		position: relative;
 	}
 	.bgGrad {
 		/* z-index:2 */
 		position: absolute;
 		height: 50px;
-		bottom:0;
+		bottom: 0;
 		width: 100%;
 		background: linear-gradient(to bottom, transparent 0%, black 90%);
 	}
@@ -992,8 +1006,8 @@
 		align-items: flex-start;
 		gap: 2px;
 		/* border: 1px solid brown; */
-		align-self:flex-start;
-		margin-top:7px;
+		align-self: flex-start;
+		margin-top: 7px;
 	}
 	.slotButton {
 		position: relative;
@@ -1048,7 +1062,7 @@
 	.selectedPortrait {
 		background-repeat: no-repeat;
 		background-size: 100% 100%;
-		min-width:100px;
+		min-width: 100px;
 		flex-basis: 15%;
 		display: flex;
 		flex-direction: column;
@@ -1061,13 +1075,13 @@
 		flex-grow: 1;
 		overflow: hidden;
 		display: block;
-		height:10vh;
+		height: 10vh;
 		/* text-align: center; */
 		/* margin-bottom: 0; */
 		/* vertical-align: bottom; */
 		/* border: 1px solid brown; */
-		padding-top:4px;
-		padding-inline:4px;
+		padding-top: 4px;
+		padding-inline: 4px;
 	}
 	.portrait > img {
 		display: block;
@@ -1083,9 +1097,9 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		height:4vh;
-		z-index:2;
-		color:white;
+		height: 4vh;
+		z-index: 2;
+		color: white;
 		border-top: none;
 		word-wrap: break-word;
 		/* font-size: clamp(14px, 2vw + 2px, 19px); */
@@ -1095,19 +1109,19 @@
 
 		height: 100%;
 		display: flex;
-		gap:5px;
+		gap: 5px;
 		background-repeat: no-repeat;
-		background-size: calc(max(100%,700px)) 100%;
+		background-size: calc(max(100%, 700px)) 100%;
 		background-position: left top;
-		padding:5px;
+		padding: 5px;
 	}
 	.selectedRest {
 		flex-basis: 85%;
 		height: 100%;
 		background-repeat: no-repeat;
-		background-size: calc(max(100%,700px)) 100%;
+		background-size: calc(max(100%, 700px)) 100%;
 		background-position: left top;
-		padding:10px;
+		padding: 10px;
 		/* background-color: aqua; */
 	}
 	.selectedStats {
@@ -1115,17 +1129,17 @@
 		flex-direction: column;
 		overflow-y: auto;
 		padding: 5px;
-		min-width:20vw;
+		min-width: 20vw;
 		/* border: 1px solid brown; */
 		border-left: none;
-		color:white;
+		color: white;
 	}
 	.vasdPromptAndButtons {
 		/* padding: 10px; */
 		display: flex;
 		height: 100%;
 		flex-direction: column;
-		color:white;
+		color: white;
 		/* justify-content: space-around; */
 		overflow-y: auto;
 		/* border: 1px solid brown; */

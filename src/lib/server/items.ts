@@ -221,6 +221,16 @@ const fist: Item = {
 		} satisfies BattleEvent
 	},
 }
+const belt: Item = {
+	id: 'belt',
+	slot: 'utility',
+	default: true,
+}
+const rags: Item = {
+	id: 'rags',
+	slot: 'body',
+	default: true,
+}
 
 const wait: Item = {
 	id: 'wait',
@@ -258,9 +268,11 @@ export const items = [
 	dagger,
 	club,
 	fireStaff,
+	belt,
 	bandage,
 	bomb,
 	poisonDart,
+	rags,
 	plateMail,
 	leatherArmor,
 	theifCloak,
@@ -312,11 +324,11 @@ export function equipItem(player: Player, item: Item) {
 			warmup: item.warmup ?? 0,
 		}
 		player.inventory.push(createState)
-		player.inventory.sort((a, b) => {
-			let aIndex = items.findIndex(i => i.id == a.itemId)
-			let bIndex = items.findIndex(i => i.id == b.itemId)
-			return aIndex - bIndex
-		})
+		// player.inventory.sort((a, b) => {
+		// 	let aIndex = items.findIndex(i => i.id == a.itemId)
+		// 	let bIndex = items.findIndex(i => i.id == b.itemId)
+		// 	return aIndex - bIndex
+		// })
 	} else {
 		state.itemId = item.id
 		state.warmup = item.warmup ?? 0

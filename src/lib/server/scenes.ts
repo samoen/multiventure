@@ -26,10 +26,10 @@ export type SceneId =
 export type Scene = {
 	displayName: string,
 	onEnterScene: (player: Player) => void
+	onLeaveScene?: (player: Player) => void
 	onBattleJoin?: (player: Player) => void
 	onVictory?: (player: Player) => void
 	actions: (player: Player) => void
-	// vases?: VisualActionSource[]
 	solo?: boolean
 	hasEntered?: Set<HeroName>
 	landscape?: LandscapeImage
@@ -87,10 +87,49 @@ const tutorial: Scene = {
 			unitId: 'vasSkipTutorial',
 			displayName: 'Skip Tutorial',
 			sprite: 'portal',
-			startText: 'This portal will take you to the real world',
+			startText: `Hi, I'm a talking portal.. go ahead and jump inside!`,
 			startsLocked: true,
-			actionsWithRequirements: [{ travelTo: 'forest', }]
+			responses:[
+				{
+					responseId:'showDefaults',
+					responseText: `Hello portal.. hey can I take some items out of the tutorial?`,
+					retort: `Here are the items you need equipped if you want to travel through me!`,
+					unlockVas:['vasBelt','vasFist'],
+					lockVas:['vasEquipClub','vasEquipBomb']
+				},
+			],
+			actionsWithRequirements: [
+			{
+				requiresGear:['fist', 'belt'],
+				travelTo: 'forest', 
+			},
+		]
 		})
+		player.visualActionSources.push({
+			unitId: 'vasBelt',
+			displayName: 'Belt',
+			sprite: 'altar',
+			startText: `It's a plain belt`,
+			startsLocked: true,
+			actionsWithRequirements: [
+			{
+				pickupItem:'belt'
+			},
+		]
+		})
+		player.visualActionSources.push({
+			unitId: 'vasFist',
+			displayName: 'Fist',
+			sprite: 'altar',
+			startText: `It's a fist`,
+			startsLocked: true,
+			actionsWithRequirements: [
+			{
+				pickupItem:'fist'
+			},
+		]
+		})
+
 		player.visualActionSources.push({
 			unitId: 'vasTutor',
 			displayName: 'Arthur',
@@ -99,21 +138,33 @@ const tutorial: Scene = {
 				{
 					responseId: 'scared',
 					responseText: `Huh? Danger? I didn't sign up for this!`,
-					retort: `Hmmf, think you can weasel your way through this game without enduring hardship? Maybe you can.. here's a portal.`,
-					unlockVas: ['vasSkipTutorial']
+					retort: `Oh, there must have been a mistake. I only train willing recruits in this tutorial. Here's a portal to the real world`,
+					unlock:['saidWrong'],
+					lock:['cheeky', 'brave'],
+					lockVas:['vasGoTrain1', 'vasEquipClub','vasEquipBomb'],
+					unlockVas: ['vasSkipTutorial'],
 				},
 				{
 					responseId: 'cheeky',
 					responseText: `Don't break the fourth wall Arthur, I'm into serious RPGs.`,
-					retort: `Things will get plenty dark and gritty soon enough. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.`
+					retort: `Things will get plenty dark and gritty soon enough. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.`,
+					unlock:['saidWrong'],
+					lock:['scared']
+				},
+				{
+					startsLocked:true,
+					responseId: 'saidWrong',
+					responseText: `I said the wrong thing! Can I reset our conversation?`,
+					retort: `Yep, just click my portrait. Conversations are just for fun.`
 				},
 				{
 					responseId: 'brave',
 					responseText: `I tend to breeze through tutorials pretty easily so get on with it.`,
 					retort: `Great to hear ${player.heroName}! Our training goblin is ready for you. Also there's a bit of a rat problem in the training room right now.. Equip these items and enter that training room!`,
-					unlockVas: ['vasEquipBomb', 'vasEquipClub'],
-					lockVas: ['vasSkipTutorial'],
+					unlockVas: ['vasEquipBomb', 'vasEquipClub', 'vasGoTrain1'],
+					lockVas: ['vasSkipTutorial','vasFist','vasBelt'],
 					lock: ['wantsToSkip', 'scared', 'cheeky'],
+					unlock:['saidWrong'],
 				},
 			],
 			sprite: 'general',
@@ -325,11 +376,11 @@ const trainingRoom3: Scene = {
 			displayName: 'Arthur',
 			sprite: 'general',
 			portrait: 'general',
-			startText: `Well done ${player.heroName}! You may be the chosen one after all.. Head through this portal to start the game.`,
+			startText: `Well done ${player.heroName}! You may be the chosen one after all..`,
 			responses: [{
 				responseId: 'go',
 				responseText: 'Thanks Arthur',
-				retort: 'Now to teach the next recruit..',
+				retort: `Head through this portal to start the game. Now it's time for me to teach the next recruit..`,
 				unlockVas: ['vasLeaveTutorial'],
 			}]
 		})
@@ -385,6 +436,11 @@ export const forest: Scene = {
 			startsLocked: true,
 			actionsWithRequirements: [{ requiresFlags: ['heardAboutHiddenPassage'], travelTo: 'forestPassage' }],
 			startText: `Delve into the secret passage`,
+			detect:[
+				{
+					flag:'heardAboutHiddenPassage'
+				},
+			],
 		})
 	}
 }
@@ -479,7 +535,6 @@ const house: Scene = {
 					responseText: `I won't`,
 					retort: `Not much of a hero are you?`,
 					lock: ['accepted'],
-					unlockVas: ['vasForestPassageFromForest']
 				},
 				{
 					responseId: `reward`,
@@ -490,13 +545,13 @@ const house: Scene = {
 			],
 			detect: [{
 				flag: 'killedGoblins',
-				unlockVasOnDetect: ['vasLeatherGift'],
 				startText: `Dear Sir ${player.heroName}! You return with the stench of goblin blood about yourself. Thank you for obtaining vengence on my behalf.`,
 				responses: [
 					{
 						responseId: 'cool',
 						responseText: `All in a day's work ma'am`,
 						retort: `I bequeath the armor to you so that my son's legacy may live on. Good luck out there ${player.heroName}`,
+						unlockVas:['vasLeatherGift']
 					}
 				]
 			}]
@@ -512,8 +567,15 @@ const house: Scene = {
 					requiresFlags: ['killedGoblins'],
 					pickupItem: 'leatherArmor',
 				}
-			]
+			],
+			detect: [{
+				flag: 'killedGoblins',
+				locked: false,
+				startText: `Leather armor reduces the damage of each incoming strike`,
+			}]
+			
 		})
+
 		player.visualActionSources.push({
 			unitId: 'vasGoCastle',
 			displayName: 'Travel',
@@ -542,9 +604,6 @@ const throne: Scene = {
 		}
 	},
 	actions(player: Player) {
-		// const hasDoneMedallion = player.flags.has('smashedMedallion') || player.flags.has('placedMedallion')
-		// const mustGoThroughTunnel = player.flags.has('killedGoblins') && !hasDoneMedallion
-		// const heldByKing = player.flags.has('smashedMedallion')
 
 		player.visualActionSources.push({
 			unitId: 'vasThroneGuard',
@@ -603,8 +662,6 @@ const throne: Scene = {
 						responseText: `Oh noooo`,
 						retort: 'hehehehe',
 					}],
-					unlockVasOnDetect: ['vasRealmFromThrone'],
-					lockVasOnDetect: ['vasChamberFromThrone', 'vasCastleFromThrone']
 				},
 				{
 					flag: 'placedMedallion',
@@ -614,7 +671,6 @@ const throne: Scene = {
 						responseText: `Happy to help.`,
 						retort: 'I have more tasks for you. I have opened a portal to a place where great treasures are. Go gather some treasure.',
 					}],
-					unlockVasOnDetect: ['vasRealmFromThrone'],
 				},
 			],
 		})
@@ -623,8 +679,16 @@ const throne: Scene = {
 			startsLocked: true,
 			displayName: 'Portal',
 			sprite: 'portal',
-			startText: 'You are drawn into the portal by the kings magic',
-			actionsWithRequirements: [{ travelTo: 'realmOfMadness' }]
+			startText: 'A portal to an unknown realm',
+			actionsWithRequirements: [{ travelTo: 'realmOfMadness' }],
+			detect:[
+				{
+				flag:'smashedMedallion'
+			},
+				{
+				flag:'placedMedallion'
+			},
+		],
 		})
 		player.visualActionSources.push({
 			unitId: 'vasChamberFromThrone',
@@ -632,7 +696,13 @@ const throne: Scene = {
 			displayName: 'Dungeon',
 			sprite: 'temple',
 			startText: 'A musty staircase down into the depths of the castle',
-			actionsWithRequirements: [{ requiresNotFlags: ['smashedMedallion'], travelTo: 'tunnelChamber' }]
+			actionsWithRequirements: [{ requiresNotFlags: ['smashedMedallion'], travelTo: 'tunnelChamber' }],
+			detect:[
+				{
+					flag:'smashedMedallion',
+					locked:true
+				}
+			],
 		})
 		player.visualActionSources.push({
 			unitId: 'vasCastleFromThrone',
@@ -642,7 +712,13 @@ const throne: Scene = {
 			actionsWithRequirements: [{
 				requiresNotFlags: ['smashedMedallion'],
 				travelTo: 'castle'
-			}]
+			}],
+			detect:[
+				{
+					flag:'smashedMedallion',
+					locked:true
+				}
+			],
 		})
 	}
 }
@@ -853,8 +929,6 @@ const armory: Scene = {
 			player.sceneActions.push({
 				buttonText: `Equip ${item.id}`,
 				performAction() {
-					// const tId = id as ItemId
-
 					equipItem(player, item)
 				},
 			})

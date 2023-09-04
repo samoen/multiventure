@@ -59,7 +59,7 @@ export let clientState = writable({
     loading: false,
 })
 
-export let triedSignupButTaken : Writable<string|undefined> = writable(undefined)
+export let triedSignupButTaken: Writable<string | undefined> = writable(undefined)
 
 export const lastMsgFromServer: Writable<MessageFromServer | undefined> = writable();
 export const allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
@@ -82,7 +82,7 @@ export const allies = derived(allVisualUnitProps, ($allVisualUnitProps) => {
 export const enemies = derived(allVisualUnitProps, ($allVisualUnitProps) => {
     return $allVisualUnitProps.filter((p) => p.side == 'enemy');
 });
-export const vases = derived([visualActionSources, convoStateForEachVAS], ([$visualActionSources, $convoStateForEachVAS]) => {
+export const vasesToShow = derived([visualActionSources, convoStateForEachVAS], ([$visualActionSources, $convoStateForEachVAS]) => {
     return $visualActionSources.filter((s) => {
         let cs = $convoStateForEachVAS.get(s.id)
         if (!cs || cs.kind != 'seen') return false
@@ -119,7 +119,7 @@ export let currentAnimation = derived([currentAnimationIndex, currentAnimationsW
 
 export function actionsForSlot(lm: MessageFromServer | undefined, iId: ItemId): GameActionSentToClient[] {
     if (!lm) return []
-    return lm.itemActions.filter(ia => ia.itemId  == iId)
+    return lm.itemActions.filter(ia => ia.itemId == iId)
 }
 export let typedInventory = derived([
     lastMsgFromServer,
@@ -130,7 +130,7 @@ export let typedInventory = derived([
     $waitingForMyAnimation,
     $clientState,
 ]) => {
-    let inventory : { itemState: ItemState, disabled: boolean, acts: GameActionSentToClient[], overlayNumber: string | undefined, dots: string, img: string }[] = []
+    let inventory: { itemState: ItemState, disabled: boolean, acts: GameActionSentToClient[], overlayNumber: string | undefined, dots: string, img: string }[] = []
     if (!$lastMsgFromServer) {
         return inventory
     }
@@ -157,13 +157,13 @@ export let slotlessBattleActions = derived(lastMsgFromServer, ($lastMsgFromServe
 })
 
 
-export type DetailWindow = { kind: 'vup', entity: VisualUnitProps } | { kind: 'vas', entity: VisualActionSourceInClient } | {kind:'bg'}
+export type DetailWindow = { kind: 'vup', entity: VisualUnitProps } | { kind: 'vas', entity: VisualActionSourceInClient } | { kind: 'bg' }
 
 
 export const selectedDetail: Readable<DetailWindow | undefined> = derived([
     lastUnitClicked,
     allVisualUnitProps,
-    vases,
+    vasesToShow,
     convoStateForEachVAS,
 ], ([$lastUnitClicked,
     $allVisualUnitProps,
@@ -171,8 +171,8 @@ export const selectedDetail: Readable<DetailWindow | undefined> = derived([
     $convoStateForEachVAS,
 ]) => {
 
-    if($lastUnitClicked == 'background'){
-        return {kind:'bg'} satisfies DetailWindow
+    if ($lastUnitClicked == 'background') {
+        return { kind: 'bg' } satisfies DetailWindow
     }
 
     let vupAt = $allVisualUnitProps.find(v => v.id == $lastUnitClicked)
@@ -221,14 +221,14 @@ export const selectedVisualActionSourceState = derived([
     // lastUnitClicked,
     // selectedVisualActionSource,
     selectedDetail,
-    visualActionSources,
+    // visualActionSources,
     convoStateForEachVAS,
 
 ], ([
     // $lastUnitClicked,
     // $selectedVisualActionSource,
     $selectedDetail,
-    $visualActionSources,
+    // $visualActionSources,
     $convoStateForEachVAS,
 ]) => {
     if (!$selectedDetail || $selectedDetail.kind != 'vas') return undefined
@@ -372,87 +372,89 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         // console.log(`${JSON.stringify(lastMsg.visualActionSources.map(v=>v.id))}`)
 
         for (const vas of lastMsg.visualActionSources) {
-            convoStateForEachVAS.update(cs => {
-                let existing = cs.get(vas.id)
-
-                // Do something if no state for this vas,
-                // or if exists with a new detect step
-                // or if it exists but only unseen
-                if (!existing || (existing && existing.detectStep != vas.detectStep) || existing.kind == 'notSeen') {
-                    // console.log(`init vas state ${vas.id} with unlockable`)
-                    let startResponsesLocked = new Map<string, boolean>()
-                    for (const resp of vas.responses) {
-                        if (resp.responseId) {
-                            if (resp.startsLocked) {
-                                startResponsesLocked.set(resp.responseId, true)
-                            } else {
-                                startResponsesLocked.set(resp.responseId, false)
-                            }
-                        }
-                    }
-
-                    // default startsLocked handling
-                    let startLocked = vas.startsLocked ?? false
-
-                    // if it's been unlocked already before it's been seen, carry over the locked state
-                    if (existing && existing.kind == 'notSeen') {
-                        startLocked = existing.isLocked
-                    }
-
-                    // If it's a new detect step or it wasn't existing and already has a detect step, consider it advanced
-                    let detectStepAdvance = (existing && existing.detectStep != vas.detectStep) || (!existing && vas.detectStep)
-
-                    // vas with advanced detect step always unlocked
-                    if (detectStepAdvance) {
-                        startLocked = false
-                    }
-
-                    //  handle the unlocks on detect step advance
-                    if (detectStepAdvance && vas.unlockOnSee) {
-                        for (const vId of vas.unlockOnSee) {
-                            let toUnlock = cs.get(vId)
-                            if (toUnlock) {
-                                toUnlock.isLocked = false
-                            } else {
-                                cs.set(vId, {
-                                    kind: 'notSeen',
-                                    currentRetort: 'I have not been seen yet',
-                                    isLocked: false,
-                                    lockedResponseHandles: new Map(),
-                                })
-                            }
-                        }
-                    }
-                    if (detectStepAdvance && vas.lockOnSee) {
-                        for (const vId of vas.lockOnSee) {
-                            let toLock = cs.get(vId)
-                            if (toLock) {
-                                toLock.isLocked = true
-                            } else {
-                                cs.set(vId, {
-                                    kind: 'notSeen',
-                                    currentRetort: 'I have not been seen yet',
-                                    isLocked: true,
-                                    lockedResponseHandles: new Map(),
-                                })
-                            }
-                        }
-                    }
-
-                    cs.set(vas.id, {
-                        kind: 'seen',
-                        currentRetort: vas.startText,
-                        detectStep: vas.detectStep,
-                        lockedResponseHandles: startResponsesLocked,
-                        isLocked: startLocked,
-                    })
-                }
-                return cs
-            })
+            syncConvoStateToVas(vas)
         }
 
         visualActionSources.set(lastMsg.visualActionSources)
     }
+}
+
+export function syncConvoStateToVas(vas: VisualActionSourceInClient, forceUnlock: boolean = false) {
+    convoStateForEachVAS.update(cs => {
+        let existing = cs.get(vas.id)
+
+        // Do something if no state for this vas,
+        // or if exists with a new detect step
+        // or if it exists but only unseen
+        if (!existing || (existing && existing.detectStep != vas.detectStep) || existing.kind == 'notSeen') {
+            // console.log(`init vas state ${vas.id} with unlockable`)
+            let startResponsesLocked = new Map<string, boolean>()
+            for (const resp of vas.responses) {
+                if (resp.responseId) {
+                    if (resp.startsLocked) {
+                        startResponsesLocked.set(resp.responseId, true)
+                    } else {
+                        startResponsesLocked.set(resp.responseId, false)
+                    }
+                }
+            }
+
+            // default startsLocked handling
+            let startLocked = vas.startsLocked ?? false
+
+            // if it's been unlocked already before it's been seen, carry over the locked state
+            if (existing && existing.kind == 'notSeen') {
+                startLocked = existing.isLocked
+            }
+
+            // If it's a new detect step or it wasn't existing and already has a detect step, consider it advanced
+            // let detectStepAdvance = (existing && existing.detectStep != vas.detectStep) || (!existing && vas.detectStep)
+
+            if (forceUnlock) {
+                startLocked = false
+            }
+
+            cs.set(vas.id, {
+                kind: 'seen',
+                currentRetort: vas.startText,
+                detectStep: vas.detectStep,
+                lockedResponseHandles: startResponsesLocked,
+                isLocked: startLocked,
+            })
+        }
+        return cs
+    })
+}
+
+export function changeVasLocked(vId: VisualActionSourceId, unlock: boolean) {
+
+    const vases = get(visualActionSources)
+    const found = vases.find(v => v.id == vId)
+    convoStateForEachVAS.update(cs => {
+        let cState = cs.get(vId)
+        if (found) {
+            // vas will already have a convo state
+            if (!cState) return cs
+            if (unlock) {
+                cState.isLocked = false
+            } else {
+                cState.isLocked = true
+            }
+            console.log('unlocked ' + vId)
+        } else {
+            if (cState) {
+                cState.isLocked = false
+            } else {
+                cs.set(vId, {
+                    kind: 'notSeen',
+                    currentRetort: 'I have not been seen yet',
+                    isLocked: !unlock,
+                    lockedResponseHandles: new Map(),
+                })
+            }
+        }
+        return cs
+    })
 }
 
 export function handlePutsStatuses(anim: BattleAnimation) {
@@ -568,7 +570,7 @@ function checkAnimationValid(ba: BattleAnimation): boolean {
     let valid = true
     let enemiesToCheck = get(enemies)
     let alliesToCheck = get(allies)
-    let vasesToCheck = get(vases)
+    let vasesToCheck = get(vasesToShow)
 
     let foundSource = enemiesToCheck.some(e => e.id == ba.source) || alliesToCheck.some(a => a.id == ba.source)
     let foundTarget = ba.target == undefined || enemiesToCheck.some(e => e.id == ba.target) || alliesToCheck.some(a => a.id == ba.target) || vasesToCheck.some(v => v.id == ba.target)
@@ -577,11 +579,11 @@ function checkAnimationValid(ba: BattleAnimation): boolean {
 }
 
 
-export function heroSprite(info:ItemState[]) {
-    
-    if (info.some(i=>i.itemId=='club')) return 'ruffian';
-    if (info.some(i=>i.itemId=='dagger')) return 'theif';
-    if (info.some(i=>i.itemId=='fireStaff')) return 'mage';
+export function heroSprite(info: ItemState[]) {
+
+    if (info.some(i => i.itemId == 'club')) return 'ruffian';
+    if (info.some(i => i.itemId == 'dagger')) return 'theif';
+    if (info.some(i => i.itemId == 'fireStaff')) return 'mage';
     return 'peasant';
 }
 
