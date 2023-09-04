@@ -50,8 +50,8 @@
 	const highlightedForAct = derived(
 		[latestSlotButtonInput, host],
 		([$latestSlotButtonInput, $host]) => {
-			if ($latestSlotButtonInput == 'none') return undefined;
-			let found = $host?.actionsThatCanTargetMe.find((a) => a.slot == $latestSlotButtonInput);
+			if ($latestSlotButtonInput == undefined) return undefined;
+			let found = $host?.actionsThatCanTargetMe.find((a) => a.itemId == $latestSlotButtonInput);
 			return found;
 		}
 	);
@@ -150,7 +150,7 @@
 		on:click|preventDefault|stopPropagation={() => {
 			if ($highlightedForAct) {
 				choose($highlightedForAct);
-				$latestSlotButtonInput = 'none';
+				$latestSlotButtonInput = undefined;
 			}
 			$lastUnitClicked = hostId;
 		}}

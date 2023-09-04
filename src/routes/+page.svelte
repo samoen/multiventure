@@ -57,7 +57,7 @@
 	import VisualActionSource from '$lib/Components/VisualActionSource.svelte';
 	import { fade } from 'svelte/transition';
 	import type { ItemId } from '$lib/server/items';
-	import { anySprites, getLandscape, miscPortraits } from '$lib/client/assets';
+	import { anySprites, getLandscape, getSlotImage, miscPortraits } from '$lib/client/assets';
 
 	export let data: DataFirstLoad;
 	let signupInput: string;
@@ -180,7 +180,7 @@
 		$convoStateForEachVAS.clear();
 		$visualActionSources = [];
 		$allVisualUnitProps = [];
-		$latestSlotButtonInput = 'none';
+		$latestSlotButtonInput = undefined;
 		$lastUnitClicked = undefined;
 	}
 
@@ -362,8 +362,8 @@
 			tabindex="0"
 			on:keydown
 			on:click={() => {
-				console.log('visual clicked');
-				$latestSlotButtonInput = 'none';
+				// console.log('visual clicked');
+				$latestSlotButtonInput = undefined;
 				$lastUnitClicked = 'background'
 			}}
 			class:noOpacity={$visualOpacity}
@@ -512,11 +512,11 @@
 					{/if}
 				</div>
 				<div class="slotButtons">
-					{#each $typedInventory as [slot, value]}
+					{#each $typedInventory as value}
 						{#if value.overlayNumber != undefined || value.acts.length}
 							<button
 								class="slotButton"
-								class:activeSlotButton={$latestSlotButtonInput == slot}
+								class:activeSlotButton={$latestSlotButtonInput == value.itemState.itemId}
 								type="button"
 								disabled={value.disabled}
 								on:click={() => {
@@ -526,23 +526,24 @@
 									const onlyAction = slotActions.at(0);
 									if (oneChoice && onlyAction) {
 										choose(onlyAction);
-										$latestSlotButtonInput = 'none';
+										$latestSlotButtonInput = undefined;
 										return;
 									}
 									if ($selectedDetail && $selectedDetail.kind == 'vup') {
 										let actForSelectedMatchingSlot =
 											$selectedDetail.entity.actionsThatCanTargetMe.find((a) => {
-												if (a.slot && a.slot == slot) {
+												
+												if (a.itemId && a.itemId == value.itemState.itemId) {
 													return true;
 												}
 											});
 										if (actForSelectedMatchingSlot) {
 											choose(actForSelectedMatchingSlot);
-											$latestSlotButtonInput = 'none';
+											$latestSlotButtonInput = undefined;
 											return;
 										}
 									}
-									$latestSlotButtonInput = slot;
+									$latestSlotButtonInput = value.itemState.itemId;
 								}}
 							>
 								<img
@@ -553,29 +554,11 @@
 								/>
 								<span class="slotCounter">{value.overlayNumber ?? ''}</span>
 								<span class="slotItemname"
-									>{$lastMsgFromServer.yourInfo.inventory[slot].itemId}</span
+									>{value.itemState.itemId}</span
 								>
 								<span class="slotStockDots">{value.dots}</span>
 							</button>
 						{/if}
-					{/each}
-					{#each $slotlessBattleActions as act}
-						<button
-							class="slotButton"
-							disabled={$waitingForMyAnimation || $clientState.waitingForMyEvent}
-							on:click={() => {
-								choose(act);
-								$latestSlotButtonInput = 'none';
-							}}
-						>
-							<img
-								class="slotImg"
-								class:halfOpacity={$waitingForMyAnimation || $clientState.waitingForMyEvent}
-								src={blankSlot}
-								alt="a slot"
-							/>
-							<span class="slotItemname">{act.buttonText}</span>
-						</button>
 					{/each}
 				</div>
 			</div>
@@ -1116,7 +1099,7 @@
 		background-repeat: no-repeat;
 		background-size: calc(max(100%,700px)) 100%;
 		background-position: left top;
-		/* padding:5px; */
+		padding:5px;
 	}
 	.selectedRest {
 		flex-basis: 85%;
@@ -1124,6 +1107,7 @@
 		background-repeat: no-repeat;
 		background-size: calc(max(100%,700px)) 100%;
 		background-position: left top;
+		padding:10px;
 		/* background-color: aqua; */
 	}
 	.selectedStats {
@@ -1137,7 +1121,7 @@
 		color:white;
 	}
 	.vasdPromptAndButtons {
-		padding: 10px;
+		/* padding: 10px; */
 		display: flex;
 		height: 100%;
 		flex-direction: column;

@@ -4,7 +4,7 @@ import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer
 import { items, type Item, equipItem, checkHasItem, type ItemId } from "./items"
 import { pushHappening } from "./messaging"
 import { scenes, type SceneId } from "./scenes"
-import { users, type Player, playerItemStates, activePlayersInScene, type GameAction, healPlayer, type Flag, type MiscPortrait } from "./users"
+import { users, type Player, activePlayersInScene, type GameAction, healPlayer, type Flag, type MiscPortrait } from "./users"
 
 export function updateAllPlayerActions() {
 	for (const allPlayer of users.values()) {
@@ -17,76 +17,56 @@ export function updatePlayerActions(player: Player) {
 	player.itemActions = []
 	player.visualActionSources = []
 
-	if (player.health < 1) {
-		if (items.succumb.actions) {
-			let ga: GameAction = {
-				buttonText: 'Succumb',
-				performAction() {
-					if (items.succumb.actions) {
-						return items.succumb.actions(player)
-					}
-				},
-				slot: items.succumb.slot,
-			}
-			player.itemActions.push(ga)
-		}
-		return
-	}
 	let sceneEnemies = enemiesInScene(player.currentScene)
 	let scenePlayers = activePlayersInScene(player.currentScene)
-	if (sceneEnemies.length) {
-		if (items.wait.actions) {
-			let ga: GameAction = {
-				buttonText: 'Wait',
-				performAction() {
-					if (items.wait.actions) {
-						return items.wait.actions(player)
-					}
-				},
-				slot: items.wait.slot,
-			}
-			player.itemActions.push(ga)
-		}
-	}
 
-	for (const cd of playerItemStates(player)) {
-		const i = items[cd.itemId]
+	for (const cd of player.inventory) {
+		const i = items.find(item=>item.id == cd.itemId)
+		if(i == undefined)return
 		if (i.useableOutOfBattle || sceneEnemies.length) {
 			if (cd.cooldown < 1 && cd.warmup < 1 && (cd.stock == undefined || cd.stock > 0)) {
 				if (i.actions) {
-					let ga: GameAction = {
-						buttonText: `use ${i.id}`,
-						performAction() {
-							if (i.actions) {
-								return i.actions(player)
-							}
-						},
-						slot: i.slot,
-					}
-					player.itemActions.push(ga)
-				}
-				if (i.actionForEnemy) {
-					for (const enemy of sceneEnemies) {
+					if((i.requiresSourceDead && player.health < 1) || (!i.requiresSourceDead && player.health > 0)){
 						let ga: GameAction = {
-							buttonText: `use ${i.id} on ${enemy.unitId}`,
+							buttonText: `use ${i.id}`,
 							performAction() {
-								if (i.actionForEnemy) {
-									return i.actionForEnemy(player, enemy)
+								if (i.actions) {
+									return i.actions(player)
 								}
 							},
 							slot: i.slot,
-							target: enemy.unitId,
+							itemId: i.id,
 						}
 						player.itemActions.push(ga)
+
+					}
+				}
+				if (i.actionForEnemy) {
+					for (const enemy of sceneEnemies) {
+						if((i.requiresSourceDead && player.health < 1) || (!i.requiresSourceDead && player.health > 0)){
+							let ga: GameAction = {
+								buttonText: `use ${i.id} on ${enemy.unitId}`,
+								performAction() {
+									if (i.actionForEnemy) {
+										return i.actionForEnemy(player, enemy)
+									}
+								},
+								slot: i.slot,
+								itemId:i.id,
+								target: enemy.unitId,
+							}
+							player.itemActions.push(ga)
+						}
 					}
 				}
 				if (i.actionForFriendly) {
 					for (const friend of scenePlayers.filter(f => f.unitId != player.unitId)) {
 						if (
 							(!i.requiresHealth || friend.health < friend.maxHealth && friend.health > 0) &&
-							(!i.requiresStatus || friend.statuses[i.requiresStatus] > 0)
-						) {
-							let ga: GameAction = {
+							(!i.requiresStatus || friend.statuses[i.requiresStatus] > 0) &&
+							((i.requiresSourceDead && player.health < 1) || (!i.requiresSourceDead && player.health > 0))
+							) {
+								let ga: GameAction = {
 								buttonText: `use ${i.id} on ${friend.unitId}`,
 								performAction() {
 									if (i.actionForFriendly) {
@@ -94,6 +74,7 @@ export function updatePlayerActions(player: Player) {
 									}
 								},
 								slot: i.slot,
+								itemId:i.id,
 								target: friend.unitId,
 							}
 							player.itemActions.push(ga)
@@ -103,7 +84,8 @@ export function updatePlayerActions(player: Player) {
 				if (i.actionForSelf) {
 					if (
 						(!i.requiresHealth || player.health < player.maxHealth && player.health > 0) &&
-						(!i.requiresStatus || player.statuses[i.requiresStatus] > 0)
+						(!i.requiresStatus || player.statuses[i.requiresStatus] > 0) &&
+						((i.requiresSourceDead && player.health < 1) || (!i.requiresSourceDead && player.health > 0))
 					) {
 						let ga: GameAction = {
 							buttonText: `use ${i.id} on self`,
@@ -113,6 +95,7 @@ export function updatePlayerActions(player: Player) {
 								}
 							},
 							slot: i.slot,
+							itemId:i.id,
 							target: player.unitId,
 						}
 						player.itemActions.push(ga)
@@ -191,9 +174,9 @@ export function changeScene(player: Player, goTo: SceneId) {
 
 	// When entering a new scene, state cooldowns to 0,
 	// state warmups to the item warmup, stocks to start
-	for (const itemState of playerItemStates(player)) {
+	for (const itemState of player.inventory) {
 		itemState.cooldown = 0
-		let item = items[itemState.itemId]
+		let item = items.find(i=>i.id == itemState.itemId)
 		if (item != undefined) {
 			if (item.warmup) {
 				itemState.warmup = item.warmup
@@ -217,12 +200,14 @@ export function changeScene(player: Player, goTo: SceneId) {
 }
 
 export function handleAction(player: Player, actionFromId: GameAction) {
+	const actionStartedInSceneId = player.currentScene
+
 	if (actionFromId.goTo) {
 		changeScene(player, actionFromId.goTo)
 		return
 	}
 
-	if (!actionFromId.slot || actionFromId.slot == 'succumb') {
+	if (!actionFromId.itemId) {
 		if (actionFromId.performAction) {
 			let battleEvent = actionFromId.performAction();
 			if (battleEvent) {
@@ -232,13 +217,9 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		return
 	}
 
-	let itemUsed: Item | undefined = undefined
-	if (actionFromId.slot == 'wait') {
-		itemUsed = items.wait
-	} else {
-		const itemState = player.inventory[actionFromId.slot]
-		itemUsed = items[itemState.itemId]
-	}
+	let itemUsed  = items.find(i=>i.id == actionFromId.itemId)
+	if(!itemUsed)return
+
 
 	pushHappening('----');
 
@@ -256,7 +237,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 
 	handleRetaliations(player, false, actionFromId, itemUsed)
 
-	if (player.health > 0) {
+	if (player.health > 0 || itemUsed.requiresSourceDead) {
 		preCombatActionPerformed(player, actionFromId, itemUsed)
 		if (actionFromId.performAction) {
 			let battleEvent = actionFromId.performAction();
@@ -270,7 +251,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		handleRetaliations(player, true, actionFromId, itemUsed)
 	}
 	if (itemUsed.provoke != undefined) {
-		for (const enemy of enemiesInScene(player.currentScene)) {
+		for (const enemy of enemiesInScene(actionStartedInSceneId)) {
 			let statusForPlayer = enemy.statuses.get(player.unitId)
 			if (!statusForPlayer) continue
 			if (statusForPlayer.poison > 0) {
@@ -322,8 +303,8 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 
 
-	const playerScene = scenes.get(player.currentScene);
-	const postReactionEnemies = enemiesInScene(player.currentScene)
+	const playerScene = scenes.get(actionStartedInSceneId);
+	const postReactionEnemies = enemiesInScene(actionStartedInSceneId)
 	if (!postReactionEnemies.length && playerScene?.onVictory) {
 		for (const playerInScene of activePlayersInScene(player.currentScene)) {
 			playerScene.onVictory(playerInScene)
@@ -338,21 +319,25 @@ function preCombatActionPerformed(player: Player, gameAction: GameAction, itemUs
 
 	// Each turn decrement cooldowns, only if time passed ie provoke
 	if (itemUsed.provoke != undefined) {
-		for (const cd of playerItemStates(player)) {
+		for (const cd of player.inventory) {
 			if (cd.cooldown > 0) cd.cooldown--
 			if (cd.warmup > 0) cd.warmup--
 		}
 	}
 
 	// If we used an equipment item set it on cooldown and reduce stock
-	if (gameAction.slot && gameAction.slot != 'wait' && gameAction.slot != 'succumb') {
-		let itemState = player.inventory[gameAction.slot]
-		let item = items[itemState.itemId]
-		if (item.cooldown) {
-			itemState.cooldown = item.cooldown
-		}
-		if (itemState.stock) {
-			itemState.stock--
+	if (gameAction.itemId) {
+		let itemState = player.inventory.find(i=>i.itemId == gameAction.itemId)
+		if(itemState){
+			const isId = itemState.itemId
+			let item = items.find(i=>i.id == isId)
+			if(!item)return
+			if (item.cooldown) {
+				itemState.cooldown = item.cooldown
+			}
+			if (itemState.stock) {
+				itemState.stock--
+			}
 		}
 	}
 
@@ -561,7 +546,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				remove: m.remove
 			} satisfies StatusModifier
 		}),
-		takesItem: battleEvent.takesItem && battleEvent.takesItem.slot != 'wait' && battleEvent.takesItem.slot != 'succumb' ? { slot: battleEvent.takesItem.slot, id: battleEvent.takesItem.id } : undefined,
+		takesItem: battleEvent.takesItem ? { id: battleEvent.takesItem.id, slot:battleEvent.takesItem.slot } : undefined,
 	}
 	pushAnimation({
 		sceneId: sceneToPlayAnim,
@@ -623,7 +608,7 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 								source: { kind: 'player', entity: player },
 								target: { kind: 'vas', entity: vas },
 								behavior: { kind: 'melee' },
-								takesItem: items[id]
+								takesItem: items.find(i=>i.id == id)
 							} satisfies BattleEvent
 						},
 					}
@@ -658,7 +643,9 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 export function convertServerActionToClientAction(sa: GameAction): GameActionSentToClient {
 	return {
 		buttonText: sa.buttonText,
-		slot: sa.slot != 'wait' && sa.slot != 'succumb' ? sa.slot : undefined,
+		// slot: sa.slot != 'wait' && sa.slot != 'succumb' ? sa.slot : undefined,
+		itemId: sa.itemId,
+		slot: sa.slot,
 		target: sa.target,
 	}
 }

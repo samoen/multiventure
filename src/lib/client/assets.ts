@@ -1,4 +1,5 @@
 import rage from '$lib/assets/extras/rage.png';
+import skull from '$lib/assets/extras/suppose_dead.png';
 import hidden from '$lib/assets/extras/hidden.png';
 import plainsLandscape from '$lib/assets/landscapes/landscape-plain.webp';
 import castleLandscape from '$lib/assets/landscapes/landscape-castle.webp';
@@ -44,11 +45,13 @@ import dagger from '$lib/assets/scenery/dagger.png';
 import potion from '$lib/assets/scenery/potion-red.png';
 import club from '$lib/assets/extras/club.png';
 import potionSlot from '$lib/assets/equipment/potion-slot.png';
+import skullSlot from '$lib/assets/equipment/skull-slot.png';
 import dressSlot from '$lib/assets/equipment/dress_silk_green.png';
 import tunicSlot from '$lib/assets/equipment/tunic_elven.png';
 import clubSlot from '$lib/assets/equipment/club-small.png';
 import fistSlot from '$lib/assets/equipment/fist-human.png';
 import shieldSlot from '$lib/assets/equipment/heater-shield.png';
+import waitSlot from '$lib/assets/equipment/wait-slot.png';
 import blankSlot from '$lib/assets/equipment/blank-attack.png';
 import poisonDartSlot from '$lib/assets/equipment/dagger-thrown-poison-human.png';
 import fireballSlot from '$lib/assets/equipment/fireball.png';
@@ -78,13 +81,15 @@ export function getSlotImage(id: ItemId): string {
     if (id == 'leatherArmor') return tunicSlot;
     if (id == 'theifCloak') return dressSlot;
     if (id == 'plateMail') return shieldSlot;
+    if(id == 'wait')return waitSlot;
+    if(id == 'succumb')return skullSlot;
     return blankSlot;
 }
 
 export function getHeroPortrait(pi: PlayerInClient): string {
-    if (pi.inventory.weapon.itemId == 'dagger') {
-        return peasantPortrait
-    }
+    // if (pi.inventory.weapon.itemId == 'dagger') {
+    //     return peasantPortrait
+    // }
     return peasantPortrait
 }
 
@@ -117,6 +122,7 @@ export const anySprites: Record<AnySprite, string> = {
     flame: flame,
     heal: heal,
     poison: greenDrip,
+    skull: skull,
     castle: lighthouse,
     forest: forest,
     stoneDoor: stoneDoor,

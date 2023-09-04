@@ -3,7 +3,7 @@ import { activeEnemies, addAggro, damagePlayer, enemiesInScene, getAggroForPlaye
 import { items } from './items';
 import { type VisualActionSourceInClient, convertServerActionToClientAction, convertVasToClient } from './logic';
 import { scenes, forest } from './scenes';
-import { activePlayers, globalFlags, playerItemStates, users, type HeroName, type Player, type GameAction, activePlayersInScene, type PlayerInClient, type Flag, type GlobalFlag } from './users';
+import { activePlayers, globalFlags, users, type HeroName, type Player, type GameAction, activePlayersInScene, type PlayerInClient, type Flag, type GlobalFlag } from './users';
 
 export const FAKE_LATENCY = 50;
 
@@ -56,11 +56,12 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 			maxHealth: forPlayer.maxHealth,
 			agility: forPlayer.agility,
 			strength: forPlayer.strength,
-			inventory:{
-				weapon: forPlayer.inventory.weapon,
-				utility: forPlayer.inventory.utility,
-				body: forPlayer.inventory.body,
-			},
+			// inventory:{
+			// 	weapon: forPlayer.inventory.weapon,
+			// 	utility: forPlayer.inventory.utility,
+			// 	body: forPlayer.inventory.body,
+			// },
+			inventory:forPlayer.inventory,
 			currentSceneDisplay: scene.displayName,
 			statuses:forPlayer.statuses,
 		},
@@ -74,11 +75,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 					maxHealth: u.maxHealth,
 					agility:u.agility,
 					strength:u.strength,
-					inventory:{
-						weapon: u.inventory.weapon,
-						utility: u.inventory.utility,
-						body: u.inventory.body,
-					},
+					inventory:u.inventory,
 					currentSceneDisplay: 'somewhere',
 					statuses:u.statuses,
 				} satisfies PlayerInClient;
@@ -108,7 +105,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				templateId: e.templateId,
 				myAggro: getAggroForPlayer(e,forPlayer),
 				statuses: Object.fromEntries(e.statuses),
-			}
+			} satisfies EnemyInClient
 		}),
 		playerFlags: Array.from(forPlayer.flags),
 		globalFlags: Array.from(globalFlags),

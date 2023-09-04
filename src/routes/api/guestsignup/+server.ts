@@ -4,8 +4,6 @@ import { isJoin } from '$lib/utils';
 import { FAKE_LATENCY } from '$lib/server/messaging';
 import { users, type Player, type Flag, globalFlags, addNewUser } from '$lib/server/users';
 import { scenes, type SceneId, addSoloScenes } from '$lib/server/scenes';
-import type { Inventory } from '$lib/server/items';
-import { v4 } from 'uuid';
 
 
 function isGuestSignupMsg(msg: object): msg is {hi:string} {

@@ -1,7 +1,7 @@
 // This file is for stuff available to both the server and browser
 
 import type { ActiveEnemy, EnemyTemplateId } from './server/enemies';
-import type { EquipmentSlot, Item, ItemId, ItemState } from './server/items';
+import type { Item, ItemId, ItemState, QuickbarSlot } from './server/items';
 import type { SceneId } from './server/scenes';
 import type { Flag, GlobalFlag, HeroName, Player } from './server/users';
 
@@ -20,7 +20,7 @@ export type BattleAnimation = {
 	behavior: AnimationBehavior,
 	alsoDamages?:HealthModifier[],
 	alsoModifiesAggro?:AggroModifier[],
-	takesItem?:{slot:EquipmentSlot,id:ItemId},
+	takesItem?:{slot:string, id:ItemId},
 }
 
 export type DataFirstLoad = {
@@ -87,7 +87,8 @@ export type AnySprite =
 | 'heal' 
 | 'poison' 
 | 'smoke' 
-| 'shield' 
+| 'shield'
+| 'skull'
 | 'club'
 | 'armorStand'
 
@@ -130,7 +131,8 @@ export function isGameActionSelected(msg: object): msg is GameActionSelected {
 
 export type GameActionSentToClient = {
 	buttonText: string;
-	slot?:EquipmentSlot;
+	slot?:QuickbarSlot;
+	itemId?:ItemId;
 	target?: UnitId;
 };
 

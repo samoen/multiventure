@@ -1,12 +1,27 @@
 import type { UnitId, BattleAnimation, StatusEffect, StatusId, BattleEvent, HeroId, AnySprite, VisualActionSourceId } from '$lib/utils';
 import { v4 } from 'uuid';
-import { items, type Inventory, type Item, type ItemState, type EquipmentSlot, type QuickbarSlot } from './items';
+import { items, type Item, type ItemState, type QuickbarSlot, type ItemId, equipItem } from './items';
 import { pushHappening } from './messaging';
 import type { VisualActionSource } from './logic';
 import { type SceneId, scenes, addSoloScenes } from './scenes';
 
 export const users = new Map<UserId, Player>();
 export const globalFlags = new Set<GlobalFlag>();
+
+export function defaultInventory():ItemState[]{
+	let defaultItems = items.filter(i=>i.default)
+	
+	return defaultItems.map(i=>{
+		return{
+			itemId:i.id,
+			cooldown:0,
+			slot:i.slot,
+			warmup:i.warmup ?? 0,
+			stock:i.startStock,
+		} satisfies ItemState
+	})
+
+}
 
 export function addNewUser(heroName: string): { id: string, player: Player } {
 	const startflags: Set<Flag> = new Set()
@@ -15,7 +30,7 @@ export function addNewUser(heroName: string): { id: string, player: Player } {
 	// startflags.add('killedGoblins')
 
 	let startScene: SceneId = `tutorial_${heroName}`
-	// startScene = `trainingRoom1_${heroName}`
+	// startScene = `trainingRoom2_${heroName}`
 	// startScene = `forest`
 	// startScene = 'forestPassage'
 	// startScene = 'goblinCamp'
@@ -23,32 +38,8 @@ export function addNewUser(heroName: string): { id: string, player: Player } {
 	// startScene = 'throne'
 	// startScene = 'armory'
 
-	let startWep = items.unarmed
-	// startWep = items.dagger
-	let startUtil = items.empty
-	// startUtil = items.bandage
-	let startBody = items.rags
+	let startInventory = defaultInventory()
 
-	let startInventory: Inventory = {
-		weapon: {
-			itemId: startWep.id,
-			cooldown: 0,
-			warmup: startWep.warmup ?? 0,
-			stock: startWep.startStock
-		},
-		utility: {
-			itemId: startUtil.id,
-			cooldown: 0,
-			warmup: startBody.warmup ?? 0,
-			stock: startUtil.startStock
-		},
-		body: {
-			itemId: startBody.id,
-			cooldown: 0,
-			warmup: startBody.warmup ?? 0,
-			stock: startBody.startStock
-		}
-	}
 
 	let player: Player = {
 		unitId: `hero${heroName}`,
@@ -75,6 +66,8 @@ export function addNewUser(heroName: string): { id: string, player: Player } {
 			hidden: 0,
 		},
 	}
+
+	// equipItem(player, fireStaff)
 
 	addSoloScenes(heroName)
 	scenes.get(player.currentScene)?.onEnterScene(player)
@@ -112,9 +105,11 @@ export type Player = {
 	animations: BattleAnimation[];
 	visualActionSources: VisualActionSource[];
 	currentScene: SceneId;
+	// abilities:Map<QuickbarSlot,ItemState>;
 } & PlayerInClient;
 
 export type PlayerInClient = {
+	inventory:ItemState[];
 	unitId: HeroId;
 	heroName: HeroName;
 	currentSceneDisplay: string;
@@ -122,7 +117,6 @@ export type PlayerInClient = {
 	agility: number;
 	strength: number;
 	maxHealth: number;
-	inventory: Inventory;
 	statuses: Record<StatusId, number>
 };
 
@@ -131,25 +125,38 @@ export type GameAction = {
 	performAction?: () => BattleEvent | void;
 	buttonText: string;
 	slot?: QuickbarSlot;
+	itemId?:ItemId;
 	target?: UnitId;
 };
 
 export type MiscPortrait = 'general' | 'peasant' | 'lady'
 
 export function playerEquipped(player: Player): Item[] {
-	return [
-		items[player.inventory.weapon.itemId],
-		items[player.inventory.body.itemId],
-		items[player.inventory.utility.itemId]]
+	let equippedItems : Item[] = []
+	for(const iId of player.inventory){
+		// if(slot in ItemId){
+
+		// }
+		let found = items.find(i=>i.id == iId.itemId)
+		if(found){
+			equippedItems.push(found)
+
+		}
+	}
+	return equippedItems
+	// return [
+	// 	items[player.inventory.weapon.itemId],
+	// 	items[player.inventory.body.itemId],
+	// 	items[player.inventory.utility.itemId]]
 }
 
-export function playerItemStates(player: Player): ItemState[] {
-	return [
-		player.inventory.weapon,
-		player.inventory.body,
-		player.inventory.utility
-	]
-}
+// export function playerItemStates(player: Player): ItemState[] {
+// 	return [
+// 		player.inventory.weapon,
+// 		player.inventory.body,
+// 		player.inventory.utility
+// 	]
+// }
 
 export function healPlayer(player: Player, amount: number): { healed: number } {
 	let missing = player.maxHealth - player.health

@@ -2,7 +2,7 @@ import type { LandscapeImage } from '$lib/utils';
 import { enemiesInScene, enemyTemplates, spawnEnemy, type EnemyStatuses, type EnemyTemplateId } from './enemies';
 import { equipItem, items, type ItemId } from './items';
 import type { VisualActionSource } from './logic';
-import { activePlayersInScene, globalFlags, healPlayer, type HeroName, type Player } from './users';
+import { activePlayersInScene, defaultInventory, globalFlags, healPlayer, type HeroName, type Player } from './users';
 
 
 export const scenes: Map<SceneId, Scene> = new Map()
@@ -344,9 +344,10 @@ const trainingRoom3: Scene = {
 	},
 	onVictory(player) {
 		player.sceneTexts.push('The mighty beast falls as Arthur finally gets the door open')
-		equipItem(player, items.rags)
-		equipItem(player, items.empty)
-		equipItem(player, items.unarmed)
+		player.inventory = defaultInventory()
+		// equipItem(player, items.find(i=>i.i))
+		// equipItem(player, items.empty)
+		// equipItem(player, items.unarmed)
 		player.health = player.maxHealth
 	},
 }
@@ -405,10 +406,6 @@ const castle: Scene = {
 		if (player.flags.has('heardAboutHiddenPassage') && !player.flags.has('metArthur')) {
 			player.flags.add('metArthur')
 			player.sceneTexts.push("From an unknown place appears a voice. 'Hail!' It cries. You reach for a weapon that you suddenly remember you don't posess. While you see know doors, before you materialises a soldier. There is something about his eyes that tell you he is not afflicted by the same condition that seems to have twisted this land. 'I see you have found your way into this once hallowed hall. I would introduce myself, but whatever name I once had no longer has any meaning.'");
-			if (player.inventory.utility.itemId == 'empty') {
-				player.sceneTexts.push("From his cloak he produces a small object. A bandage. 'You may need this traveller. This land is unkind to strangers.")
-				player.inventory.utility.itemId = 'bandage';
-			}
 			player.sceneTexts.push("As quickly as he arrived, the mysterious warrior disappears back into the walls. You feel that this will not be the last your see of this odd spirit.");
 		}
 		if (!player.flags.has('heardAboutHiddenPassage')) {
@@ -854,12 +851,13 @@ const armory: Scene = {
 		player.sceneTexts.push("Grab some equipment!")
 	},
 	actions(player) {
-		for (const id in items) {
+		for (const item of items) {
 			player.sceneActions.push({
-				buttonText: `Equip ${id}`,
+				buttonText: `Equip ${item.id}`,
 				performAction() {
-					const tId = id as ItemId
-					equipItem(player, items[tId])
+					// const tId = id as ItemId
+
+					equipItem(player, item)
 				},
 			})
 		}

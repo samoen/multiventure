@@ -46,7 +46,7 @@ export const POST = (async (r) => {
 		player.sceneTexts.push('You were struck down')
 		pushHappening(`${player.heroName} is mortally wounded`)
 	}
-
+	
 	updateAllPlayerActions()
 
 	// tiny timeout so endpoint returns before the event messages get sent

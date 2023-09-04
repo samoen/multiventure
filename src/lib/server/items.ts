@@ -4,44 +4,6 @@ import { pushHappening } from './messaging';
 import type { SceneId } from './scenes';
 import { activePlayersInScene, type GameAction, type Player } from './users';
 
-export type EquipmentSlot =
-	| 'weapon'
-	| 'utility'
-	| 'body'
-
-export type QuickbarSlot = EquipmentSlot | 'wait' | 'succumb'
-
-export type ItemId = keyof typeof items
-
-export type ItemState = {
-	itemId: ItemId;
-	cooldown: number;
-	warmup: number;
-	stock?: number;
-}
-
-export type Inventory = {
-	[T in EquipmentSlot]: ItemState
-}
-
-export type Item = {
-	id: ItemId
-	slot: QuickbarSlot
-	speed?: number
-	provoke?: number
-	grantsImmunity?: boolean;
-	actions?: (player: Player) => BattleEvent
-	actionForEnemy?: (player: Player, enemy: ActiveEnemy) => BattleEvent
-	actionForFriendly?: (player: Player, friend: Player) => BattleEvent
-	actionForSelf?: (player: Player) => BattleEvent
-	onTakeDamage?: (incoming: number) => number
-	warmup?: number
-	cooldown?: number
-	startStock?: number
-	useableOutOfBattle?: boolean
-	requiresHealth?: boolean
-	requiresStatus?: StatusId
-}
 
 
 const dagger: Item = {
@@ -247,6 +209,7 @@ const leatherArmor: Item = {
 const unarmed: Item = {
 	id: 'unarmed',
 	slot: 'weapon',
+	default:true,
 	provoke: 1,
 	speed: 10,
 	actionForEnemy(player, enemy) {
@@ -262,6 +225,7 @@ const unarmed: Item = {
 const wait: Item = {
 	id: 'wait',
 	slot: 'wait',
+	default:true,
 	speed: 999,
 	provoke: 0,
 	actions(player) {
@@ -274,57 +238,96 @@ const wait: Item = {
 const succumb: Item = {
 	id: 'succumb',
 	slot: 'succumb',
+	default:true,
 	speed: -999,
 	grantsImmunity: true,
+	requiresSourceDead:true,
+	useableOutOfBattle:true,
 	actions(player) {
 		return {
-			behavior: { kind: 'selfInflicted', extraSprite: 'smoke' },
+			behavior: { kind: 'selfInflicted', extraSprite: 'skull' },
 			source: { kind: 'player', entity: player },
 			succumb: true,
 		} satisfies BattleEvent
 	}
 }
 
-const empty: Item = {
-	id: 'empty',
-	slot: 'utility',
-}
-const rags: Item = {
-	id: 'rags',
-	slot: 'body',
+
+export const items = [
+	 wait,
+	 succumb,
+	 unarmed,
+	 dagger,
+	 club,
+	 fireStaff,
+	 bandage,
+	 bomb,
+	 poisonDart,
+	 plateMail,
+	 leatherArmor,
+	 theifCloak,
+] as const satisfies Item[]
+
+
+export type ItemId =  typeof items[number]['id']
+export type QuickbarSlot = typeof items[number]['slot']
+
+export type ItemState = {
+	itemId: ItemId;
+	slot:QuickbarSlot;
+	cooldown: number;
+	warmup: number;
+	stock?: number;
 }
 
-export const items = {
-	wait: wait,
-	succumb: succumb,
-	unarmed: unarmed,
-	dagger: dagger,
-	club: club,
-	fireStaff: fireStaff,
-	empty: empty,
-	bandage: bandage,
-	bomb: bomb,
-	poisonDart: poisonDart,
-	rags: rags,
-	plateMail: plateMail,
-	leatherArmor: leatherArmor,
-	theifCloak: theifCloak,
-} as const satisfies Record<string, Item>;
+export type Item = {
+	id: string
+	slot: string
+	speed?: number
+	provoke?: number
+	grantsImmunity?: boolean;
+	default?:boolean;
+	actions?: (player: Player) => BattleEvent
+	actionForEnemy?: (player: Player, enemy: ActiveEnemy) => BattleEvent
+	actionForFriendly?: (player: Player, friend: Player) => BattleEvent
+	actionForSelf?: (player: Player) => BattleEvent
+	onTakeDamage?: (incoming: number) => number
+	warmup?: number
+	cooldown?: number
+	startStock?: number
+	useableOutOfBattle?: boolean
+	requiresHealth?: boolean
+	requiresStatus?: StatusId
+	requiresSourceDead?:boolean
+}
 
 
 export function equipItem(player: Player, item: Item) {
-	if (item.slot == 'wait' || item.slot == 'succumb') return
-	player.inventory[item.slot].itemId = item.id
-	player.inventory[item.slot].warmup = item.warmup ?? 0
-	player.inventory[item.slot].cooldown = 0
-	player.inventory[item.slot].stock = item.startStock
+	// if (item.slot == 'wait' || item.slot == 'succumb') return
+	let state = player.inventory.find(i=> i.slot == item.slot)
+	// let i = items.find(i=>i.id == item.id) ?? items[0]
+	if(!state){
+		player.inventory.push({
+			itemId:item.id,
+			slot:item.slot,
+			cooldown:0,
+			warmup:item.warmup ?? 0,
+		})
+		return
+	}
+	// if(item.id in ItemId){
+
+	// }
+	// if(!(item.id in ItemId))return
+	state.itemId = item.id
+	state.warmup = item.warmup ?? 0
+	state.cooldown = 0
+	state.stock = item.startStock
 }
 
 export function checkHasItem(player: Player, id: ItemId): boolean {
 	if (
-		player.inventory.weapon.itemId == id ||
-		player.inventory.utility.itemId == id ||
-		player.inventory.body.itemId == id
+		player.inventory.some(i=>i.itemId==id)
 	) {
 		return true
 	}

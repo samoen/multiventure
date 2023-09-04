@@ -54,7 +54,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		baseHealth: 5,
 		baseDamage: 10,
 		aggroGain: 10,
-		startAggro: 50,
+		startAggro: 70,
 		speed: 3,
 	},
 	goblin: {

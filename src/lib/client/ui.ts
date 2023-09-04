@@ -2,7 +2,7 @@ import type { Flag, HeroName, MiscPortrait, PlayerInClient } from "$lib/server/u
 import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient, AnySprite, LandscapeImage, VisualActionSourceId } from "$lib/utils";
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 
-import type { EquipmentSlot, Inventory, ItemId, ItemState } from '$lib/server/items';
+import type { ItemId, ItemState, QuickbarSlot } from '$lib/server/items';
 import { crossfade } from "svelte/transition";
 import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easing";
 import { tick } from "svelte";
@@ -68,7 +68,7 @@ export const currentAnimationIndex: Writable<number> = writable(999)
 export const currentAnimationsWithData: Writable<BattleAnimation[]> = writable([])
 export const subAnimationStage: Writable<'start' | 'fire' | 'sentHome'> = writable('start')
 export const convoStateForEachVAS: Writable<Map<VisualActionSourceId, ConvoState>> = writable(new Map())
-export const latestSlotButtonInput: Writable<EquipmentSlot | 'none'> = writable('none')
+export const latestSlotButtonInput: Writable<ItemId | undefined> = writable(undefined)
 export const lastUnitClicked: Writable<UnitId | 'background' | undefined> = writable()
 export const visualLandscape: Writable<LandscapeImage> = writable('plains')
 export const visualOpacity = writable(false)
@@ -117,9 +117,9 @@ export let currentAnimation = derived([currentAnimationIndex, currentAnimationsW
 
 // export const animationCancelled = writable(false)
 
-export function actionsForSlot(lm: MessageFromServer | undefined, equipmentSlot: EquipmentSlot): GameActionSentToClient[] {
+export function actionsForSlot(lm: MessageFromServer | undefined, iId: ItemId): GameActionSentToClient[] {
     if (!lm) return []
-    return lm?.itemActions.filter(ia => ia.slot == equipmentSlot)
+    return lm.itemActions.filter(ia => ia.itemId  == iId)
 }
 export let typedInventory = derived([
     lastMsgFromServer,
@@ -130,18 +130,17 @@ export let typedInventory = derived([
     $waitingForMyAnimation,
     $clientState,
 ]) => {
-    let map = new Map<EquipmentSlot, ({ itemState: ItemState, disabled: boolean, acts: GameActionSentToClient[], overlayNumber: string | undefined, dots: string, img: string })>()
+    let inventory : { itemState: ItemState, disabled: boolean, acts: GameActionSentToClient[], overlayNumber: string | undefined, dots: string, img: string }[] = []
     if (!$lastMsgFromServer) {
-        return map
+        return inventory
     }
-    for (const [key, value] of Object.entries($lastMsgFromServer.yourInfo.inventory)) {
-        let tKey = key as EquipmentSlot
-        let acts = actionsForSlot($lastMsgFromServer, tKey)
+    for (const state of $lastMsgFromServer.yourInfo.inventory) {
+        let acts = actionsForSlot($lastMsgFromServer, state.itemId)
         let d = (!acts.length || $waitingForMyAnimation || $clientState.waitingForMyEvent)
-
-        map.set(tKey, { itemState: value, disabled: d, acts: acts, overlayNumber: numberShownOnSlot(value), dots: stockDotsOnSlotButton(value), img: getSlotImage(value.itemId) })
+        inventory.push({ itemState: state, disabled: d, acts: acts, overlayNumber: numberShownOnSlot(state), dots: stockDotsOnSlotButton(state), img: getSlotImage(state.itemId) })
     }
-    return map
+
+    return inventory
 })
 export let wepSlotActions = derived(lastMsgFromServer, ($lastMsgFromServer) => {
     return $lastMsgFromServer?.itemActions.filter(ia => ia.slot == 'weapon')
@@ -154,7 +153,7 @@ export let bodySlotActions = derived(lastMsgFromServer, ($lastMsgFromServer) => 
     return $lastMsgFromServer?.itemActions.filter(ia => ia.slot == 'body')
 })
 export let slotlessBattleActions = derived(lastMsgFromServer, ($lastMsgFromServer) => {
-    return $lastMsgFromServer?.itemActions.filter(ia => ia.slot == undefined) ?? []
+    return $lastMsgFromServer?.itemActions.filter(ia => ia.slot == 'wait' || ia.slot == 'succumb') ?? []
 })
 
 
@@ -308,7 +307,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         console.log('tried to sync with bad msg')
     }
     if (lastMsg) {
-        console.log('sync wep wu to ' + lastMsg.yourInfo.inventory.weapon.warmup)
+        // console.log('sync wep wu to ' + lastMsg.yourInfo.inventory.weapon.warmup)
 
         visualLandscape.set(lastMsg.landscape)
         visualSceneLabel.set(lastMsg.yourInfo.currentSceneDisplay)
@@ -318,7 +317,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         newVups.push({
             id: lastMsg.yourInfo.unitId,
             name: lastMsg.yourInfo.heroName,
-            src: heroSprites[heroSprite(lastMsg.yourInfo.inventory.weapon?.itemId)],
+            src: heroSprites[heroSprite(lastMsg.yourInfo.inventory)],
             maxHp: lastMsg.yourInfo.maxHealth,
             displayHp: lastMsg.yourInfo.health,
             side: 'hero',
@@ -355,7 +354,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                 {
                     id: p.unitId,
                     name: p.heroName,
-                    src: heroSprites[heroSprite(p.inventory.weapon.itemId)],
+                    src: heroSprites[heroSprite(p.inventory)],
                     displayHp: p.health,
                     maxHp: p.maxHealth,
                     side: 'hero',
@@ -533,7 +532,7 @@ export async function nextAnimationIndex(
             return
         }
         if (animsInWaiting) {
-            console.log('playing anims in waiting')
+            // console.log('playing anims in waiting')
             syncVisualsToMsg(animsInWaiting.prev)
             currentAnimationsWithData.set(animsInWaiting.withAnims.animations)
             animationsInWaiting.set(undefined)
@@ -578,10 +577,11 @@ function checkAnimationValid(ba: BattleAnimation): boolean {
 }
 
 
-export function heroSprite(weapon: ItemId) {
-    if (weapon == 'club') return 'ruffian';
-    if (weapon == 'dagger') return 'theif';
-    if (weapon == 'fireStaff') return 'mage';
+export function heroSprite(info:ItemState[]) {
+    
+    if (info.some(i=>i.itemId=='club')) return 'ruffian';
+    if (info.some(i=>i.itemId=='dagger')) return 'theif';
+    if (info.some(i=>i.itemId=='fireStaff')) return 'mage';
     return 'peasant';
 }
 

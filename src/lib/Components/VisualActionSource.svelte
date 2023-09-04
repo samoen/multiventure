@@ -67,12 +67,24 @@
 			return;
 		}
 		if ($currentAnimation.takesItem) {
+			const takenItem = $currentAnimation.takesItem
 			if(guestIsMe){
 				pickedup = true;
 			}
 			updateUnit($guestId, (vup) => {
-				if ($currentAnimation?.takesItem?.slot == 'weapon') {
-					vup.src = heroSprites[heroSprite($currentAnimation.takesItem.id as ItemId)];
+				if(vup.actual.kind == 'player'){
+					let found = vup.actual.info.inventory.find(i=>i.slot == takenItem.slot)
+					if(!found){
+						vup.actual.info.inventory.push({
+							itemId:takenItem.id,
+							slot:takenItem.slot,
+							cooldown:0,
+							warmup:0,
+						})
+					}else{
+						found.itemId = takenItem.id
+					}
+					vup.src = heroSprites[heroSprite(vup.actual.info.inventory)];
 				}
 			});
 			await tick();
