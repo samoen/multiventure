@@ -380,7 +380,7 @@ const trainingRoom3: Scene = {
 			responses: [{
 				responseId: 'go',
 				responseText: 'Thanks Arthur',
-				retort: `Head through this portal to start the game. Now it's time for me to teach the next recruit..`,
+				retort: `Now we can't have you starting the game with all that loot. Please drop your weapon in the box, put your farmer stuff back on, and head through the portal. Now it's time for me to teach the next recruit..`,
 				unlockVas: ['vasLeaveTutorial'],
 			}]
 		})
@@ -390,12 +390,48 @@ const trainingRoom3: Scene = {
 			sprite: 'portal',
 			startText: 'Take this portal to enter the world. Have fun :)',
 			startsLocked: true,
-			actionsWithRequirements: [{ travelTo: 'forest' }]
+			actionsWithRequirements: [{ 
+				requiresGear:['fist','belt','rags'],
+				travelTo: 'forest' 
+			}]
+		})
+		player.visualActionSources.push({
+			unitId: 'vasBox',
+			displayName: 'Box',
+			sprite: 'box',
+			startText: `Drop your weapon into this box. Don't worry, your fists are registered weapons`,
+			actionsWithRequirements: [
+			{
+				pickupItem:'fist'
+			},
+		]
+		})
+		player.visualActionSources.push({
+			unitId: 'vasBag',
+			displayName: 'Empty Bag',
+			sprite: 'bag',
+			startText: `Your trusty bag. It's empty`,
+			actionsWithRequirements: [
+			{
+				pickupItem:'belt'
+			},
+		]
+		})
+		player.visualActionSources.push({
+			unitId: 'vasClothes',
+			displayName: 'Clothes',
+			sprite: 'scarecrow',
+			startText: 'Just your old farmers clothes',
+			actionsWithRequirements: [
+			{
+				pickupItem:'rags'
+			},
+		]
 		})
 	},
 	onVictory(player) {
 		player.sceneTexts.push('The mighty beast falls as Arthur finally gets the door open')
-		player.inventory = defaultInventory()
+		// player.inventory = defaultInventory()
 		// equipItem(player, items.find(i=>i.i))
 		// equipItem(player, items.empty)
 		// equipItem(player, items.unarmed)

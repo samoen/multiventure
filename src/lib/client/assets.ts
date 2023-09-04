@@ -27,6 +27,7 @@ import theif from '$lib/assets/units/thief.png';
 import mage from '$lib/assets/units/mage.png';
 import arrow from '$lib/assets/extras/arrow.png';
 import bomb from '$lib/assets/extras/bomb.png';
+import box from '$lib/assets/scenery/box.png';
 import shield from '$lib/assets/extras/shield.png';
 import smoke from '$lib/assets/extras/smoke.png';
 import flame from '$lib/assets/extras/flame.png';
@@ -41,6 +42,9 @@ import armor from '$lib/assets/scenery/armor.png';
 import bombpad from '$lib/assets/scenery/bomb-pad.png';
 import altar from '$lib/assets/scenery/altar.png';
 import staff from '$lib/assets/scenery/staff-magic.png';
+import whiteRing from '$lib/assets/scenery/ring-white.png';
+import bag from '$lib/assets/scenery/leather-pack.png';
+import scarecrow from '$lib/assets/scenery/scarecrow.png';
 import dagger from '$lib/assets/scenery/dagger.png';
 import potion from '$lib/assets/scenery/potion-red.png';
 import club from '$lib/assets/extras/club.png';
@@ -130,6 +134,10 @@ export const anySprites: Record<AnySprite, string> = {
     signpost: signpost,
     temple: temple,
     club: club,
+    bag: bag,
+    box: box,
+    whiteRing: whiteRing,
+    scarecrow: scarecrow,
     dagger: dagger,
     staff: staff,
     potion: potion,

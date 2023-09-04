@@ -90,6 +90,10 @@ export type AnySprite =
 | 'shield'
 | 'skull'
 | 'club'
+| 'box'
+| 'whiteRing'
+| 'scarecrow'
+| 'bag'
 | 'armorStand'
 
 export type LandscapeImage = 'plains' | 'castle' | 'bridge' | 'grimForest'

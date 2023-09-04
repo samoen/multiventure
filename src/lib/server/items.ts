@@ -37,7 +37,7 @@ const club: Item = {
 	}
 }
 
-const fireStaff: Item = {
+export const fireStaff: Item = {
 	id: 'fireStaff',
 	slot: 'weapon',
 	warmup: 2,
@@ -130,7 +130,7 @@ const poisonDart: Item = {
 	},
 }
 
-const plateMail: Item = {
+export const plateMail: Item = {
 	id: 'plateMail',
 	slot: 'body',
 	cooldown: 2,
