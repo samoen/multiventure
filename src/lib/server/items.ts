@@ -206,10 +206,10 @@ const leatherArmor: Item = {
 	},
 }
 
-const unarmed: Item = {
-	id: 'unarmed',
+const fist: Item = {
+	id: 'fist',
 	slot: 'weapon',
-	default:true,
+	default: true,
 	provoke: 1,
 	speed: 10,
 	actionForEnemy(player, enemy) {
@@ -225,7 +225,7 @@ const unarmed: Item = {
 const wait: Item = {
 	id: 'wait',
 	slot: 'wait',
-	default:true,
+	default: true,
 	speed: 999,
 	provoke: 0,
 	actions(player) {
@@ -238,11 +238,11 @@ const wait: Item = {
 const succumb: Item = {
 	id: 'succumb',
 	slot: 'succumb',
-	default:true,
+	default: true,
 	speed: -999,
 	grantsImmunity: true,
-	requiresSourceDead:true,
-	useableOutOfBattle:true,
+	requiresSourceDead: true,
+	useableOutOfBattle: true,
 	actions(player) {
 		return {
 			behavior: { kind: 'selfInflicted', extraSprite: 'skull' },
@@ -254,27 +254,27 @@ const succumb: Item = {
 
 
 export const items = [
-	 wait,
-	 succumb,
-	 unarmed,
-	 dagger,
-	 club,
-	 fireStaff,
-	 bandage,
-	 bomb,
-	 poisonDart,
-	 plateMail,
-	 leatherArmor,
-	 theifCloak,
+	fist,
+	dagger,
+	club,
+	fireStaff,
+	bandage,
+	bomb,
+	poisonDart,
+	plateMail,
+	leatherArmor,
+	theifCloak,
+	wait,
+	succumb,
 ] as const satisfies Item[]
 
 
-export type ItemId =  typeof items[number]['id']
+export type ItemId = typeof items[number]['id']
 export type QuickbarSlot = typeof items[number]['slot']
 
 export type ItemState = {
 	itemId: ItemId;
-	slot:QuickbarSlot;
+	slot: QuickbarSlot;
 	cooldown: number;
 	warmup: number;
 	stock?: number;
@@ -286,7 +286,7 @@ export type Item = {
 	speed?: number
 	provoke?: number
 	grantsImmunity?: boolean;
-	default?:boolean;
+	default?: boolean;
 	actions?: (player: Player) => BattleEvent
 	actionForEnemy?: (player: Player, enemy: ActiveEnemy) => BattleEvent
 	actionForFriendly?: (player: Player, friend: Player) => BattleEvent
@@ -298,36 +298,37 @@ export type Item = {
 	useableOutOfBattle?: boolean
 	requiresHealth?: boolean
 	requiresStatus?: StatusId
-	requiresSourceDead?:boolean
+	requiresSourceDead?: boolean
 }
 
 
 export function equipItem(player: Player, item: Item) {
-	// if (item.slot == 'wait' || item.slot == 'succumb') return
-	let state = player.inventory.find(i=> i.slot == item.slot)
-	// let i = items.find(i=>i.id == item.id) ?? items[0]
-	if(!state){
-		player.inventory.push({
-			itemId:item.id,
-			slot:item.slot,
-			cooldown:0,
-			warmup:item.warmup ?? 0,
+	let state = player.inventory.find(i => i.slot == item.slot)
+	if (!state) {
+		let createState: ItemState = {
+			itemId: item.id,
+			slot: item.slot,
+			cooldown: 0,
+			warmup: item.warmup ?? 0,
+		}
+		player.inventory.push(createState)
+		player.inventory.sort((a, b) => {
+			let aIndex = items.findIndex(i => i.id == a.itemId)
+			let bIndex = items.findIndex(i => i.id == b.itemId)
+			return aIndex - bIndex
 		})
-		return
+	} else {
+		state.itemId = item.id
+		state.warmup = item.warmup ?? 0
+		state.cooldown = 0
+		state.stock = item.startStock
 	}
-	// if(item.id in ItemId){
 
-	// }
-	// if(!(item.id in ItemId))return
-	state.itemId = item.id
-	state.warmup = item.warmup ?? 0
-	state.cooldown = 0
-	state.stock = item.startStock
 }
 
 export function checkHasItem(player: Player, id: ItemId): boolean {
 	if (
-		player.inventory.some(i=>i.itemId==id)
+		player.inventory.some(i => i.itemId == id)
 	) {
 		return true
 	}

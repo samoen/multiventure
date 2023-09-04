@@ -701,7 +701,6 @@ const forestPassage: Scene = {
 			startText: 'A well worn club',
 			startsLocked: true,
 			actionsWithRequirements: [{
-				requiresGear: ['unarmed'],
 				pickupItem: 'club',
 			}],
 		})
@@ -713,7 +712,6 @@ const forestPassage: Scene = {
 			startsLocked: true,
 			actionsWithRequirements: [
 				{
-					requiresGear: ['unarmed'],
 					pickupItem: 'dagger'
 				}
 			],
@@ -865,7 +863,7 @@ const armory: Scene = {
 			player.sceneActions.push({
 				buttonText: `Spawn ${id}`,
 				performAction() {
-					spawnEnemy(`${id}${Math.round(Math.random() * 100)}`, id as EnemyTemplateId, 'armory')
+					spawnEnemy(`${id}${Math.round(Math.random() * 1000)}`, id as EnemyTemplateId, 'armory')
 				},
 			})
 		}

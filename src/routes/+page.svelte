@@ -475,9 +475,9 @@
 						</div>
 
 						<!-- <div> -->
-						{#each Object.entries($selectedDetail.entity.actual.info.inventory) as [key, value]}
+						{#each $selectedDetail.entity.actual.info.inventory as itemState}
 							<div>
-								{`${key}: ${value.itemId}`}
+								{`${itemState.slot}: ${itemState.itemId}`}
 							</div>
 						{/each}
 						<div>

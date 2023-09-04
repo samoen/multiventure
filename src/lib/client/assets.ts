@@ -71,7 +71,7 @@ export const enemySprites: Record<EnemyTemplateId, string> = {
 };
 
 export function getSlotImage(id: ItemId): string {
-    if (id == 'unarmed') return fistSlot;
+    if (id == 'fist') return fistSlot;
     if (id == 'club') return clubSlot;
     if (id == 'dagger') return daggerSlot;
     if (id == 'fireStaff') return fireballSlot;
