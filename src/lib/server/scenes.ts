@@ -9,6 +9,7 @@ export const scenes: Map<SceneId, Scene> = new Map()
 
 export type SceneId =
 	| `tutorial_${HeroName}`
+	| `trainingRoom0_${HeroName}`
 	| `trainingRoom1_${HeroName}`
 	| `trainingRoom2_${HeroName}`
 	| `trainingRoom3_${HeroName}`
@@ -87,53 +88,19 @@ const tutorial: Scene = {
 			unitId: 'vasSkipTutorial',
 			displayName: 'Skip Tutorial',
 			sprite: 'portal',
-			startText: `Hi, I'm a talking portal.. go ahead and jump inside!`,
+			startText: `True heroes never skip the tutorial..`,
 			startsLocked: true,
-			responses:[
-				{
-					responseId:'showDefaults',
-					responseText: `Hello portal.. hey can I take some items out of the tutorial?`,
-					retort: `Here are the items you need equipped if you want to travel through me!`,
-					unlockVas:['vasBelt','vasFist'],
-					lockVas:['vasEquipClub','vasEquipBomb']
-				},
-			],
 			actionsWithRequirements: [
 			{
-				requiresGear:['fist', 'belt'],
 				travelTo: 'forest', 
-			},
-		]
-		})
-		player.visualActionSources.push({
-			unitId: 'vasBelt',
-			displayName: 'Belt',
-			sprite: 'altar',
-			startText: `It's a plain belt`,
-			startsLocked: true,
-			actionsWithRequirements: [
-			{
-				pickupItem:'belt'
-			},
-		]
-		})
-		player.visualActionSources.push({
-			unitId: 'vasFist',
-			displayName: 'Fist',
-			sprite: 'altar',
-			startText: `It's a fist`,
-			startsLocked: true,
-			actionsWithRequirements: [
-			{
-				pickupItem:'fist'
 			},
 		]
 		})
 
 		player.visualActionSources.push({
-			unitId: 'vasTutor',
+			unitId: 'vasTutorTutorial',
 			displayName: 'Arthur',
-			startText: `Look alive recruit! The first day of training can be the most dangerous of a guardsman's life.\n\nYou must be ${player.heroName}, welcome aboard. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.`,
+			startText: `Look alive recruit! The first day of training can be the most dangerous of a guardsman's career.\n\nYou must be ${player.heroName}, welcome aboard. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.`,
 			responses: [
 				{
 					responseId: 'scared',
@@ -141,7 +108,7 @@ const tutorial: Scene = {
 					retort: `Oh, there must have been a mistake. I only train willing recruits in this tutorial. Here's a portal to the real world`,
 					unlock:['saidWrong'],
 					lock:['cheeky', 'brave'],
-					lockVas:['vasGoTrain1', 'vasEquipClub','vasEquipBomb'],
+					lockVas:['vasGoTrainTutorial'],
 					unlockVas: ['vasSkipTutorial'],
 				},
 				{
@@ -160,16 +127,46 @@ const tutorial: Scene = {
 				{
 					responseId: 'brave',
 					responseText: `I tend to breeze through tutorials pretty easily so get on with it.`,
-					retort: `Great to hear ${player.heroName}! Our training goblin is ready for you. Also there's a bit of a rat problem in the training room right now.. Equip these items and enter that training room!`,
-					unlockVas: ['vasEquipBomb', 'vasEquipClub', 'vasGoTrain1'],
-					lockVas: ['vasSkipTutorial','vasFist','vasBelt'],
+					retort: `Great to hear ${player.heroName}! You can select a unit by tapping or clicking it. When a unit is selected you will see available actions. Select the training room and enter.`,
+					unlockVas:['vasGoTrainTutorial'],
+					lockVas: ['vasSkipTutorial'],
 					lock: ['wantsToSkip', 'scared', 'cheeky'],
-					unlock:['saidWrong'],
 				},
 			],
 			sprite: 'general',
 			portrait: 'general',
 		})
+		player.visualActionSources.push({
+			unitId: 'vasGoTrainTutorial',
+			displayName: 'Training Room',
+			startsLocked:true,
+			sprite: 'castle',
+			startText: `An entrance to a training room. You will fight one rat, just punch it!`,
+			actionsWithRequirements: [
+				{
+					travelTo: `trainingRoom0_${player.heroName}`,
+				},
+			],
+		})
+
+	},
+}
+
+const trainingRoom0: Scene = {
+	displayName: 'Training Room',
+	landscape: 'bridge',
+	solo: true,
+	onEnterScene(player) {
+		// if respawning from checkpoint we already beat the room
+		if (player.previousScene == 'dead') {
+			this.onVictory && this.onVictory(player)
+			return
+		}
+		player.sceneTexts.push("You enter the training room. It is well worn by many training sessions. The walls are covered in blast marks, dents and splinters.")
+
+		spawnEnemy('Skitters', 'rat', `trainingRoom0_${player.heroName}`)
+	},
+	actions(player) {
 		player.visualActionSources.push({
 			unitId: 'vasEquipClub',
 			displayName: 'Club',
@@ -182,26 +179,47 @@ const tutorial: Scene = {
 			unitId: 'vasEquipBomb',
 			displayName: 'Bomb',
 			sprite: 'bombPadded',
-			startText: 'A powderbomb deals splash damage to all nearby enemies. It should clear out the rats nicely.',
+			startText: 'A powderbomb deals splash damage and reduces aggro of all nearby enemies. It should clear out the rats nicely.',
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'bomb' }],
+		})
+		player.visualActionSources.push({
+			unitId: 'vasTutor0',
+			displayName: 'Arthur',
+			sprite: 'general',
+			portrait: 'general',
+			startText: `You punched that rat good! Any questions?`,
+			responses: [
+				{
+					responseId: 'gimmie',
+					responseText: `Can I get some equipment?`,
+					retort: `Sure, here's some gear. Select the items and and equip. Our training goblin is ready for you. Also there's a bit of a rat problem in there right now..`,
+					unlockVas: ['vasEquipClub', `vasEquipBomb`]
+				},
+				{
+					responseId: 'explainAggro',
+					responseText: `What's that purple bar beneath the enemies health bar?`,
+					retort: `That is the enemy's aggression towards you. It indicates the likelihood of it attacking you on your next action. Some enemies gain aggression faster than others, and some actions provoke more.`,
+				},
+			]
 		})
 		player.visualActionSources.push({
 			unitId: 'vasGoTrain1',
 			displayName: 'Training Room',
 			sprite: 'castle',
-			startText: `An entrance to a training room`,
+			startText: `A sign on the door says: 'Glornak's office'`,
 			actionsWithRequirements: [
 				{
 					requiresGear: ['bomb', 'club'],
-					travelTo: `trainingRoom1_${player.heroName}`,
-				},
-			],
+					travelTo: `trainingRoom1_${player.heroName}`
+				}
+			]
 		})
-
+	},
+	onVictory(player) {
+		player.lastCheckpoint = `trainingRoom0_${player.heroName}`
 	},
 }
-
 const trainingRoom1: Scene = {
 	displayName: 'Training Room',
 	landscape: 'bridge',
@@ -214,33 +232,39 @@ const trainingRoom1: Scene = {
 		}
 		player.sceneTexts.push("You enter the training room. It is well worn by many training sessions. The walls are covered in blast marks, dents and splinters.")
 		player.sceneTexts.push("Glornak: 'Hey you! I've never seen a more pitiful excuse for a guardsman in my life, and I've been working here since Arthur was a recruit! Go, my rats!'")
-		player.sceneTexts.push("Skitters: 'Squeak!'")
+		player.sceneTexts.push("Squeaky: 'Squeak!'")
 		player.sceneTexts.push("Nibbles: 'Reeeeee!'")
 
 		spawnEnemy('Glornak', 'goblin', `trainingRoom1_${player.heroName}`)
-		spawnEnemy('Skitters', 'rat', `trainingRoom1_${player.heroName}`)
 		spawnEnemy('Squeaky', 'rat', `trainingRoom1_${player.heroName}`)
 		spawnEnemy('Scratchy', 'rat', `trainingRoom1_${player.heroName}`)
 		spawnEnemy('Nibbles', 'rat', `trainingRoom1_${player.heroName}`)
 	},
 	actions(player) {
 		player.visualActionSources.push({
-			unitId: 'vasTutor2',
+			unitId: 'vasTutor1',
 			displayName: 'Arthur',
 			sprite: 'general',
 			portrait: 'general',
-			startText: `Great job! Let's switch up your equipment. Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you.`,
+			startText: `Great job! Questions? Concerns?`,
 			responses: [
 				{
 					responseId: 'gimmie',
-					responseText: `Alright show me the gear`,
-					retort: `Gear up and head into the next room. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
-					unlockVas: ['vasEquipDagger', `vasEquipBandage`]
+					responseText: `Alright what's my next battle?`,
+					retort: `Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
+					unlockVas:['vasGoTrain2']
 				},
 				{
-					responseId: 'explainAggro',
-					responseText: `What's that purple bar beneath the enemies health bar?`,
-					retort: `That is the enemy's aggression towards you. It indicates the likelihood of it attacking you on your next action.`,
+					responseId:'imhurt',
+					responseText:`I got damaged in that last fight, got a remedy?`,
+					retort:`Equip this potion. It has limited uses in each area, and gets refilled when you travel. Select yourself and drink it`,
+					unlockVas:['vasEquipBandage']
+				},
+				{
+					responseId:'whyslow',
+					responseText:`I attacked the goblin but he hit me first, what's that about?`,
+					retort:`An enemy with a higher agility than you will strike first. Some weapons give bonus agility, like this dagger`,
+					unlockVas:['vasEquipDagger']
 				},
 			]
 		})
@@ -264,6 +288,7 @@ const trainingRoom1: Scene = {
 			unitId: 'vasGoTrain2',
 			displayName: 'Training Room',
 			sprite: 'castle',
+			startsLocked:true,
 			startText: `Another door, another training room.`,
 			actionsWithRequirements: [
 				{
@@ -275,7 +300,6 @@ const trainingRoom1: Scene = {
 	},
 	onVictory(player) {
 		player.lastCheckpoint = `trainingRoom1_${player.heroName}`
-		player.health = player.maxHealth
 		player.sceneTexts.push("Glornak: 'Ohhhh nooooo. How could I underestimate this recruit. Surely they are the chosen one.'")
 		player.sceneTexts.push("Glornak falls down in a very convincing display.")
 	},
@@ -305,7 +329,7 @@ const trainingRoom2: Scene = {
 			displayName: 'Arthur',
 			sprite: 'general',
 			portrait: 'general',
-			startText: `Brilliant work recruit! Alright, last one. We don't normally do this but I see something great in you. You are going to fight a cave troll.`,
+			startText: `Brilliant work recruit! Alright, last one. We don't normally do this but I see something great in you. You are going to fight a cave troll. They are slow but powerful.`,
 			responses: [
 				{
 					responseId: 'ok',
@@ -319,7 +343,7 @@ const trainingRoom2: Scene = {
 			unitId: 'vasEquipStaff',
 			displayName: 'Fire Staff',
 			sprite: 'staff',
-			startText: `A fire staff takes 3 turns before you can use it. Trolls are slow, so it won't get a chance to retaliate once you land that finishing blast!`,
+			startText: `A fire staff will need a while to warmup before using it. Take other actions first.`,
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'fireStaff' },]
 		})
@@ -343,7 +367,7 @@ const trainingRoom2: Scene = {
 			unitId: 'vasGoTrain3',
 			displayName: 'Training Room',
 			sprite: 'stoneDoor',
-			startText: `The final room`,
+			startText: `The next room looks more like a prison cell than a training room. The bones of previous recruits are strewn about the place..`,
 			actionsWithRequirements: [
 				{
 					requiresGear: ['fireStaff', 'poisonDart', 'theifCloak'],
@@ -363,7 +387,7 @@ const trainingRoom3: Scene = {
 	solo: true,
 	onEnterScene(player) {
 		player.lastCheckpoint = `trainingRoom2_${player.heroName}`
-		player.sceneTexts.push("You enter a dark, stinking place. Iron bars slam shut behind you. It looks more like a prison cell than a training room. The bones of previous recruits are strewn about the place. A giant figure emerges from the darkness.")
+		player.sceneTexts.push("You enter a dark, stinking place. Iron bars slam shut behind you. A giant figure emerges from the darkness.")
 		player.sceneTexts.push("Ragor: 'RRRAAAAAAUUUUUUGHHH!'")
 		player.sceneTexts.push("You hear Arthur's voice from behind the barred doors.")
 		player.sceneTexts.push(`Arthur: You know what, ${player.heroName}? Maybe I was a bit too hasty throwing you in there.. it's more of a day two kind of battle. If I can just find the door key I'll pull you out...'`)
@@ -380,7 +404,7 @@ const trainingRoom3: Scene = {
 			responses: [{
 				responseId: 'go',
 				responseText: 'Thanks Arthur',
-				retort: `Now we can't have you starting the game with all that loot. Please drop your weapon in the box, put your farmer stuff back on, and head through the portal. Now it's time for me to teach the next recruit..`,
+				retort: `Now we can't have you starting the game with all that loot. Please drop your weapon in the box, put your farmer stuff back on, and head through the portal.`,
 				unlockVas: ['vasLeaveTutorial'],
 			}]
 		})
@@ -431,10 +455,6 @@ const trainingRoom3: Scene = {
 	},
 	onVictory(player) {
 		player.sceneTexts.push('The mighty beast falls as Arthur finally gets the door open')
-		// player.inventory = defaultInventory()
-		// equipItem(player, items.find(i=>i.i))
-		// equipItem(player, items.empty)
-		// equipItem(player, items.unarmed)
 		player.health = player.maxHealth
 	},
 }
@@ -984,6 +1004,7 @@ const armory: Scene = {
 export function addSoloScenes(name: string) {
 	let t = Object.assign({}, tutorial)
 	scenes.set(`tutorial_${name}`, t)
+	scenes.set(`trainingRoom0_${name}`, trainingRoom0)
 	scenes.set(`trainingRoom1_${name}`, trainingRoom1)
 	scenes.set(`trainingRoom2_${name}`, trainingRoom2)
 	scenes.set(`trainingRoom3_${name}`, trainingRoom3)
