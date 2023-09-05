@@ -1,5 +1,5 @@
 import type { Flag, HeroName, MiscPortrait, PlayerInClient } from "$lib/server/users";
-import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient, AnySprite, LandscapeImage, VisualActionSourceId } from "$lib/utils";
+import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient, AnySprite, LandscapeImage, VisualActionSourceId, SignupResponse } from "$lib/utils";
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 
 import type { ItemId, ItemState, QuickbarSlot } from '$lib/server/items';
@@ -74,6 +74,7 @@ export const lastUnitClicked: Writable<UnitId | 'background' | undefined> = writ
 export const visualLandscape: Writable<LandscapeImage> = writable('plains')
 export const visualOpacity = writable(false)
 export const visualSceneLabel = writable('nowhere')
+export const successcreds : Writable<SignupResponse | undefined> = writable(undefined)
 
 
 export const allies = derived(allVisualUnitProps, ($allVisualUnitProps) => {

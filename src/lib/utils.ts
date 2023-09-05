@@ -163,6 +163,15 @@ export type JoinGame = {
 	join: HeroName;
 };
 
-export function isJoin(msg: object): msg is JoinGame {
-	return 'join' in msg;
+export function isJoin(msg: any): msg is JoinGame {
+	if(((typeof msg) === 'object') && msg){
+		if('join' in msg){
+			if((typeof msg.join) === 'string'){
+				if(msg.join.length > 0){
+					return true
+				}
+			}
+		}
+	}
+	return false;
 }

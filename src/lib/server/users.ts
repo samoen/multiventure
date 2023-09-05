@@ -93,7 +93,7 @@ export type GlobalFlag = 'unused';
 
 export type Player = {
 	connectionState: {
-		ip: string | null;
+		// ip: string | null;
 		con: ReadableStreamController<unknown> | null;
 		stream: ReadableStream | null;
 	} | null;

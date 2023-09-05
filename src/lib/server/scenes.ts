@@ -100,22 +100,31 @@ const tutorial: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasTutorTutorial',
 			displayName: 'Arthur',
-			startText: `Look alive recruit! The first day of training can be the most dangerous of a guardsman's career.\n\nYou must be ${player.heroName}, welcome aboard. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.`,
+			startText: `Look alive recruit! The first day of training can be the most dangerous of a guardsman's career.`,
 			responses: [
 				{
 					responseId: 'scared',
 					responseText: `Huh? Danger? I didn't sign up for this!`,
 					retort: `Oh, there must have been a mistake. I only train willing recruits in this tutorial. Here's a portal to the real world`,
 					unlock:['saidWrong'],
-					lock:['cheeky', 'brave'],
+					lock:['cheeky', 'brave', 'open'],
 					lockVas:['vasGoTrainTutorial'],
 					unlockVas: ['vasSkipTutorial'],
 				},
 				{
+					responseId: 'open',
+					responseText: `I'm ready to train sir!`,
+					retort: `Ah, you must be ${player.heroName}, welcome aboard. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.`,
+					unlock:['brave', 'cheeky'],
+					lock:['scared'],
+					lockVas:['vasSkipTutorial'],
+				},
+				{
 					responseId: 'cheeky',
-					responseText: `Don't break the fourth wall Arthur, I'm into serious RPGs.`,
+					responseText: `Don't break the fourth wall, I'm into serious RPGs.`,
+					startsLocked:true,
 					retort: `Things will get plenty dark and gritty soon enough. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.`,
-					unlock:['saidWrong'],
+					unlock:['saidWrong', 'brave'],
 					lock:['scared']
 				},
 				{
@@ -125,12 +134,13 @@ const tutorial: Scene = {
 					retort: `Yep, just click my portrait. Conversations are just for fun.`
 				},
 				{
+					startsLocked:true,
 					responseId: 'brave',
 					responseText: `I tend to breeze through tutorials pretty easily so get on with it.`,
 					retort: `Great to hear ${player.heroName}! You can select a unit by tapping or clicking it. When a unit is selected you will see available actions. Select the training room and enter.`,
 					unlockVas:['vasGoTrainTutorial'],
 					lockVas: ['vasSkipTutorial'],
-					lock: ['wantsToSkip', 'scared', 'cheeky'],
+					lock: ['wantsToSkip', 'scared', 'cheeky', 'saidWrong'],
 				},
 			],
 			sprite: 'general',
@@ -250,14 +260,14 @@ const trainingRoom1: Scene = {
 			responses: [
 				{
 					responseId: 'gimmie',
-					responseText: `Alright what's my next battle?`,
+					responseText: `What's my next battle?`,
 					retort: `Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
 					unlockVas:['vasGoTrain2']
 				},
 				{
 					responseId:'imhurt',
 					responseText:`I got damaged in that last fight, got a remedy?`,
-					retort:`Equip this potion. It has limited uses in each area, and gets refilled when you travel. Select yourself and drink it`,
+					retort:`Here's a potion. It has limited uses in each area, and gets refilled when you travel. Equip it, select yourself and take a sip`,
 					unlockVas:['vasEquipBandage']
 				},
 				{

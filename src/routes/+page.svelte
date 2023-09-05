@@ -44,7 +44,10 @@
 		selectedVasActionsToShow,
 		triedSignupButTaken,
 		syncConvoStateToVas,
-		changeVasLocked
+		changeVasLocked,
+
+		successcreds
+
 	} from '$lib/client/ui';
 	import type { MessageFromServer } from '$lib/server/messaging';
 	import { onMount, tick } from 'svelte';
@@ -71,16 +74,19 @@
 	let autoSignup: boolean = false;
 	let autoContinue:boolean = false;
 
-	let continueAs : Writable<{hName : string, id:string} | undefined> | undefined = writable(undefined)
 	let sourceErrored : Writable<boolean> = writable(false)
-	let successcreds : SignupResponse | undefined = undefined
 
 
 	onMount(() => {
 		console.log('mounted with ssr data ' + JSON.stringify(data));
 		if (data.readyToSubscribe && data.yourHeroCookie && data.userId) {
 			$clientState.status = 'mounted with valid cookies to continue as'
-			$continueAs = {hName:data.yourHeroCookie,id:data.userId}
+			$successcreds = {
+				alreadyConnected:false,
+				needsAuth:'',
+				yourHeroName:data.yourHeroCookie,
+				yourId:data.userId,
+			}
 			if(autoContinue){
 				console.log(`doing autocontinue..`);
 				subscribeEventsIfNotAlready()
@@ -231,7 +237,7 @@
 		if (res.alreadyConnected) {
 			console.log('login response says already connected, oh well');
 		}
-		successcreds = res
+		$successcreds = res
 
 		$clientState.status = 'we signed up as guest, subscribing';
 		subscribeEventsIfNotAlready();
@@ -272,7 +278,7 @@
 			$clientState.loading = false;
 			return
 		}
-		successcreds = res
+		$successcreds = res
 		$clientState.status = `successful signup as ${res.yourHeroName}, subscribing`;
 		subscribeEventsIfNotAlready();
 	}
@@ -348,8 +354,8 @@
 							>Login</button
 						>
 					{/if}
-					{#if $continueAs}
-						<button on:click={subscribeEventsIfNotAlready}>Continue as {$continueAs.hName}</button>
+					{#if $successcreds}
+						<button on:click={subscribeEventsIfNotAlready}>Continue as {$successcreds.yourHeroName}</button>
 					{/if}
 				</div>
 			</div>
@@ -363,7 +369,7 @@
 {/if}
 
 {#if $lastMsgFromServer && (!source || source.readyState != source.OPEN)}
-	<p>event source got closed.. if stuck here there's a bug</p>
+	<p>Weird source state ${source} ${source ? source.readyState : ''}</p>
 {/if}
 
 {#if $lastMsgFromServer}
@@ -746,7 +752,7 @@
 		<p />
 	{/each}
 	<p class="textSelectable">
-		Logged in as {successcreds?.yourHeroName} uid: {successcreds?.yourId}
+		Logged in as {$successcreds?.yourHeroName} uid: {$successcreds?.yourId}
 		<button
 			on:click={leaveGame}>Log Out</button
 		>
@@ -1194,8 +1200,8 @@
 	}
 	.vasResponse {
 		/* font-size:1rem; */
-		padding-inline: 6px;
-		padding-block: 0.4em;
+		padding-inline: 0.7em;
+		padding-block: 0.6em;
 		border:none;
 		border-radius: 1px;
 		color:white;

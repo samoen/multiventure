@@ -1,95 +1,106 @@
 <script lang="ts">
 	import { statusImages } from '$lib/client/assets';
-	import { allVisualUnitProps, lastMsgFromServer, selectedDetail, type VisualUnitProps } from '$lib/client/ui';
+	import { allVisualUnitProps, lastMsgFromServer, selectedDetail, successcreds, type VisualUnitProps } from '$lib/client/ui';
 
 	import type { StatusEffect, StatusId, UnitId } from '$lib/utils';
 	import { tick } from 'svelte';
+	import { derived } from 'svelte/store';
 
 	export let hostId: UnitId;
 	let shouldDie = false;
-	$: vu = $allVisualUnitProps.find((v) => v.id == hostId);
-	$: hpBar = vu ? (vu.displayHp > 0 ? 100 * (vu.displayHp / vu.maxHp) : 0) : 0;
-	$: {
-		if (vu?.side == 'enemy' && vu.displayHp < 1) {
-			die(vu);
-		}
-	}
-	async function die(vu: VisualUnitProps) {
+	const vu = derived(allVisualUnitProps,($allVisualUnitProps)=>{
+		const res = $allVisualUnitProps.find((v) => v.id == hostId);
+		return res 
+	}) 
+
+	const hpBar = derived(vu,($vu)=>{
+		return $vu ? ($vu.displayHp > 0 ? 100 * ($vu.displayHp / $vu.maxHp) : 0) : 0;
+	})
+	
+	vu.subscribe(r=>{
+			if (r && (r.side == 'enemy' && r.displayHp < 1)) {
+				die();
+			}
+	})
+
+	async function die() {
 		await tick();
 		shouldDie = true;
 	}
 	export let flip: boolean;
-	let statuses: StatusId[] = [];
-	$: {
-		if (vu?.actual.kind == 'enemy') {
-			// statuses = vu.actual.enemy.statuses.map(s=>s.status)
-			statuses = [];
-			if (vu.actual.enemy.statuses) {
-				// console.log(JSON.stringify(vu.actual.enemy.statuses))
-				let arrayOfStatuses = Array.from(Object.values(vu.actual.enemy.statuses));
+	const statuses = derived(vu,($vu)=>{
+		let s : StatusId[] = [];
+		if(!$vu)return s
+
+		if ($vu.actual.kind == 'enemy') {
+			// statuses = $vu.actual.enemy.statuses.map(s=>s.status)
+			if ($vu.actual.enemy.statuses) {
+				// console.log(JSON.stringify($vu.actual.enemy.statuses))
+				let arrayOfStatuses = Array.from(Object.values($vu.actual.enemy.statuses));
 				// console.log(JSON.stringify(arrayOfStatuses))
 				if (arrayOfStatuses.find((s) => s.poison > 0)) {
-					statuses.push('poison');
+					s.push('poison');
 				}
 				if (arrayOfStatuses.find((s) => s.rage > 0)) {
-					statuses.push('rage');
+					s.push('rage');
 				}
 				if (arrayOfStatuses.find((s) => s.hidden > 0)) {
-					statuses.push('hidden');
+					s.push('hidden');
 				}
 			}
 		}
-		if (vu?.actual.kind == 'player') {
-			statuses = [];
-			if (vu.actual.info.statuses.poison > 0) {
+		if ($vu.actual.kind == 'player') {
+			if ($vu.actual.info.statuses.poison > 0) {
 				// console.log('pushing poison visual on player')
-				statuses.push('poison');
+				s.push('poison');
 			}
-			if (vu.actual.info.statuses.rage > 0) {
-				statuses.push('rage');
+			if ($vu.actual.info.statuses.rage > 0) {
+				s.push('rage');
 			}
-			if (vu.actual.info.statuses.hidden > 0) {
-				statuses.push('hidden');
+			if ($vu.actual.info.statuses.hidden > 0) {
+				s.push('hidden');
 			}
 		}
-	}
+		return s
+	})
 
+	
 </script>
 
-{#if vu}
+{#if $vu && $successcreds}
 	<div class="top" 
 	class:noOpacity={shouldDie}
 	class:selected={!shouldDie && $selectedDetail && $selectedDetail.kind == 'vup' && $selectedDetail?.entity.id == hostId}
 	>
 		<div class="nameHolder">
 			<span class="selfIndicator"
-				>{vu.name == $lastMsgFromServer?.yourInfo.heroName ? '👤' : ''}</span
 			>
-			<span class="nametag">{vu.name}</span>
+				{$vu.name == $successcreds.yourHeroName ? '+' : ''}</span>
+			<span class="nametag">{$vu.name}</span>
 		</div>
 		<div class="outerHeroSprite">
 			<div class="statuses">
-				{#each statuses as s}
+				{#each $statuses as s}
 					<img class="status" alt="status" src={statusImages[s]} />
 				{/each}
 			</div>
 			<img
 			class="heroSprite"
-				class:flipped={flip && !vu.tilt}
-				class:tiltedHero={vu.tilt && vu.side == 'hero'}
-				class:tiltedEnemy={vu.tilt && vu.side == 'enemy'}
-				class:faded={statuses.includes('hidden')}
+				class:flipped={flip && !$vu.tilt}
+				class:tiltedHero={$vu.tilt && $vu.side == 'hero'}
+				class:tiltedEnemy={$vu.tilt && $vu.side == 'enemy'}
+				class:faded={$statuses.includes('hidden')}
 				alt="you"
-				src={vu.src}
+				src={$vu.src}
 			/>
 		</div>
 		<div class="bars">
 			<div class="healthbar">
-				<div class="healthbar_health" style:width="{hpBar}%" />
+				<div class="healthbar_health" style:width="{$hpBar}%" />
 			</div>
-			{#if vu.side == 'enemy' && vu.aggro != undefined}
+			{#if $vu.side == 'enemy' && $vu.aggro != undefined}
 				<div class="aggrobar">
-					<div class="aggro" style:width="{vu.aggro}%" />
+					<div class="aggro" style:width="{$vu.aggro}%" />
 				</div>
 			{/if}
 		</div>

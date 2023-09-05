@@ -7,12 +7,12 @@ import { enterSceneOrWakeup, updateAllPlayerActions } from '$lib/server/logic';
 export const GET: RequestHandler = async (event) => {
 	try {
 		await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
-		let ip: string;
-		try {
-			ip = event.getClientAddress();
-		} catch (e) {
-			return json({ error: 'no ip' }, { status: 401 })
-		}
+		// let ip: string;
+		// try {
+		// 	ip = event.getClientAddress();
+		// } catch (e) {
+		// 	return json({ error: 'no ip' }, { status: 401 })
+		// }
 		const from = event.cookies.get('hero');
 		const fromId = event.cookies.get('uid');
 		console.log(`stream requested by: ${from} ${fromId}`);
@@ -34,7 +34,11 @@ export const GET: RequestHandler = async (event) => {
 			// return json({ error: 'user already connected' }, { status: 401 });
 			// if (player.connectionState.con != null) {
 			console.log(`${player.heroName} subscribing but already subscribed`);
-			player.connectionState.con?.close()
+			try{
+				player.connectionState.con?.close()
+			}catch(e){
+				console.log('failed to close')
+			}
 
 			// player.connectionState.con.enqueue(encode('closing', {}));
 
@@ -47,7 +51,7 @@ export const GET: RequestHandler = async (event) => {
 			// player.connectionState = null;
 		}
 		player.connectionState = {
-			ip: null,
+			// ip: null,
 			con: null,
 			stream: null
 		};
@@ -55,8 +59,8 @@ export const GET: RequestHandler = async (event) => {
 		let rs = new ReadableStream({
 			start: (c) => {
 				if (!player || !player.connectionState) return
-				console.log(`stream started with: ${ip}, hero ${player.heroName}`);
-				player.connectionState.ip = ip;
+				console.log(`stream started for hero ${player.heroName}`);
+				// player.connectionState.ip = ip;
 				player.connectionState.con = c;
 				pushHappening(`${player.heroName} joined the game`)
 				setTimeout(() => {
@@ -71,7 +75,7 @@ export const GET: RequestHandler = async (event) => {
 				}, 1);
 			},
 			cancel: (reason) => {
-				console.log(`stream cancel handle for ${ip} ${player.heroName}`);
+				console.log(`stream cancel handle for hero ${player.heroName}`);
 				if (reason) console.log(`reason: ${reason}`)
 				// try {
 				// 	if(player.connectionState && player.connectionState.con){

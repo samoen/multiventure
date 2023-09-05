@@ -11,9 +11,7 @@ export const POST: RequestHandler = async (r) => {
 	if (!isJoin(msg)) {
 		return json({error: 'malformed sign up request'}, { status: 400 });
 	}
-	// if(players.has(msg.join) && players.get(msg.join).connectionState){
-		//     return json('hero already connected', {status:401})
-		// }
+	
 	let resp : SignupResponse = {
 		alreadyConnected:false,
 		needsAuth:'',
