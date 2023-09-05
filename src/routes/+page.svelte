@@ -51,11 +51,12 @@
 	import { flip } from 'svelte/animate';
 	import blankSlot from '$lib/assets/equipment/blank-attack.png';
 
-	import type { BattleAnimation, DataFirstLoad, LandscapeImage } from '$lib/utils';
+	import { isSignupResponse, type BattleAnimation, type DataFirstLoad, type LandscapeImage, type SignupResponse } from '$lib/utils';
 	import VisualActionSource from '$lib/Components/VisualActionSource.svelte';
 	import { fade } from 'svelte/transition';
 	import type { ItemId } from '$lib/server/items';
 	import { anySprites, getLandscape, getSlotImage, miscPortraits } from '$lib/client/assets';
+	import { writable, type Writable } from 'svelte/store';
 
 	export let data: DataFirstLoad;
 	let signupInput: string;
@@ -67,24 +68,40 @@
 
 	let happenings: HTMLElement;
 	let sceneTexts: HTMLElement;
-	let autoSignup: boolean = true;
+	let autoSignup: boolean = false;
+	let autoContinue:boolean = false;
+
+	let continueAs : Writable<{hName : string, id:string} | undefined> | undefined = writable(undefined)
+	let sourceErrored : Writable<boolean> = writable(false)
+	let successcreds : SignupResponse | undefined = undefined
+
 
 	onMount(() => {
 		console.log('mounted with ssr data ' + JSON.stringify(data));
+		if (data.readyToSubscribe && data.yourHeroCookie && data.userId) {
+			$clientState.status = 'mounted with valid cookies to continue as'
+			$continueAs = {hName:data.yourHeroCookie,id:data.userId}
+			if(autoContinue){
+				console.log(`doing autocontinue..`);
+				subscribeEventsIfNotAlready()
+				return
+			}
+			$clientState.loading = false;
+			return
+		}
 
-		if (data.readyToSubscribe) {
-			console.log(`ssr data says cookies are good. auto-subscribing..`);
-			$clientState.status = 'auto subscribing';
-			subscribeEventsIfNotAlready();
-		} else if (data.noPlayer && data.yourHeroCookie && autoSignup) {
-			console.log(`ssr data says my hero cookie not matching anyone, doing auto signup..`);
+		 if (data.noPlayer && data.yourHeroCookie && autoSignup) {
+			console.log(`doing auto signup..`);
 			$clientState.status = 'auto signup';
 			signUp(data.yourHeroCookie);
-		} else {
-			$clientState.status = 'need manual login';
-			$clientState.loading = false;
-		}
+			return
+		} 
+		
+		$clientState.status = 'mounted, need manual login';
+		$clientState.loading = false;
+		
 	});
+
 	function isMsgFromServer(msg: object): msg is MessageFromServer {
 		return 'triggeredBy' in msg;
 	}
@@ -101,49 +118,61 @@
 	}
 
 	function subscribeEventsIfNotAlready() {
-		if (source != null && source.readyState != EventSource.CLOSED) {
-			console.log('no need to subscribe');
-			return;
-		}
+		// if (source != null && source.readyState != EventSource.CLOSED) {
+		// 	console.log('no need to subscribe');
+		// 	$clientState.status = 'subscribing to events';
+		// 	$clientState.loading = false;
+		// 	return;
+		// }
+		$clientState.loading = true;
 		$clientState.status = 'subscribing to events';
 		try {
 			source = new EventSource('/api/subscribe');
 		} catch (e) {
+			$clientState.status = 'failed to source'
+			$clientState.loading = false;
 			console.log('failed to source');
 			console.error(e);
 			return;
 		}
 		source.onerror = function (ev) {
 			console.error(`event source error ${JSON.stringify(ev)}`, ev);
-			$clientState.status = 'Event source errored, need manual action';
-			this.close();
-			$lastMsgFromServer = undefined;
-			$clientState.loading = false;
+			$clientState.status = 'Event source errored';
+			$sourceErrored = true
+			// $clientState.loading = false;
+			// this.close();
+			// $lastMsgFromServer = undefined;
 		};
 
 		source.addEventListener('firstack', async (e) => {
+			$sourceErrored = false
 			getWorld();
+			$clientState.loading = false
 		});
-
+		
 		source.addEventListener('world', async (e) => {
+			$sourceErrored = false
 			let sMsg = JSON.parse(e.data);
 			if (!isMsgFromServer(sMsg)) {
 				console.log('malformed event from server');
 				return;
 			}
 			worldReceived(sMsg);
+			$clientState.loading = false
 		});
+
 		source.addEventListener('closing', (e) => {
-			console.log('got closing msg');
-			source?.close();
-			$clientState.status = 'you logged in elsewhere, connection closed';
-			$lastMsgFromServer = undefined;
+			console.log('server requested close source');
+			$clientState.status = 'server asked to close source';
+			leaveGame()
 		});
 		console.log('subscribed');
+		$clientState.status = 'done subscribing'
 	}
 
 	async function getWorld() {
 		$clientState.loading = true;
+		$clientState.status = 'getting initial world';
 		let r = await fetch('/api/world', { method: 'POST' });
 		let sMsg = await r.json();
 		if (!isMsgFromServer(sMsg)) {
@@ -152,6 +181,7 @@
 		}
 		worldReceived(sMsg);
 		$clientState.loading = false;
+		$clientState.status = 'received initial world'
 	}
 
 	async function deleteHero() {
@@ -165,21 +195,18 @@
 		leaveGame();
 	}
 	function leaveGame() {
-		$clientState.status = 'unsubscribing from events';
-		if (source?.readyState != source?.CLOSED) {
-			console.log('closing con from browser');
-			source?.close();
-		}
+		$clientState.status = 'leaving game';
+		source?.close();
 		source = null;
 		$lastMsgFromServer = undefined;
-		$clientState.status = 'need manual login';
-		$clientState.loading = false;
 		$currentAnimationIndex = 999;
 		$convoStateForEachVAS.clear();
 		$visualActionSources = [];
 		$allVisualUnitProps = [];
 		$latestSlotButtonInput = undefined;
 		$lastUnitClicked = undefined;
+		$clientState.status = 'left game';
+		$clientState.loading = false;
 	}
 
 	async function guestSignUp() {
@@ -191,28 +218,29 @@
 			}
 		});
 		let res = await joincall.json();
-		if (
-			typeof res == 'object' &&
-			'alreadyConnected' in res &&
-			typeof res.alreadyConnected == 'boolean' &&
-			res.alreadyConnected
-		) {
-			console.log('login response says already connected');
-			// location.reload()
-		}
-
-		if (joincall.ok) {
-			// if we were to re-mount (hot-reload) after this point, page data would be misleading
-			invalidateAll();
-			$clientState.status = 'waiting for first event';
-			subscribeEventsIfNotAlready();
-		} else {
-			console.log('joincall not ok');
+		if(!joincall.ok){
 			$clientState.status = 'signup failed, need manual';
 			$clientState.loading = false;
+			return
 		}
+		if(!isSignupResponse(res)){
+			$clientState.status = 'signup bad response';
+			$clientState.loading = false;
+			return
+		}
+		if (res.alreadyConnected) {
+			console.log('login response says already connected, oh well');
+		}
+		successcreds = res
+
+		$clientState.status = 'we signed up as guest, subscribing';
+		subscribeEventsIfNotAlready();
 	}
+	
 	async function signUp(usrName: string) {
+		$clientState.loading = true
+		$clientState.status = 'signing up'
+
 		let joincall = await fetch('/api/signup', {
 			method: 'POST',
 			body: JSON.stringify({ join: usrName }),
@@ -221,33 +249,32 @@
 			}
 		});
 		let res = await joincall.json();
-		if (
-			typeof res == 'object' &&
-			'alreadyConnected' in res &&
-			typeof res.alreadyConnected == 'boolean' &&
-			res.alreadyConnected
-		) {
-			console.log('login response says already connected');
-			// location.reload()
+		
+		if(!isSignupResponse(res)){
+			$clientState.status = 'signup bad response';
+			$clientState.loading = false;
+			return
+		}
+		if (res.alreadyConnected) {
+			console.log('login response says already connected, oh well');
 		}
 
-		if (joincall.ok) {
-			// if we were to re-mount (hot-reload) after this point, page data would be misleading
-			invalidateAll();
-			// location.reload()
-			// joinedAs = usrName
-			$clientState.status = 'waiting for first event';
-			subscribeEventsIfNotAlready();
-		} else if (res.needAuth) {
-			signInNameInput = res.needAuth;
-			$triedSignupButTaken = res.needAuth;
-			$clientState.status = 'signup name taken, can try login';
-			$clientState.loading = false;
-		} else {
-			console.log('joincall not ok, no recourse');
+		if(!joincall.ok){
 			$clientState.status = 'signup failed, need manual';
 			$clientState.loading = false;
+			return
 		}
+		
+		if (res.needsAuth.length) {
+			signInNameInput = res.needsAuth;
+			$triedSignupButTaken = res.needsAuth;
+			$clientState.status = 'signup name taken, can try login';
+			$clientState.loading = false;
+			return
+		}
+		successcreds = res
+		$clientState.status = `successful signup as ${res.yourHeroName}, subscribing`;
+		subscribeEventsIfNotAlready();
 	}
 
 	function guestSignUpButtonClicked() {
@@ -282,7 +309,7 @@
 		signInIdInput = '';
 		signInNameInput = '';
 		// let res = await loginCall.json();
-		invalidateAll();
+		// invalidateAll();
 		$clientState.status = 'waiting for first event';
 		subscribeEventsIfNotAlready();
 	}
@@ -291,6 +318,7 @@
 <!-- <h3>Status: {clientState.status}</h3> -->
 {#if $clientState.loading}
 	<p>loading...</p>
+	<p>{$clientState.status}</p>
 {/if}
 {#if !$clientState.loading && !$lastMsgFromServer}
 	<div class="landing" style="background-image:url({getLandscape($visualLandscape)});">
@@ -319,6 +347,9 @@
 						<button disabled={!signInNameInput || !signInIdInput} on:click={signInButtonClicked}
 							>Login</button
 						>
+					{/if}
+					{#if $continueAs}
+						<button on:click={subscribeEventsIfNotAlready}>Continue as {$continueAs.hName}</button>
 					{/if}
 				</div>
 			</div>
@@ -715,20 +746,22 @@
 		<p />
 	{/each}
 	<p class="textSelectable">
-		Logged in as {$lastMsgFromServer.yourInfo.heroName} uid: {data.userId}
+		Logged in as {successcreds?.yourHeroName} uid: {successcreds?.yourId}
 		<button
-			on:click={() => {
-				$lastMsgFromServer = undefined;
-				leaveGame();
-			}}>Log Out</button
+			on:click={leaveGame}>Log Out</button
 		>
 		<button on:click={deleteHero}>Delete Hero</button>
 	</p>
 	<p>
-
 		{JSON.stringify($lastMsgFromServer.playerFlags)}
 	</p>
-{/if}
+	{/if}
+	<p>
+		status: {$clientState.status}
+	</p>
+	{#if $sourceErrored}
+		<button>source errored</button>
+	{/if}
 
 <style>
 	:global(body) {
@@ -763,7 +796,7 @@
 	}
 
 	.landing {
-		height: 100vh;
+		height: 100svh;
 		background-repeat: no-repeat;
 		background-size: cover;
 		display: flex;
@@ -788,7 +821,7 @@
 		/* border:2px solid brown; */
 		display: flex;
 		justify-content: center;
-		height: 30vh;
+		height: 30svh;
 		/* width:fit-content; */
 		/* max-width:100%; */
 		background-color: rgb(0, 0, 0, 0.4);
@@ -919,7 +952,7 @@
 		background-color: beige;
 	}
 	.wrapGameField {
-		height: 70vh;
+		height: 70svh;
 		overflow-y: auto;
 		overflow-x: hidden;
 		/* overscroll-behavior: contain; */
@@ -1057,7 +1090,7 @@
 		/* background-color: transparent; */
 		display: flex;
 		position: relative;
-		height: 30vh;
+		height: 30svh;
 	}
 	.selectedPortrait {
 		background-repeat: no-repeat;
@@ -1075,7 +1108,7 @@
 		flex-grow: 1;
 		overflow: hidden;
 		display: block;
-		height: 10vh;
+		height: 10svh;
 		/* text-align: center; */
 		/* margin-bottom: 0; */
 		/* vertical-align: bottom; */
@@ -1097,7 +1130,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		height: 4vh;
+		height: 4svh;
 		z-index: 2;
 		color: white;
 		border-top: none;
@@ -1160,8 +1193,18 @@
 		gap: 5px;
 	}
 	.vasResponse {
+		/* font-size:1rem; */
 		padding-inline: 6px;
-		padding-block: 2px;
+		padding-block: 0.4em;
+		border:none;
+		border-radius: 1px;
+		color:white;
+		
+		background-color: brown;
+		/* background-color: aqua; */
 		/* max-width:30ch; */
+	}
+	.vasResponse:disabled{
+		background-color: gray;
 	}
 </style>

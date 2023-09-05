@@ -57,7 +57,7 @@ export type ConvoState = {
 export let clientState = writable({
     waitingForMyEvent: false,
     status: 'starting up',
-    loading: false,
+    loading: true,
 })
 
 export let triedSignupButTaken: Writable<string | undefined> = writable(undefined)

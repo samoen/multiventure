@@ -32,5 +32,5 @@ export const POST: RequestHandler = async (r) => {
 	r.cookies.set('hero', msg.heroName, { path: '/', secure: false });
 	r.cookies.set('uid', msg.userId, { path: '/', secure: false });
 
-	return json({ success: true });
+	return json({ success: true, yourHeroName:msg.heroName, yourId:msg.userId });
 };

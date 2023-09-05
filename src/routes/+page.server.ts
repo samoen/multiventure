@@ -11,20 +11,16 @@ export const load = (async (r) => {
 	let uid = r.cookies.get('uid')
 	let hero = r.cookies.get('hero')
 	if (!uid || !hero) {
-		// let guestNumber = 1
-		// for (const existingHero of users){
-
-		// }
 		dtl.cookieMissing = true
 		return dtl
 	}
+	dtl.yourHeroCookie = hero
+	dtl.userId = uid
 
 	let player = users.get(uid)
 	if (!player) {
 		console.log(`cookie ${uid} not present in player list ${JSON.stringify(Array.from(users.keys()).map(k=>k))}`);
 		dtl.noPlayer = true
-		dtl.yourHeroCookie = hero
-
 		return dtl
 	}
 	if(player.heroName != hero){
@@ -32,8 +28,7 @@ export const load = (async (r) => {
 		return dtl
 	}
 
-		dtl.readyToSubscribe=true
-		dtl.userId = uid
+	dtl.readyToSubscribe=true
 	return dtl
 	
 	// return {

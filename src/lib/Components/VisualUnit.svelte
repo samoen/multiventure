@@ -125,10 +125,10 @@
 		opacity: 0.5;
 	}
 	.tiltedHero{
-		transform: rotate(15deg) translateX(30px) translateY(-10px)
+		transform: rotate(10deg) translateX(20px) translateY(-5px)
 	}
 	.tiltedEnemy{
-		transform: scaleX(-1) rotate(15deg) translateX(30px) translateY(-10px)
+		transform: scaleX(-1) rotate(10deg) translateX(20px) translateY(-5px)
 	}
 	/* .bold {
 		font-weight: bold;
