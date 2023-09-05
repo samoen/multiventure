@@ -56,6 +56,8 @@
 		}
 	);
 
+	let boundHostHeight:number
+	let placeHoldHeight = 'auto';
 	const hostHome = derived(
 		[currentAnimation, subAnimationStage],
 		([$currentAnim, $subAnimationStage]) => {
@@ -68,6 +70,7 @@
 				$subAnimationStage == 'fire'
 			) {
 				console.log('host leave');
+				placeHoldHeight = `${boundHostHeight}px`
 				return false;
 			}
 			return true;
@@ -147,6 +150,7 @@
 <div class="unitAndArea">
 	<div
 		class="home placeHolder"
+		style="height:{$hostHome ? 'auto' : placeHoldHeight}"
 		on:click|preventDefault|stopPropagation={() => {
 			if ($highlightedForAct) {
 				choose($highlightedForAct);
@@ -157,6 +161,7 @@
 		class:clickable={$highlightedForAct}
 		role="button"
 		tabindex="0"
+		bind:offsetHeight={boundHostHeight}
 		on:keydown
 	>
 		{#if $hostHome}
@@ -354,6 +359,7 @@
 	}
 	.placeHolder {
 		border: 2px dashed transparent;
+		/* background-color: aqua; */
 		border-radius: 10px;
 		width: 50%;
 	}
