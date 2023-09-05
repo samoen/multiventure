@@ -16,6 +16,7 @@ export type BattleAnimation = {
 	damageToSource?: number,
 	target?: UnitId,
 	damageToTarget?: number,
+	strikes?:number,
 	putsStatuses?:StatusModifier[]
 	behavior: AnimationBehavior,
 	alsoDamages?:HealthModifier[],

@@ -74,8 +74,10 @@
 				{/each}
 			</div>
 			<img
-				class="heroSprite"
-				class:flipped={flip}
+			class="heroSprite"
+				class:flipped={flip && !vu.tilt}
+				class:tiltedHero={vu.tilt && vu.side == 'hero'}
+				class:tiltedEnemy={vu.tilt && vu.side == 'enemy'}
 				class:faded={statuses.includes('hidden')}
 				alt="you"
 				src={vu.src}
@@ -121,6 +123,12 @@
 	}
 	.faded {
 		opacity: 0.5;
+	}
+	.tiltedHero{
+		transform: rotate(15deg) translateX(30px) translateY(-10px)
+	}
+	.tiltedEnemy{
+		transform: scaleX(-1) rotate(15deg) translateX(30px) translateY(-10px)
 	}
 	/* .bold {
 		font-weight: bold;

@@ -179,21 +179,36 @@
 				class="guestHolder"
 				in:receiveMelee={{ key: 'movehero' }}
 				out:sendMelee={{ key: 'movehero' }}
-				on:introend={() => {
-					if ($currentAnimation != undefined) {
-						let anim = $currentAnimation;
-						updateUnit(hostId, (vup) => {
-							vup.displayHp -= anim.damageToTarget ?? 0;
-						});
-						handlePutsStatuses(anim);
-						if ($guestId == undefined) return;
+				on:introend={async () => {
+					if ($currentAnimation == undefined || $guestId == undefined) return;
+					const anim = $currentAnimation;
+					let strks = anim.strikes ?? 1;
+					if(strks < 1)strks = 1;
+					let sDmg = (anim.damageToTarget ?? 0) / strks;
+					for (const _ of Array.from({ length: strks })) {
 						updateUnit($guestId, (vup) => {
-							if (vup.side == 'enemy') {
-								vup.aggro = 0;
-							}
+							vup.tilt = true;
 						});
-						$subAnimationStage = 'sentHome';
+						let stop = false;
+						updateUnit(hostId, (vup) => {
+							vup.displayHp -= sDmg;
+							if (vup.displayHp < 1) stop = true;
+						});
+						await new Promise((r) => setTimeout(r, 100));
+						updateUnit($guestId, (vup) => {
+							vup.tilt = false;
+						});
+						if (stop) break;
+						await new Promise((r) => setTimeout(r, 200));
 					}
+					handlePutsStatuses(anim);
+					if ($guestId == undefined) return;
+					updateUnit($guestId, (vup) => {
+						if (vup.side == 'enemy') {
+							vup.aggro = 0;
+						}
+					});
+					$subAnimationStage = 'sentHome';
 				}}
 			>
 				<VisualUnit hostId={$guestId} flip={!$hostIsNotHero} />

@@ -56,8 +56,8 @@ export const fireStaff: Item = {
 	}
 }
 
-const bandage: Item = {
-	id: 'bandage',
+const potion: Item = {
+	id: 'potion',
 	slot: 'utility',
 	startStock: 2,
 	useableOutOfBattle: true,
@@ -269,7 +269,7 @@ export const items = [
 	club,
 	fireStaff,
 	belt,
-	bandage,
+	potion,
 	bomb,
 	poisonDart,
 	rags,

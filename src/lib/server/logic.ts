@@ -376,6 +376,7 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 										source: enemyInScene.unitId,
 										target: player.unitId,
 										damageToTarget: r.dmgDone,
+										strikes: enemyInScene.template.strikes,
 										behavior: enemyInScene.template.behavior ?? { kind: 'melee' },
 									}
 								})
@@ -534,6 +535,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		target: battleEvent.target?.entity.unitId,
 		damageToSource: dmgToSource,
 		damageToTarget: dmgToTarget,
+		strikes:battleEvent.strikes,
 		behavior: battleEvent.behavior,
 		alsoDamages: alsoDmgedAnimation,
 		alsoModifiesAggro: aggroModifiedAnimations,

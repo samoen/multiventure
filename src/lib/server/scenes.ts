@@ -282,7 +282,7 @@ const trainingRoom1: Scene = {
 			sprite: 'potion',
 			startText: `Use potions when you get low on health.`,
 			startsLocked: true,
-			actionsWithRequirements: [{ pickupItem: 'bandage' }]
+			actionsWithRequirements: [{ pickupItem: 'potion' }]
 		})
 		player.visualActionSources.push({
 			unitId: 'vasGoTrain2',
@@ -292,7 +292,7 @@ const trainingRoom1: Scene = {
 			startText: `Another door, another training room.`,
 			actionsWithRequirements: [
 				{
-					requiresGear: ['dagger', 'bandage'],
+					requiresGear: ['dagger', 'potion'],
 					travelTo: `trainingRoom2_${player.heroName}`
 				}
 			]
@@ -336,7 +336,13 @@ const trainingRoom2: Scene = {
 					responseText: `I ain't 'fraid of no troll`,
 					retort: `Trolls have very high damage and health, this equipment will let you handle him.`,
 					unlockVas: ['vasEquipDart', `vasEquipCloak`, `vasEquipStaff`]
-				}
+				},
+				{
+					responseId: 'whatifdie',
+					responseText: `What if the troll wins the battle?`,
+					retort: `It's not a problem, you have a checkpoint right here. If you run out of health, just succumb to your wounds, respawn and try again.`,
+					unlockVas: ['vasEquipDart', `vasEquipCloak`, `vasEquipStaff`]
+				},
 			]
 		})
 		player.visualActionSources.push({
@@ -548,7 +554,7 @@ const castle: Scene = {
 			sprite: 'potion',
 			startText: `You find a potion!`,
 			startsLocked: true,
-			actionsWithRequirements: [{ pickupItem: 'bandage' }]
+			actionsWithRequirements: [{ pickupItem: 'potion' }]
 		})
 		player.visualActionSources.push({
 			unitId: 'vasForestFromCastle',

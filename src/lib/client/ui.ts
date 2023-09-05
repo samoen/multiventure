@@ -28,6 +28,7 @@ export type VisualUnitProps = {
     id: UnitId;
     name: string;
     src: string;
+    tilt?:boolean;
     displayHp: number;
     maxHp: number;
     aggro?: number;
