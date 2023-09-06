@@ -308,14 +308,9 @@
 							) {
 								updateUnit(other.target, (vup) => {
 									if (vup.actual.kind == 'enemy') {
-										if (other.amount != undefined) {
 											vup.actual.enemy.myAggro += other.amount;
 											if (vup.actual.enemy.myAggro > 100) vup.actual.enemy.myAggro = 100;
 											if (vup.actual.enemy.myAggro < 0) vup.actual.enemy.myAggro = 0;
-										}
-										if (other.setTo != undefined) {
-											vup.actual.enemy.myAggro = other.setTo;
-										}
 									}
 								});
 							}

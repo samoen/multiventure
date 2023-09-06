@@ -943,7 +943,6 @@ const tunnelChamber: Scene = {
 		}
 	},
 	actions(player: Player) {
-		// const medallionDone = player.flags.has('smashedMedallion') || player.flags.has('placedMedallion')
 		player.visualActionSources.push({
 			unitId: 'vasDungeonAltar',
 			displayName: 'Altar',

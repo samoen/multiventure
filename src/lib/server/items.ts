@@ -1,25 +1,48 @@
-import type { AggroModifier, AggroModifierEvent, BattleEvent, HealthModifier, HealthModifierEvent, StatusId, UnitId } from '$lib/utils';
-import { damageEnemy, enemiesInScene, pushAnimation, takePoisonDamage, type ActiveEnemy } from './enemies';
+import type { AggroModifier, AggroModifierEvent, AnimationBehavior, BattleEvent, HealthModifier, HealthModifierEvent, StatusId, StatusMod, UnitId } from '$lib/utils';
+import type { ActiveEnemy } from './enemies';
 import { pushHappening } from './messaging';
 import type { SceneId } from './scenes';
-import { activePlayersInScene, type GameAction, type Player } from './users';
+import type { Player } from './users';
+
+export type Item = {
+	id: string
+	slot: string
+	speed?: number,
+	damageLimit?: number,
+	damageReduction?: number,
+	provoke?: number
+	grantsImmunity?: boolean;
+	default?: boolean;
+	warmup?: number
+	cooldown?: number
+	startStock?: number
+	useableOutOfBattle?: boolean
+	requiresHealth?: boolean
+	requiresStatus?: StatusId
+	requiresSourceDead?: boolean
+
+	baseHeal?: number,
+	baseDmg?: number,
+	putsStatusOnAffected?: StatusMod,
+	aggroModifyForAll?: number,
+	behavior: AnimationBehavior,
+	strikes?: number
+	style: TargetStyle
+	succumb?: boolean
+}
 
 
+export type TargetStyle = { style: 'anyEnemy' } | { style: 'allEnemies', putsStatusOnSelf?: StatusMod } | { style: 'anyFriendly', selfBehavior: AnimationBehavior } | { style: 'noAction' } | { style: 'onlySelf' }
 
 const dagger: Item = {
 	id: 'dagger',
 	slot: 'weapon',
 	provoke: 7,
 	speed: 8,
-	actionForEnemy(player, enemy) {
-		return {
-			source: { kind: 'player', entity: player },
-			target: { kind: 'enemy', entity: enemy },
-			baseDamageToTarget: 7,
-			strikes: 3,
-			behavior: { kind: 'melee' },
-		} satisfies BattleEvent
-	}
+	baseDmg: 7,
+	behavior: { kind: 'melee' },
+	strikes: 3,
+	style: { style: 'anyEnemy' }
 }
 
 const club: Item = {
@@ -27,14 +50,9 @@ const club: Item = {
 	slot: 'weapon',
 	provoke: 40,
 	speed: 2,
-	actionForEnemy(player, enemy) {
-		return {
-			source: { kind: 'player', entity: player },
-			target: { kind: 'enemy', entity: enemy },
-			baseDamageToTarget: 25,
-			behavior: { kind: 'melee' },
-		} satisfies BattleEvent
-	}
+	baseDmg: 25,
+	behavior: { kind: 'melee' },
+	style: { style: 'anyEnemy' }
 }
 
 export const fireStaff: Item = {
@@ -44,16 +62,9 @@ export const fireStaff: Item = {
 	cooldown: 1,
 	provoke: 60,
 	speed: 1,
-	actionForEnemy(player, enemy) {
-
-		return {
-			source: { kind: 'player', entity: player },
-			target: { kind: 'enemy', entity: enemy },
-			baseDamageToTarget: 100,
-			behavior: { kind: 'missile', extraSprite: 'flame' },
-		} satisfies BattleEvent
-
-	}
+	baseDmg: 100,
+	behavior: { kind: 'missile', extraSprite: 'flame' },
+	style: { style: 'anyEnemy' }
 }
 
 const potion: Item = {
@@ -64,21 +75,9 @@ const potion: Item = {
 	requiresHealth: true,
 	speed: 15,
 	provoke: 1,
-	actionForFriendly(player, friend) {
-		return {
-			source: { kind: 'player', entity: player },
-			target: { kind: 'player', entity: friend },
-			baseHealingToTarget: 90,
-			behavior: { kind: 'melee' },
-		} satisfies BattleEvent
-	},
-	actionForSelf(player) {
-		return {
-			source: { kind: 'player', entity: player },
-			baseHealingToSource: 90,
-			behavior: { kind: 'selfInflicted', extraSprite: 'heal' },
-		}
-	}
+	style: { style: 'anyFriendly', selfBehavior: { kind: 'selfInflicted', extraSprite: 'heal' } },
+	behavior: { kind: 'melee' },
+	baseHeal: 90,
 }
 
 const bomb: Item = {
@@ -87,29 +86,10 @@ const bomb: Item = {
 	startStock: 1,
 	speed: 12,
 	provoke: 5,
-	actions(player) {
-		let dmgModifies: HealthModifierEvent[] = []
-		let aggroModifies: AggroModifierEvent[] = []
-		let forHeroes = activePlayersInScene(player.currentScene)
-		for (const enemy of enemiesInScene(player.currentScene)) {
-			dmgModifies.push({
-				baseDamage: 5,
-				targetEnemy: enemy
-			})
-			aggroModifies.push({
-				targetEnemy: enemy,
-				forHeros: forHeroes,
-				baseAmount: -20,
-			})
-		}
-
-		return {
-			source: { kind: 'player', entity: player },
-			behavior: { kind: 'center', extraSprite: 'bomb' },
-			alsoDamages: dmgModifies,
-			alsoModifiesAggro: aggroModifies
-		} satisfies BattleEvent
-	},
+	style: { style: 'allEnemies' },
+	behavior: { kind: 'center', extraSprite: 'bomb' },
+	baseDmg: 5,
+	aggroModifyForAll: -20
 }
 
 export const poisonDart: Item = {
@@ -118,39 +98,23 @@ export const poisonDart: Item = {
 	startStock: 2,
 	provoke: 40,
 	speed: 20,
-	actionForEnemy(player, enemy) {
-		return {
-			source: { kind: 'player', entity: player },
-			target: { kind: 'enemy', entity: enemy },
-			putsStatuses: [{ targetEnemy: enemy, status: 'poison', count: 3 }],
-			baseDamageToTarget: 3,
-			behavior: { kind: 'missile', extraSprite: 'arrow' },
-		} satisfies BattleEvent
-
-	},
+	behavior: { kind: 'missile', extraSprite: 'arrow' },
+	style: { style: 'anyEnemy' },
+	putsStatusOnAffected: { statusId: 'poison', count: 3 },
+	baseDmg: 3,
 }
 
 export const plateMail: Item = {
 	id: 'plateMail',
 	slot: 'body',
 	cooldown: 2,
-	provoke: 5,
+	provoke: 100,
 	speed: 999,
-	damageLimit:20,
-	actions(player) {
-		pushHappening(`${player.heroName} infuriates enemies!`)
-		return {
-			behavior: { kind: 'center', extraSprite: 'bomb' },
-			source: { kind: 'player', entity: player },
-			alsoModifiesAggro: enemiesInScene(player.currentScene).map((e) => {
-				return {
-					targetEnemy: e,
-					setTo: 100,
-					forHeros: [player]
-				} satisfies AggroModifierEvent
-			})
-		} satisfies BattleEvent
-	},
+	damageLimit: 20,
+	grantsImmunity: true,
+	behavior: { kind: 'selfInflicted', extraSprite: 'flame' },
+	style: { style: 'allEnemies', putsStatusOnSelf: { statusId: 'rage', count: 2 } },
+
 }
 
 const theifCloak: Item = {
@@ -159,14 +123,9 @@ const theifCloak: Item = {
 	cooldown: 3,
 	speed: 999,
 	provoke: 30,
-	actions(player) {
-		pushHappening(`${player.heroName} hid in shadows`)
-		return {
-			behavior: { kind: 'selfInflicted', extraSprite: 'smoke' },
-			source: { kind: 'player', entity: player },
-			putsStatuses: [{ targetPlayer: player, status: 'hidden', count: 2 }],
-		} satisfies BattleEvent
-	},
+	grantsImmunity: true,
+	behavior: { kind: 'selfInflicted', extraSprite: 'smoke' },
+	style: { style: 'allEnemies', putsStatusOnSelf: { statusId: 'hidden', count: 2 } },
 }
 
 export const leatherArmor: Item = {
@@ -177,23 +136,10 @@ export const leatherArmor: Item = {
 	speed: 5,
 	provoke: 0,
 	grantsImmunity: true,
-	damageReduction:5,
-	actionForFriendly(player, friend) {
-		return {
-			source: { kind: 'player', entity: player },
-			target: { kind: 'player', entity: friend },
-			behavior: { kind: 'melee' },
-			putsStatuses: [{ targetPlayer: friend, status: 'poison', remove: true }]
-		} satisfies BattleEvent
-	},
-	actionForSelf(player) {
-		return {
-			source: { kind: 'player', entity: player },
-			behavior: { kind: 'selfInflicted', extraSprite: 'heal' },
-			putsStatuses: [{ targetPlayer: player, status: 'poison', remove: true }]
-		} satisfies BattleEvent
-
-	},
+	damageReduction: 5,
+	behavior: { kind: 'melee' },
+	style: { style: 'anyFriendly', selfBehavior: { kind: 'selfInflicted', extraSprite: 'heal' } },
+	putsStatusOnAffected: { statusId: 'poison', remove: true }
 }
 
 const fist: Item = {
@@ -202,24 +148,23 @@ const fist: Item = {
 	default: true,
 	provoke: 1,
 	speed: 10,
-	actionForEnemy(player, enemy) {
-		return {
-			behavior: { kind: 'melee' },
-			source: { kind: 'player', entity: player },
-			target: { kind: 'enemy', entity: enemy },
-			baseDamageToTarget: 5,
-		} satisfies BattleEvent
-	},
+	behavior: { kind: 'melee' },
+	style: { style: 'anyEnemy' },
+	baseDmg: 10,
 }
 const belt: Item = {
 	id: 'belt',
 	slot: 'utility',
 	default: true,
+	style: { style: 'noAction' },
+	behavior: { kind: 'melee' }
 }
 const rags: Item = {
 	id: 'rags',
 	slot: 'body',
 	default: true,
+	style: { style: 'noAction' },
+	behavior: { kind: 'melee' }
 }
 
 const wait: Item = {
@@ -228,28 +173,20 @@ const wait: Item = {
 	default: true,
 	speed: 999,
 	provoke: 0,
-	actions(player) {
-		return {
-			behavior: { kind: 'selfInflicted', extraSprite: 'shield' },
-			source: { kind: 'player', entity: player },
-		} satisfies BattleEvent
-	}
+	behavior: { kind: 'selfInflicted', extraSprite: 'shield' },
+	style: { style: 'onlySelf' }
 }
 const succumb: Item = {
 	id: 'succumb',
 	slot: 'succumb',
+	succumb: true,
 	default: true,
 	speed: -999,
 	grantsImmunity: true,
 	requiresSourceDead: true,
 	useableOutOfBattle: true,
-	actions(player) {
-		return {
-			behavior: { kind: 'selfInflicted', extraSprite: 'skull' },
-			source: { kind: 'player', entity: player },
-			succumb: true,
-		} satisfies BattleEvent
-	}
+	behavior: { kind: 'selfInflicted', extraSprite: 'skull' },
+	style: { style: 'onlySelf' },
 }
 
 
@@ -282,27 +219,6 @@ export type ItemState = {
 	stock?: number;
 }
 
-export type Item = {
-	id: string
-	slot: string
-	speed?: number
-	damageLimit?:number,
-	damageReduction?:number,
-	provoke?: number
-	grantsImmunity?: boolean;
-	default?: boolean;
-	actions?: (player: Player) => BattleEvent
-	actionForEnemy?: (player: Player, enemy: ActiveEnemy) => BattleEvent
-	actionForFriendly?: (player: Player, friend: Player) => BattleEvent
-	actionForSelf?: (player: Player) => BattleEvent
-	warmup?: number
-	cooldown?: number
-	startStock?: number
-	useableOutOfBattle?: boolean
-	requiresHealth?: boolean
-	requiresStatus?: StatusId
-	requiresSourceDead?: boolean
-}
 
 
 export function equipItem(player: Player, item: Item) {

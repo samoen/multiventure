@@ -64,20 +64,20 @@ export type BattleEvent = {
 	succumb?:boolean,
 }
 
-export type StatusModifier = {target:UnitId, status:StatusId, remove?:boolean, count?:number}
-export type StatusModifierEvent = {targetPlayer?:Player, targetEnemy?:ActiveEnemy, status:StatusId, remove?:boolean, count?:number}
+export type StatusMod = {statusId:StatusId, remove?:boolean, count?:number}
+
+export type StatusModifier = {target:UnitId} & StatusMod
+export type StatusModifierEvent = {targetPlayer?:Player, targetEnemy?:ActiveEnemy,} & StatusMod
 export type HealthModifier = {target:UnitId,amount:number}
 export type HealthModifierEvent = {targetPlayer?:Player,targetEnemy?:ActiveEnemy,baseDamage?:number,baseHeal?:number}
 export type AggroModifier = {
 	target:EnemyId,
-	amount?:number,
-	setTo?:number,
+	amount:number,
 	forHeros:HeroId[]
 }
 export type AggroModifierEvent = {
 	targetEnemy:ActiveEnemy,
-	baseAmount?:number,
-	setTo?:number,
+	baseAmount:number,
 	forHeros: Player[]
 }
 

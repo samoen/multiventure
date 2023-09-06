@@ -466,10 +466,10 @@ export function handlePutsStatuses(anim: BattleAnimation) {
                         // remove enemy status for all sources
                         for (const sourceId in vup.actual.enemy.statuses) {
                             const tSourceId = sourceId as UnitId
-                            vup.actual.enemy.statuses[tSourceId][ps.status] = 0
+                            vup.actual.enemy.statuses[tSourceId][ps.statusId] = 0
                         }
                     } else if (vup.actual.kind == 'player') {
-                        vup.actual.info.statuses[ps.status] = 0;
+                        vup.actual.info.statuses[ps.statusId] = 0;
                     }
                 } else {
                     if (ps.count) {
@@ -480,9 +480,9 @@ export function handlePutsStatuses(anim: BattleAnimation) {
                                 console.log('adding statuses for ' + anim.source)
                                 vup.actual.enemy.statuses[anim.source] = { poison: 0, rage: 0, hidden: 0 };
                             }
-                            vup.actual.enemy.statuses[anim.source][ps.status] = ps.count;
+                            vup.actual.enemy.statuses[anim.source][ps.statusId] = ps.count;
                         } else if (vup.actual.kind == 'player') {
-                            vup.actual.info.statuses[ps.status] = ps.count;
+                            vup.actual.info.statuses[ps.statusId] = ps.count;
                         }
 
                     }

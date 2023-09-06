@@ -1,4 +1,4 @@
-import type { AnimationBehavior, UnitId, BattleAnimation, EnemyName, StatusEffect, StatusId, EnemyId, BattleEvent, StatusModifierEvent, HeroId, HealthModifierEvent } from "$lib/utils";
+import type { AnimationBehavior, UnitId, BattleAnimation, EnemyName, StatusEffect, StatusId, EnemyId, BattleEvent, StatusModifierEvent, HeroId, HealthModifierEvent, StatusMod } from "$lib/utils";
 import { pushHappening } from "./messaging";
 import { scenes, type SceneId } from "./scenes";
 import { playerEquipped, type HeroName, type Player, activePlayers, activePlayersInScene } from "./users";
@@ -34,7 +34,7 @@ export type EnemyTemplate = {
 	baseDamage: number
 	behavior?: AnimationBehavior
 	randomTarget?:boolean
-	putsStatusOnTarget?:{statusId:StatusId, count:number}
+	putsStatusOnTarget?:StatusMod
 	aggroGain: number
 	startAggro: number
 	speed: number
