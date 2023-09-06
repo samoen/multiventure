@@ -2,7 +2,7 @@ import type { UnitId, BattleAnimation, StatusEffect, StatusId, BattleEvent, Hero
 import { v4 } from 'uuid';
 import { items, type Item, type ItemState, type QuickbarSlot, type ItemId, equipItem, fireStaff, plateMail, leatherArmor, poisonDart } from './items';
 import { pushHappening } from './messaging';
-import type { VisualActionSource } from './logic';
+import type { UnlockableActionData, VisualActionSource } from './logic';
 import { type SceneId, scenes, addSoloScenes } from './scenes';
 
 export const users = new Map<UserId, Player>();
@@ -36,7 +36,7 @@ export function addNewUser(heroName: string): { id: string, player: Player } {
 	// startScene = 'goblinCamp'
 	// startScene = 'castle'
 	// startScene = 'throne'
-	startScene = 'armory'
+	// startScene = 'armory'
 
 	let startInventory = defaultInventory()
 
@@ -129,6 +129,7 @@ export type GameAction = {
 	slot?: QuickbarSlot;
 	itemId?:ItemId;
 	target?: UnitId;
+	unlockableActData?:UnlockableActionData;
 };
 
 export type MiscPortrait = 'general' | 'peasant' | 'lady'

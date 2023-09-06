@@ -52,7 +52,7 @@ export type BattleEventEntity = {kind:'player',entity:Player}|{kind:'enemy',enti
 
 export type BattleEvent = {
 	source: BattleEventEntity
-	target?:BattleEventEntity|{kind:'vas',entity:{unitId:VisualActionSourceId}}
+	target?:BattleEventEntity
 	baseHealingToSource?: number,
 	baseHealingToTarget?: number,
 	baseDamageToTarget?:number,
@@ -61,7 +61,6 @@ export type BattleEvent = {
 	behavior: AnimationBehavior,
 	alsoDamages?:HealthModifierEvent[],
 	alsoModifiesAggro?:AggroModifierEvent[],
-	takesItem?:Item,
 	succumb?:boolean,
 }
 

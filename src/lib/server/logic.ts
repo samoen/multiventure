@@ -214,10 +214,35 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 
 	if (!actionFromId.itemId) {
-		if (actionFromId.performAction) {
-			let battleEvent = actionFromId.performAction();
-			if (battleEvent) {
-				processBattleEvent(battleEvent, player)
+		if (actionFromId.unlockableActData) {
+			if(actionFromId.unlockableActData.pickupItem){
+				const idToPickup = actionFromId.unlockableActData.pickupItem
+				let toPickup = items.find(i=>i.id == idToPickup)
+				if(toPickup){
+					equipItem(player, toPickup)
+					pushAnimation({
+						sceneId:actionStartedInSceneId,
+						battleAnimation:{
+							source:player.unitId,
+							target:actionFromId.target,
+							behavior:{kind:'melee'},
+							takesItem: { id: idToPickup, slot: toPickup.slot },
+						}
+					})
+				}
+			}
+			
+			if(actionFromId.unlockableActData.travelTo){
+				changeScene(player, actionFromId.unlockableActData.travelTo)
+				pushAnimation({
+					leavingScene:player,
+					sceneId:actionStartedInSceneId,
+					battleAnimation:{
+						source:player.unitId,
+						behavior:{kind:'travel',goTo:actionFromId.unlockableActData.travelTo},
+						target:actionFromId.target
+					}
+				})
 			}
 		}
 		return
@@ -536,15 +561,10 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		}
 	}
 
-	if (battleEvent.takesItem && battleEvent.source.kind == 'player') {
-		equipItem(battleEvent.source.entity, battleEvent.takesItem)
-	}
+	
 	let leavingScene = undefined
 	let sceneToPlayAnim = player.currentScene
-	if (battleEvent.behavior.kind == 'travel') {
-		leavingScene = player
-		changeScene(player, battleEvent.behavior.goTo)
-	}
+	
 	if (battleEvent.succumb) {
 		leavingScene = player
 		changeScene(player, 'dead')
@@ -574,7 +594,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				remove: m.remove
 			} satisfies StatusModifier
 		}),
-		takesItem: battleEvent.takesItem ? { id: battleEvent.takesItem.id, slot: battleEvent.takesItem.slot } : undefined,
+		
 	}
 	pushAnimation({
 		sceneId: sceneToPlayAnim,
@@ -631,14 +651,8 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 					// let item = items[id]
 					ga = {
 						buttonText: `Equip ${id}`,
-						performAction() {
-							return {
-								source: { kind: 'player', entity: player },
-								target: { kind: 'vas', entity: vas },
-								behavior: { kind: 'melee' },
-								takesItem: items.find(i => i.id == id)
-							} satisfies BattleEvent
-						},
+						unlockableActData:unlockableActData,
+						target:vas.unitId,
 					}
 				} else if (unlockableActData.travelTo) {
 					let travelTo = unlockableActData.travelTo
@@ -647,13 +661,8 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 
 					ga = {
 						buttonText: `Travel to ${scene.displayName}`,
-						performAction() {
-							return {
-								behavior: { kind: 'travel', goTo: travelTo },
-								source: { kind: 'player', entity: player },
-								target: { kind: 'vas', entity: vas }
-							} satisfies BattleEvent
-						},
+						unlockableActData:unlockableActData,
+						target:vas.unitId,
 					}
 				}
 				else {
