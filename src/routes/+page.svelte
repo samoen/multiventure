@@ -45,7 +45,10 @@
 		triedSignupButTaken,
 		syncConvoStateToVas,
 		changeVasLocked,
-		successcreds
+		successcreds,
+
+		subAnimationStage
+
 	} from '$lib/client/ui';
 	import type { MessageFromServer } from '$lib/server/messaging';
 	import { onMount, tick } from 'svelte';
@@ -76,7 +79,7 @@
 
 	let happenings: HTMLElement;
 	let sceneTexts: HTMLElement;
-	let autoSignup: boolean = false;
+	let autoSignup: boolean = true;
 	let autoContinue: boolean = false;
 
 	let sourceErrored: Writable<boolean> = writable(false);
@@ -142,16 +145,15 @@
 			$clientState.status = 'failed to source';
 			$clientState.loading = false;
 			console.log('failed to source');
-			console.error(e);
+			console.log(e);
 			return;
 		}
 		$source.onerror = function (ev) {
-			console.error(`event source error ${JSON.stringify(ev)}`, ev);
+			console.log(`event source error ${JSON.stringify(ev)}`, ev);
 			$clientState.status = 'Event source errored';
 			$sourceErrored = true;
-			// $clientState.loading = false;
+			$clientState.loading = false;
 			// this.close();
-			// $lastMsgFromServer = undefined;
 		};
 
 		$source.addEventListener('firstack', async (e) => {
@@ -206,10 +208,13 @@
 	}
 	function leaveGame() {
 		$clientState.status = 'leaving game';
+		$clientState.waitingForMyEvent = false;
 		$source?.close();
+		$successcreds = undefined
 		$source = undefined;
 		$lastMsgFromServer = undefined;
 		$currentAnimationIndex = 999;
+		$subAnimationStage = 'start'
 		$convoStateForEachVAS.clear();
 		$visualActionSources = [];
 		$allVisualUnitProps = [];

@@ -619,7 +619,6 @@ export async function choose(chosen: GameActionSentToClient): Promise<MessageFro
     clientState.update(cs => {
         cs.status = 'playing'
         cs.waitingForMyEvent = false
-        cs.loading = false;
         return cs
     })
 
