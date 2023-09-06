@@ -4,6 +4,7 @@
     import strong from "$lib/assets/ui/strong.png"
     import foot from "$lib/assets/ui/foot.png"
     import teeth from "$lib/assets/ui/teeth.png"
+    import shieldHealth from "$lib/assets/ui/shield-health.png"
 
 
     export let vu : VisualUnitProps
@@ -15,6 +16,10 @@
 <div>
     <div class="statLine">
         <img src={heart} alt='a heart'>
+        <div>{vu.displayHp}</div>
+    </div>
+    <div class="statLine">
+        <img src={shieldHealth} alt='a heart'>
         <div>{vu.maxHp}</div>
     </div>
     <div class="statLine">

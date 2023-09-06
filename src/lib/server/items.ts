@@ -136,6 +136,7 @@ export const plateMail: Item = {
 	cooldown: 2,
 	provoke: 5,
 	speed: 999,
+	damageLimit:20,
 	actions(player) {
 		pushHappening(`${player.heroName} infuriates enemies!`)
 		return {
@@ -149,12 +150,6 @@ export const plateMail: Item = {
 				} satisfies AggroModifierEvent
 			})
 		} satisfies BattleEvent
-	},
-	onTakeDamage(incoming) {
-		if (incoming > 20) {
-			return 20
-		}
-		return incoming
 	},
 }
 
@@ -178,16 +173,11 @@ export const leatherArmor: Item = {
 	id: 'leatherArmor',
 	slot: 'body',
 	useableOutOfBattle: true,
-	onTakeDamage(incoming) {
-		if (incoming < 6) {
-			return 1
-		}
-		return incoming - 5
-	},
 	requiresStatus: 'poison',
 	speed: 5,
 	provoke: 0,
 	grantsImmunity: true,
+	damageReduction:5,
 	actionForFriendly(player, friend) {
 		return {
 			source: { kind: 'player', entity: player },
@@ -296,6 +286,8 @@ export type Item = {
 	id: string
 	slot: string
 	speed?: number
+	damageLimit?:number,
+	damageReduction?:number,
 	provoke?: number
 	grantsImmunity?: boolean;
 	default?: boolean;
@@ -303,7 +295,6 @@ export type Item = {
 	actionForEnemy?: (player: Player, enemy: ActiveEnemy) => BattleEvent
 	actionForFriendly?: (player: Player, friend: Player) => BattleEvent
 	actionForSelf?: (player: Player) => BattleEvent
-	onTakeDamage?: (incoming: number) => number
 	warmup?: number
 	cooldown?: number
 	startStock?: number

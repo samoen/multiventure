@@ -36,7 +36,8 @@ export type EnemyTemplate = {
 	aggroGain: number
 	startAggro: number
 	speed: number
-	onTakeDamage?: (incoming: number) => number
+	damageLimit?:number
+	damageReduction?:number
 	battleEvent?:(me: ActiveEnemy, player: Player) => BattleEvent
 };
 
@@ -62,6 +63,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		baseDamage: 20,
 		aggroGain: 80,
 		startAggro: 20,
+		damageReduction: 3,
 		speed: 4,
 	},
 	darter: {
@@ -86,10 +88,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		aggroGain: 30,
 		startAggro: 0,
 		speed: 10,
-		onTakeDamage(incoming) {
-			if (incoming > 10) return 10
-			return incoming
-		}
+		damageLimit:10,
 	},
 	fireGremlin: {
 		baseHealth: 10,
@@ -196,11 +195,19 @@ export function damagePlayer(enemy: ActiveEnemy, player: Player, baseDmg:number)
 	let strikes = enemy.template.strikes ?? 1
 	for (const _ of Array.from({ length: strikes })) {
 		let dmg = baseDmg
-		for (const item of playerEquipped(player)) {
-			if (item.onTakeDamage) {
-				dmg = item.onTakeDamage(dmg)
+		let equippedItems = playerEquipped(player)
+		for (const item of equippedItems) {
+			if (item.damageReduction) {
+				dmg = dmg - item.damageReduction
+				if(dmg < 1)dmg = 1
 			}
 		}
+		for (const item of equippedItems) {
+			if(item.damageLimit){
+				if(dmg > item.damageLimit)dmg = item.damageLimit
+			}
+		}
+
 		player.health -= dmg
 		dmgDone += dmg
 	}
@@ -209,22 +216,30 @@ export function damagePlayer(enemy: ActiveEnemy, player: Player, baseDmg:number)
 	return { dmgDone: dmgDone }
 }
 
-export function damageEnemy(actor: Player, enemy: ActiveEnemy, damage: number, strikes: number = 1): { dmgDone: number } {
+export function damageEnemy(attackerName: string, enemy: ActiveEnemy, damage: number, bonusDmg:number, strikes: number = 1): { dmgDone: number } {
 	if (enemy.currentHealth < 1) return { dmgDone: 0 }
 
 	let dmgDone = 0
 	for (const _ of Array.from({ length: strikes })) {
-		let dmg = enemy.template.onTakeDamage?.(damage) ?? damage
+		let dmg = damage + bonusDmg
+		if(enemy.template.damageReduction){
+			dmg = dmg - enemy.template.damageReduction
+			if(dmg < 1) dmg = 1
+		}
+		if(enemy.template.damageLimit){
+			if (dmg > enemy.template.damageLimit) {
+				dmg = enemy.template.damageLimit
+			} 
+		}
 		enemy.currentHealth -= dmg
 		dmgDone += dmg
 	}
-	dmgDone = dmgDone + actor.strength
 
-	pushHappening(`${actor.heroName} hit ${enemy.name} ${strikes > 1 ? strikes + ' times' : ''} for ${dmgDone} damage`)
+	pushHappening(`${attackerName} hit ${enemy.name} ${strikes > 1 ? strikes + ' times' : ''} for ${dmgDone} damage`)
 
 	let result = checkEnemyDeath(enemy)
 	if (result.killed) {
-		pushHappening(`${actor.heroName} killed ${enemy.name}`)
+		pushHappening(`${attackerName} killed ${enemy.name}`)
 	}
 	return { dmgDone: dmgDone }
 }
@@ -238,21 +253,6 @@ export function pushAnimation(
 	if(leavingScene){
 		leavingScene.animations.push(battleAnimation)
 	}
-}
-
-export function infightDamage(actor: ActiveEnemy, target: ActiveEnemy, baseDmg:number): { dmgDone: number } {
-	if (target.currentHealth < 1) return { dmgDone: 0 }
-	let damage = baseDmg
-	if(target.template.onTakeDamage){
-		damage = target.template.onTakeDamage(baseDmg)
-	}
-	target.currentHealth -= damage
-	pushHappening(`${actor.name} accidentally hit ${target.name} for ${damage} damage`)
-	let result = checkEnemyDeath(target)
-	if (result.killed) {
-		pushHappening(`${actor.name} killed ${target.name}`)
-	}
-	return { dmgDone: damage }
 }
 
 export function takePoisonDamage(enemy: ActiveEnemy): { dmgDone: number } {

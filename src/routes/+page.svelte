@@ -70,7 +70,7 @@
 	let signupInput: string;
 	let signInNameInput: string;
 	let signInIdInput: string;
-	let source: EventSource | undefined;
+	let source: Writable<EventSource | undefined> = writable(undefined);
 
 	// let unitsDetails: UnitDetails[] = [];
 
@@ -127,7 +127,7 @@
 	}
 
 	function subscribeEventsIfNotAlready() {
-		if (source != undefined && source.readyState != EventSource.CLOSED) {
+		if ($source != undefined && $source.readyState != EventSource.CLOSED) {
 			console.log('no need to subscribe but doing anyway?');
 		// 	$clientState.status = 'subscribing to events';
 		// 	$clientState.loading = false;
@@ -137,7 +137,7 @@
 		$clientState.status = 'subscribing to events';
 		console.log('subscribing...')
 		try {
-			source = new EventSource('/api/subscribe');
+			$source = new EventSource('/api/subscribe');
 		} catch (e) {
 			$clientState.status = 'failed to source';
 			$clientState.loading = false;
@@ -145,7 +145,7 @@
 			console.error(e);
 			return;
 		}
-		source.onerror = function (ev) {
+		$source.onerror = function (ev) {
 			console.error(`event source error ${JSON.stringify(ev)}`, ev);
 			$clientState.status = 'Event source errored';
 			$sourceErrored = true;
@@ -154,13 +154,13 @@
 			// $lastMsgFromServer = undefined;
 		};
 
-		source.addEventListener('firstack', async (e) => {
+		$source.addEventListener('firstack', async (e) => {
 			$sourceErrored = false;
 			getWorld();
 			$clientState.loading = false;
 		});
 
-		source.addEventListener('world', async (e) => {
+		$source.addEventListener('world', async (e) => {
 			$sourceErrored = false;
 			let sMsg = JSON.parse(e.data);
 			if (!isMsgFromServer(sMsg)) {
@@ -171,7 +171,7 @@
 			$clientState.loading = false;
 		});
 
-		source.addEventListener('closing', (e) => {
+		$source.addEventListener('closing', (e) => {
 			console.log('server requested close source');
 			$clientState.status = 'server asked to close source';
 			leaveGame();
@@ -206,8 +206,8 @@
 	}
 	function leaveGame() {
 		$clientState.status = 'leaving game';
-		source?.close();
-		source = undefined;
+		$source?.close();
+		$source = undefined;
 		$lastMsgFromServer = undefined;
 		$currentAnimationIndex = 999;
 		$convoStateForEachVAS.clear();
@@ -378,8 +378,8 @@
 	<!-- <button disabled={!signupInput} on:click={signUpButtonClicked}>Sign Up</button> -->
 {/if}
 
-{#if $lastMsgFromServer && (!source || source.readyState != source.OPEN)}
-	<p>{`Weird source state ${source} ${source ? source.readyState : ''}`}</p>
+{#if $lastMsgFromServer && ($source == undefined || $source.readyState != $source.OPEN)}
+	<p>{`Weird source: ${$source}, readystate: ${$source ? $source.readyState : ''}`}</p>
 {/if}
 
 {#if $lastMsgFromServer}

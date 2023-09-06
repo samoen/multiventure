@@ -1,6 +1,6 @@
 import { goto } from "$app/navigation"
 import type { AggroModifier, AnySprite, BattleAnimation, BattleEvent, GameActionSentToClient, HealthModifier, StatusEffect, StatusModifier, UnitId, VisualActionSourceId } from "$lib/utils"
-import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, infightDamage, modifyAggroForPlayer, modifiedEnemyHealth } from "./enemies"
+import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, modifyAggroForPlayer, modifiedEnemyHealth } from "./enemies"
 import { items, type Item, equipItem, checkHasItem, type ItemId } from "./items"
 import { pushHappening } from "./messaging"
 import { scenes, type SceneId } from "./scenes"
@@ -415,7 +415,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	}
 	if (battleEvent.baseDamageToTarget) {
 		if (battleEvent.target?.kind == 'enemy' && battleEvent.source.kind == 'player') {
-			const r = damageEnemy(battleEvent.source.entity, battleEvent.target.entity, battleEvent.baseDamageToTarget, battleEvent.strikes)
+			const r = damageEnemy(battleEvent.source.entity.heroName, battleEvent.target.entity, battleEvent.baseDamageToTarget,battleEvent.source.entity.strength, battleEvent.strikes)
 			dmgToTarget = r.dmgDone
 		}
 		if (battleEvent.target?.kind == 'player' && battleEvent.source.kind == 'enemy') {
@@ -423,7 +423,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 			dmgToTarget = r.dmgDone
 		}
 		if (battleEvent.target?.kind == 'enemy' && battleEvent.source.kind == 'enemy') {
-			const r = infightDamage(battleEvent.source.entity, battleEvent.target.entity, battleEvent.baseDamageToTarget)
+			const r = damageEnemy(battleEvent.source.entity.name, battleEvent.target.entity, battleEvent.baseDamageToTarget, 0)
 			dmgToTarget = r.dmgDone
 		}
 	}
@@ -469,7 +469,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 			if (healthModifyEvent.targetEnemy) {
 				if (battleEvent.source.kind == 'player') {
 					if (healthModifyEvent.baseDamage) {
-						let r = damageEnemy(battleEvent.source.entity, healthModifyEvent.targetEnemy, healthModifyEvent.baseDamage)
+						let r = damageEnemy(battleEvent.source.entity.heroName, healthModifyEvent.targetEnemy, healthModifyEvent.baseDamage,0)
 						alsoDmgedAnimation.push({
 							target: healthModifyEvent.targetEnemy.unitId,
 							amount: r.dmgDone,
@@ -478,7 +478,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				}
 				if (battleEvent.source.kind == 'enemy') {
 					if (healthModifyEvent.baseDamage) {
-						let r = infightDamage(battleEvent.source.entity, healthModifyEvent.targetEnemy, healthModifyEvent.baseDamage)
+						let r = damageEnemy(battleEvent.source.entity.name, healthModifyEvent.targetEnemy, healthModifyEvent.baseDamage,0)
 						alsoDmgedAnimation.push({
 							target: healthModifyEvent.targetEnemy.unitId,
 							amount: r.dmgDone,
