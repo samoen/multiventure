@@ -48,9 +48,11 @@ export function isSignupResponse(r:any): r is SignupResponse{
    return true
 }
 
+export type BattleEventEntity = {kind:'player',entity:Player}|{kind:'enemy',entity:ActiveEnemy}
+
 export type BattleEvent = {
-	source:{kind:'player',entity:Player}|{kind:'enemy',entity:ActiveEnemy}
-	target?:{kind:'player',entity:Player}|{kind:'enemy',entity:ActiveEnemy}|{kind:'vas',entity:{unitId:VisualActionSourceId}}
+	source: BattleEventEntity
+	target?:BattleEventEntity|{kind:'vas',entity:{unitId:VisualActionSourceId}}
 	baseHealingToSource?: number,
 	baseHealingToTarget?: number,
 	baseDamageToTarget?:number,

@@ -1,5 +1,5 @@
 import { goto } from "$app/navigation"
-import type { AggroModifier, AnySprite, BattleAnimation, BattleEvent, GameActionSentToClient, HealthModifier, StatusEffect, StatusModifier, UnitId, VisualActionSourceId } from "$lib/utils"
+import type { AggroModifier, AnySprite, BattleAnimation, BattleEvent, BattleEventEntity, GameActionSentToClient, HealthModifier, StatusEffect, StatusModifier, StatusModifierEvent, UnitId, VisualActionSourceId } from "$lib/utils"
 import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, modifyAggroForPlayer, modifiedEnemyHealth } from "./enemies"
 import { items, type Item, equipItem, checkHasItem, type ItemId } from "./items"
 import { pushHappening } from "./messaging"
@@ -21,12 +21,12 @@ export function updatePlayerActions(player: Player) {
 	let scenePlayers = activePlayersInScene(player.currentScene)
 
 	for (const cd of player.inventory) {
-		const i = items.find(item=>item.id == cd.itemId)
-		if(i == undefined)return
+		const i = items.find(item => item.id == cd.itemId)
+		if (i == undefined) return
 		if (i.useableOutOfBattle || sceneEnemies.length) {
 			if (cd.cooldown < 1 && cd.warmup < 1 && (cd.stock == undefined || cd.stock > 0)) {
 				if (i.actions) {
-					if((i.requiresSourceDead && player.health < 1) || (!i.requiresSourceDead && player.health > 0)){
+					if ((i.requiresSourceDead && player.health < 1) || (!i.requiresSourceDead && player.health > 0)) {
 						let ga: GameAction = {
 							buttonText: `use ${i.id}`,
 							performAction() {
@@ -43,7 +43,7 @@ export function updatePlayerActions(player: Player) {
 				}
 				if (i.actionForEnemy) {
 					for (const enemy of sceneEnemies) {
-						if((i.requiresSourceDead && player.health < 1) || (!i.requiresSourceDead && player.health > 0)){
+						if ((i.requiresSourceDead && player.health < 1) || (!i.requiresSourceDead && player.health > 0)) {
 							let ga: GameAction = {
 								buttonText: `use ${i.id} on ${enemy.unitId}`,
 								performAction() {
@@ -52,7 +52,7 @@ export function updatePlayerActions(player: Player) {
 									}
 								},
 								slot: i.slot,
-								itemId:i.id,
+								itemId: i.id,
 								target: enemy.unitId,
 							}
 							player.itemActions.push(ga)
@@ -65,8 +65,8 @@ export function updatePlayerActions(player: Player) {
 							(!i.requiresHealth || friend.health < friend.maxHealth && friend.health > 0) &&
 							(!i.requiresStatus || friend.statuses[i.requiresStatus] > 0) &&
 							((i.requiresSourceDead && player.health < 1) || (!i.requiresSourceDead && player.health > 0))
-							) {
-								let ga: GameAction = {
+						) {
+							let ga: GameAction = {
 								buttonText: `use ${i.id} on ${friend.unitId}`,
 								performAction() {
 									if (i.actionForFriendly) {
@@ -74,7 +74,7 @@ export function updatePlayerActions(player: Player) {
 									}
 								},
 								slot: i.slot,
-								itemId:i.id,
+								itemId: i.id,
 								target: friend.unitId,
 							}
 							player.itemActions.push(ga)
@@ -95,7 +95,7 @@ export function updatePlayerActions(player: Player) {
 								}
 							},
 							slot: i.slot,
-							itemId:i.id,
+							itemId: i.id,
 							target: player.unitId,
 						}
 						player.itemActions.push(ga)
@@ -105,7 +105,7 @@ export function updatePlayerActions(player: Player) {
 		}
 	}
 
-	if(!sceneEnemies.length || player.currentScene == 'armory'){
+	if (!sceneEnemies.length || player.currentScene == 'armory') {
 		scenes.get(player.currentScene)?.actions(player)
 	}
 }
@@ -170,8 +170,8 @@ export function scaleEnemyHealthInScene(sceneId: SceneId) {
 
 export function changeScene(player: Player, goTo: SceneId) {
 	let left = scenes.get(player.currentScene)
-	if(!left)return
-	if(left.onLeaveScene){
+	if (!left) return
+	if (left.onLeaveScene) {
 		left.onLeaveScene(player)
 	}
 
@@ -182,7 +182,7 @@ export function changeScene(player: Player, goTo: SceneId) {
 	// state warmups to the item warmup, stocks to start
 	for (const itemState of player.inventory) {
 		itemState.cooldown = 0
-		let item = items.find(i=>i.id == itemState.itemId)
+		let item = items.find(i => i.id == itemState.itemId)
 		if (item != undefined) {
 			if (item.warmup) {
 				itemState.warmup = item.warmup
@@ -223,8 +223,8 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		return
 	}
 
-	let itemUsed  = items.find(i=>i.id == actionFromId.itemId)
-	if(!itemUsed)return
+	let itemUsed = items.find(i => i.id == actionFromId.itemId)
+	if (!itemUsed) return
 
 
 	pushHappening('----');
@@ -333,11 +333,11 @@ function preCombatActionPerformed(player: Player, gameAction: GameAction, itemUs
 
 	// If we used an equipment item set it on cooldown and reduce stock
 	if (gameAction.itemId) {
-		let itemState = player.inventory.find(i=>i.itemId == gameAction.itemId)
-		if(itemState){
+		let itemState = player.inventory.find(i => i.itemId == gameAction.itemId)
+		if (itemState) {
 			const isId = itemState.itemId
-			let item = items.find(i=>i.id == isId)
-			if(!item)return
+			let item = items.find(i => i.id == isId)
+			if (!item) return
 			if (item.cooldown) {
 				itemState.cooldown = item.cooldown
 			}
@@ -355,7 +355,8 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 	if (itemUsed.speed) {
 		playerHitSpeed += itemUsed.speed
 	}
-	for (const enemyInScene of enemiesInScene(player.currentScene).sort((a, b) => b.template.speed - a.template.speed)) {
+	let sceneEnemies = enemiesInScene(player.currentScene)
+	for (const enemyInScene of sceneEnemies.sort((a, b) => b.template.speed - a.template.speed)) {
 		if (enemyInScene.currentHealth < 1) continue
 		if (
 			(postAction && (playerHitSpeed >= enemyInScene.template.speed))
@@ -364,24 +365,43 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 			let aggroForActor = getAggroForPlayer(enemyInScene, player)
 			if (aggroForActor) {
 				if ((Math.random() < (aggroForActor / 100))) {
-					if (enemyInScene.template.battleEvent) {
-						processBattleEvent(enemyInScene.template.battleEvent(enemyInScene, player), player)
-					} else {
-						let r = damagePlayer(enemyInScene, player, enemyInScene.damage)
-						if (r.dmgDone > 0) {
-							pushAnimation(
-								{
-									sceneId: player.currentScene,
-									battleAnimation: {
-										source: enemyInScene.unitId,
-										target: player.unitId,
-										damageToTarget: r.dmgDone,
-										strikes: enemyInScene.template.strikes,
-										behavior: enemyInScene.template.behavior ?? { kind: 'melee' },
-									}
-								})
+
+					// let r = damagePlayer(enemyInScene, player, enemyInScene.damage)
+					// if (r.dmgDone > 0) {
+					let putsStatuses: StatusModifierEvent[] = []
+					if (enemyInScene.template.putsStatusOnTarget) {
+						putsStatuses.push({
+							status: enemyInScene.template.putsStatusOnTarget.statusId,
+							count: enemyInScene.template.putsStatusOnTarget.count,
+							targetPlayer: player,
+						})
+					}
+					let target: BattleEventEntity = { kind: 'player', entity: player }
+					if (enemyInScene.template.randomTarget) {
+						const selfIndex = sceneEnemies.indexOf(enemyInScene)
+						if (selfIndex == -1) {
+							console.log('random targeting failed to find self index')
+							break
+						}
+						const randomIndex = Math.floor(Math.random() * sceneEnemies.length);
+						if (randomIndex != selfIndex) {
+							let randomEnemy = sceneEnemies.at(randomIndex)
+							if (!randomEnemy) {
+								console.log('random targeting failed to find enemy target')
+								break
+							}
+							target = { kind: 'enemy', entity: randomEnemy }
 						}
 					}
+					let be: BattleEvent = {
+						source: { kind: 'enemy', entity: enemyInScene },
+						target: target,
+						behavior: enemyInScene.template.behavior ?? { kind: 'melee' },
+						putsStatuses: putsStatuses,
+						strikes: enemyInScene.template.strikes,
+						baseDamageToTarget: enemyInScene.template.baseDamage,
+					}
+					processBattleEvent(be, player)
 
 					// enemy aggro to all players goes to zero when it succeeds an aggro roll
 					for (const key of enemyInScene.aggros.keys()) {
@@ -415,7 +435,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	}
 	if (battleEvent.baseDamageToTarget) {
 		if (battleEvent.target?.kind == 'enemy' && battleEvent.source.kind == 'player') {
-			const r = damageEnemy(battleEvent.source.entity.heroName, battleEvent.target.entity, battleEvent.baseDamageToTarget,battleEvent.source.entity.strength, battleEvent.strikes)
+			const r = damageEnemy(battleEvent.source.entity.heroName, battleEvent.target.entity, battleEvent.baseDamageToTarget, battleEvent.source.entity.strength, battleEvent.strikes)
 			dmgToTarget = r.dmgDone
 		}
 		if (battleEvent.target?.kind == 'player' && battleEvent.source.kind == 'enemy') {
@@ -469,7 +489,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 			if (healthModifyEvent.targetEnemy) {
 				if (battleEvent.source.kind == 'player') {
 					if (healthModifyEvent.baseDamage) {
-						let r = damageEnemy(battleEvent.source.entity.heroName, healthModifyEvent.targetEnemy, healthModifyEvent.baseDamage,0)
+						let r = damageEnemy(battleEvent.source.entity.heroName, healthModifyEvent.targetEnemy, healthModifyEvent.baseDamage, 0)
 						alsoDmgedAnimation.push({
 							target: healthModifyEvent.targetEnemy.unitId,
 							amount: r.dmgDone,
@@ -478,7 +498,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				}
 				if (battleEvent.source.kind == 'enemy') {
 					if (healthModifyEvent.baseDamage) {
-						let r = damageEnemy(battleEvent.source.entity.name, healthModifyEvent.targetEnemy, healthModifyEvent.baseDamage,0)
+						let r = damageEnemy(battleEvent.source.entity.name, healthModifyEvent.targetEnemy, healthModifyEvent.baseDamage, 0)
 						alsoDmgedAnimation.push({
 							target: healthModifyEvent.targetEnemy.unitId,
 							amount: r.dmgDone,
@@ -535,7 +555,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		target: battleEvent.target?.entity.unitId,
 		damageToSource: dmgToSource,
 		damageToTarget: dmgToTarget,
-		strikes:battleEvent.strikes,
+		strikes: battleEvent.strikes,
 		behavior: battleEvent.behavior,
 		alsoDamages: alsoDmgedAnimation,
 		alsoModifiesAggro: aggroModifiedAnimations,
@@ -554,7 +574,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				remove: m.remove
 			} satisfies StatusModifier
 		}),
-		takesItem: battleEvent.takesItem ? { id: battleEvent.takesItem.id, slot:battleEvent.takesItem.slot } : undefined,
+		takesItem: battleEvent.takesItem ? { id: battleEvent.takesItem.id, slot: battleEvent.takesItem.slot } : undefined,
 	}
 	pushAnimation({
 		sceneId: sceneToPlayAnim,
@@ -589,15 +609,15 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 				}
 			}
 			if (unlockableActData.requiresFlags != undefined) {
-				for (const flagRequired of unlockableActData.requiresFlags){
-					if(!player.flags.has(flagRequired)){
+				for (const flagRequired of unlockableActData.requiresFlags) {
+					if (!player.flags.has(flagRequired)) {
 						passedRequirements = false
 					}
 				}
 			}
 			if (unlockableActData.requiresNotFlags != undefined) {
-				for (const flagNotAllowed of unlockableActData.requiresNotFlags){
-					if(player.flags.has(flagNotAllowed)){
+				for (const flagNotAllowed of unlockableActData.requiresNotFlags) {
+					if (player.flags.has(flagNotAllowed)) {
 						passedRequirements = false
 					}
 				}
@@ -616,7 +636,7 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 								source: { kind: 'player', entity: player },
 								target: { kind: 'vas', entity: vas },
 								behavior: { kind: 'melee' },
-								takesItem: items.find(i=>i.id == id)
+								takesItem: items.find(i => i.id == id)
 							} satisfies BattleEvent
 						},
 					}
@@ -670,7 +690,7 @@ export function convertVasToClient(vas: VisualActionSource, player: Player): Vis
 	if (vas.responses) responses = vas.responses
 	let detectStep = undefined
 	if (vas.detect) {
-		for(const detected of vas.detect){
+		for (const detected of vas.detect) {
 			if (player.flags.has(detected.flag)) {
 				detectStep = detected.flag
 				startLocked = detected.locked
@@ -710,7 +730,7 @@ export type VisualActionSource = {
 	actionsWithRequirements?: UnlockableActionData[]
 	startText: string,
 	responses?: ConversationResponse[]
-	detect?: { flag: Flag, startText?: string, responses?: ConversationResponse[], locked?:boolean}[]
+	detect?: { flag: Flag, startText?: string, responses?: ConversationResponse[], locked?: boolean }[]
 	startsLocked?: boolean
 }
 

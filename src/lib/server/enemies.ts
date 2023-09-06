@@ -33,12 +33,13 @@ export type EnemyTemplate = {
 	baseHealth: number
 	baseDamage: number
 	behavior?: AnimationBehavior
+	randomTarget?:boolean
+	putsStatusOnTarget?:{statusId:StatusId, count:number}
 	aggroGain: number
 	startAggro: number
 	speed: number
 	damageLimit?:number
 	damageReduction?:number
-	battleEvent?:(me: ActiveEnemy, player: Player) => BattleEvent
 };
 
 export type EnemyTemplateId =
@@ -72,15 +73,8 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		aggroGain: 10,
 		startAggro: 10,
 		speed: 4,
-		battleEvent(me, player) {
-			return{
-				behavior:{kind:'missile',extraSprite:'arrow'},
-				source:{kind:'enemy',entity:me},
-				target:{kind:'player',entity:player},
-				baseDamageToTarget:5,
-				putsStatuses:[{status:'poison',count:3,targetPlayer:player}satisfies StatusModifierEvent],
-			}satisfies BattleEvent
-		},
+		behavior:{kind:'missile',extraSprite:'arrow'},
+		putsStatusOnTarget:{statusId:'poison',count:3},
 	},
 	hobGoblin: {
 		baseHealth: 50,
@@ -92,24 +86,12 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 	},
 	fireGremlin: {
 		baseHealth: 10,
-		baseDamage: 5,
+		baseDamage: 10,
 		aggroGain: 50,
 		startAggro: 100,
 		speed: 10,
-		battleEvent(me, player) {
-			return {
-				behavior:{kind:'missile',extraSprite:'flame'},
-				alsoDamages:enemiesInScene(me.currentScene).filter(e=>e.name!=me.name && e.currentHealth > 0).map(e=>{
-					return {
-						baseDamage:10,
-						targetEnemy:e,
-					} satisfies HealthModifierEvent
-				}),
-				target:{kind:'player',entity:player},
-				baseDamageToTarget:5,
-				source:{kind:'enemy',entity:me},
-			}satisfies BattleEvent
-		},
+		behavior:{kind:'missile',extraSprite:'flame'},
+		randomTarget:true,
 	},
 	troll: {
 		baseHealth: 150,
