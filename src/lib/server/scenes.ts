@@ -108,7 +108,7 @@ const tutorial: Scene = {
 				},
 				{
 					responseId: 'open',
-					responseText: `I'm ready to train sir!`,
+					responseText: `Reporting for duty sir.`,
 					retort: `Ah, you must be ${player.heroName}, welcome aboard. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.`,
 					unlock:['brave', 'cheeky'],
 					lock:['scared'],
@@ -126,7 +126,7 @@ const tutorial: Scene = {
 					startsLocked:true,
 					responseId: 'saidWrong',
 					responseText: `I said the wrong thing! Can I reset our conversation?`,
-					retort: `Yep, just click my portrait. Conversations are just for fun.`
+					retort: `Yep, just click my portrait to reset - NPC conversations are just for fun! However, actions that reach the server are serious business.`
 				},
 				{
 					startsLocked:true,
@@ -176,7 +176,7 @@ const trainingRoom0: Scene = {
 			unitId: 'vasEquipClub',
 			displayName: 'Club',
 			sprite: 'club',
-			startText: 'A club deals a hefty chunk of damage each hit. That makes it effective against unarmored foes like goblins.',
+			startText: 'A club deals a hefty chunk of damage in a single strike. That makes it effective against lightly armored foes, because light armor reduces the damage of each incoming strike.',
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'club', }],
 		})
@@ -193,18 +193,24 @@ const trainingRoom0: Scene = {
 			displayName: 'Arthur',
 			sprite: 'general',
 			portrait: 'general',
-			startText: `You punched that rat good! Any questions?`,
+			startText: `What a great punch! You're a natural. Any questions?`,
 			responses: [
-				{
-					responseId: 'gimmie',
-					responseText: `Can I get some equipment?`,
-					retort: `Sure, here's some gear. Select the items and and equip. Our training goblin is ready for you. Also there's a bit of a rat problem in there right now..`,
-					unlockVas: ['vasEquipClub', `vasEquipBomb`]
-				},
 				{
 					responseId: 'explainAggro',
 					responseText: `What's that purple bar beneath the enemies health bar?`,
 					retort: `That is the enemy's aggression towards you. It indicates the likelihood of it attacking you on your next action. Some enemies gain aggression faster than others, and some actions provoke more.`,
+				},
+				{
+					responseId: 'gimmie',
+					responseText: `Can I get some equipment?`,
+					retort: `Sure, here's some gear. Select the items and and equip them.`,
+					unlockVas: ['vasEquipClub', `vasEquipBomb`]
+				},
+				{
+					responseId: 'explainNext',
+					responseText: `What's my next challenge?`,
+					retort: `Next you will fight a goblin. Goblins wear light armor, so a club will be effective. Also there's a bit of a rat problem in there right now..`,
+					unlockVas:['vasGoTrain1']
 				},
 			]
 		})
@@ -212,6 +218,7 @@ const trainingRoom0: Scene = {
 			unitId: 'vasGoTrain1',
 			displayName: 'Training Room',
 			sprite: 'castle',
+			startsLocked:true,
 			startText: `A sign on the door says: 'Glornak's office'`,
 			actionsWithRequirements: [
 				{
@@ -256,7 +263,7 @@ const trainingRoom1: Scene = {
 				{
 					responseId:'imhurt',
 					responseText:`I'm hurt!`,
-					retort:`Here's a potion. It has limited uses in each area, and gets refilled when you travel. Equip it, select yourself and take a sip`,
+					retort:`Here's a potion. Equip it, select yourself and take a sip`,
 					unlockVas:['vasEquipBandage']
 				},
 				{
@@ -268,7 +275,7 @@ const trainingRoom1: Scene = {
 				{
 					responseId: 'gimmie',
 					responseText: `What's my next battle?`,
-					retort: `Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
+					retort: `Your next battle is against heavily armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
 					unlockVas:['vasGoTrain2']
 				},
 			]
@@ -277,7 +284,7 @@ const trainingRoom1: Scene = {
 			unitId: 'vasEquipDagger',
 			displayName: 'Dagger',
 			sprite: 'dagger',
-			startText: 'Hobgoblins wear heavy armor, which limits the amount of damage they take each strike. A dagger strikes multiple times per attack, mitigating their defenses.',
+			startText: 'A dagger strikes multiple times per attack. That makes it effective against heavy armor - which limits the amount of damage taken each strike.',
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'dagger' },]
 		})
@@ -285,7 +292,7 @@ const trainingRoom1: Scene = {
 			unitId: 'vasEquipBandage',
 			displayName: 'Potion',
 			sprite: 'potion',
-			startText: `Use potions when you get low on health.`,
+			startText: `Use potions when you get low on health. It has limited uses in each area, and gets refilled when you travel.`,
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'potion' }]
 		})

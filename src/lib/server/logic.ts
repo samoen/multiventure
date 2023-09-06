@@ -23,192 +23,190 @@ export function updatePlayerActions(player: Player) {
 	for (const cd of player.inventory) {
 		const i = items.find(item => item.id == cd.itemId)
 		if (i == undefined) return
-		if (i.useableOutOfBattle || sceneEnemies.length) {
-			if (cd.cooldown < 1 &&
-				cd.warmup < 1 &&
-				(cd.stock == undefined || cd.stock > 0) &&
-				(i.requiresSourceDead && player.health < 1) || (!i.requiresSourceDead && player.health > 0)
-			) {
+		if (!i.useableOutOfBattle && !sceneEnemies.length) continue
+		if ((i.requiresSourceDead && player.health > 0)) continue
+		if (!i.requiresSourceDead && player.health < 1) continue
+		if (cd.cooldown > 0) continue
+		if (cd.warmup > 0) continue
+		if (cd.stock != undefined && cd.stock < 1) continue
 
-				if (i.style.style == 'onlySelf') {
-					const be: BattleEvent = {
-						source: { kind: 'player', entity: player },
-						succumb: i.succumb,
-						behavior: i.behavior,
-					}
-					let ga: GameAction = {
-						buttonText: `use ${i.id}`,
-						performAction() {
-							return be
-						},
-						slot: i.slot,
-						itemId: i.id,
-					}
-					player.itemActions.push(ga)
+		if (i.style.style == 'onlySelf') {
+			const be: BattleEvent = {
+				source: { kind: 'player', entity: player },
+				succumb: i.succumb,
+				behavior: i.behavior,
+			}
+			let ga: GameAction = {
+				buttonText: `use ${i.id}`,
+				performAction() {
+					return be
+				},
+				slot: i.slot,
+				itemId: i.id,
+			}
+			player.itemActions.push(ga)
+		}
+
+		if ((i.style.style == 'allEnemies')) {
+			const be: BattleEvent = {
+				source: { kind: 'player', entity: player },
+				behavior: i.behavior,
+			}
+			if (i.baseDmg) {
+				be.alsoDamages = []
+				for (const enemy of sceneEnemies) {
+					be.alsoDamages.push({
+						baseDamage: i.baseDmg,
+						targetEnemy: enemy
+					})
+				}
+			}
+			if (i.aggroModifyForAll) {
+				be.alsoModifiesAggro = []
+				for (const enemy of sceneEnemies) {
+					be.alsoModifiesAggro.push({
+						targetEnemy: enemy,
+						forHeros: scenePlayers,
+						baseAmount: i.aggroModifyForAll,
+					})
+				}
+			}
+			if (i.putsStatusOnAffected) {
+				be.putsStatuses = []
+				for (const enemy of sceneEnemies) {
+					be.putsStatuses.push({
+						targetEnemy: enemy,
+						statusId: i.putsStatusOnAffected.statusId,
+						count: i.putsStatusOnAffected.count,
+						remove: i.putsStatusOnAffected.remove,
+
+					})
+				}
+			}
+			if (i.style.putsStatusOnSelf) {
+				be.putsStatuses = []
+				be.putsStatuses.push({
+					targetPlayer: player,
+					statusId: i.style.putsStatusOnSelf.statusId,
+					count: i.style.putsStatusOnSelf.count,
+					remove: i.style.putsStatusOnSelf.remove,
+				})
+			}
+
+			let ga: GameAction = {
+				buttonText: `use ${i.id}`,
+				performAction() {
+					return be
+				},
+				slot: i.slot,
+				itemId: i.id,
+			}
+			player.itemActions.push(ga)
+
+
+		}
+		if ((i.style.style == 'anyEnemy')) {
+			for (const enemy of sceneEnemies) {
+				const be: BattleEvent = {
+					source: { kind: 'player', entity: player },
+					target: { kind: 'enemy', entity: enemy },
+					baseDamageToTarget: i.baseDmg,
+					behavior: i.behavior,
+					strikes: i.strikes,
+				}
+				if (i.putsStatusOnAffected) {
+					be.putsStatuses = []
+					be.putsStatuses.push({
+						targetEnemy: enemy,
+						statusId: i.putsStatusOnAffected.statusId,
+						count: i.putsStatusOnAffected.count,
+						remove: i.putsStatusOnAffected.remove,
+					})
 				}
 
-				if ((i.style.style == 'allEnemies')) {
+				let ga: GameAction = {
+					buttonText: `use ${i.id} on ${enemy.unitId}`,
+					performAction() {
+						return be
+					},
+					slot: i.slot,
+					itemId: i.id,
+					target: enemy.unitId,
+				}
+				player.itemActions.push(ga)
+
+
+
+			}
+		}
+		if ((i.style.style == 'anyFriendly')) {
+			for (const friend of scenePlayers.filter(f => f.unitId != player.unitId)) {
+				if (
+					(!i.requiresHealth || friend.health < friend.maxHealth && friend.health > 0) &&
+					(!i.requiresStatus || friend.statuses[i.requiresStatus] > 0)
+				) {
 					const be: BattleEvent = {
 						source: { kind: 'player', entity: player },
-						behavior: i.behavior,
-					}
-					if (i.baseDmg) {
-						be.alsoDamages = []
-						for (const enemy of sceneEnemies) {
-							be.alsoDamages.push({
-								baseDamage: i.baseDmg,
-								targetEnemy: enemy
-							})
-						}
-					}
-					if (i.aggroModifyForAll) {
-						be.alsoModifiesAggro = []
-						for (const enemy of sceneEnemies) {
-							be.alsoModifiesAggro.push({
-								targetEnemy: enemy,
-								forHeros: scenePlayers,
-								baseAmount: i.aggroModifyForAll,
-							})
-						}
+						target: { kind: 'player', entity: friend },
+						behavior: { kind: 'melee' },
+						baseHealingToTarget: i.baseHeal
 					}
 					if (i.putsStatusOnAffected) {
 						be.putsStatuses = []
-						for (const enemy of sceneEnemies) {
-							be.putsStatuses.push({
-								targetEnemy: enemy,
-								statusId: i.putsStatusOnAffected.statusId,
-								count: i.putsStatusOnAffected.count,
-								remove: i.putsStatusOnAffected.remove,
-
-							})
-						}
-					}
-					if (i.style.putsStatusOnSelf) {
-						be.putsStatuses = []
 						be.putsStatuses.push({
-							targetPlayer: player,
-							statusId: i.style.putsStatusOnSelf.statusId,
-							count: i.style.putsStatusOnSelf.count,
-							remove: i.style.putsStatusOnSelf.remove,
+							targetPlayer: friend,
+							statusId: i.putsStatusOnAffected.statusId,
+							count: i.putsStatusOnAffected.count,
+							remove: i.putsStatusOnAffected.remove,
 						})
 					}
-
 					let ga: GameAction = {
-						buttonText: `use ${i.id}`,
+						buttonText: `use ${i.id} on ${friend.unitId}`,
 						performAction() {
 							return be
 						},
 						slot: i.slot,
 						itemId: i.id,
+						target: friend.unitId,
 					}
 					player.itemActions.push(ga)
 
 
 				}
-				if ((i.style.style == 'anyEnemy')) {
-					for (const enemy of sceneEnemies) {
-						const be: BattleEvent = {
-							source: { kind: 'player', entity: player },
-							target: { kind: 'enemy', entity: enemy },
-							baseDamageToTarget: i.baseDmg,
-							behavior: i.behavior,
-							strikes: i.strikes,
-						}
-						if (i.putsStatusOnAffected) {
-							be.putsStatuses = []
-							be.putsStatuses.push({
-								targetEnemy: enemy,
-								statusId: i.putsStatusOnAffected.statusId,
-								count: i.putsStatusOnAffected.count,
-								remove: i.putsStatusOnAffected.remove,
-							})
-						}
+			}
+		}
+		if ((i.style.style == 'anyFriendly')) {
+			if (
+				(!i.requiresHealth || player.health < player.maxHealth && player.health > 0) &&
+				(!i.requiresStatus || player.statuses[i.requiresStatus] > 0)
+			) {
 
-						let ga: GameAction = {
-							buttonText: `use ${i.id} on ${enemy.unitId}`,
-							performAction() {
-								return be
-							},
-							slot: i.slot,
-							itemId: i.id,
-							target: enemy.unitId,
-						}
-						player.itemActions.push(ga)
-
-
-
-					}
+				const be: BattleEvent = {
+					source: { kind: 'player', entity: player },
+					behavior: i.style.selfBehavior,
+					baseHealingToSource: i.baseHeal
 				}
-				if ((i.style.style == 'anyFriendly')) {
-					for (const friend of scenePlayers.filter(f => f.unitId != player.unitId)) {
-						if (
-							(!i.requiresHealth || friend.health < friend.maxHealth && friend.health > 0) &&
-							(!i.requiresStatus || friend.statuses[i.requiresStatus] > 0)
-						) {
-							const be: BattleEvent = {
-								source: { kind: 'player', entity: player },
-								target: { kind: 'player', entity: friend },
-								behavior: { kind: 'melee' },
-								baseHealingToTarget: i.baseHeal
-							}
-							if (i.putsStatusOnAffected) {
-								be.putsStatuses = []
-								be.putsStatuses.push({
-									targetPlayer: friend,
-									statusId: i.putsStatusOnAffected.statusId,
-									count: i.putsStatusOnAffected.count,
-									remove: i.putsStatusOnAffected.remove,
-								})
-							}
-							let ga: GameAction = {
-								buttonText: `use ${i.id} on ${friend.unitId}`,
-								performAction() {
-									return be
-								},
-								slot: i.slot,
-								itemId: i.id,
-								target: friend.unitId,
-							}
-							player.itemActions.push(ga)
-
-
-						}
-					}
+				if (i.putsStatusOnAffected) {
+					be.putsStatuses = []
+					be.putsStatuses.push({
+						targetPlayer: player,
+						statusId: i.putsStatusOnAffected.statusId,
+						count: i.putsStatusOnAffected.count,
+						remove: i.putsStatusOnAffected.remove,
+					})
 				}
-				if ((i.style.style == 'anyFriendly')) {
-					if (
-						(!i.requiresHealth || player.health < player.maxHealth && player.health > 0) &&
-						(!i.requiresStatus || player.statuses[i.requiresStatus] > 0)
-					) {
-
-						const be: BattleEvent = {
-							source: { kind: 'player', entity: player },
-							behavior: i.style.selfBehavior,
-							baseHealingToSource: i.baseHeal
-						}
-						if (i.putsStatusOnAffected) {
-							be.putsStatuses = []
-							be.putsStatuses.push({
-								targetPlayer: player,
-								statusId: i.putsStatusOnAffected.statusId,
-								count: i.putsStatusOnAffected.count,
-								remove: i.putsStatusOnAffected.remove,
-							})
-						}
-						let ga: GameAction = {
-							buttonText: `use ${i.id} on self`,
-							performAction() {
-								return be
-							},
-							slot: i.slot,
-							itemId: i.id,
-							target: player.unitId,
-						}
-						player.itemActions.push(ga)
-
-
-					}
+				let ga: GameAction = {
+					buttonText: `use ${i.id} on self`,
+					performAction() {
+						return be
+					},
+					slot: i.slot,
+					itemId: i.id,
+					target: player.unitId,
 				}
+				player.itemActions.push(ga)
+
+
 			}
 		}
 	}
