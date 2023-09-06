@@ -1,6 +1,6 @@
 import { goto } from "$app/navigation"
 import type { AggroModifier, AnySprite, BattleAnimation, BattleEvent, BattleEventEntity, GameActionSentToClient, HealthModifier, StatusEffect, StatusModifier, StatusModifierEvent, UnitId, VisualActionSourceId } from "$lib/utils"
-import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, modifyAggroForPlayer, modifiedEnemyHealth } from "./enemies"
+import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, modifyAggroForPlayer, modifiedEnemyHealth, type EnemyTemplateId, spawnEnemy } from "./enemies"
 import { items, type Item, equipItem, checkHasItem, type ItemId } from "./items"
 import { pushHappening } from "./messaging"
 import { scenes, type SceneId } from "./scenes"
@@ -212,42 +212,55 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		changeScene(player, actionFromId.goTo)
 		return
 	}
+	if (actionFromId.devAction) {
+		actionFromId.devAction()
+		return
+	}
 
-	if (!actionFromId.itemId) {
-		if (actionFromId.unlockableActData) {
-			if(actionFromId.unlockableActData.pickupItem){
-				const idToPickup = actionFromId.unlockableActData.pickupItem
-				let toPickup = items.find(i=>i.id == idToPickup)
-				if(toPickup){
-					equipItem(player, toPickup)
-					pushAnimation({
-						sceneId:actionStartedInSceneId,
-						battleAnimation:{
-							source:player.unitId,
-							target:actionFromId.target,
-							behavior:{kind:'melee'},
-							takesItem: { id: idToPickup, slot: toPickup.slot },
-						}
-					})
-				}
-			}
-			
-			if(actionFromId.unlockableActData.travelTo){
-				changeScene(player, actionFromId.unlockableActData.travelTo)
+	if (actionFromId.unlockableActData) {
+		if (actionFromId.unlockableActData.pickupItem) {
+			const idToPickup = actionFromId.unlockableActData.pickupItem
+			let toPickup = items.find(i => i.id == idToPickup)
+			if (toPickup) {
+				equipItem(player, toPickup)
 				pushAnimation({
-					leavingScene:player,
-					sceneId:actionStartedInSceneId,
-					battleAnimation:{
-						source:player.unitId,
-						behavior:{kind:'travel',goTo:actionFromId.unlockableActData.travelTo},
-						target:actionFromId.target
+					sceneId: actionStartedInSceneId,
+					battleAnimation: {
+						source: player.unitId,
+						target: actionFromId.target,
+						behavior: { kind: 'melee' },
+						takesItem: { id: idToPickup, slot: toPickup.slot },
 					}
 				})
 			}
 		}
+
+		if (actionFromId.unlockableActData.setsFlag) {
+			player.flags.add(actionFromId.unlockableActData.setsFlag)
+		}
+
+		if (actionFromId.unlockableActData.spawnsEnemies) {
+			for (const e of actionFromId.unlockableActData.spawnsEnemies) {
+				spawnEnemy(e.eName, e.eTemp, actionStartedInSceneId)
+			}
+		}
+
+		if (actionFromId.unlockableActData.travelTo) {
+			changeScene(player, actionFromId.unlockableActData.travelTo)
+			pushAnimation({
+				leavingScene: player,
+				sceneId: actionStartedInSceneId,
+				battleAnimation: {
+					source: player.unitId,
+					behavior: { kind: 'travel', goTo: actionFromId.unlockableActData.travelTo },
+					target: actionFromId.target
+				}
+			})
+		}
 		return
 	}
 
+	if (!actionFromId.itemId) return
 	let itemUsed = items.find(i => i.id == actionFromId.itemId)
 	if (!itemUsed) return
 
@@ -561,10 +574,10 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		}
 	}
 
-	
+
 	let leavingScene = undefined
 	let sceneToPlayAnim = player.currentScene
-	
+
 	if (battleEvent.succumb) {
 		leavingScene = player
 		changeScene(player, 'dead')
@@ -594,7 +607,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				remove: m.remove
 			} satisfies StatusModifier
 		}),
-		
+
 	}
 	pushAnimation({
 		sceneId: sceneToPlayAnim,
@@ -644,30 +657,35 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 			}
 			if (passedRequirements) {
 				let ga: GameAction
-				if (unlockableActData.serverAct) {
-					ga = unlockableActData.serverAct
-				} else if (unlockableActData.pickupItem) {
+
+				let txt: string = 'no text'
+				let targ: UnitId | undefined = undefined
+				if (unlockableActData.pickupItem) {
 					let id = unlockableActData.pickupItem
-					// let item = items[id]
-					ga = {
-						buttonText: `Equip ${id}`,
-						unlockableActData:unlockableActData,
-						target:vas.unitId,
-					}
-				} else if (unlockableActData.travelTo) {
+					txt = `Equip ${id}`
+					targ = vas.unitId
+				}
+				if (unlockableActData.travelTo) {
 					let travelTo = unlockableActData.travelTo
 					let scene = scenes.get(travelTo)
 					if (!scene) continue
+					txt = `Travel to ${scene.displayName}`
+					targ = vas.unitId
+				}
 
-					ga = {
-						buttonText: `Travel to ${scene.displayName}`,
-						unlockableActData:unlockableActData,
-						target:vas.unitId,
-					}
+				if (unlockableActData.bText) {
+					txt = unlockableActData.bText
 				}
-				else {
-					continue
+
+				ga = {
+					buttonText: txt,
+					unlockableActData: unlockableActData,
+					target: targ
 				}
+
+				// else {
+				// 	continue
+				// }
 
 				validUnlockableActions.push(ga)
 			}
@@ -756,12 +774,14 @@ export type VisualActionSourceInClient = {
 }
 
 export type UnlockableActionData = {
-	serverAct?: GameAction
 	requiresFlags?: Flag[]
 	requiresNotFlags?: Flag[]
 	requiresGear?: ItemId[]
 	pickupItem?: ItemId
 	travelTo?: SceneId
+	setsFlag?: Flag
+	bText?: string
+	spawnsEnemies?: { eName: string, eTemp: EnemyTemplateId }[]
 }
 
 export type ConversationResponse = {

@@ -64,13 +64,8 @@ const dead: Scene = {
 			sprite: 'portal',
 			startText: `A portal`,
 			actionsWithRequirements: [
-				{
-					serverAct: {
-						buttonText: 'Go to dev room',
-						goTo: 'armory'
-					}
-				},
-				{travelTo:player.lastCheckpoint}
+				{travelTo:player.lastCheckpoint},
+				{travelTo:'armory'},
 			]
 		})
 	}
@@ -956,35 +951,22 @@ const tunnelChamber: Scene = {
 			startText: `It's the altar the king told me about`,
 			actionsWithRequirements: [{
 				requiresNotFlags: ['placedMedallion', 'smashedMedallion'],
-				serverAct: {
-					buttonText: "Place the medallion upon the altar",
-					performAction() {
-						player.flags.add('placedMedallion')
-						for (const allPlayer of activePlayersInScene('tunnelChamber')) {
-							allPlayer.sceneTexts.push("The medallion is placed into the altar. The hooded figure turns upon you in a rage")
-						}
-						for (const allPlayer of activePlayersInScene('throne')) {
-							allPlayer.sceneTexts.push("You hear a rumbling from below. The king says 'yay someone placed the medallion. If I just told you to do that, never mind..'  that explains why your actions just changed mid scene. Stragglers can still get their ealier quests from here still. hopefully it makes sense.")
-						}
-						spawnEnemy('Hooded Figure', 'hobGoblin', 'tunnelChamber')
-						spawnEnemy('Skritter', 'rat', 'tunnelChamber')
-						spawnEnemy('Snivels', 'darter', 'tunnelChamber')
+				setsFlag:'placedMedallion',
+				bText:"Place the medallion upon the altar",
+				spawnsEnemies:[
+					{
+						eName:'Hooded Figure',
+						eTemp:'hobGoblin',
 					},
-				}
+					{
+						eName:'Shootah',
+						eTemp:'darter',
+					},
+				]
 			}, {
 				requiresNotFlags: ['placedMedallion', 'smashedMedallion'],
-				serverAct: {
-					buttonText: "Smash the medallion",
-					performAction() {
-						player.flags.add('smashedMedallion')
-						for (const playerInChamber of activePlayersInScene('tunnelChamber')) {
-							playerInChamber.sceneTexts.push("The medallion got smashed. The hooded figure is pleased with you. You can leave the chamber now")
-						}
-						for (const playerInThrone of activePlayersInScene('throne')) {
-							playerInThrone.sceneTexts.push("You hear the sound of a medallion gettin smashed down below. The situation in here changes.. but not so much that it wouldn't make sense to come here for your earlier quests.. anyway, a new action button probably appeared just now")
-						}
-					},
-				}
+				setsFlag:'smashedMedallion',
+				bText:'Smash the medallion',
 			}
 			],
 			detect:[
@@ -1035,7 +1017,7 @@ const armory: Scene = {
 		for (const item of items) {
 			player.sceneActions.push({
 				buttonText: `Equip ${item.id}`,
-				performAction() {
+				devAction() {
 					equipItem(player, item)
 				},
 			})
@@ -1043,7 +1025,7 @@ const armory: Scene = {
 		for (const id in enemyTemplates) {
 			player.sceneActions.push({
 				buttonText: `Spawn ${id}`,
-				performAction() {
+				devAction() {
 					spawnEnemy(`${id}${Math.round(Math.random() * 1000)}`, id as EnemyTemplateId, 'armory')
 				},
 			})

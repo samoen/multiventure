@@ -124,6 +124,7 @@ export type PlayerInClient = {
 
 export type GameAction = {
 	goTo?: SceneId;
+	devAction?:()=>void;
 	performAction?: () => BattleEvent | void;
 	buttonText: string;
 	slot?: QuickbarSlot;
