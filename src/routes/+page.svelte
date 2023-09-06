@@ -45,67 +45,70 @@
 		triedSignupButTaken,
 		syncConvoStateToVas,
 		changeVasLocked,
-
 		successcreds
-
 	} from '$lib/client/ui';
 	import type { MessageFromServer } from '$lib/server/messaging';
 	import { onMount, tick } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import blankSlot from '$lib/assets/equipment/blank-attack.png';
 
-	import { isSignupResponse, type BattleAnimation, type DataFirstLoad, type LandscapeImage, type SignupResponse } from '$lib/utils';
+	import {
+		isSignupResponse,
+		type BattleAnimation,
+		type DataFirstLoad,
+		type LandscapeImage,
+		type SignupResponse
+	} from '$lib/utils';
 	import VisualActionSource from '$lib/Components/VisualActionSource.svelte';
 	import { fade } from 'svelte/transition';
 	import type { ItemId } from '$lib/server/items';
 	import { anySprites, getLandscape, getSlotImage, miscPortraits } from '$lib/client/assets';
 	import { writable, type Writable } from 'svelte/store';
+	import UnitStats from '$lib/Components/UnitStats.svelte';
 
 	export let data: DataFirstLoad;
 	let signupInput: string;
 	let signInNameInput: string;
 	let signInIdInput: string;
-	let source: EventSource | null;
+	let source: EventSource | undefined;
 
 	// let unitsDetails: UnitDetails[] = [];
 
 	let happenings: HTMLElement;
 	let sceneTexts: HTMLElement;
 	let autoSignup: boolean = false;
-	let autoContinue:boolean = false;
+	let autoContinue: boolean = false;
 
-	let sourceErrored : Writable<boolean> = writable(false)
-
+	let sourceErrored: Writable<boolean> = writable(false);
 
 	onMount(() => {
 		console.log('mounted with ssr data ' + JSON.stringify(data));
 		if (data.readyToSubscribe && data.yourHeroCookie && data.userId) {
-			$clientState.status = 'mounted with valid cookies to continue as'
+			$clientState.status = 'mounted with valid cookies to continue as';
 			$successcreds = {
-				alreadyConnected:false,
-				needsAuth:'',
-				yourHeroName:data.yourHeroCookie,
-				yourId:data.userId,
-			}
-			if(autoContinue){
+				alreadyConnected: false,
+				needsAuth: '',
+				yourHeroName: data.yourHeroCookie,
+				yourId: data.userId
+			};
+			if (autoContinue) {
 				console.log(`doing autocontinue..`);
-				subscribeEventsIfNotAlready()
-				return
+				subscribeEventsIfNotAlready();
+				return;
 			}
 			$clientState.loading = false;
-			return
+			return;
 		}
 
-		 if (data.noPlayer && data.yourHeroCookie && autoSignup) {
+		if (data.noPlayer && data.yourHeroCookie && autoSignup) {
 			console.log(`doing auto signup..`);
 			$clientState.status = 'auto signup';
 			signUp(data.yourHeroCookie);
-			return
-		} 
-		
+			return;
+		}
+
 		$clientState.status = 'mounted, need manual login';
 		$clientState.loading = false;
-		
 	});
 
 	function isMsgFromServer(msg: object): msg is MessageFromServer {
@@ -124,18 +127,19 @@
 	}
 
 	function subscribeEventsIfNotAlready() {
-		// if (source != null && source.readyState != EventSource.CLOSED) {
-		// 	console.log('no need to subscribe');
+		if (source != undefined && source.readyState != EventSource.CLOSED) {
+			console.log('no need to subscribe but doing anyway?');
 		// 	$clientState.status = 'subscribing to events';
 		// 	$clientState.loading = false;
 		// 	return;
-		// }
+		}
 		$clientState.loading = true;
 		$clientState.status = 'subscribing to events';
+		console.log('subscribing...')
 		try {
 			source = new EventSource('/api/subscribe');
 		} catch (e) {
-			$clientState.status = 'failed to source'
+			$clientState.status = 'failed to source';
 			$clientState.loading = false;
 			console.log('failed to source');
 			console.error(e);
@@ -144,36 +148,36 @@
 		source.onerror = function (ev) {
 			console.error(`event source error ${JSON.stringify(ev)}`, ev);
 			$clientState.status = 'Event source errored';
-			$sourceErrored = true
+			$sourceErrored = true;
 			// $clientState.loading = false;
 			// this.close();
 			// $lastMsgFromServer = undefined;
 		};
 
 		source.addEventListener('firstack', async (e) => {
-			$sourceErrored = false
+			$sourceErrored = false;
 			getWorld();
-			$clientState.loading = false
+			$clientState.loading = false;
 		});
-		
+
 		source.addEventListener('world', async (e) => {
-			$sourceErrored = false
+			$sourceErrored = false;
 			let sMsg = JSON.parse(e.data);
 			if (!isMsgFromServer(sMsg)) {
 				console.log('malformed event from server');
 				return;
 			}
 			worldReceived(sMsg);
-			$clientState.loading = false
+			$clientState.loading = false;
 		});
 
 		source.addEventListener('closing', (e) => {
 			console.log('server requested close source');
 			$clientState.status = 'server asked to close source';
-			leaveGame()
+			leaveGame();
 		});
 		console.log('subscribed');
-		$clientState.status = 'done subscribing'
+		$clientState.status = 'done subscribing';
 	}
 
 	async function getWorld() {
@@ -187,7 +191,7 @@
 		}
 		worldReceived(sMsg);
 		$clientState.loading = false;
-		$clientState.status = 'received initial world'
+		$clientState.status = 'received initial world';
 	}
 
 	async function deleteHero() {
@@ -203,7 +207,7 @@
 	function leaveGame() {
 		$clientState.status = 'leaving game';
 		source?.close();
-		source = null;
+		source = undefined;
 		$lastMsgFromServer = undefined;
 		$currentAnimationIndex = 999;
 		$convoStateForEachVAS.clear();
@@ -224,28 +228,29 @@
 			}
 		});
 		let res = await joincall.json();
-		if(!joincall.ok){
+		if (!joincall.ok) {
 			$clientState.status = 'signup failed, need manual';
 			$clientState.loading = false;
-			return
+			return;
 		}
-		if(!isSignupResponse(res)){
+		if (!isSignupResponse(res)) {
 			$clientState.status = 'signup bad response';
 			$clientState.loading = false;
-			return
+			return;
 		}
 		if (res.alreadyConnected) {
 			console.log('login response says already connected, oh well');
 		}
-		$successcreds = res
+		$successcreds = res;
 
 		$clientState.status = 'we signed up as guest, subscribing';
 		subscribeEventsIfNotAlready();
 	}
-	
+
 	async function signUp(usrName: string) {
-		$clientState.loading = true
-		$clientState.status = 'signing up'
+		$clientState.loading = true;
+		$clientState.status = 'signing up';
+		console.log('signing up')
 
 		let joincall = await fetch('/api/signup', {
 			method: 'POST',
@@ -255,30 +260,33 @@
 			}
 		});
 		let res = await joincall.json();
-		
-		if(!isSignupResponse(res)){
-			$clientState.status = 'signup bad response';
+
+		if (!isSignupResponse(res)) {
+			console.log('signup malformed response')
+			$clientState.status = 'signup malformed response';
 			$clientState.loading = false;
-			return
+			return;
 		}
 		if (res.alreadyConnected) {
 			console.log('login response says already connected, oh well');
 		}
 
-		if(!joincall.ok){
+		if (!joincall.ok) {
+			console.log('signup fail response')
 			$clientState.status = 'signup failed, need manual';
 			$clientState.loading = false;
-			return
+			return;
 		}
-		
+
 		if (res.needsAuth.length) {
 			signInNameInput = res.needsAuth;
 			$triedSignupButTaken = res.needsAuth;
+			console.log('signup name taken')
 			$clientState.status = 'signup name taken, can try login';
 			$clientState.loading = false;
-			return
+			return;
 		}
-		$successcreds = res
+		$successcreds = res;
 		$clientState.status = `successful signup as ${res.yourHeroName}, subscribing`;
 		subscribeEventsIfNotAlready();
 	}
@@ -355,7 +363,9 @@
 						>
 					{/if}
 					{#if $successcreds}
-						<button on:click={subscribeEventsIfNotAlready}>Continue as {$successcreds.yourHeroName}</button>
+						<button on:click={subscribeEventsIfNotAlready}
+							>Continue as {$successcreds.yourHeroName}</button
+						>
 					{/if}
 				</div>
 			</div>
@@ -369,7 +379,7 @@
 {/if}
 
 {#if $lastMsgFromServer && (!source || source.readyState != source.OPEN)}
-	<p>Weird source state ${source} ${source ? source.readyState : ''}</p>
+	<p>{`Weird source state ${source} ${source ? source.readyState : ''}`}</p>
 {/if}
 
 {#if $lastMsgFromServer}
@@ -439,14 +449,14 @@
 											other.forHeros.includes($lastMsgFromServer.yourInfo.unitId)
 										) {
 											updateUnit(other.target, (vup) => {
-												if (vup.aggro != undefined) {
+												if (vup.actual.kind == 'enemy') {
 													if (other.amount != undefined) {
-														vup.aggro += other.amount;
-														if (vup.aggro > 100) vup.aggro = 100;
-														if (vup.aggro < 0) vup.aggro = 0;
+														vup.actual.enemy.myAggro += other.amount;
+														if (vup.actual.enemy.myAggro > 100) vup.actual.enemy.myAggro = 100;
+														if (vup.actual.enemy.myAggro < 0) vup.actual.enemy.myAggro = 0;
 													}
 													if (other.setTo != undefined) {
-														vup.aggro = other.setTo;
+														vup.actual.enemy.myAggro = other.setTo;
 													}
 												}
 											});
@@ -476,259 +486,256 @@
 			</div>
 		</div>
 	</div>
-	{#if $selectedDetail && $selectedDetail.kind == 'vup'}
-		<div class="selectedDetails">
-			<div class="selectedPortrait" style="background-image:url({minimap})">
-				<div class="portrait">
-					<img src={$selectedDetail.entity.actual.portrait} alt="portrait" />
+	{#if $selectedDetail}
+		<div class="selectedDetails" style="background-image:url({sidebar})">
+			{#if $selectedDetail.kind == 'vup'}
+				<div class="selectedPortrait" style="background-image:url({minimap})">
+					<div class="portrait">
+						<img src={$selectedDetail.entity.actual.portrait} alt="portrait" />
+					</div>
+					<div class="underPortrait">
+						<strong>
+							{$selectedDetail.entity.actual.kind == 'player'
+								? $selectedDetail.entity.actual.info.heroName
+								: $selectedDetail.entity.actual.enemy.name}
+						</strong>
+					</div>
 				</div>
-				<div class="underPortrait">
-					<strong>
-						{$selectedDetail.entity.actual.kind == 'player'
-							? $selectedDetail.entity.actual.info.heroName
-							: $selectedDetail.entity.actual.enemy.name}
-					</strong>
-				</div>
-			</div>
-			<div class="vupSelectedRest" style="background-image:url({sidebar})">
-				<div class="selectedStats">
-					{#if $selectedDetail.entity.actual.kind == 'player'}
-						<div>
-							{$selectedDetail.entity.displayHp}/{$selectedDetail.entity.maxHp} hp
-						</div>
-						<div>
-							{#each Object.entries($selectedDetail.entity.actual.info.statuses) as [key, value]}
-								{#if value > 0}
-									{`${key} ${value}`}
-								{/if}
-							{/each}
-						</div>
-
-						<!-- <div> -->
-						{#each $selectedDetail.entity.actual.info.inventory as itemState}
+				<div class="vupSelectedRest">
+					<div class="selectedStats">
+						<UnitStats vu={$selectedDetail.entity}></UnitStats>
+						{#if $selectedDetail.entity.actual.kind == 'player'}
 							<div>
-								{`${itemState.slot}: ${itemState.itemId}`}
+								{$selectedDetail.entity.displayHp}/{$selectedDetail.entity.maxHp} hp
 							</div>
-						{/each}
-						<div>
-							Agility: {$selectedDetail.entity.actual.info.agility}
-						</div>
-						<div>
-							Strength: {$selectedDetail.entity.actual.info.strength}
-						</div>
-						<!-- <div>
-							<button type="button">show gear</button>
-						</div> -->
-					{/if}
-					{#if $selectedDetail.entity.actual.kind == 'enemy'}
-						<div>
-							{$selectedDetail.entity.displayHp}/{$selectedDetail.entity.maxHp} hp
-						</div>
-						<div>
-							Template: {$selectedDetail.entity.actual.enemy.templateId}
-						</div>
-						<div>
-							Aggro: {JSON.stringify($selectedDetail.entity.actual.enemy.myAggro)}
-						</div>
-						<div>
-							{#each Object.entries($selectedDetail.entity.actual.enemy.statuses) as [forHero, statuses]}
-								{#each Object.entries(statuses) as [key, value]}
+							<div>
+								{#each Object.entries($selectedDetail.entity.actual.info.statuses) as [key, value]}
 									{#if value > 0}
-										{`${forHero}: ${key} ${value}, `}
+										{`${key} ${value}`}
 									{/if}
 								{/each}
+							</div>
+
+							<!-- <div> -->
+							{#each $selectedDetail.entity.actual.info.inventory as itemState}
+								<div>
+									{`${itemState.slot}: ${itemState.itemId}`}
+								</div>
 							{/each}
-						</div>
-					{/if}
-				</div>
-				<div class="slotButtons">
-					{#each $typedInventory as value}
-						{#if value.overlayNumber != undefined || value.acts.length}
-							<button
-								class="slotButton"
-								class:activeSlotButton={$latestSlotButtonInput == value.itemState.itemId}
-								type="button"
-								disabled={value.disabled}
-								on:click={() => {
-									let slotActions = value.acts;
-									if (!slotActions || !slotActions.length) return;
-									const oneChoice = slotActions.length == 1;
-									const onlyAction = slotActions.at(0);
-									if (oneChoice && onlyAction) {
-										choose(onlyAction);
-										$latestSlotButtonInput = undefined;
-										return;
-									}
-									if ($selectedDetail && $selectedDetail.kind == 'vup') {
-										let actForSelectedMatchingSlot =
-											$selectedDetail.entity.actionsThatCanTargetMe.find((a) => {
-												if (a.itemId && a.itemId == value.itemState.itemId) {
-													return true;
-												}
-											});
-										if (actForSelectedMatchingSlot) {
-											choose(actForSelectedMatchingSlot);
+							<!-- <div>
+								<button type="button">show gear</button>
+							</div> -->
+						{/if}
+						{#if $selectedDetail.entity.actual.kind == 'enemy'}
+							<div>
+								{$selectedDetail.entity.displayHp}/{$selectedDetail.entity.maxHp} hp
+							</div>
+							<div>
+								Template: {$selectedDetail.entity.actual.enemy.templateId}
+							</div>
+							<div>
+								Aggro: {JSON.stringify($selectedDetail.entity.actual.enemy.myAggro)}
+							</div>
+							<div>
+								{#each Object.entries($selectedDetail.entity.actual.enemy.statuses) as [forHero, statuses]}
+									{#each Object.entries(statuses) as [key, value]}
+										{#if value > 0}
+											{`${forHero}: ${key} ${value}, `}
+										{/if}
+									{/each}
+								{/each}
+							</div>
+						{/if}
+					</div>
+					<div class="slotButtons">
+						{#each $typedInventory as value}
+							{#if value.overlayNumber != undefined || value.acts.length}
+								<button
+									class="slotButton"
+									class:activeSlotButton={$latestSlotButtonInput == value.itemState.itemId}
+									type="button"
+									disabled={value.disabled}
+									on:click={() => {
+										let slotActions = value.acts;
+										if (!slotActions || !slotActions.length) return;
+										const oneChoice = slotActions.length == 1;
+										const onlyAction = slotActions.at(0);
+										if (oneChoice && onlyAction) {
+											choose(onlyAction);
 											$latestSlotButtonInput = undefined;
 											return;
 										}
-									}
-									$latestSlotButtonInput = value.itemState.itemId;
-								}}
-							>
-								<img
-									class="slotImg"
-									class:halfOpacity={value.disabled}
-									src={value.img}
-									alt="a slot"
-								/>
-								<span class="slotCounter">{value.overlayNumber ?? ''}</span>
-								<span class="slotItemname">{value.itemState.itemId}</span>
-								<span class="slotStockDots">{value.dots}</span>
-							</button>
-						{/if}
-					{/each}
+										if ($selectedDetail && $selectedDetail.kind == 'vup') {
+											let actForSelectedMatchingSlot =
+												$selectedDetail.entity.actionsThatCanTargetMe.find((a) => {
+													if (a.itemId && a.itemId == value.itemState.itemId) {
+														return true;
+													}
+												});
+											if (actForSelectedMatchingSlot) {
+												choose(actForSelectedMatchingSlot);
+												$latestSlotButtonInput = undefined;
+												return;
+											}
+										}
+										$latestSlotButtonInput = value.itemState.itemId;
+									}}
+								>
+									<img
+										class="slotImg"
+										class:halfOpacity={value.disabled}
+										src={value.img}
+										alt="a slot"
+									/>
+									<span class="slotCounter">{value.overlayNumber ?? ''}</span>
+									<span class="slotItemname">{value.itemState.itemId}</span>
+									<span class="slotStockDots">{value.dots}</span>
+								</button>
+							{/if}
+						{/each}
+					</div>
 				</div>
-			</div>
-		</div>
-	{/if}
-	{#if $selectedVisualActionSourceState && $selectedDetail && $selectedDetail.kind == 'vas'}
-		<div class="selectedDetails">
-			<div class="selectedPortrait" style="background-image:url({minimap})">
-				<div
-					class="portrait"
-					on:click={() => {
-						if (
-							!(
-								$selectedVisualActionSourceState &&
-								$selectedDetail &&
-								$selectedDetail.kind == 'vas'
+			{/if}
+			{#if $selectedVisualActionSourceState && $selectedDetail.kind == 'vas'}
+				<div class="selectedPortrait" style="background-image:url({minimap})">
+					<div
+						class="portrait"
+						on:click={() => {
+							if (
+								!(
+									$selectedVisualActionSourceState &&
+									$selectedDetail &&
+									$selectedDetail.kind == 'vas'
+								)
 							)
-						)
-							return;
-						$convoStateForEachVAS.delete($selectedDetail.entity.id);
-						syncConvoStateToVas($selectedDetail.entity, true);
-					}}
-					role="button"
-					tabindex="0"
-					on:keydown
-				>
-					<img
-						src={$selectedDetail.entity.portrait
-							? miscPortraits[$selectedDetail.entity.portrait]
-							: anySprites[$selectedDetail.entity.sprite]}
-						alt="place"
-					/>
-				</div>
-				<div class="underPortrait">
-					<strong>
-						{$selectedDetail.entity.displayName}
-					</strong>
-				</div>
-			</div>
-			<div class="selectedRest" style="background-image:url({sidebar})">
-				<div class="vasdPromptAndButtons">
-					<div class="vasdPrompt">
-						{$selectedVisualActionSourceState.currentRetort ?? 'selected vas has no current retort'}
+								return;
+							$convoStateForEachVAS.delete($selectedDetail.entity.id);
+							syncConvoStateToVas($selectedDetail.entity, true);
+						}}
+						role="button"
+						tabindex="0"
+						on:keydown
+					>
+						<img
+							src={$selectedDetail.entity.portrait
+								? miscPortraits[$selectedDetail.entity.portrait]
+								: anySprites[$selectedDetail.entity.sprite]}
+							alt="place"
+						/>
 					</div>
-					<div class="vasdButtons">
-						{#each $selectedVasActionsToShow as act}
-							<button
-								type="button"
-								class="vasResponse"
-								disabled={$clientState.waitingForMyEvent || $waitingForMyAnimation}
-								on:click={async () => {
-									if (
-										!$selectedDetail ||
-										$selectedDetail.kind != 'vas' ||
-										$waitingForMyAnimation ||
-										$clientState.waitingForMyEvent
-									) {
-										return;
-									}
-									$lastUnitClicked = $selectedDetail.entity.id;
-									$selectedDetail.entity;
-									await choose(act);
-									if ($currentAnimation != undefined) {
-										if ($currentAnimation.behavior.kind == 'travel') {
-											$visualOpacity = true;
-											// await tick()
+					<div class="underPortrait">
+						<strong>
+							{$selectedDetail.entity.displayName}
+						</strong>
+					</div>
+				</div>
+				<div class="selectedRest">
+					<div class="vasdPromptAndButtons">
+						<div class="vasdPrompt">
+							{$selectedVisualActionSourceState.currentRetort ??
+								'selected vas has no current retort'}
+						</div>
+						<div class="vasdButtons">
+							{#each $selectedVasActionsToShow as act}
+								<button
+									type="button"
+									class="vasResponse"
+									disabled={$clientState.waitingForMyEvent || $waitingForMyAnimation}
+									on:click={async () => {
+										if (
+											!$selectedDetail ||
+											$selectedDetail.kind != 'vas' ||
+											$waitingForMyAnimation ||
+											$clientState.waitingForMyEvent
+										) {
+											return;
 										}
-									}
+										$lastUnitClicked = $selectedDetail.entity.id;
+										$selectedDetail.entity;
+										await choose(act);
+										if ($currentAnimation != undefined) {
+											if ($currentAnimation.behavior.kind == 'travel') {
+												$visualOpacity = true;
+												// await tick()
+											}
+										}
 
-									$convoStateForEachVAS = $convoStateForEachVAS;
-									$visualActionSources = $visualActionSources;
-								}}>{act.buttonText}</button
-							>
-						{/each}
-						{#each $selectedVasResponsesToShow as c}
-							<button
-								class="vasResponse"
-								type="button"
-								disabled={$clientState.waitingForMyEvent || $waitingForMyAnimation}
-								on:click={() => {
-									if (
-										!$selectedDetail ||
-										$selectedDetail.kind != 'vas' ||
-										$clientState.waitingForMyEvent ||
-										$waitingForMyAnimation
-									)
-										return;
+										$convoStateForEachVAS = $convoStateForEachVAS;
+										$visualActionSources = $visualActionSources;
+									}}>{act.buttonText}</button
+								>
+							{/each}
+							{#each $selectedVasResponsesToShow as c}
+								<button
+									class="vasResponse"
+									type="button"
+									disabled={$clientState.waitingForMyEvent || $waitingForMyAnimation}
+									on:click={() => {
+										if (
+											!$selectedDetail ||
+											$selectedDetail.kind != 'vas' ||
+											$clientState.waitingForMyEvent ||
+											$waitingForMyAnimation
+										)
+											return;
 
-									$lastUnitClicked = $selectedDetail.entity.id;
-									// let cs = $convoStateForEachVAS.get($selectedDetail.entity.id)
-									let state = $selectedVisualActionSourceState;
-									if (!state) return;
-									if (c.lock) {
-										for (const handleToLock of c.lock) {
-											state.lockedResponseHandles.set(handleToLock, true);
+										$lastUnitClicked = $selectedDetail.entity.id;
+										// let cs = $convoStateForEachVAS.get($selectedDetail.entity.id)
+										let state = $selectedVisualActionSourceState;
+										if (!state) return;
+										if (c.lock) {
+											for (const handleToLock of c.lock) {
+												state.lockedResponseHandles.set(handleToLock, true);
+											}
 										}
-									}
-									if (c.unlock) {
-										for (const handleToUnlock of c.unlock) {
-											state.lockedResponseHandles.set(handleToUnlock, false);
+										if (c.unlock) {
+											for (const handleToUnlock of c.unlock) {
+												state.lockedResponseHandles.set(handleToUnlock, false);
+											}
 										}
-									}
-									if (c.responseId) {
-										state.lockedResponseHandles.set(c.responseId, true);
-									}
-									if (c.unlockVas) {
-										for (const handleToUnlock of c.unlockVas) {
-											// let csToUnlock = $convoStateForEachVAS.get(handleToUnlock);
-											// if (csToUnlock) {
+										if (c.responseId) {
+											state.lockedResponseHandles.set(c.responseId, true);
+										}
+										if (c.unlockVas) {
+											for (const handleToUnlock of c.unlockVas) {
+												// let csToUnlock = $convoStateForEachVAS.get(handleToUnlock);
+												// if (csToUnlock) {
 												changeVasLocked(handleToUnlock, true);
-											// }
+												// }
+											}
 										}
-									}
-									if (c.lockVas) {
-										for (const handleToLock of c.lockVas) {
-											// let csToUnlock = $convoStateForEachVAS.get(handleToLock);
-											// if (csToUnlock) {
+										if (c.lockVas) {
+											for (const handleToLock of c.lockVas) {
+												// let csToUnlock = $convoStateForEachVAS.get(handleToLock);
+												// if (csToUnlock) {
 												changeVasLocked(handleToLock, false);
-											// }
+												// }
+											}
 										}
-									}
-									if (c.retort) {
-										state.currentRetort = c.retort;
-									}
-									$visualActionSources = $visualActionSources;
-									$convoStateForEachVAS = $convoStateForEachVAS;
-								}}>{c.responseText}</button
-							>
-						{/each}
+										if (c.retort) {
+											state.currentRetort = c.retort;
+										}
+										$visualActionSources = $visualActionSources;
+										$convoStateForEachVAS = $convoStateForEachVAS;
+									}}>{c.responseText}</button
+								>
+							{/each}
+						</div>
 					</div>
 				</div>
+			{/if}
+			{#if $selectedDetail.kind == 'bg'}
+			<div class="sceneTexts" bind:this={sceneTexts}>
+				{#each $lastMsgFromServer.sceneTexts as t}
+					<p class="sceneText">{t}</p>
+					<br />
+				{/each}
 			</div>
-		</div>
-		<div />
-	{/if}
-	{#if $selectedDetail && $selectedDetail.kind == 'bg'}
-		<div class="sceneTexts" bind:this={sceneTexts}>
-			{#each $lastMsgFromServer.sceneTexts as t}
-				<p class="sceneText">{t}</p>
-				<br />
-			{/each}
+		{/if}
 		</div>
 	{/if}
+
+
 	{#if $lastMsgFromServer.sceneActions.length}
 		<div class="sceneButtons">
 			{#each $lastMsgFromServer.sceneActions as op, i}
@@ -753,21 +760,19 @@
 	{/each}
 	<p class="textSelectable">
 		Logged in as {$successcreds?.yourHeroName} uid: {$successcreds?.yourId}
-		<button
-			on:click={leaveGame}>Log Out</button
-		>
+		<button on:click={leaveGame}>Log Out</button>
 		<button on:click={deleteHero}>Delete Hero</button>
 	</p>
 	<p>
 		{JSON.stringify($lastMsgFromServer.playerFlags)}
 	</p>
-	{/if}
-	<p>
-		status: {$clientState.status}
-	</p>
-	{#if $sourceErrored}
-		<button>source errored</button>
-	{/if}
+{/if}
+<p>
+	status: {$clientState.status}
+</p>
+{#if $sourceErrored}
+	<button>source errored</button>
+{/if}
 
 <style>
 	:global(body) {
@@ -918,10 +923,11 @@
 	}
 	.sceneTexts {
 		/* margin-top: 5px; */
-		border: 1px solid brown;
+		/* border: 1px solid brown; */
 		height: 30vh;
 		overflow-y: auto;
-		background-color: burlywood;
+		/* background-color: burlywood; */
+		color:white;
 		padding: 10px;
 	}
 	.sceneButtons {
@@ -1094,6 +1100,10 @@
 	}
 	.selectedDetails {
 		/* background-color: transparent; */
+		background-repeat: no-repeat;
+		background-size: calc(max(100%, 700px)) 100%;
+		background-position: left top;
+
 		display: flex;
 		position: relative;
 		height: 30svh;
@@ -1149,17 +1159,13 @@
 		height: 100%;
 		display: flex;
 		gap: 5px;
-		background-repeat: no-repeat;
-		background-size: calc(max(100%, 700px)) 100%;
-		background-position: left top;
+
 		padding: 5px;
 	}
 	.selectedRest {
 		flex-basis: 85%;
 		height: 100%;
-		background-repeat: no-repeat;
-		background-size: calc(max(100%, 700px)) 100%;
-		background-position: left top;
+		
 		padding: 10px;
 		/* background-color: aqua; */
 	}
@@ -1202,15 +1208,15 @@
 		/* font-size:1rem; */
 		padding-inline: 0.7em;
 		padding-block: 0.6em;
-		border:none;
+		border: none;
 		border-radius: 1px;
-		color:white;
-		
+		color: white;
+
 		background-color: brown;
 		/* background-color: aqua; */
 		/* max-width:30ch; */
 	}
-	.vasResponse:disabled{
+	.vasResponse:disabled {
 		background-color: gray;
 	}
 </style>

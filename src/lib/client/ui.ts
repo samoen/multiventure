@@ -31,7 +31,6 @@ export type VisualUnitProps = {
     tilt?:boolean;
     displayHp: number;
     maxHp: number;
-    aggro?: number;
     side: 'hero' | 'enemy'
     actual: UnitDetails;
     actionsThatCanTargetMe: GameActionSentToClient[]
@@ -326,7 +325,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
             actual: {
                 kind: 'player',
                 portrait: getHeroPortrait(lastMsg.yourInfo),
-                info: lastMsg.yourInfo,
+                info: structuredClone(lastMsg.yourInfo),
             },
             actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == lastMsg.yourInfo.unitId)
         } satisfies VisualUnitProps
@@ -340,12 +339,11 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                     src: enemySprites[e.templateId],
                     displayHp: e.health,
                     maxHp: e.maxHealth,
-                    aggro: e.myAggro,
                     side: 'enemy',
                     actual: {
                         kind: 'enemy',
                         portrait: enemyPortraits[e.templateId],
-                        enemy: e
+                        enemy: structuredClone(e)
                     },
                     actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == e.unitId)
                 } satisfies VisualUnitProps

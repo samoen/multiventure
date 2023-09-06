@@ -103,7 +103,10 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				maxHealth: e.maxHealth,
 				name: e.name,
 				templateId: e.templateId,
+				strength:e.template.baseDamage,
+				agility:e.template.speed,
 				myAggro: getAggroForPlayer(e,forPlayer),
+				aggGain: e.template.aggroGain,
 				statuses: Object.fromEntries(e.statuses),
 			} satisfies EnemyInClient
 		}),

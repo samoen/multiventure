@@ -209,8 +209,8 @@
 					handlePutsStatuses(anim);
 					if ($guestId == undefined) return;
 					updateUnit($guestId, (vup) => {
-						if (vup.side == 'enemy') {
-							vup.aggro = 0;
+						if (vup.actual.kind == 'enemy') {
+							vup.actual.enemy.myAggro = 0;
 						}
 					});
 					$subAnimationStage = 'sentHome';
@@ -231,8 +231,8 @@
 					let anim = $currentAnimation;
 					if (!anim) return;
 					updateUnit(anim.source, (vup) => {
-						if (vup.side == 'enemy') {
-							vup.aggro = 0;
+						if (vup.actual.kind == 'enemy') {
+							vup.actual.enemy.myAggro = 0;
 						}
 					});
 				}}
@@ -307,14 +307,14 @@
 								other.forHeros.includes($lastMsgFromServer.yourInfo.unitId)
 							) {
 								updateUnit(other.target, (vup) => {
-									if (vup.aggro != undefined) {
+									if (vup.actual.kind == 'enemy') {
 										if (other.amount != undefined) {
-											vup.aggro += other.amount;
-											if (vup.aggro > 100) vup.aggro = 100;
-											if (vup.aggro < 0) vup.aggro = 0;
+											vup.actual.enemy.myAggro += other.amount;
+											if (vup.actual.enemy.myAggro > 100) vup.actual.enemy.myAggro = 100;
+											if (vup.actual.enemy.myAggro < 0) vup.actual.enemy.myAggro = 0;
 										}
 										if (other.setTo != undefined) {
-											vup.aggro = other.setTo;
+											vup.actual.enemy.myAggro = other.setTo;
 										}
 									}
 								});

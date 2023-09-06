@@ -98,9 +98,9 @@
 			<div class="healthbar">
 				<div class="healthbar_health" style:width="{$hpBar}%" />
 			</div>
-			{#if $vu.side == 'enemy' && $vu.aggro != undefined}
+			{#if $vu.actual.kind == 'enemy'}
 				<div class="aggrobar">
-					<div class="aggro" style:width="{$vu.aggro}%" />
+					<div class="aggro" style:width="{$vu.actual.enemy.myAggro}%" />
 				</div>
 			{/if}
 		</div>

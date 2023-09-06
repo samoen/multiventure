@@ -135,6 +135,9 @@ export type EnemyInClient = {
 	health: number
 	maxHealth: number
 	myAggro: number
+	aggGain: number
+	strength:number
+	agility:number
 	// statuses: Map<HeroName,Record<StatusId,number>>
 	statuses: Record<UnitId,Record<StatusId,number>>
 }

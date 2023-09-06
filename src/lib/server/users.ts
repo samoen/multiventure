@@ -36,7 +36,7 @@ export function addNewUser(heroName: string): { id: string, player: Player } {
 	// startScene = 'goblinCamp'
 	// startScene = 'castle'
 	// startScene = 'throne'
-	// startScene = 'armory'
+	startScene = 'armory'
 
 	let startInventory = defaultInventory()
 
