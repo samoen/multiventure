@@ -688,7 +688,6 @@ export function convertVasToClient(vas: VisualActionSource, player: Player): Vis
 		sprite: vas.sprite,
 		portrait: vas.portrait,
 		startsLocked: startLocked,
-		lockHandle: vas.lockHandle,
 		actionsInClient: validUnlockableClientActions,
 		detectStep: detectStep,
 	} satisfies VisualActionSourceInClient
@@ -713,13 +712,11 @@ export type VisualActionSource = {
 	responses?: ConversationResponse[]
 	detect?: { flag: Flag, startText?: string, responses?: ConversationResponse[], locked?:boolean}[]
 	startsLocked?: boolean
-	lockHandle?: string
 }
 
 export type VisualActionSourceInClient = {
 	displayName: string
 	startsLocked?: boolean
-	lockHandle?: string
 	id: VisualActionSourceId
 	sprite: AnySprite
 	portrait?: MiscPortrait

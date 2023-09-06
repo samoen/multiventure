@@ -259,14 +259,8 @@ const trainingRoom1: Scene = {
 			startText: `Great job! Questions? Concerns?`,
 			responses: [
 				{
-					responseId: 'gimmie',
-					responseText: `What's my next battle?`,
-					retort: `Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
-					unlockVas:['vasGoTrain2']
-				},
-				{
 					responseId:'imhurt',
-					responseText:`I got damaged in that last fight, got a remedy?`,
+					responseText:`I'm hurt!`,
 					retort:`Here's a potion. It has limited uses in each area, and gets refilled when you travel. Equip it, select yourself and take a sip`,
 					unlockVas:['vasEquipBandage']
 				},
@@ -275,6 +269,12 @@ const trainingRoom1: Scene = {
 					responseText:`I attacked the goblin but he hit me first, what's that about?`,
 					retort:`An enemy with a higher agility than you will strike first. Some weapons give bonus agility, like this dagger`,
 					unlockVas:['vasEquipDagger']
+				},
+				{
+					responseId: 'gimmie',
+					responseText: `What's my next battle?`,
+					retort: `Your next battle is against armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
+					unlockVas:['vasGoTrain2']
 				},
 			]
 		})
@@ -351,7 +351,6 @@ const trainingRoom2: Scene = {
 					responseId: 'whatifdie',
 					responseText: `What if the troll wins the battle?`,
 					retort: `It's not a problem, you have a checkpoint right here. If you run out of health, just succumb to your wounds, respawn and try again.`,
-					unlockVas: ['vasEquipDart', `vasEquipCloak`, `vasEquipStaff`]
 				},
 			]
 		})
@@ -439,7 +438,7 @@ const trainingRoom3: Scene = {
 			unitId: 'vasBox',
 			displayName: 'Box',
 			sprite: 'box',
-			startText: `Drop your weapon into this box. Don't worry, your fists are registered weapons`,
+			startText: `Drop your weapon into this box.`,
 			actionsWithRequirements: [
 			{
 				pickupItem:'fist'
@@ -496,8 +495,8 @@ export const forest: Scene = {
 	actions(player: Player) {
 		player.visualActionSources.push({
 			unitId: 'vascastle',
-			displayName: 'Travel',
-			sprite: 'signpost',
+			displayName: 'Castle',
+			sprite: 'castle',
 			actionsWithRequirements: [{ travelTo: 'castle' }],
 			startText: `In the distance you see a castle`,
 		})
@@ -547,16 +546,23 @@ const castle: Scene = {
 	actions(player: Player) {
 
 		player.visualActionSources.push({
-			unitId: 'vasHouse',
-			displayName: 'Castle Grounds',
+			unitId: 'vasKeep',
+			displayName: 'Keep',
 			sprite: 'castle',
 			responses: [{
 				responseId: 'rummage',
 				responseText: 'Search around the old barracks',
 				unlockVas: ['vasCastleBandage'],
 			}],
-			actionsWithRequirements: [{ travelTo: 'house' }, { travelTo: 'throne' }],
-			startText: `In the castle grounds you see a house. The door is open and someone is inside. Further on there are steps leading up to the Bramblemore throne room. There is a long abandoned barracks with broken gear strewn around.`,
+			actionsWithRequirements: [{ travelTo: 'throne' }],
+			startText: `In the center of the castle lies the Bramblemore throne room. Along the path is a long abandoned barracks with broken gear strewn around.`,
+		})
+		player.visualActionSources.push({
+			unitId: 'vasHouse',
+			displayName: 'House',
+			sprite: 'stoneDoor',
+			actionsWithRequirements: [{ travelTo: 'house' }],
+			startText: `You see a beautiful little thatched roof cottage. It looks inviting.`,
 		})
 		player.visualActionSources.push({
 			unitId: 'vasCastleBandage',
@@ -582,7 +588,7 @@ const house: Scene = {
 	onEnterScene(player) {
 		if (!player.flags.has('heardAboutHiddenPassage')) {
 			player.flags.add('heardAboutHiddenPassage')
-			player.sceneTexts.push("You come upon a beautiful little thatched roof cottage. The air is sweet with the smell of flowery perfume, but there is a sense of sadness in the air. You notice the door slightly ajar and knock on it quietly. There is no response.\n\nYou gently push the door open and find a woman sitting at a table alone, sobbing silently. Startled, she jumps from her seat. You hold your hands up as in a sign of concilation.")
+			player.sceneTexts.push("The air is sweet with the smell of flowery perfume, but there is a sense of sadness in the air. You notice the door slightly ajar and knock on it quietly. There is no response.\n\nYou gently push the door open and find a woman sitting at a table alone, sobbing silently. Startled, she jumps from her seat. You hold your hands up as in a sign of concilation.")
 		}
 		else if (!player.flags.has('killedGoblins')) {
 			player.sceneTexts.push(`${player.heroName}... why do you return without the blood of those foul goblins on your hands? Leave me. I do not wish to see anyone while they still draw breath.`)
@@ -593,6 +599,7 @@ const house: Scene = {
 			unitId: 'vasHouseWoman',
 			displayName: 'Giselle',
 			sprite: 'lady',
+			portrait:'lady',
 			startText: `Traveller, what is it you do here? Do you not see I grieve? My son... he was murdered by Gorlak and his rowdy band of filthy goblin scum. He was barely a man yet had the stars in his eyes. He sought adventure but found his demise far too soon. Will you avenge him on my behalf? I don't have much but I'm sure I can find somethign to reward you`,
 			responses: [
 				{
@@ -867,7 +874,7 @@ const forestPassage: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasPassageTravel',
 			displayName: 'Travel',
-			sprite: 'forest',
+			sprite: 'signpost',
 			startText: `You are in a passage. At one end you see Bramblefoot Woods. At the other, a campsite`,
 			actionsWithRequirements: [
 				{
@@ -896,7 +903,8 @@ const goblinCamp: Scene = {
 			for (const playerInScene of activePlayersInScene('goblinCamp')) {
 				playerInScene.sceneTexts.push(`Suddendly, A pair of goblins rush out of a tent.. "Hey Gorlak, looks like lunch!" "Right you are Murk. Let's eat!"`)
 			}
-			spawnEnemy('Gorlak', 'goblin', 'goblinCamp')
+			// spawnEnemy('Gorlak', 'goblin', 'goblinCamp')
+			spawnEnemy('Camp Rat', 'rat', 'goblinCamp')
 			spawnEnemy('Dartah', 'darter', 'goblinCamp')
 			spawnEnemy(
 				'Murk',
@@ -944,7 +952,7 @@ const tunnelChamber: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasDungeonAltar',
 			displayName: 'Altar',
-			sprite: 'armorStand',
+			sprite: 'altar',
 			startText: `It's the altar the king told me about`,
 			actionsWithRequirements: [{
 				requiresNotFlags: ['placedMedallion', 'smashedMedallion'],
@@ -978,7 +986,34 @@ const tunnelChamber: Scene = {
 					},
 				}
 			}
+			],
+			detect:[
+				{
+					flag:'smashedMedallion',
+					startText:`The altar's energies dissapated`
+				},
+				{
+					flag:'placedMedallion',
+					startText:`The medallion was placed on the altar, it opens a secret door, revealing an item`,
+				},
 			]
+		})
+
+		player.visualActionSources.push({
+			unitId:'vasAltarReward',
+			displayName:'Plate Mail',
+			sprite:'armorStand',
+			startsLocked:true,
+			startText:'Plate mail limits the amount of damage you take from each strike.',
+			actionsWithRequirements:[
+				{requiresFlags:['placedMedallion'],pickupItem:'plateMail'}
+			],
+			detect:[
+				{
+					flag:'placedMedallion',
+					locked:false,
+				},
+			],
 		})
 
 		player.visualActionSources.push({

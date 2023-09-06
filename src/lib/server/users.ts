@@ -1,6 +1,6 @@
 import type { UnitId, BattleAnimation, StatusEffect, StatusId, BattleEvent, HeroId, AnySprite, VisualActionSourceId } from '$lib/utils';
 import { v4 } from 'uuid';
-import { items, type Item, type ItemState, type QuickbarSlot, type ItemId, equipItem, fireStaff, plateMail } from './items';
+import { items, type Item, type ItemState, type QuickbarSlot, type ItemId, equipItem, fireStaff, plateMail, leatherArmor, poisonDart } from './items';
 import { pushHappening } from './messaging';
 import type { VisualActionSource } from './logic';
 import { type SceneId, scenes, addSoloScenes } from './scenes';
@@ -68,7 +68,8 @@ export function addNewUser(heroName: string): { id: string, player: Player } {
 	}
 
 	// equipItem(player, fireStaff)
-	// equipItem(player, plateMail)
+	// equipItem(player,leatherArmor)
+	// equipItem(player, poisonDart)
 
 	addSoloScenes(heroName)
 	scenes.get(player.currentScene)?.onEnterScene(player)

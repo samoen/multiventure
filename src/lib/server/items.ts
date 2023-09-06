@@ -112,7 +112,7 @@ const bomb: Item = {
 	},
 }
 
-const poisonDart: Item = {
+export const poisonDart: Item = {
 	id: 'poisonDart',
 	slot: 'utility',
 	startStock: 2,
@@ -174,7 +174,7 @@ const theifCloak: Item = {
 	},
 }
 
-const leatherArmor: Item = {
+export const leatherArmor: Item = {
 	id: 'leatherArmor',
 	slot: 'body',
 	useableOutOfBattle: true,
