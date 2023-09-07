@@ -9,7 +9,7 @@ import { tick } from "svelte";
 import type { EnemyTemplateId } from "$lib/server/enemies";
 import type { MessageFromServer } from "$lib/server/messaging";
 import type { VisualActionSourceInClient } from "$lib/server/logic";
-import { anySprites, enemySprites, getHeroPortrait, getPortrait, getSlotImage, heroSprite} from "./assets";
+import { anySprites, enemySprites, getHeroPortrait, getPortrait, getSlotImage, heroSpriteFromClass} from "./assets";
 
 
 type UnitDetails = {
@@ -314,17 +314,18 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         visualSceneLabel.set(lastMsg.yourInfo.currentSceneDisplay)
 
         let newVups: VisualUnitProps[] = []
-        // console.log(`syncing hero with poison ${lastMsg.yourInfo.statuses.poison}`)
+        // console.log(`I am class ${lastMsg.yourInfo.class}`)
+
         newVups.push({
             id: lastMsg.yourInfo.unitId,
             name: lastMsg.yourInfo.heroName,
-            src: heroSprite(lastMsg.yourInfo.inventory),
+            src: heroSpriteFromClass(lastMsg.yourInfo.class),
             maxHp: lastMsg.yourInfo.maxHealth,
             displayHp: lastMsg.yourInfo.health,
             side: 'hero',
             actual: {
                 kind: 'player',
-                portrait: getHeroPortrait(lastMsg.yourInfo),
+                portrait: getHeroPortrait(lastMsg.yourInfo.class),
                 info: structuredClone(lastMsg.yourInfo),
             },
             actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == lastMsg.yourInfo.unitId)
@@ -350,17 +351,18 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
             )
         }
         for (const p of lastMsg.otherPlayers) {
+            console.log(p.heroName + ` is class ` + p.class)
             newVups.push(
                 {
                     id: p.unitId,
                     name: p.heroName,
-                    src: heroSprite(p.inventory),
+                    src: heroSpriteFromClass(p.class),
                     displayHp: p.health,
                     maxHp: p.maxHealth,
                     side: 'hero',
                     actual: {
                         kind: 'player',
-                        portrait: getHeroPortrait(p),
+                        portrait: getHeroPortrait(p.class),
                         info: p,
                     },
                     actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == p.unitId)
@@ -440,7 +442,6 @@ export function changeVasLocked(vId: VisualActionSourceId, unlock: boolean) {
             } else {
                 cState.isLocked = true
             }
-            console.log('unlocked ' + vId)
         } else {
             if (cState) {
                 cState.isLocked = false

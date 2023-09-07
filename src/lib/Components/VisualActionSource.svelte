@@ -14,13 +14,13 @@
 		visualActionSources,
 		visualOpacity
 	} from '$lib/client/ui';
-	import type { VisualActionSourceId } from '$lib/utils';
 	import { derived } from 'svelte/store';
 	import VisualUnit from './VisualUnit.svelte';
 	import { tick } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import type { ItemId } from '$lib/server/items';
-	import { anySprites, heroSprite } from '$lib/client/assets';
+	import { anySprites, getHeroPortrait, heroSpriteFromClass } from '$lib/client/assets';
+	import type { VisualActionSourceId } from '$lib/utils';
 
 	export let hostId: VisualActionSourceId;
 	let pickedup = false;
@@ -72,18 +72,32 @@
 			}
 			updateUnit($guestId, (vup) => {
 				if(vup.actual.kind == 'player'){
-					let found = vup.actual.info.inventory.find(i=>i.slot == takenItem.slot)
-					if(!found){
-						vup.actual.info.inventory.push({
-							itemId:takenItem.id,
-							slot:takenItem.slot,
-							cooldown:0,
-							warmup:0,
-						})
-					}else{
-						found.itemId = takenItem.id
+					// let found = vup.actual.info.inventory.find(i=>i.slot == takenItem.slot)
+					// if(!found){
+					// 	vup.actual.info.inventory.push({
+					// 		itemId:takenItem.id,
+					// 		slot:takenItem.slot,
+					// 		cooldown:0,
+					// 		warmup:0,
+					// 	})
+					// }else{
+					// 	found.itemId = takenItem.id
+					// }
+					if($lastMsgFromServer){
+						if(vup.actual.info.heroName == $lastMsgFromServer.yourInfo.heroName){
+							vup.src = heroSpriteFromClass($lastMsgFromServer.yourInfo.class);
+							vup.actual.portrait = getHeroPortrait($lastMsgFromServer.yourInfo.class)
+						}else{
+							for (const p of $lastMsgFromServer.otherPlayers){
+								if(p.heroName == vup.actual.info.heroName){
+									vup.src = heroSpriteFromClass(p.class);
+									vup.actual.portrait = getHeroPortrait(p.class)
+								}
+							}
+						}
+						
 					}
-					vup.src = heroSprite(vup.actual.info.inventory);
+
 				}
 			});
 			await tick();

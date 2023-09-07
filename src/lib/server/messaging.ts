@@ -1,6 +1,6 @@
-import type { BattleAnimation, EnemyInClient, GameActionSentToClient, LandscapeImage } from '$lib/utils';
+import type { GameActionSentToClient, BattleAnimation, EnemyInClient, LandscapeImage } from '$lib/utils';
 import { activeEnemies, addAggro, damagePlayer, enemiesInScene, getAggroForPlayer, takePoisonDamage } from './enemies';
-import { items } from './items';
+import { findClassFromInventory, items } from './items';
 import { type VisualActionSourceInClient, convertServerActionToClientAction, convertVasToClient } from './logic';
 import { scenes, forest } from './scenes';
 import { activePlayers, globalFlags, users, type HeroName, type Player, type GameAction, activePlayersInScene, type PlayerInClient, type Flag, type GlobalFlag } from './users';
@@ -76,14 +76,10 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 			maxHealth: forPlayer.maxHealth,
 			agility: forPlayer.agility,
 			strength: forPlayer.strength,
-			// inventory:{
-			// 	weapon: forPlayer.inventory.weapon,
-			// 	utility: forPlayer.inventory.utility,
-			// 	body: forPlayer.inventory.body,
-			// },
 			inventory:forPlayer.inventory,
 			currentSceneDisplay: scene.displayName,
 			statuses:forPlayer.statuses,
+			class:findClassFromInventory(forPlayer.inventory)
 		},
 		otherPlayers: activePlayers()
 			.filter((u) => u.heroName != forPlayer.heroName && u.currentScene == forPlayer.currentScene)
@@ -98,6 +94,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 					inventory:u.inventory,
 					currentSceneDisplay: 'somewhere',
 					statuses:u.statuses,
+					class:findClassFromInventory(u.inventory)
 				} satisfies PlayerInClient;
 			}),
 			sceneTexts: forPlayer.sceneTexts,

@@ -1,7 +1,7 @@
 // This file is for stuff available to both the server and browser
 
 import type { ActiveEnemy, EnemyTemplate, EnemyTemplateId } from './server/enemies';
-import type { Item, ItemId, ItemState, QuickbarSlot } from './server/items';
+import type { ItemId, QuickbarSlot, ItemState } from './server/items';
 import type { SceneId } from './server/scenes';
 import type { Flag, GlobalFlag, HeroName, Player } from './server/users';
 

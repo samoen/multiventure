@@ -13,6 +13,8 @@ import thugPortrait from '$lib/assets/portraits/thug.webp';
 import ruffianPortrait from '$lib/assets/portraits/ruffian.webp';
 import magePortrait from '$lib/assets/portraits/mage.webp';
 import peasant from '$lib/assets/units/peasant.png';
+import rogue from '$lib/assets/units/rogue.png';
+import thug from '$lib/assets/units/thug.png';
 import general from '$lib/assets/units/general.png';
 import druid from '$lib/assets/units/druid.png';
 import lady from '$lib/assets/units/lady.png';
@@ -94,13 +96,18 @@ export function getSlotImage(id: ItemId): string {
     return blankSlot;
 }
 
-export function getHeroPortrait(pi: PlayerInClient): string {
-    if (pi.inventory.some(i=>i.itemId=='dagger'))return thiefPortrait
-    if (pi.inventory.some(i=>i.itemId=='fireStaff'))return magePortrait
-    if (pi.inventory.some(i=>i.itemId=='club'))return ruffianPortrait
+export function getHeroPortrait(className: string): string {
+    // if (pi.inventory.some(i=>i.itemId=='dagger'))return thiefPortrait
+    // if (pi.inventory.some(i=>i.itemId=='fireStaff'))return magePortrait
+    // if (pi.inventory.some(i=>i.itemId=='club'))return ruffianPortrait
     // if (pi.inventory.weapon.itemId == 'dagger') {
     //     return peasantPortrait
     // }
+    if(className == 'peasant')return peasantPortrait
+    if(className == 'thief')return thiefPortrait
+    if(className == 'ruffian')return ruffianPortrait
+    if(className == 'thug')return thugPortrait
+    if(className == 'mage')return magePortrait
     return peasantPortrait
 }
 
@@ -119,14 +126,18 @@ export const statusImages: Record<StatusId, string> = {
     hidden: hidden,
 };
 
-export function heroSprite(info: ItemState[]) :string {
-
-    if (info.some(i => i.itemId == 'club')){
-
-        return ruffian;
-    } 
-    if (info.some(i => i.itemId == 'dagger')) return thief;
-    if (info.some(i => i.itemId == 'fireStaff')) return mage;
+export function heroSpriteFromClass(className: string) :string {
+    if(className == 'peasant')return peasant
+    if(className == 'thief')return thief
+    if(className == 'rogue')return rogue
+    if(className == 'ruffian')return ruffian
+    if(className == 'thug')return thug
+    if(className == 'mage')return mage
+    // if (info.some(i => i.itemId == 'club')){
+        // return ruffian;
+    // } 
+    // if (info.some(i => i.itemId == 'dagger')) return thief;
+    // if (info.some(i => i.itemId == 'fireStaff')) return mage;
     return peasant;
 }
 

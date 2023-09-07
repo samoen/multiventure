@@ -7,6 +7,7 @@ import type { Player } from './users';
 export type Item = {
 	id: string
 	slot: string
+	towardsClass?:{kind:'class', class:string}|{kind:'any'}
 	speed?: number,
 	damageLimit?: number,
 	damageReduction?: number,
@@ -37,6 +38,7 @@ export type TargetStyle = { style: 'anyEnemy' } | { style: 'allEnemies', putsSta
 const dagger: Item = {
 	id: 'dagger',
 	slot: 'weapon',
+	towardsClass:{kind:'class',class:'thief'},
 	provoke: 7,
 	speed: 4,
 	baseDmg: 7,
@@ -48,6 +50,7 @@ const dagger: Item = {
 const club: Item = {
 	id: 'club',
 	slot: 'weapon',
+	towardsClass:{kind:'class',class:'ruffian'},
 	provoke: 40,
 	speed: 1,
 	baseDmg: 28,
@@ -58,6 +61,7 @@ const club: Item = {
 export const fireStaff: Item = {
 	id: 'fireStaff',
 	slot: 'weapon',
+	towardsClass:{kind:'class',class:'mage'},
 	warmup: 2,
 	cooldown: 1,
 	provoke: 60,
@@ -83,6 +87,7 @@ const potion: Item = {
 const bomb: Item = {
 	id: 'bomb',
 	slot: 'utility',
+	towardsClass:{kind:'any'},
 	startStock: 1,
 	speed: 12,
 	provoke: 5,
@@ -133,6 +138,7 @@ export const leatherArmor: Item = {
 	slot: 'body',
 	useableOutOfBattle: true,
 	requiresStatus: 'poison',
+	towardsClass:{kind:'any'},
 	speed: 5,
 	provoke: 0,
 	grantsImmunity: true,
@@ -145,6 +151,7 @@ export const leatherArmor: Item = {
 const fist: Item = {
 	id: 'fist',
 	slot: 'weapon',
+	towardsClass:{kind:'class',class:'peasant'},
 	default: true,
 	provoke: 1,
 	speed: 10,
@@ -261,5 +268,56 @@ export function checkHasItem(player: Player, id: ItemId): boolean {
 	return false
 }
 
+export type HeroClassData = {line:string,classes:string[]}[]
+export const heroClassData : HeroClassData = [
+	{line:'peasant', classes:['peasant']},
+	{line: 'thief', classes:['thief','rogue']},
+	{line: 'ruffian', classes:['ruffian','thug']},
+	{line: 'mage', classes:['mage']}
+ ]
 
-
+export function findClassFromInventory(inv:ItemState[]):string{
+	let classCount : Map<string,number> = new Map()
+	let anyCount = 0
+	for(const i of inv){
+		if(i.stats){
+			if(i.stats.towardsClass){
+				if(i.stats.towardsClass.kind == 'class'){
+					let exist = classCount.get(i.stats.towardsClass.class)
+					if(exist){
+						classCount.set(i.stats.towardsClass.class,exist+1)
+					}else{
+						classCount.set(i.stats.towardsClass.class,1)
+					}
+				}
+				if(i.stats.towardsClass.kind == 'any'){
+					anyCount++
+				}
+			}
+		}
+	}
+	let firstLine = heroClassData.at(0)
+	if(firstLine == undefined){
+		return 'peasant'
+	}
+	let highestLine = firstLine.line
+	let highestCount = 0
+	for(let [k,v] of classCount){
+		if(v > highestCount){
+			highestLine = k
+		}
+	}
+	let lineage = heroClassData.find(l=>l.line==highestLine)
+	if(!lineage)return highestLine
+	let classesInLineage = lineage.classes
+	if(!classesInLineage.length)return highestLine
+	let upgraded = highestLine
+	if(anyCount > classesInLineage.length -1){
+		let boss = classesInLineage.at(-1)
+		if(!boss)return highestLine
+		upgraded = boss
+	}
+	let final = classesInLineage.at(anyCount)
+	if(!final)return highestLine
+	return final
+}

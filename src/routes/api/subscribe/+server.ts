@@ -29,34 +29,40 @@ export const GET: RequestHandler = async (event) => {
 		if (player.heroName != from) {
 			return json({ error: 'cookie hero not matching hero from cookie id' }, { status: 401 });
 		}
-		if (player.connectionState != null && player.connectionState.stream != null) {
+		if (player.connectionState.con != undefined
+			// || player.connectionState.stream != undefined
+			) {
 			// return json({ error: 'user already connected' }, { status: 401 });
 			// if (player.connectionState.con != null) {
-			console.log(`${player.heroName} subscribing but already subscribed`);
-			try{
-				// player.connectionState.con?.close()
-			}catch(e){
-				console.log('failed to close')
-			}
-			
+				console.log(`${player.heroName} subscribing but already subscribed, con is ${player.connectionState.con}`);
+				
+				// closing here causes infinite subscribe loops?
+				// try {
+				// 	player.connectionState.con?.close()
+				// 	await new Promise((resolve) => setTimeout(resolve, 100));
+				// } catch (e) {
+				// 	console.log('failed to close already subber')
+				// }
+
 			// player.connectionState.con.enqueue(encode('closing', {}));
-			
+
 			// // wait for old subscriber to cancel. Improve this
 			// await new Promise((r) => {
-				// 	setTimeout(r, 1000);
-				// }); 
-				// }
-				
-				// player.connectionState = null;
-			}
-			player.connectionState = {
-				// ip: null,
-				con: undefined,
-				stream: undefined
-			};
-			
-			let rs = new ReadableStream({
-			start: (c) => {
+			// 	setTimeout(r, 1000);
+			// }); 
+			// }
+
+			// player.connectionState = null;
+		}
+		player.connectionState = {
+			// ip: null,
+			con: undefined,
+			stream: undefined
+		};
+
+		let rs = new ReadableStream({
+			start(c) {
+
 				if (!player || !player.connectionState) return
 				console.log(`stream started for hero ${player.heroName}`);
 				// player.connectionState.ip = ip;
@@ -68,33 +74,40 @@ export const GET: RequestHandler = async (event) => {
 					updateAllPlayerActions()
 					sendEveryoneWorld(player.heroName);
 					if (player.connectionState && player.connectionState.con) {
-						player.connectionState.con.enqueue(encode(`firstack`, { yes: 'okk' }));
+						console.log('sending ack')
+						try {
+							player.connectionState.con.enqueue(encode(`firstack`, { yes: 'okk' }));
+						} catch (e) {
+							console.log('failed to send ack')
+						}
 						// player.animations = []
 					}
 				}, 1);
 			},
-			cancel: (reason) => {
+			cancel(reason){
 				console.log(`stream cancel handle for hero ${player.heroName}`);
 				if (reason) console.log(`reason: ${reason}`)
 				// try {
-			// 	if(player.connectionState && player.connectionState.con){
-				// 		player.connectionState.con.close();
+				// 	if(player.connectionState.con != undefined){
+				// 		player.connectionState.con?.close();
 				// 	}
 				//     console.log(`stream cancel handler successfully closed controller for ${ip} ${from}`);
 				// } catch (e) {
-					//     console.log(`stream cancel handler failed to close controller for ${ip} ${from} because ${e}`);
-					// }
+				//     console.log(`stream cancel handler failed to close controller for ${ip} ${from} because ${e}`);
+				// }
+				// console.log(`setting ${player.heroName} connection con to undefined`)
+				player.connectionState.con = undefined;
+				player.connectionState.stream = undefined;
+				
+				// setTimeout(() => {
+					// modifyEnemies()
 					pushHappening(`${player.heroName} left the game`)
-					player.connectionState.con = undefined;
-					
-					// setTimeout(() => {
-						// modifyEnemies()
-						sendEveryoneWorld(player.heroName);
-					// }, 1);
-				}
-			});
-			player.connectionState.stream = rs;
-			
+					sendEveryoneWorld(player.heroName);
+				// }, 1);
+			}
+		});
+		player.connectionState.stream = rs;
+
 		console.log(`returning readableString for ${player.heroName}, current connections ${JSON.stringify(activePlayers().map(p => p.heroName))}`)
 		return new Response(rs, {
 			headers: {
