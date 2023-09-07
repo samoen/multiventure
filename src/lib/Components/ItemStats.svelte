@@ -9,73 +9,93 @@
 	import foot from '$lib/assets/ui/foot.png';
 	import saw from '$lib/assets/ui/saw.png';
 	import teeth from '$lib/assets/ui/teeth.png';
+	import crown from '$lib/assets/ui/crown.png';
 
 	export let itemState: ItemState;
 </script>
-
 <div class="top">
-	{#if itemState.stats}
-        {itemState.itemId}
-        {#if itemState.stats.baseDmg}
+
+    <div class='title'>
+        <p>
+            {itemState.itemId}
+        </p>
+    </div>
+    <div class="stats">
+        {#if itemState.stats}
+            {#if itemState.stats.style.style == 'allEnemies'}
+                <!-- <div class="noNumber"> -->
+                    <img src={saw} alt="Splash" />
+                <!-- </div> -->
+            {/if}
+            {#if itemState.stats.grantsImmunity}
+                <!-- <div class="noNumber"> -->
+                    <img src={crown} alt="No retaliation" />
+                <!-- </div> -->
+            {/if}
+            {#if itemState.stats.baseDmg}
+                <div class="statLine">
+                    <img src={strong} alt="a heart" />
+                    <div>{itemState.stats.baseDmg}</div>
+                </div>
+            {/if}
+            {#if itemState.stats.strikes && itemState.stats.strikes > 1}
+                <div class="statLine">
+                    <img src={crossedSwords} alt="a heart" />
+                    <div>{itemState.stats?.strikes}</div>
+                </div>
+                
+            {/if}
+            {#if itemState.stats.speed && itemState.stats.speed > 0}
+                <div class="statLine">
+                    <img src={foot} alt="a heart" />
+                    <div>{itemState.stats.speed}</div>
+                </div>
+            {/if}
+            {#if itemState.stats.provoke && itemState.stats.provoke > 0}
+                <div class="statLine">
+                    <img src={teeth} alt="a heart" />
+                    <div>{itemState.stats.provoke}</div>
+                </div>
+            {/if}
+            {#if itemState.stats.damageReduction}
             <div class="statLine">
-                <img src={strong} alt="a heart" />
-                <div>{itemState.stats.baseDmg}</div>
+                <img src={lightShield} alt="a heart" />
+                <div>{itemState.stats.damageReduction}</div>
             </div>
-        {/if}
-        {#if itemState.stats.strikes && itemState.stats.strikes > 1}
+            {/if}
+            {#if itemState.stats.damageLimit}
             <div class="statLine">
-                <img src={crossedSwords} alt="a heart" />
-                <div>{itemState.stats?.strikes}</div>
+                <img src={heavyShield} alt="a heart" />
+                <div>{itemState.stats.damageLimit}</div>
             </div>
-            
-        {/if}
-        {#if itemState.stats.speed && itemState.stats.speed > 0}
+            {/if}
+            {#if itemState.stats.cooldown}
             <div class="statLine">
-                <img src={foot} alt="a heart" />
-                <div>{itemState.stats.speed}</div>
+                <img src={loading} alt="a heart" />
+                <div>{itemState.stats.cooldown}</div>
             </div>
-        {/if}
-        {#if itemState.stats.provoke && itemState.stats.provoke > 0}
+            {/if}
+            {#if itemState.stats.warmup}
             <div class="statLine">
-                <img src={teeth} alt="a heart" />
-                <div>{itemState.stats.provoke}</div>
+                <img src={candle} alt="a heart" />
+                <div>{itemState.stats.warmup}</div>
             </div>
+            {/if}
         {/if}
-		{#if itemState.stats.damageReduction}
-        <div class="statLine">
-            <img src={lightShield} alt="a heart" />
-            <div>{itemState.stats.damageReduction}</div>
-        </div>
-		{/if}
-		{#if itemState.stats.damageLimit}
-        <div class="statLine">
-            <img src={heavyShield} alt="a heart" />
-            <div>{itemState.stats.damageLimit}</div>
-        </div>
-		{/if}
-		{#if itemState.stats.cooldown}
-        <div class="statLine">
-            <img src={loading} alt="a heart" />
-            <div>{itemState.stats.cooldown}</div>
-        </div>
-		{/if}
-		{#if itemState.stats.warmup}
-        <div class="statLine">
-            <img src={candle} alt="a heart" />
-            <div>{itemState.stats.warmup}</div>
-        </div>
-		{/if}
-        {#if itemState.stats.style.style == 'allEnemies'}
-            <!-- <div class="noNumber"> -->
-                <img src={saw} alt="a heart" />
-            <!-- </div> -->
-        {/if}
-	{/if}
+    </div>
 </div>
 
 <style>
+    .title{
+        display: block;
+        /* border: 2px solid blue; */
+    }
+    .stats{
+        display: inline-flex;
+        flex-direction: column;
+    }
 	.top {
-		display: inline-block;
+		display: block;
 		/* min-width: 20px;
 		min-height: 20px;
 		background-color: aqua; */

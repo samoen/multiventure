@@ -137,8 +137,6 @@ export type GameAction = {
 	unlockableActData?:UnlockableActionData;
 };
 
-export type MiscPortrait = 'general' | 'peasant' | 'lady'
-
 export function playerEquipped(player: Player): Item[] {
 	let equippedItems : Item[] = []
 	for(const iId of player.inventory){

@@ -1,4 +1,4 @@
-import type { Flag, HeroName, MiscPortrait, PlayerInClient } from "$lib/server/users";
+import type { Flag, HeroName, PlayerInClient } from "$lib/server/users";
 import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient, AnySprite, LandscapeImage, VisualActionSourceId, SignupResponse } from "$lib/utils";
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 
@@ -9,7 +9,7 @@ import { tick } from "svelte";
 import type { EnemyTemplateId } from "$lib/server/enemies";
 import type { MessageFromServer } from "$lib/server/messaging";
 import type { VisualActionSourceInClient } from "$lib/server/logic";
-import { anySprites, enemyPortraits, enemySprites, getHeroPortrait, getSlotImage, heroSprites } from "./assets";
+import { anySprites, enemySprites, getHeroPortrait, getPortrait, getSlotImage, heroSprite} from "./assets";
 
 
 type UnitDetails = {
@@ -59,7 +59,7 @@ export let clientState = writable({
     loading: true,
 })
 
-export let triedSignupButTaken: Writable<string | undefined> = writable(undefined)
+export const triedSignupButTaken: Writable<string | undefined> = writable(undefined)
 export const source: Writable<EventSource | undefined> = writable(undefined);
 export const lastMsgFromServer: Writable<MessageFromServer | undefined> = writable();
 export const allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
@@ -318,7 +318,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         newVups.push({
             id: lastMsg.yourInfo.unitId,
             name: lastMsg.yourInfo.heroName,
-            src: heroSprites[heroSprite(lastMsg.yourInfo.inventory)],
+            src: heroSprite(lastMsg.yourInfo.inventory),
             maxHp: lastMsg.yourInfo.maxHealth,
             displayHp: lastMsg.yourInfo.health,
             side: 'hero',
@@ -342,7 +342,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                     side: 'enemy',
                     actual: {
                         kind: 'enemy',
-                        portrait: enemyPortraits[e.templateId],
+                        portrait: e.template.portrait ? getPortrait(e.template.portrait) : enemySprites[e.templateId],
                         enemy: structuredClone(e)
                     },
                     actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == e.unitId)
@@ -354,7 +354,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                 {
                     id: p.unitId,
                     name: p.heroName,
-                    src: heroSprites[heroSprite(p.inventory)],
+                    src: heroSprite(p.inventory),
                     displayHp: p.health,
                     maxHp: p.maxHealth,
                     side: 'hero',
@@ -578,14 +578,6 @@ function checkAnimationValid(ba: BattleAnimation): boolean {
     return foundSource && foundTarget
 }
 
-
-export function heroSprite(info: ItemState[]) {
-
-    if (info.some(i => i.itemId == 'club')) return 'ruffian';
-    if (info.some(i => i.itemId == 'dagger')) return 'theif';
-    if (info.some(i => i.itemId == 'fireStaff')) return 'mage';
-    return 'peasant';
-}
 
 export async function choose(chosen: GameActionSentToClient): Promise<MessageFromServer | undefined> {
     clientState.update((s) => {

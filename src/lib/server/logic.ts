@@ -4,7 +4,7 @@ import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer
 import { items, type Item, equipItem, checkHasItem, type ItemId } from "./items"
 import { pushHappening } from "./messaging"
 import { scenes, type SceneId } from "./scenes"
-import { users, type Player, activePlayersInScene, type GameAction, healPlayer, type Flag, type MiscPortrait } from "./users"
+import { users, type Player, activePlayersInScene, type GameAction, healPlayer, type Flag } from "./users"
 
 export function updateAllPlayerActions() {
 	for (const allPlayer of users.values()) {
@@ -848,7 +848,7 @@ export type VisualActionSource = {
 	unitId: VisualActionSourceId
 	displayName: string
 	sprite: AnySprite
-	portrait?: MiscPortrait
+	portrait?: string
 	actionsWithRequirements?: UnlockableActionData[]
 	startText: string,
 	responses?: ConversationResponse[]
@@ -861,7 +861,7 @@ export type VisualActionSourceInClient = {
 	startsLocked?: boolean
 	id: VisualActionSourceId
 	sprite: AnySprite
-	portrait?: MiscPortrait
+	portrait?: string
 	actionsInClient: GameActionSentToClient[]
 	startText: string,
 	responses: ConversationResponse[]

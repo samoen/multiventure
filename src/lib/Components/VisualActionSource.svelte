@@ -3,7 +3,6 @@
 		allVisualUnitProps,
 		convoStateForEachVAS,
 		currentAnimation,
-		heroSprite,
 		lastMsgFromServer,
 		lastUnitClicked,
 		nextAnimationIndex,
@@ -21,7 +20,7 @@
 	import { tick } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import type { ItemId } from '$lib/server/items';
-	import { anySprites, heroSprites } from '$lib/client/assets';
+	import { anySprites, heroSprite } from '$lib/client/assets';
 
 	export let hostId: VisualActionSourceId;
 	let pickedup = false;
@@ -84,7 +83,7 @@
 					}else{
 						found.itemId = takenItem.id
 					}
-					vup.src = heroSprites[heroSprite(vup.actual.info.inventory)];
+					vup.src = heroSprite(vup.actual.info.inventory);
 				}
 			});
 			await tick();

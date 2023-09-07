@@ -44,7 +44,7 @@
 
 	import UnitStats from '$lib/Components/UnitStats.svelte';
 	import VisualActionSource from '$lib/Components/VisualActionSource.svelte';
-	import { anySprites, getLandscape, miscPortraits } from '$lib/client/assets';
+	import { anySprites, getLandscape, getPortrait } from '$lib/client/assets';
 	import {
 		isSignupResponse,
 		type DataFirstLoad
@@ -52,6 +52,8 @@
 	import { writable, type Writable } from 'svelte/store';
 	import { fade } from 'svelte/transition';
 	import ItemStats from '$lib/Components/ItemStats.svelte';
+	import { invalidate, invalidateAll } from '$app/navigation';
+	import { page } from '$app/stores';
 
 	export let data: DataFirstLoad;
 	let signupInput: string;
@@ -66,11 +68,14 @@
 
 	let sourceErrored: Writable<boolean> = writable(false);
 
-	onMount(() => {
+	onMount(async () => {
 		console.log('mounted with ssr data ' + JSON.stringify(data));
-
-		// In dev sometimes we mount with old state and messes up our flow
-		if ($successcreds || $lastMsgFromServer) {
+		
+		// In dev sometimes the page mounts but the page data is old and innaccurate
+		await invalidateAll()
+		console.log('invalidated, now have ssr data ' + JSON.stringify(data));
+		// In dev sometimes we mount with existing state and messes up our flow
+		if ($successcreds || $lastMsgFromServer) {	
 			console.log('mounted with existing state. hmm');
 			leaveGame();
 			// invalidateAll()
@@ -172,7 +177,7 @@
 		});
 
 		$source.addEventListener('world', function (e) {
-			console.log('got msg from source and source is ' + $source);
+			// console.log('got msg from source and source is ' + $source);
 			if ($source == undefined) {
 				console.log(' got msg from undefined source, weird..');
 			}
@@ -626,7 +631,7 @@
 					>
 						<img
 							src={$selectedDetail.entity.portrait
-								? miscPortraits[$selectedDetail.entity.portrait]
+								? getPortrait($selectedDetail.entity.portrait)
 								: anySprites[$selectedDetail.entity.sprite]}
 							alt="place"
 						/>

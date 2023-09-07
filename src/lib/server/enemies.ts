@@ -29,6 +29,7 @@ export function getAggroForPlayer(enemy: ActiveEnemy, player: Player): number {
 }
 
 export type EnemyTemplate = {
+	portrait?:string
 	strikes?: number
 	baseHealth: number
 	baseDamage: number
@@ -77,6 +78,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		putsStatusOnTarget:{statusId:'poison',count:3},
 	},
 	orc: {
+		portrait:'grunt',
 		baseHealth: 50,
 		baseDamage: 10,
 		aggroGain: 30,

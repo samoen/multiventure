@@ -25,9 +25,8 @@ import grunt from '$lib/assets/units/grunt.png';
 import troll from '$lib/assets/units/young-ogre.png';
 import greenDrip from '$lib/assets/extras/green-drip.png';
 import ruffian from '$lib/assets/units/ruffian.png';
-import rogue from '$lib/assets/units/rogue.png';
 import fireghost from '$lib/assets/units/fireghost.png';
-import theif from '$lib/assets/units/thief.png';
+import thief from '$lib/assets/units/thief.png';
 import mage from '$lib/assets/units/mage.png';
 import arrow from '$lib/assets/extras/arrow.png';
 import bomb from '$lib/assets/extras/bomb.png';
@@ -66,8 +65,8 @@ import poisonDartSlot from '$lib/assets/equipment/dagger-thrown-poison-human.png
 import fireballSlot from '$lib/assets/equipment/fireball.png';
 import daggerSlot from '$lib/assets/equipment/dagger-human.png';
 import type { EnemyTemplateId } from '$lib/server/enemies';
-import type { ItemId } from '$lib/server/items';
-import type { MiscPortrait, PlayerInClient } from '$lib/server/users';
+import type { ItemId, ItemState } from '$lib/server/items';
+import type { PlayerInClient } from '$lib/server/users';
 import type { AnySprite, LandscapeImage, StatusId } from '$lib/utils';
 
 export const enemySprites: Record<EnemyTemplateId, string> = {
@@ -105,26 +104,31 @@ export function getHeroPortrait(pi: PlayerInClient): string {
     return peasantPortrait
 }
 
-export const enemyPortraits = {
-    orc: gruntPortrait,
-    rat: gruntPortrait,
-    goblin: gruntPortrait,
-    darter: gruntPortrait,
-    fireGremlin: gruntPortrait,
-    troll: gruntPortrait
-} satisfies Record<EnemyTemplateId, string>;
 
-export const miscPortraits = {
-    peasant: peasantPortrait,
-    general: generalPortrait,
-    lady: ladyPortrait,
-} satisfies Record<MiscPortrait, string>;
+export function getPortrait(key:string):string{
+    if(key == 'grunt')return gruntPortrait
+    if(key == 'lady')return ladyPortrait
+    if(key == 'general')return generalPortrait
+    return gruntPortrait
+}
+
 
 export const statusImages: Record<StatusId, string> = {
     poison: greenDrip,
     rage: rage,
     hidden: hidden,
 };
+
+export function heroSprite(info: ItemState[]) :string {
+
+    if (info.some(i => i.itemId == 'club')){
+
+        return ruffian;
+    } 
+    if (info.some(i => i.itemId == 'dagger')) return thief;
+    if (info.some(i => i.itemId == 'fireStaff')) return mage;
+    return peasant;
+}
 
 export const anySprites: Record<AnySprite, string> = {
     arrow: arrow,
@@ -159,13 +163,6 @@ export const anySprites: Record<AnySprite, string> = {
     necromancer: necromancer,
 }
 
-export const heroSprites = {
-    peasant: peasant,
-    rogue: rogue,
-    theif: theif,
-    ruffian: ruffian,
-    mage: mage
-};
 
 export function getLandscape(key: LandscapeImage): string {
     if (key == 'plains') {
