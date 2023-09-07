@@ -8,12 +8,12 @@
 
 
     export let vu : VisualUnitProps
-    $: str = vu.actual.kind == 'enemy' ? vu.actual.enemy.strength : vu.actual.info.strength
-    $: agi = vu.actual.kind == 'enemy' ? vu.actual.enemy.agility : vu.actual.info.agility
-    $: aggGain = vu.actual.kind == 'enemy' ? vu.actual.enemy.aggGain : 0
+    $: str = vu.actual.kind == 'enemy' ? vu.actual.enemy.template.baseDamage : vu.actual.info.strength
+    $: agi = vu.actual.kind == 'enemy' ? vu.actual.enemy.template.speed : vu.actual.info.agility
+    $: aggGain = vu.actual.kind == 'enemy' ? vu.actual.enemy.template.aggroGain : 0
 </script>
 
-<div>
+<div class="top">
     <div class="statLine">
         <img src={heart} alt='a heart'>
         <div>{vu.displayHp}</div>
@@ -40,8 +40,17 @@
 </div>
 
 <style>
+    .top{
+        display: inline-block;
+    }
     .statLine{
         display: flex;
+        gap:5px;
+        padding-right:5px;
         flex-direction: row;
+        border: 1px solid brown;
+    }
+    .statLine > img{
+        border-right: 1px solid brown;
     }
 </style>

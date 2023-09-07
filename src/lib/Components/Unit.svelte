@@ -69,7 +69,7 @@
 				$currentAnim.source == hostId &&
 				$subAnimationStage == 'fire'
 			) {
-				console.log('host leave');
+				// console.log('host leave');
 				placeHoldHeight = `${boundHostHeight}px`
 				return false;
 			}

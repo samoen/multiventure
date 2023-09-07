@@ -2,6 +2,7 @@ import { FAKE_LATENCY } from '$lib/server/messaging';
 import { users } from '$lib/server/users';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import type { SignupResponse } from '$lib/utils';
 
 type LoginRequest = {
 	heroName: string,
@@ -29,8 +30,15 @@ export const POST: RequestHandler = async (r) => {
 		return json({ error: 'bad hero name' }, { status: 400 });
 	}
 
+	const resp : SignupResponse = {
+		alreadyConnected:false,
+		needsAuth:'',
+		yourHeroName:msg.heroName,
+		yourId:msg.userId
+	}
+
 	r.cookies.set('hero', msg.heroName, { path: '/', secure: false });
 	r.cookies.set('uid', msg.userId, { path: '/', secure: false });
 
-	return json({ success: true, yourHeroName:msg.heroName, yourId:msg.userId });
+	return json(resp);
 };

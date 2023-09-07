@@ -43,7 +43,10 @@ export function addNewUser(heroName: string): { id: string, player: Player } {
 
 	let player: Player = {
 		unitId: `hero${heroName}`,
-		connectionState: null,
+		connectionState: {
+			con:undefined,
+			stream:undefined,
+		},
 		heroName: heroName,
 		previousScene: 'dead',
 		lastCheckpoint: 'forest',
@@ -52,8 +55,8 @@ export function addNewUser(heroName: string): { id: string, player: Player } {
 		inventory: startInventory,
 		health: 100,
 		maxHealth: 100,
-		agility: 0,
-		strength: 0,
+		agility: 1,
+		strength: 1,
 		sceneActions: [],
 		itemActions: [],
 		visualActionSources: [],
@@ -95,9 +98,9 @@ export type GlobalFlag = 'unused';
 export type Player = {
 	connectionState: {
 		// ip: string | null;
-		con: ReadableStreamController<unknown> | null;
-		stream: ReadableStream | null;
-	} | null;
+		con: ReadableStreamController<unknown> | undefined;
+		stream: ReadableStream | undefined;
+	};
 	previousScene: SceneId;
 	lastCheckpoint: SceneId;
 	itemActions: GameAction[];
@@ -168,6 +171,7 @@ export function healPlayer(player: Player, amount: number): { healed: number } {
 	if (missing < amount) {
 		toHeal = missing
 	}
+
 	player.health += toHeal
 	pushHappening(`${player.heroName} was healed for ${toHeal}hp`);
 	return { healed: toHeal }
@@ -175,8 +179,11 @@ export function healPlayer(player: Player, amount: number): { healed: number } {
 
 export function activePlayers(): Player[] {
 	return Array.from(users.values())
-		.filter((usr) => usr.connectionState != null
-			&& usr.connectionState.stream && usr.connectionState.stream.locked
+		.filter((usr) => {
+			return usr.connectionState.con && 
+				usr.connectionState.stream && 
+				usr.connectionState.stream.locked
+		}
 		)
 }
 

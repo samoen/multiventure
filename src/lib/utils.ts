@@ -1,6 +1,6 @@
 // This file is for stuff available to both the server and browser
 
-import type { ActiveEnemy, EnemyTemplateId } from './server/enemies';
+import type { ActiveEnemy, EnemyTemplate, EnemyTemplateId } from './server/enemies';
 import type { Item, ItemId, ItemState, QuickbarSlot } from './server/items';
 import type { SceneId } from './server/scenes';
 import type { Flag, GlobalFlag, HeroName, Player } from './server/users';
@@ -136,14 +136,9 @@ export type EnemyInClient = {
 	health: number
 	maxHealth: number
 	myAggro: number
-	aggGain: number
-	strength:number
-	agility:number
-	// statuses: Map<HeroName,Record<StatusId,number>>
+	template:EnemyTemplate
 	statuses: Record<UnitId,Record<StatusId,number>>
 }
-
-
 
 
 export type GameActionSelected = {

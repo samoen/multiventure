@@ -60,7 +60,7 @@ export let clientState = writable({
 })
 
 export let triedSignupButTaken: Writable<string | undefined> = writable(undefined)
-
+export const source: Writable<EventSource | undefined> = writable(undefined);
 export const lastMsgFromServer: Writable<MessageFromServer | undefined> = writable();
 export const allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
 export const visualActionSources: Writable<VisualActionSourceInClient[]> = writable([])
@@ -656,10 +656,6 @@ function handleAnimationsOnMessage(
     // my message with no animations
     if (latest.triggeredBy == latest.yourInfo.heroName && !latest.animations.length && currentAnim != undefined) {
         console.log('my message with no animations, but we are animating. Ignore, it will be synced when current anims finish');
-        // if ($currentAnimation) {
-        // 	await cancelAnimations();
-        // }
-        // syncVisualsToMsg(latest);
         return;
     }
 
@@ -671,8 +667,7 @@ function handleAnimationsOnMessage(
 
     // anyone's message with no animations and not animating
     if (currentAnim == undefined && !latest.animations.length) {
-        // await cancelAnimations();
-        console.log('Anyones message with no animations and not animating, just sync');
+        // console.log('Anyones message with no animations and not animating, just sync');
         syncVisualsToMsg(latest);
         return;
     }

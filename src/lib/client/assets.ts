@@ -10,6 +10,7 @@ import generalPortrait from '$lib/assets/portraits/general.webp';
 import ladyPortrait from '$lib/assets/portraits/lady.webp';
 import thiefPortrait from '$lib/assets/portraits/thief.webp';
 import thugPortrait from '$lib/assets/portraits/thug.webp';
+import ruffianPortrait from '$lib/assets/portraits/ruffian.webp';
 import magePortrait from '$lib/assets/portraits/mage.webp';
 import peasant from '$lib/assets/units/peasant.png';
 import general from '$lib/assets/units/general.png';
@@ -97,7 +98,7 @@ export function getSlotImage(id: ItemId): string {
 export function getHeroPortrait(pi: PlayerInClient): string {
     if (pi.inventory.some(i=>i.itemId=='dagger'))return thiefPortrait
     if (pi.inventory.some(i=>i.itemId=='fireStaff'))return magePortrait
-    if (pi.inventory.some(i=>i.itemId=='club'))return thugPortrait
+    if (pi.inventory.some(i=>i.itemId=='club'))return ruffianPortrait
     // if (pi.inventory.weapon.itemId == 'dagger') {
     //     return peasantPortrait
     // }

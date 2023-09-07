@@ -29,7 +29,7 @@ export const POST = (async (r) => {
 	}
 
 	// ensure action is still valid
-	updatePlayerActions(player)
+	// updatePlayerActions(player)
 
 	
 	let validActionsFromVases : GameAction[] = getServerActionsMetRequirementsFromVases(player.visualActionSources,player)
@@ -46,13 +46,13 @@ export const POST = (async (r) => {
 		player.sceneTexts.push('You were struck down')
 		pushHappening(`${player.heroName} is mortally wounded`)
 	}
-	
+
 	updateAllPlayerActions()
 
 	// tiny timeout so endpoint returns before the event messages get sent
-	setTimeout(() => {
-		if (player?.heroName) sendEveryoneWorld(player.heroName);
-	}, 1);
+	// setTimeout(() => {
+		sendEveryoneWorld(player.heroName);
+	// }, 1);
 
 	let nm = buildNextMessage(player,player.heroName)
 	player.animations = []

@@ -222,9 +222,10 @@ export function enterSceneOrWakeup(player: Player) {
 	if (!enteringScene) {
 		return
 	}
+	const scenePlayers = activePlayersInScene(player.currentScene)
 
 	// If no players except me in there, remove all enemies
-	if (!activePlayersInScene(player.currentScene).filter(p => p.heroName != player.heroName).length) {
+	if (!scenePlayers.filter(p => p.heroName != player.heroName).length) {
 		for (const e of enemiesInScene(player.currentScene)) {
 			let index = activeEnemies.indexOf(e)
 			if (index != -1) {

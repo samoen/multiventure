@@ -1,91 +1,82 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
 	import Unit from '$lib/Components/Unit.svelte';
 	import minimap from '$lib/assets/ui/minimap.png';
 	import sidebar from '$lib/assets/ui/sidebar.png';
 	import {
-		convoStateForEachVAS,
-		actionsForSlot,
 		allVisualUnitProps,
-		bodySlotActions,
+		allies,
 		centerFieldTarget,
+		changeVasLocked,
 		choose,
 		clientState,
+		convoStateForEachVAS,
 		currentAnimation,
 		currentAnimationIndex,
-		currentAnimationsWithData,
+		enemies,
 		handlePutsStatuses,
 		lastMsgFromServer,
 		lastUnitClicked,
 		latestSlotButtonInput,
 		nextAnimationIndex,
-		numberShownOnSlot,
 		receiveCenter,
 		selectedDetail,
+		selectedVasActionsToShow,
+		selectedVasResponsesToShow,
 		selectedVisualActionSourceState,
-		stockDotsOnSlotButton,
-		syncVisualsToMsg,
+		source,
+		subAnimationStage,
+		successcreds,
+		syncConvoStateToVas,
+		triedSignupButTaken,
 		typedInventory,
 		updateUnit,
-		utilitySlotActions,
+		vasesToShow,
 		visualActionSources,
-		slotlessBattleActions,
-		waitingForMyAnimation,
-		wepSlotActions,
-		animationsInWaiting,
-		worldReceived,
 		visualLandscape,
 		visualOpacity,
 		visualSceneLabel,
-		allies,
-		enemies,
-		vasesToShow,
-		selectedVasResponsesToShow,
-		selectedVasActionsToShow,
-		triedSignupButTaken,
-		syncConvoStateToVas,
-		changeVasLocked,
-		successcreds,
-
-		subAnimationStage
-
+		waitingForMyAnimation,
+		worldReceived
 	} from '$lib/client/ui';
 	import type { MessageFromServer } from '$lib/server/messaging';
 	import { onMount, tick } from 'svelte';
 	import { flip } from 'svelte/animate';
-	import blankSlot from '$lib/assets/equipment/blank-attack.png';
 
+	import UnitStats from '$lib/Components/UnitStats.svelte';
+	import VisualActionSource from '$lib/Components/VisualActionSource.svelte';
+	import { anySprites, getLandscape, miscPortraits } from '$lib/client/assets';
 	import {
 		isSignupResponse,
-		type BattleAnimation,
-		type DataFirstLoad,
-		type LandscapeImage,
-		type SignupResponse
+		type DataFirstLoad
 	} from '$lib/utils';
-	import VisualActionSource from '$lib/Components/VisualActionSource.svelte';
-	import { fade } from 'svelte/transition';
-	import type { ItemId } from '$lib/server/items';
-	import { anySprites, getLandscape, getSlotImage, miscPortraits } from '$lib/client/assets';
 	import { writable, type Writable } from 'svelte/store';
-	import UnitStats from '$lib/Components/UnitStats.svelte';
+	import { fade } from 'svelte/transition';
 
 	export let data: DataFirstLoad;
 	let signupInput: string;
 	let signInNameInput: string;
 	let signInIdInput: string;
-	let source: Writable<EventSource | undefined> = writable(undefined);
-
-	// let unitsDetails: UnitDetails[] = [];
-
 	let happenings: HTMLElement;
 	let sceneTexts: HTMLElement;
+
+	// set these true in dev
 	let autoSignup: boolean = true;
-	let autoContinue: boolean = false;
+	let autoContinue: boolean = true;
 
 	let sourceErrored: Writable<boolean> = writable(false);
 
 	onMount(() => {
 		console.log('mounted with ssr data ' + JSON.stringify(data));
+
+		// In dev sometimes we mount with old state and messes up our flow
+		if ($successcreds || $lastMsgFromServer) {
+			console.log('mounted with existing state. hmm');
+			leaveGame();
+			// invalidateAll()
+			// location.reload()
+			// return
+		}
+
 		if (data.readyToSubscribe && data.yourHeroCookie && data.userId) {
 			$clientState.status = 'mounted with valid cookies to continue as';
 			$successcreds = {
@@ -132,13 +123,13 @@
 	function subscribeEventsIfNotAlready() {
 		if ($source != undefined && $source.readyState != EventSource.CLOSED) {
 			console.log('no need to subscribe but doing anyway?');
-		// 	$clientState.status = 'subscribing to events';
-		// 	$clientState.loading = false;
-		// 	return;
+			// 	$clientState.status = 'subscribing to events';
+			// 	$clientState.loading = false;
+			// 	return;
 		}
 		$clientState.loading = true;
 		$clientState.status = 'subscribing to events';
-		console.log('subscribing...')
+		console.log('subscribing...');
 		try {
 			$source = new EventSource('/api/subscribe');
 		} catch (e) {
@@ -149,20 +140,45 @@
 			return;
 		}
 		$source.onerror = function (ev) {
+			console.log('huih');
+			if ($source == undefined) {
+				console.log(' got error from undefined source, weird..');
+			}
+			if ($source !== this) {
+				console.log('got error from a different source ');
+			}
+			$source = this;
 			console.log(`event source error ${JSON.stringify(ev)}`, ev);
 			$clientState.status = 'Event source errored';
 			$sourceErrored = true;
 			$clientState.loading = false;
+			// console.log('costing source')
 			// this.close();
+			// $source?.close();
 		};
 
-		$source.addEventListener('firstack', async (e) => {
+		$source.addEventListener('firstack', function (e) {
+			if ($source == undefined) {
+				console.log('got ack from undefined source, weird..');
+			}
+			if ($source !== this) {
+				console.log('got ack from a different source');
+			}
+			$source = this;
 			$sourceErrored = false;
 			getWorld();
 			$clientState.loading = false;
 		});
 
-		$source.addEventListener('world', async (e) => {
+		$source.addEventListener('world', function (e) {
+			console.log('got msg from source and source is ' + $source);
+			if ($source == undefined) {
+				console.log(' got msg from undefined source, weird..');
+			}
+			if ($source !== this) {
+				console.log('got msg from a different source');
+			}
+			$source = this;
 			$sourceErrored = false;
 			let sMsg = JSON.parse(e.data);
 			if (!isMsgFromServer(sMsg)) {
@@ -210,11 +226,12 @@
 		$clientState.status = 'leaving game';
 		$clientState.waitingForMyEvent = false;
 		$source?.close();
-		$successcreds = undefined
 		$source = undefined;
+		$successcreds = undefined;
+		$triedSignupButTaken = undefined;
 		$lastMsgFromServer = undefined;
 		$currentAnimationIndex = 999;
-		$subAnimationStage = 'start'
+		$subAnimationStage = 'start';
 		$convoStateForEachVAS.clear();
 		$visualActionSources = [];
 		$allVisualUnitProps = [];
@@ -255,7 +272,7 @@
 	async function signUp(usrName: string) {
 		$clientState.loading = true;
 		$clientState.status = 'signing up';
-		console.log('signing up')
+		console.log('signing up');
 
 		let joincall = await fetch('/api/signup', {
 			method: 'POST',
@@ -264,10 +281,16 @@
 				'Content-Type': 'application/json'
 			}
 		});
+		if (!joincall.ok) {
+			console.log('signup fail response');
+			$clientState.status = 'signup failed, need manual';
+			$clientState.loading = false;
+			return;
+		}
 		let res = await joincall.json();
 
 		if (!isSignupResponse(res)) {
-			console.log('signup malformed response')
+			console.log('signup malformed response');
 			$clientState.status = 'signup malformed response';
 			$clientState.loading = false;
 			return;
@@ -276,17 +299,10 @@
 			console.log('login response says already connected, oh well');
 		}
 
-		if (!joincall.ok) {
-			console.log('signup fail response')
-			$clientState.status = 'signup failed, need manual';
-			$clientState.loading = false;
-			return;
-		}
-
 		if (res.needsAuth.length) {
 			signInNameInput = res.needsAuth;
 			$triedSignupButTaken = res.needsAuth;
-			console.log('signup name taken')
+			console.log('signup name taken');
 			$clientState.status = 'signup name taken, can try login';
 			$clientState.loading = false;
 			return;
@@ -314,6 +330,7 @@
 	async function signInButtonClicked() {
 		$clientState.loading = true;
 		$clientState.status = 'submitting login';
+		console.log('logging in');
 		let loginCall = await fetch('/api/login', {
 			method: 'POST',
 			body: JSON.stringify({ heroName: signInNameInput, userId: signInIdInput }),
@@ -321,15 +338,27 @@
 				'Content-Type': 'application/json'
 			}
 		});
-		if (!loginCall.ok) {
-			console.log('login nope');
-			$clientState.loading = false;
-		}
 		signInIdInput = '';
 		signInNameInput = '';
+		if (!loginCall.ok) {
+			console.log('login call failed');
+			$clientState.loading = false;
+			$clientState.status = 'failed login call';
+			return;
+		}
+		let res = await loginCall.json();
+
+		if (!isSignupResponse(res)) {
+			console.log('login malformed response');
+			$clientState.status = 'login malformed response';
+			$clientState.loading = false;
+			return;
+		}
+		$successcreds = res;
 		// let res = await loginCall.json();
 		// invalidateAll();
-		$clientState.status = 'waiting for first event';
+		console.log('successful login');
+		$clientState.status = 'succuessful login';
 		subscribeEventsIfNotAlready();
 	}
 </script>
@@ -339,45 +368,46 @@
 	<p>loading...</p>
 	<p>{$clientState.status}</p>
 {/if}
+
 {#if !$clientState.loading && !$lastMsgFromServer}
 	<div class="landing" style="background-image:url({getLandscape($visualLandscape)});">
 		<div class="landingUnits">
 			<img class="landingHero" src={anySprites.general} alt="a bg" />
 			<img class="landingHero flipped" src={anySprites.lady} alt="a bg" />
 		</div>
-		<div class="landingPortraitAndDialog">
-			<div class="landingPortrait textAlignRight">
+		<!-- <div class="landingPortraitAndDialog"> -->
+		<!-- <div class="landingPortrait textAlignRight">
 				<img src={miscPortraits.general} alt="a portrait" />
-			</div>
-			<div class="landingDialog">
-				<span> Welcome hero! What is your name? </span>
-				<div class="landingResponses">
-					<button on:click={guestSignUpButtonClicked}>My name is Guest</button>
-					<div class="myNameIs">
-						<button disabled={!signupInput} on:click={signUpButtonClicked}>My name is</button>
-						<input type="text" bind:value={signupInput} />
-					</div>
-					{#if $triedSignupButTaken}
-						<p>That name is already taken. If it's you, provide the userID:</p>
-						<!-- <label for="signInName">name</label> -->
-						<input id="signInName" disabled={true} type="text" bind:value={signInNameInput} />
-						<!-- <label for="signInId">Id</label> -->
-						<input id="signInId" type="text" bind:value={signInIdInput} />
-						<button disabled={!signInNameInput || !signInIdInput} on:click={signInButtonClicked}
-							>Login</button
-						>
-					{/if}
-					{#if $successcreds}
-						<button on:click={subscribeEventsIfNotAlready}
-							>Continue as {$successcreds.yourHeroName}</button
-						>
-					{/if}
+			</div> -->
+		<div class="landingDialog">
+			<p>Welcome hero! What is your name?</p>
+			<div class="landingResponses">
+				<button on:click={guestSignUpButtonClicked}>My name is Guest</button>
+				<div class="myNameIs">
+					<button disabled={!signupInput} on:click={signUpButtonClicked}>My name is</button>
+					<input type="text" bind:value={signupInput} />
 				</div>
-			</div>
-			<div class="landingPortrait">
-				<img class="flipped" src={miscPortraits.lady} alt="a portrait" />
+				{#if $triedSignupButTaken}
+					<p>That name is already taken. If it's you, provide the userID:</p>
+					<!-- <label for="signInName">name</label> -->
+					<input id="signInName" disabled={true} type="text" bind:value={signInNameInput} />
+					<!-- <label for="signInId">Id</label> -->
+					<input id="signInId" type="text" bind:value={signInIdInput} />
+					<button disabled={!signInNameInput || !signInIdInput} on:click={signInButtonClicked}
+						>Login</button
+					>
+				{/if}
+				{#if $successcreds}
+					<button on:click={subscribeEventsIfNotAlready}
+						>Continue as {$successcreds.yourHeroName}</button
+					>
+				{/if}
 			</div>
 		</div>
+		<!-- <div class="landingPortrait">
+				<img class="flipped" src={miscPortraits.lady} alt="a portrait" />
+			</div> -->
+		<!-- </div> -->
 	</div>
 	<!-- <input type="text" bind:value={signupInput} /> -->
 	<!-- <button disabled={!signupInput} on:click={signUpButtonClicked}>Sign Up</button> -->
@@ -455,9 +485,9 @@
 										) {
 											updateUnit(other.target, (vup) => {
 												if (vup.actual.kind == 'enemy') {
-														vup.actual.enemy.myAggro += other.amount;
-														if (vup.actual.enemy.myAggro > 100) vup.actual.enemy.myAggro = 100;
-														if (vup.actual.enemy.myAggro < 0) vup.actual.enemy.myAggro = 0;
+													vup.actual.enemy.myAggro += other.amount;
+													if (vup.actual.enemy.myAggro > 100) vup.actual.enemy.myAggro = 100;
+													if (vup.actual.enemy.myAggro < 0) vup.actual.enemy.myAggro = 0;
 												}
 											});
 										}
@@ -503,11 +533,25 @@
 				</div>
 				<div class="vupSelectedRest">
 					<div class="selectedStats">
-						<UnitStats vu={$selectedDetail.entity}></UnitStats>
-						{#if $selectedDetail.entity.actual.kind == 'player'}
-							<div>
-								{$selectedDetail.entity.displayHp}/{$selectedDetail.entity.maxHp} hp
+						{#if $selectedDetail.entity.actual.kind == 'enemy'}
+							<div style="font-weight:bold;">
+								{$selectedDetail.entity.actual.enemy.templateId}
 							</div>
+							<!-- <div>
+								Aggro: {JSON.stringify($selectedDetail.entity.actual.enemy.myAggro)}
+							</div> -->
+							<div>
+								{#each Object.entries($selectedDetail.entity.actual.enemy.statuses) as [forHero, statuses]}
+									{#each Object.entries(statuses) as [key, value]}
+										{#if value > 0}
+											{`${forHero}: ${key} ${value}, `}
+										{/if}
+									{/each}
+								{/each}
+							</div>
+						{/if}
+						<UnitStats vu={$selectedDetail.entity} />
+						{#if $selectedDetail.entity.actual.kind == 'player'}
 							<div>
 								{#each Object.entries($selectedDetail.entity.actual.info.statuses) as [key, value]}
 									{#if value > 0}
@@ -525,26 +569,6 @@
 							<!-- <div>
 								<button type="button">show gear</button>
 							</div> -->
-						{/if}
-						{#if $selectedDetail.entity.actual.kind == 'enemy'}
-							<div>
-								{$selectedDetail.entity.displayHp}/{$selectedDetail.entity.maxHp} hp
-							</div>
-							<div>
-								Template: {$selectedDetail.entity.actual.enemy.templateId}
-							</div>
-							<div>
-								Aggro: {JSON.stringify($selectedDetail.entity.actual.enemy.myAggro)}
-							</div>
-							<div>
-								{#each Object.entries($selectedDetail.entity.actual.enemy.statuses) as [forHero, statuses]}
-									{#each Object.entries(statuses) as [key, value]}
-										{#if value > 0}
-											{`${forHero}: ${key} ${value}, `}
-										{/if}
-									{/each}
-								{/each}
-							</div>
 						{/if}
 					</div>
 					<div class="slotButtons">
@@ -725,16 +749,15 @@
 				</div>
 			{/if}
 			{#if $selectedDetail.kind == 'bg'}
-			<div class="sceneTexts" bind:this={sceneTexts}>
-				{#each $lastMsgFromServer.sceneTexts as t}
-					<p class="sceneText">{t}</p>
-					<br />
-				{/each}
-			</div>
-		{/if}
+				<div class="sceneTexts" bind:this={sceneTexts}>
+					{#each $lastMsgFromServer.sceneTexts as t}
+						<p class="sceneText">{t}</p>
+						<br />
+					{/each}
+				</div>
+			{/if}
 		</div>
 	{/if}
-
 
 	{#if $lastMsgFromServer.sceneActions.length}
 		<div class="sceneButtons">
@@ -812,7 +835,7 @@
 		background-size: cover;
 		display: flex;
 		flex-direction: column;
-		/* align-items: center; */
+		align-items: center;
 		justify-content: center;
 	}
 	.landingUnits {
@@ -828,18 +851,12 @@
 	.flipped {
 		transform: scaleX(-1);
 	}
-	.landingPortraitAndDialog {
-		/* border:2px solid brown; */
+	/* .landingPortraitAndDialog {
 		display: flex;
 		justify-content: center;
 		height: 30svh;
-		/* width:fit-content; */
-		/* max-width:100%; */
-		background-color: rgb(0, 0, 0, 0.4);
 	}
 	.landingPortrait {
-		/* flex-basis:auto; */
-		/* background-color: aqua; */
 		flex-shrink: 1;
 		flex-grow: 1;
 		max-width: 300px;
@@ -848,22 +865,28 @@
 		text-align: right;
 	}
 	.landingPortrait > img {
-		/* background-color: red; */
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-	}
+	} */
 	.landingDialog {
+		border-radius: 10px;
+		background-color: rgb(0, 0, 0, 0.4);
 		/* flex-grow:0; */
 		/* flex-basis: 30%; */
 		/* border:2px solid brown; */
 		/* background-color: aqua; */
 		/* flex-basis:0; */
 		flex-shrink: 1;
-		font-weight: bold;
 		color: white;
 		/* display: inline-block; */
 		padding: 10px;
+	}
+	.landingDialog > p {
+		font-size: 1.2rem;
+		font-weight: bold;
+		margin-bottom: 25px;
+		/* background-color: aqua; */
 	}
 	.landingResponses {
 		margin-top: 10px;
@@ -875,7 +898,7 @@
 	.landingResponses button {
 		padding-inline: 5px;
 		padding-block: 4px;
-		white-space: nowrap;
+		/* white-space: nowrap; */
 		border-radius: 5px;
 	}
 	.myNameIs {
@@ -887,9 +910,9 @@
 		gap: 5px;
 		margin-top: 5px;
 	}
-	/* .myNameIs button{
-
-	} */
+	.myNameIs button:disabled {
+		color: white;
+	}
 	.myNameIs input {
 		flex-shrink: 1;
 		flex-grow: 1;
@@ -927,7 +950,7 @@
 		height: 30vh;
 		overflow-y: auto;
 		/* background-color: burlywood; */
-		color:white;
+		color: white;
 		padding: 10px;
 	}
 	.sceneButtons {
@@ -1026,7 +1049,7 @@
 		/* background-color: beige; */
 		row-gap: 2px;
 		/* column-gap: 2px; */
-		grid-template-columns: repeat(auto-fit, clamp(100px, 50%, 200px));
+		grid-template-columns: repeat(auto-fit, clamp(120px, 50%, 200px));
 		justify-content: center;
 		/* align-items: start; */
 		z-index: 1;
@@ -1165,13 +1188,13 @@
 	.selectedRest {
 		flex-basis: 85%;
 		height: 100%;
-		
+
 		padding: 10px;
 		/* background-color: aqua; */
 	}
 	.selectedStats {
-		display: flex;
-		flex-direction: column;
+		/* display: flex; */
+		/* flex-direction: column; */
 		overflow-y: auto;
 		padding: 5px;
 		min-width: 20vw;

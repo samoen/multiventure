@@ -32,9 +32,29 @@ export async function sendEveryoneWorld(triggeredBy: HeroName) {
 		setTimeout(r, FAKE_LATENCY);
 	});
 	for (const user of users.values()) {
-		if (user.heroName != triggeredBy && user.connectionState && user.connectionState.con) {
+		if (user.heroName != triggeredBy && user.connectionState.stream && user.connectionState.con) {
 			const toSend = buildNextMessage(user, triggeredBy);
-			user.connectionState.con.enqueue(encode(`world`, toSend));
+			let fail = false
+			try{
+				user.connectionState.con.enqueue(encode(`world`, toSend));
+			}catch(e){
+				console.log(user.heroName + ' failed to enqeue ' + e)
+				fail = true
+			}
+			if(fail){
+				try{
+					user.connectionState.con?.close()
+				}catch(e){
+					console.log('failed to enque and failed to close!')
+				}
+				try{
+					// user.connectionState.stream?.cancel()
+				}catch(e){
+					console.log('failed to enque and failed to cancel stream!')
+				}
+				user.connectionState.con = undefined
+				user.connectionState.stream = undefined
+			}
 			user.animations = []
 		}
 	}
@@ -103,10 +123,8 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				maxHealth: e.maxHealth,
 				name: e.name,
 				templateId: e.templateId,
-				strength:e.template.baseDamage,
-				agility:e.template.speed,
+				template:e.template,
 				myAggro: getAggroForPlayer(e,forPlayer),
-				aggGain: e.template.aggroGain,
 				statuses: Object.fromEntries(e.statuses),
 			} satisfies EnemyInClient
 		}),
