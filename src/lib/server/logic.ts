@@ -544,7 +544,7 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 						behavior: enemyInScene.template.behavior ?? { kind: 'melee' },
 						putsStatuses: putsStatuses,
 						strikes: enemyInScene.template.strikes,
-						baseDamageToTarget: enemyInScene.template.baseDamage,
+						baseDamageToTarget: enemyInScene.damage,
 					}
 					processBattleEvent(be, player)
 

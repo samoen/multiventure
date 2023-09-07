@@ -18,6 +18,7 @@ export function defaultInventory():ItemState[]{
 			slot:i.slot,
 			warmup:i.warmup ?? 0,
 			stock:i.startStock,
+			stats:i,
 		} satisfies ItemState
 	})
 

@@ -20,7 +20,7 @@ export type Item = {
 	requiresHealth?: boolean
 	requiresStatus?: StatusId
 	requiresSourceDead?: boolean
-
+	excludeFromDetail?:boolean
 	baseHeal?: number,
 	baseDmg?: number,
 	putsStatusOnAffected?: StatusMod,
@@ -38,7 +38,7 @@ const dagger: Item = {
 	id: 'dagger',
 	slot: 'weapon',
 	provoke: 7,
-	speed: 8,
+	speed: 4,
 	baseDmg: 7,
 	behavior: { kind: 'melee' },
 	strikes: 3,
@@ -49,8 +49,8 @@ const club: Item = {
 	id: 'club',
 	slot: 'weapon',
 	provoke: 40,
-	speed: 2,
-	baseDmg: 25,
+	speed: 1,
+	baseDmg: 28,
 	behavior: { kind: 'melee' },
 	style: { style: 'anyEnemy' }
 }
@@ -61,7 +61,7 @@ export const fireStaff: Item = {
 	warmup: 2,
 	cooldown: 1,
 	provoke: 60,
-	speed: 1,
+	speed: 2,
 	baseDmg: 100,
 	behavior: { kind: 'missile', extraSprite: 'flame' },
 	style: { style: 'anyEnemy' }
@@ -109,7 +109,7 @@ export const plateMail: Item = {
 	slot: 'body',
 	cooldown: 2,
 	provoke: 100,
-	speed: 999,
+	speed: 0,
 	damageLimit: 20,
 	grantsImmunity: true,
 	behavior: { kind: 'selfInflicted', extraSprite: 'flame' },
@@ -121,7 +121,7 @@ const theifCloak: Item = {
 	id: 'theifCloak',
 	slot: 'body',
 	cooldown: 3,
-	speed: 999,
+	speed: 100,
 	provoke: 30,
 	grantsImmunity: true,
 	behavior: { kind: 'selfInflicted', extraSprite: 'smoke' },
@@ -156,6 +156,7 @@ const belt: Item = {
 	id: 'belt',
 	slot: 'utility',
 	default: true,
+	excludeFromDetail:true,
 	style: { style: 'noAction' },
 	behavior: { kind: 'melee' }
 }
@@ -163,6 +164,7 @@ const rags: Item = {
 	id: 'rags',
 	slot: 'body',
 	default: true,
+	excludeFromDetail:true,
 	style: { style: 'noAction' },
 	behavior: { kind: 'melee' }
 }
@@ -171,6 +173,7 @@ const wait: Item = {
 	id: 'wait',
 	slot: 'wait',
 	default: true,
+	excludeFromDetail:true,
 	speed: 999,
 	provoke: 0,
 	behavior: { kind: 'selfInflicted', extraSprite: 'shield' },
@@ -179,6 +182,7 @@ const wait: Item = {
 const succumb: Item = {
 	id: 'succumb',
 	slot: 'succumb',
+	excludeFromDetail:true,
 	succumb: true,
 	default: true,
 	speed: -999,
@@ -217,6 +221,7 @@ export type ItemState = {
 	cooldown: number;
 	warmup: number;
 	stock?: number;
+	stats?: Item;
 }
 
 
@@ -229,6 +234,7 @@ export function equipItem(player: Player, item: Item) {
 			slot: item.slot,
 			cooldown: 0,
 			warmup: item.warmup ?? 0,
+			stats:item,
 		}
 		player.inventory.push(createState)
 		// player.inventory.sort((a, b) => {
@@ -241,6 +247,7 @@ export function equipItem(player: Player, item: Item) {
 		state.warmup = item.warmup ?? 0
 		state.cooldown = 0
 		state.stock = item.startStock
+		state.stats = item
 	}
 
 }

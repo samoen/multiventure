@@ -46,7 +46,7 @@ export type EnemyTemplateId =
 	| 'rat'
 	| 'goblin'
 	| 'darter'
-	| 'hobGoblin'
+	| 'orc'
 	| 'fireGremlin'
 	| 'troll';
 
@@ -76,12 +76,12 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		behavior:{kind:'missile',extraSprite:'arrow'},
 		putsStatusOnTarget:{statusId:'poison',count:3},
 	},
-	hobGoblin: {
+	orc: {
 		baseHealth: 50,
 		baseDamage: 10,
 		aggroGain: 30,
 		startAggro: 0,
-		speed: 10,
+		speed: 4,
 		damageLimit:10,
 	},
 	fireGremlin: {

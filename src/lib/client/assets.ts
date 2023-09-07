@@ -74,7 +74,7 @@ export const enemySprites: Record<EnemyTemplateId, string> = {
     goblin: spearman,
     rat: rat,
     darter: spearman,
-    hobGoblin: grunt,
+    orc: grunt,
     troll: troll,
     fireGremlin: fireghost
 };
@@ -106,7 +106,7 @@ export function getHeroPortrait(pi: PlayerInClient): string {
 }
 
 export const enemyPortraits = {
-    hobGoblin: gruntPortrait,
+    orc: gruntPortrait,
     rat: gruntPortrait,
     goblin: gruntPortrait,
     darter: gruntPortrait,

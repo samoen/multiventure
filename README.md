@@ -132,10 +132,5 @@ enemy nuker aggro high, time protect
 manage cooldowns/warmup timing
 get stock value
 
-tutorial:
-light armor goblins + rats, give club + bomb
-heavy armor hobgoblins + fire gremlin. give dagger + bandage
-troll, give poison dart, protect armor, fire staff
-
 stretch goals:
 battle position: backline, melee, infiltrated

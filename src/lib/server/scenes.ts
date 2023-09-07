@@ -176,7 +176,7 @@ const trainingRoom0: Scene = {
 			unitId: 'vasEquipClub',
 			displayName: 'Club',
 			sprite: 'club',
-			startText: 'A club deals a hefty chunk of damage in a single strike. That makes it effective against lightly armored foes, because light armor reduces the damage of each incoming strike.',
+			startText: 'A club deals a hefty chunk of damage in a single strike. That makes it effective against lightly armored foes.',
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'club', }],
 		})
@@ -209,7 +209,7 @@ const trainingRoom0: Scene = {
 				{
 					responseId: 'explainNext',
 					responseText: `What's my next challenge?`,
-					retort: `Next you will fight a goblin. Goblins wear light armor, so a club will be effective. Also there's a bit of a rat problem in there right now..`,
+					retort: `Next you will fight a goblin. Goblins wear light armor, which reduces the damage of each incoming strike. Also there's a bit of a rat problem in there right now..`,
 					unlockVas:['vasGoTrain1']
 				},
 			]
@@ -275,7 +275,7 @@ const trainingRoom1: Scene = {
 				{
 					responseId: 'gimmie',
 					responseText: `What's my next battle?`,
-					retort: `Your next battle is against heavily armored Hobgoblins. There's a fire gremlin in there too, but save him for last - he's as much a danger to his allies as he is to you. By the way, the hobgoblin named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!`,
+					retort: `Your next battle is against Orcs. Orcs wear heavy armor, which limits the amount of damage taken from each strike. There's a fire gremlin in there too, but he's as much a danger to his allies as he is to you.`,
 					unlockVas:['vasGoTrain2']
 				},
 			]
@@ -284,7 +284,7 @@ const trainingRoom1: Scene = {
 			unitId: 'vasEquipDagger',
 			displayName: 'Dagger',
 			sprite: 'dagger',
-			startText: 'A dagger strikes multiple times per attack. That makes it effective against heavy armor - which limits the amount of damage taken each strike.',
+			startText: 'A dagger strikes multiple times per attack. That makes it effective against heavy armor',
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'dagger' },]
 		})
@@ -301,7 +301,7 @@ const trainingRoom1: Scene = {
 			displayName: 'Training Room',
 			sprite: 'castle',
 			startsLocked:true,
-			startText: `Another door, another training room.`,
+			startText: `The sign reads: 'The Orc named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!'`,
 			actionsWithRequirements: [
 				{
 					requiresGear: ['dagger', 'potion'],
@@ -331,8 +331,8 @@ const trainingRoom2: Scene = {
 		player.sceneTexts.push("Florgus: 'There you go again Morgus, talking about Glornak like I'm not standing right here. And it's OUR training room now remember? Oh Great, another recruit equipped with a dagger..'")
 		player.sceneTexts.push("Scortchy: 'Burn! I burn you! REEEE HEEE HEEE'")
 		player.sceneTexts.push("Florgus: 'Remember Scortchy, aim for the recruit! Not us!'")
-		spawnEnemy('Borgus', 'hobGoblin', `trainingRoom2_${player.heroName}`, borgusStatuses)
-		spawnEnemy('Florgus', 'hobGoblin', `trainingRoom2_${player.heroName}`)
+		spawnEnemy('Borgus', 'orc', `trainingRoom2_${player.heroName}`, borgusStatuses)
+		spawnEnemy('Florgus', 'orc', `trainingRoom2_${player.heroName}`)
 		spawnEnemy('Scorchy', 'fireGremlin', `trainingRoom2_${player.heroName}`)
 	},
 	actions(player) {
@@ -341,7 +341,7 @@ const trainingRoom2: Scene = {
 			displayName: 'Arthur',
 			sprite: 'general',
 			portrait: 'general',
-			startText: `Brilliant work recruit! Alright, last one. We don't normally do this but I see something great in you. You are going to fight a cave troll. They are slow but powerful.`,
+			startText: `Brilliant work recruit! Alright, last one. We don't normally do this but I see something great in you. You are going to fight a cave troll.. if you need to heal do it now.`,
 			responses: [
 				{
 					responseId: 'ok',
@@ -395,7 +395,6 @@ const trainingRoom2: Scene = {
 	},
 	onVictory(player) {
 		player.lastCheckpoint = `trainingRoom2_${player.heroName}`
-		player.health = player.maxHealth
 	},
 }
 
@@ -832,14 +831,15 @@ const forestPassage: Scene = {
 		player.visualActionSources.push({
 			unitId: 'vasDweller',
 			displayName: 'Forest Dweller',
-			startText: `I mean you no harm. You will need a weapon if you want to continue through this passage. Would you like a dagger, or are you more the clubbing sort?`,
+			startText: `I mean you no harm. You will want a weapon if you continue through this passage. Would you like a dagger, or are you more the clubbing sort?`,
 			responses: [
 				{
 					responseId: 'freeDagger',
 					responseText: `I choose the dagger`,
-					retort: `A fine choice! Stab em up!`,
+					retort: `Not the best against goblins but hey, stab em up! You remember how to reset NPC conversations right?`,
 					unlockVas: ['vasFreeDagger'],
 					lock: ['freeClub'],
+					unlock:['tips'],
 				},
 				{
 					responseId: 'freeClub',
@@ -847,6 +847,13 @@ const forestPassage: Scene = {
 					retort: `A fine choice! Bludgeon those enemies!`,
 					unlockVas: ['vasFreeClub'],
 					lock: ['freeDagger'],
+					unlock:['tips'],
+				},
+				{
+					responseId: 'tips',
+					startsLocked:true,
+					responseText: `Any tips for the battle?`,
+					retort: `Remember goblins wear light armor. Target enraged enemies first. Make sure you've found the potion hidden at the castle.`,
 				},
 			],
 			sprite: 'druid',
@@ -855,7 +862,7 @@ const forestPassage: Scene = {
 			unitId: 'vasFreeClub',
 			displayName: 'Club',
 			sprite: 'club',
-			startText: 'A well worn club',
+			startText: `A well worn club. It's slow but hits hard. Good against light armor.`,
 			startsLocked: true,
 			actionsWithRequirements: [{
 				pickupItem: 'club',
@@ -865,7 +872,7 @@ const forestPassage: Scene = {
 			unitId: 'vasFreeDagger',
 			displayName: 'Dagger',
 			sprite: 'dagger',
-			startText: 'An old rusty dagger',
+			startText: `A rusty dagger. It's fast and strikes multiple times. Not good against light armor.`,
 			startsLocked: true,
 			actionsWithRequirements: [
 				{
@@ -880,10 +887,10 @@ const forestPassage: Scene = {
 			startText: `You are in a passage. At one end you see Bramblefoot Woods. At the other, a campsite`,
 			actionsWithRequirements: [
 				{
-					travelTo: 'forest',
+					travelTo: 'goblinCamp',
 				},
 				{
-					travelTo: 'goblinCamp',
+					travelTo: 'forest',
 				},
 			],
 		})
@@ -905,9 +912,9 @@ const goblinCamp: Scene = {
 			for (const playerInScene of activePlayersInScene('goblinCamp')) {
 				playerInScene.sceneTexts.push(`Suddendly, A pair of goblins rush out of a tent.. "Hey Gorlak, looks like lunch!" "Right you are Murk. Let's eat!"`)
 			}
-			// spawnEnemy('Gorlak', 'goblin', 'goblinCamp')
-			spawnEnemy('Camp Rat', 'rat', 'goblinCamp')
-			spawnEnemy('Dartah', 'darter', 'goblinCamp')
+			spawnEnemy('Gorlak', 'goblin', 'goblinCamp')
+			// spawnEnemy('Camp Rat', 'rat', 'goblinCamp')
+			// spawnEnemy('Dartah', 'darter', 'goblinCamp')
 			spawnEnemy(
 				'Murk',
 				'goblin',
@@ -962,7 +969,7 @@ const tunnelChamber: Scene = {
 				spawnsEnemies:[
 					{
 						eName:'Hooded Figure',
-						eTemp:'hobGoblin',
+						eTemp:'orc',
 					},
 					{
 						eName:'Shootah',

@@ -51,6 +51,7 @@
 	} from '$lib/utils';
 	import { writable, type Writable } from 'svelte/store';
 	import { fade } from 'svelte/transition';
+	import ItemStats from '$lib/Components/ItemStats.svelte';
 
 	export let data: DataFirstLoad;
 	let signupInput: string;
@@ -533,42 +534,25 @@
 				</div>
 				<div class="vupSelectedRest">
 					<div class="selectedStats">
-						{#if $selectedDetail.entity.actual.kind == 'enemy'}
-							<div style="font-weight:bold;">
-								{$selectedDetail.entity.actual.enemy.templateId}
-							</div>
-							<!-- <div>
-								Aggro: {JSON.stringify($selectedDetail.entity.actual.enemy.myAggro)}
-							</div> -->
-							<div>
-								{#each Object.entries($selectedDetail.entity.actual.enemy.statuses) as [forHero, statuses]}
-									{#each Object.entries(statuses) as [key, value]}
-										{#if value > 0}
-											{`${forHero}: ${key} ${value}, `}
-										{/if}
-									{/each}
-								{/each}
-							</div>
-						{/if}
 						<UnitStats vu={$selectedDetail.entity} />
+						
 						{#if $selectedDetail.entity.actual.kind == 'player'}
-							<div>
-								{#each Object.entries($selectedDetail.entity.actual.info.statuses) as [key, value]}
-									{#if value > 0}
-										{`${key} ${value}`}
-									{/if}
-								{/each}
-							</div>
-
 							<!-- <div> -->
 							{#each $selectedDetail.entity.actual.info.inventory as itemState}
-								<div>
-									{`${itemState.slot}: ${itemState.itemId}`}
-								</div>
+								{#if itemState.stats && !itemState.stats.excludeFromDetail}
+									<!-- <button class="inventoryButton"
+									on:click={()=>{
+										console.log('selecting')
+										$selectedItem = itemState
+										console.log($selectedItem)
+									}}
+									>
+										{`${itemState.slot}`}
+									</button> -->
+									<ItemStats itemState="{itemState}"></ItemStats>
+									
+								{/if}
 							{/each}
-							<!-- <div>
-								<button type="button">show gear</button>
-							</div> -->
 						{/if}
 					</div>
 					<div class="slotButtons">
@@ -1193,10 +1177,14 @@
 		/* background-color: aqua; */
 	}
 	.selectedStats {
-		/* display: flex; */
-		/* flex-direction: column; */
+		display: flex;
+		/* flex-wrap: wrap; */
+		flex-direction: column;
+		align-items: flex-start;
+		flex-shrink: 1;
+		gap:5px;
 		overflow-y: auto;
-		padding: 5px;
+		/* padding: 5px; */
 		min-width: 20vw;
 		/* border: 1px solid brown; */
 		border-left: none;
