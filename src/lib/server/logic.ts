@@ -855,6 +855,7 @@ export function convertVasToClient(vas: VisualActionSource, player: Player): Vis
 		startsLocked: startLocked,
 		actionsInClient: validUnlockableClientActions,
 		detectStep: detectStep,
+		scene:player.currentScene,
 	} satisfies VisualActionSourceInClient
 	return result
 }
@@ -881,6 +882,7 @@ export type VisualActionSource = {
 
 export type VisualActionSourceInClient = {
 	displayName: string
+	scene:SceneId
 	startsLocked?: boolean
 	id: VisualActionSourceId
 	sprite: AnySprite

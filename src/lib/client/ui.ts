@@ -9,16 +9,17 @@ import { tick } from "svelte";
 import type { EnemyTemplateId } from "$lib/server/enemies";
 import type { MessageFromServer } from "$lib/server/messaging";
 import type { VisualActionSourceInClient } from "$lib/server/logic";
-import { anySprites, enemySprites, getHeroPortrait, getPortrait, getSlotImage, heroSpriteFromClass} from "./assets";
+import { anySprites, enemySprites, getHeroPortrait, getPortrait, getSlotImage, heroSpriteFromClass } from "./assets";
+import type { SceneId } from "$lib/server/scenes";
 
 
-type HeroSpecificEnemyState = {hName:HeroName,agg:number,sts:{sId:StatusId,count:number}[]}
+type HeroSpecificEnemyState = { hName: HeroName, agg: number, sts: { sId: StatusId, count: number }[] }
 
 type UnitDetails = {
     portrait: string
     kind: 'enemy'
     enemy: EnemyInClient
-    heroSpecificStates : HeroSpecificEnemyState[]
+    heroSpecificStates: HeroSpecificEnemyState[]
 } | {
     kind: 'player',
     portrait: string
@@ -31,7 +32,7 @@ export type VisualUnitProps = {
     id: UnitId;
     name: string;
     src: string;
-    tilt?:boolean;
+    tilt?: boolean;
     displayHp: number;
     maxHp: number;
     side: 'hero' | 'enemy'
@@ -48,7 +49,6 @@ export type ProjectileProps = {
 export type Guest = VisualUnitProps | undefined
 export type Projectile = undefined | ProjectileProps
 export type ConvoState = {
-    kind: 'seen' | 'notSeen'
     currentRetort: string,
     detectStep?: Flag,
     lockedResponseHandles: Map<string, boolean>
@@ -70,13 +70,13 @@ export const visualActionSources: Writable<VisualActionSourceInClient[]> = writa
 export const currentAnimationIndex: Writable<number> = writable(999)
 export const currentAnimationsWithData: Writable<BattleAnimation[]> = writable([])
 export const subAnimationStage: Writable<'start' | 'fire' | 'sentHome'> = writable('start')
-export const convoStateForEachVAS: Writable<Map<VisualActionSourceId, ConvoState>> = writable(new Map())
+export const convoStateForEachVAS: Writable<Map<SceneId, Map<VisualActionSourceId, ConvoState>>> = writable(new Map())
 export const latestSlotButtonInput: Writable<ItemId | undefined> = writable(undefined)
 export const lastUnitClicked: Writable<UnitId | 'background' | undefined> = writable(undefined)
 export const visualLandscape: Writable<LandscapeImage> = writable('plains')
 export const visualOpacity = writable(false)
 export const visualSceneLabel = writable('nowhere')
-export const successcreds : Writable<SignupResponse | undefined> = writable(undefined)
+export const successcreds: Writable<SignupResponse | undefined> = writable(undefined)
 
 
 export const allies = derived(allVisualUnitProps, ($allVisualUnitProps) => {
@@ -88,11 +88,24 @@ export const enemies = derived(allVisualUnitProps, ($allVisualUnitProps) => {
 });
 export const vasesToShow = derived([visualActionSources, convoStateForEachVAS], ([$visualActionSources, $convoStateForEachVAS]) => {
     return $visualActionSources.filter((s) => {
-        let cs = $convoStateForEachVAS.get(s.id)
-        if (!cs || cs.kind != 'seen') return false
+        let csForE = $convoStateForEachVAS.get(s.scene)
+        if (!csForE) return false
+        let cs = csForE.get(s.id)
+        if (!cs) return false
         return !cs.isLocked
     })
 });
+
+export function resetSceneConvos(sceneId: SceneId) {
+    let vasesToReset = get(visualActionSources).filter(v => v.scene == sceneId)
+    convoStateForEachVAS.update(scs => {
+        scs.delete(sceneId)
+        return scs
+    })
+    vasesToReset.forEach(v => {
+        syncConvoStateToVas(v)
+    })
+}
 
 export function numberShownOnSlot(itemState: ItemState): string | undefined {
     // if(itemState.stock != undefined && itemState.stock < 1){
@@ -193,9 +206,11 @@ export const selectedDetail: Readable<DetailWindow | undefined> = derived([
 
     let firstVas = undefined
     outer: for (const vas of $vases) {
-        let cs = $convoStateForEachVAS.get(vas.id)
+        let csForE = $convoStateForEachVAS.get(vas.scene)
+        if (!csForE) continue
+        let cs = csForE.get(vas.id)
         if (!cs) continue
-        if (cs.kind != 'seen') continue
+        // if (cs.kind != 'seen') continue
         for (const act of vas.actionsInClient) {
             firstVas = vas
             break outer
@@ -236,7 +251,9 @@ export const selectedVisualActionSourceState = derived([
     $convoStateForEachVAS,
 ]) => {
     if (!$selectedDetail || $selectedDetail.kind != 'vas') return undefined
-    let state = $convoStateForEachVAS.get($selectedDetail.entity.id)
+    let csForE = $convoStateForEachVAS.get($selectedDetail.entity.scene)
+    if (!csForE) return undefined
+    let state = csForE.get($selectedDetail.entity.id)
     if (!state) {
         return undefined
     }
@@ -337,30 +354,30 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
 
         for (const e of lastMsg.enemiesInScene) {
 
-            let heroSpecifics : HeroSpecificEnemyState[] = []
-            for ( const ag of e.aggros){
-                let find = e.statuses.filter(s=>s.hId==ag.hId)
-                let stsForHero :{sId:StatusId,count:number}[] = []
-                if(find){
-                    for(const s of find){
+            let heroSpecifics: HeroSpecificEnemyState[] = []
+            for (const ag of e.aggros) {
+                let find = e.statuses.filter(s => s.hId == ag.hId)
+                let stsForHero: { sId: StatusId, count: number }[] = []
+                if (find) {
+                    for (const s of find) {
                         stsForHero.push({
-                            sId:s.statusId,
-                            count:s.count,
+                            sId: s.statusId,
+                            count: s.count,
                         })
                     }
                 }
-                let findPlayer : PlayerInClient | undefined = undefined
-                if(lastMsg.yourInfo.unitId == ag.hId){
+                let findPlayer: PlayerInClient | undefined = undefined
+                if (lastMsg.yourInfo.unitId == ag.hId) {
                     findPlayer = lastMsg.yourInfo
-                }else{
-                    findPlayer = lastMsg.otherPlayers.find(p=>p.unitId == ag.hId)
+                } else {
+                    findPlayer = lastMsg.otherPlayers.find(p => p.unitId == ag.hId)
                 }
-                
-                if(findPlayer){
+
+                if (findPlayer) {
                     heroSpecifics.push({
-                        hName:findPlayer.heroName,
-                        agg:ag.agg,
-                        sts:stsForHero,
+                        hName: findPlayer.heroName,
+                        agg: ag.agg,
+                        sts: stsForHero,
                     })
                 }
 
@@ -378,7 +395,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                         kind: 'enemy',
                         portrait: e.template.portrait ? getPortrait(e.template.portrait) : enemySprites[e.templateId],
                         enemy: structuredClone(e),
-                        heroSpecificStates:heroSpecifics,
+                        heroSpecificStates: heroSpecifics,
                     },
                     actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == e.unitId)
                 } satisfies VisualUnitProps
@@ -415,49 +432,41 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
     }
 }
 
-export function syncConvoStateToVas(vas: VisualActionSourceInClient, forceUnlock: boolean = false) {
+export function syncConvoStateToVas(vas: VisualActionSourceInClient) {
     convoStateForEachVAS.update(cs => {
-        let existing = cs.get(vas.id)
+        let sceneEntry = cs.get(vas.scene)
 
-        // Do something if no state for this vas,
-        // or if exists with a new detect step
-        // or if it exists but only unseen
-        if (!existing || (existing && existing.detectStep != vas.detectStep) || existing.kind == 'notSeen') {
-            // console.log(`init vas state ${vas.id} with unlockable`)
-            let startResponsesLocked = new Map<string, boolean>()
-            for (const resp of vas.responses) {
-                if (resp.responseId) {
-                    if (resp.startsLocked) {
-                        startResponsesLocked.set(resp.responseId, true)
-                    } else {
-                        startResponsesLocked.set(resp.responseId, false)
-                    }
+        if (!sceneEntry) {
+            sceneEntry = new Map()
+        }
+        let existing = sceneEntry.get(vas.id)
+
+        if (existing && existing.detectStep == vas.detectStep) {
+            return cs
+        }
+
+        let startResponsesLocked = new Map<string, boolean>()
+        for (const resp of vas.responses) {
+            if (resp.responseId) {
+                if (resp.startsLocked) {
+                    startResponsesLocked.set(resp.responseId, true)
+                } else {
+                    startResponsesLocked.set(resp.responseId, false)
                 }
             }
-
-            // default startsLocked handling
-            let startLocked = vas.startsLocked ?? false
-
-            // if it's been unlocked already before it's been seen, carry over the locked state
-            if (existing && existing.kind == 'notSeen') {
-                startLocked = existing.isLocked
-            }
-
-            // If it's a new detect step or it wasn't existing and already has a detect step, consider it advanced
-            // let detectStepAdvance = (existing && existing.detectStep != vas.detectStep) || (!existing && vas.detectStep)
-
-            if (forceUnlock) {
-                startLocked = false
-            }
-
-            cs.set(vas.id, {
-                kind: 'seen',
-                currentRetort: vas.startText,
-                detectStep: vas.detectStep,
-                lockedResponseHandles: startResponsesLocked,
-                isLocked: startLocked,
-            })
         }
+
+        // default startsLocked handling
+        let startLocked = vas.startsLocked ?? false
+
+        sceneEntry.set(vas.id, {
+            currentRetort: vas.startText,
+            detectStep: vas.detectStep,
+            lockedResponseHandles: startResponsesLocked,
+            isLocked: startLocked,
+        })
+        
+        cs.set(vas.scene, sceneEntry)
         return cs
     })
 }
@@ -466,28 +475,34 @@ export function changeVasLocked(vId: VisualActionSourceId, unlock: boolean) {
 
     const vases = get(visualActionSources)
     const found = vases.find(v => v.id == vId)
+    if (!found) return
+
     convoStateForEachVAS.update(cs => {
-        let cState = cs.get(vId)
-        if (found) {
-            // vas will already have a convo state
-            if (!cState) return cs
-            if (unlock) {
-                cState.isLocked = false
-            } else {
-                cState.isLocked = true
-            }
+        let sceneEntry = cs.get(found.scene)
+        if (!sceneEntry) return cs
+
+        let cState = sceneEntry.get(vId)
+        // if (found) {
+        // vas will already have a convo state
+        if (!cState) return cs
+        if (unlock) {
+            cState.isLocked = false
         } else {
-            if (cState) {
-                cState.isLocked = false
-            } else {
-                cs.set(vId, {
-                    kind: 'notSeen',
-                    currentRetort: 'I have not been seen yet',
-                    isLocked: !unlock,
-                    lockedResponseHandles: new Map(),
-                })
-            }
+            cState.isLocked = true
         }
+        // } 
+        // else {
+        //     if (cState) {
+        //         cState.isLocked = false
+        //     } else {
+        //         cs.set(vId, {
+        //             kind: 'notSeen',
+        //             currentRetort: 'I have not been seen yet',
+        //             isLocked: !unlock,
+        //             lockedResponseHandles: new Map(),
+        //         })
+        //     }
+        // }
         return cs
     })
 }
@@ -499,21 +514,21 @@ export function handlePutsStatuses(anim: BattleAnimation) {
                 if (ps.remove) {
                     if (vup.actual.kind == 'enemy') {
                         // remove enemy status for all sources
-                            vup.actual.enemy.statuses = vup.actual.enemy.statuses.filter(s=>s.statusId != ps.statusId)
+                        vup.actual.enemy.statuses = vup.actual.enemy.statuses.filter(s => s.statusId != ps.statusId)
                     } else if (vup.actual.kind == 'player') {
                         vup.actual.info.statuses[ps.statusId] = 0;
                     }
                 } else {
                     if (ps.count) {
                         if (vup.actual.kind == 'enemy') {
-                            let found = vup.actual.enemy.statuses.find(s=>s.statusId == ps.statusId && s.hId == anim.triggeredBy)
-                            if(found){
+                            let found = vup.actual.enemy.statuses.find(s => s.statusId == ps.statusId && s.hId == anim.triggeredBy)
+                            if (found) {
                                 found.count += ps.count
-                            }else{
+                            } else {
                                 vup.actual.enemy.statuses.push({
-                                    count:ps.count,
-                                    hId:anim.triggeredBy,
-                                    statusId:ps.statusId
+                                    count: ps.count,
+                                    hId: anim.triggeredBy,
+                                    statusId: ps.statusId
                                 })
                             }
                         } else if (vup.actual.kind == 'player') {

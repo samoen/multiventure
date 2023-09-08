@@ -37,7 +37,7 @@ export function addNewUser(heroName: string): { id: string, player: Player } {
 	// startScene = 'goblinCamp'
 	// startScene = 'castle'
 	// startScene = 'throne'
-	startScene = 'armory'
+	// startScene = 'armory'
 
 	let startInventory = defaultInventory()
 
@@ -119,6 +119,7 @@ export type PlayerInClient = {
 	unitId: HeroId;
 	heroName: HeroName;
 	currentSceneDisplay: string;
+	// currentScene:SceneId;
 	health: number;
 	agility: number;
 	strength: number;

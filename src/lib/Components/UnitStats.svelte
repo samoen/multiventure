@@ -133,6 +133,10 @@
 	.top {
 		display: inline-block;
 	}
+    .classTitle{
+        font-weight: bold;
+        margin-left: 3px;
+    }
 	.itemStats {
 		/* margin-top: 10px; */
 		display: flex;
@@ -157,9 +161,9 @@
 		gap: 5px;
 		padding-right: 5px;
 		flex-direction: row;
-		border: 1px solid brown;
+		/* border: 1px solid brown; */
 	}
-	.statLine > img {
-		border-right: 1px solid brown;
-	}
+	/* .statLine > img { */
+		/* border-right: 1px solid brown; */
+	/* } */
 </style>

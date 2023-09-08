@@ -109,11 +109,15 @@
 		if (!$host || !$currentAnimation) {
 			return;
 		}
-		if (pickedup) {
-			let cs = $convoStateForEachVAS.get($host.id);
-			if (cs) {
-				cs.isLocked = true;
-				$convoStateForEachVAS = $convoStateForEachVAS;
+		if (pickedup && $lastMsgFromServer) {
+			
+			let csForEach = $convoStateForEachVAS.get($host.scene)
+			if(csForEach){
+				let cs = csForEach.get($host.id);
+				if (cs) {
+					cs.isLocked = true;
+					$convoStateForEachVAS = $convoStateForEachVAS;
+				}
 			}
 		}
 	}

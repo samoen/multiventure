@@ -19,6 +19,7 @@
 		latestSlotButtonInput,
 		nextAnimationIndex,
 		receiveCenter,
+		resetSceneConvos,
 		selectedDetail,
 		selectedVasActionsToShow,
 		selectedVasResponsesToShow,
@@ -125,6 +126,10 @@
 		if (happenings) happenings.scroll({ top: happenings.scrollHeight, behavior: 'smooth' });
 		if (sceneTexts) sceneTexts.scroll({ top: sceneTexts.scrollHeight, behavior: 'smooth' });
 	}
+
+	// function onSourceError(){
+
+	// }
 
 	function subscribeEventsIfNotAlready() {
 		if ($source != undefined 
@@ -599,14 +604,13 @@
 						on:click={() => {
 							if (
 								!(
-									$selectedVisualActionSourceState &&
 									$selectedDetail &&
 									$selectedDetail.kind == 'vas'
 								)
-							)
+							){
 								return;
-							$convoStateForEachVAS.delete($selectedDetail.entity.id);
-							syncConvoStateToVas($selectedDetail.entity, true);
+							}
+							resetSceneConvos($selectedDetail.entity.scene)
 						}}
 						role="button"
 						tabindex="0"

@@ -92,6 +92,8 @@
 <style>
     .title{
         display: block;
+        font-weight: bold;
+        margin-left: 3px;
         /* border: 2px solid blue; */
     }
     .stats{
@@ -109,7 +111,7 @@
 		gap: 5px;
 		padding-right: 5px;
 		flex-direction: row;
-		border: 1px solid brown;
+		/* border: 1px solid brown; */
 	}
     .binaryItems{
         /* background-color: aqua; */
@@ -117,12 +119,12 @@
         flex-wrap: wrap;
     }
     .binary{
-        border: 1px solid brown;
+        /* border: 1px solid brown; */
         height:20px;
         width:20px;
         display: inline-block;
     }
-	.statLine > img {
-		border-right: 1px solid brown;
-	}
+	/* .statLine > img { */
+		/* border-right: 1px solid brown; */
+	/* } */
 </style>
