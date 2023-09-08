@@ -165,7 +165,6 @@
 		}
 		$source.addEventListener('error',onSourceError)
 
-
 		$source.addEventListener('firstack', function (e) {
 			if ($source == undefined) {
 				console.log('got ack from undefined source, weird..');
@@ -269,9 +268,8 @@
 			$clientState.loading = false;
 			return;
 		}
-		if (res.alreadyConnected) {
-			console.log('login response says already connected, oh well');
-		}
+		console.log(`guest sign up response ${res}`);
+		
 		$successcreds = res;
 
 		$clientState.status = 'we signed up as guest, subscribing';
@@ -304,9 +302,7 @@
 			$clientState.loading = false;
 			return;
 		}
-		if (res.alreadyConnected) {
-			console.log('login response says already connected, oh well');
-		}
+		console.log(`named sign up response ${res}`);
 
 		if (res.needsAuth.length) {
 			signInNameInput = res.needsAuth;

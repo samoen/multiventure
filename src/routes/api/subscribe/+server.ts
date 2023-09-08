@@ -37,12 +37,12 @@ export const GET: RequestHandler = async (event) => {
 				console.log(`${player.heroName} subscribing but already subscribed, con is ${player.connectionState.con}`);
 				
 				// closing here causes infinite subscribe loops?
-				// try {
-				// 	player.connectionState.con?.close()
-				// 	await new Promise((resolve) => setTimeout(resolve, 100));
-				// } catch (e) {
-				// 	console.log('failed to close already subber')
-				// }
+				try {
+					player.connectionState.con?.close()
+					await new Promise((resolve) => setTimeout(resolve, 100));
+				} catch (e) {
+					console.log('failed to close already subber')
+				}
 
 			// player.connectionState.con.enqueue(encode('closing', {}));
 
