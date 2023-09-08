@@ -77,7 +77,7 @@
 		console.log('invalidated, now have ssr data ' + JSON.stringify(data));
 		// In dev sometimes we mount with existing state and messes up our flow
 		if ($successcreds || $lastMsgFromServer) {	
-			console.log('mounted with existing state. hmm');
+			console.log(' mounted with existing state. clearing state');
 			leaveGame();
 			// invalidateAll()
 			// location.reload()
@@ -127,9 +127,20 @@
 		if (sceneTexts) sceneTexts.scroll({ top: sceneTexts.scrollHeight, behavior: 'smooth' });
 	}
 
-	// function onSourceError(){
-
-	// }
+	function onSourceError(this : EventSource, ev : Event){
+		if ($source == undefined) {
+				console.log(' got error from undefined source, weird..');
+			}
+			if ($source !== this) {
+				console.log('got error from a different source ');
+			}
+			$source = this;
+			console.log(`event source error ${JSON.stringify(ev)}`, ev);
+			$clientState.status = 'Event source errored';
+			$sourceErrored = true;
+			$clientState.loading = false;
+			leaveGame()
+	}
 
 	function subscribeEventsIfNotAlready() {
 		if ($source != undefined 
@@ -152,23 +163,8 @@
 			console.log(e);
 			return;
 		}
-		$source.onerror = function (ev) {
-			if ($source == undefined) {
-				console.log(' got error from undefined source, weird..');
-			}
-			if ($source !== this) {
-				console.log('got error from a different source ');
-			}
-			$source = this;
-			console.log(`event source error ${JSON.stringify(ev)}`, ev);
-			$clientState.status = 'Event source errored';
-			$sourceErrored = true;
-			$clientState.loading = false;
-			leaveGame()
-			// console.log('costing source')
-			// this.close();
-			// $source?.close();
-		};
+		$source.addEventListener('error',onSourceError)
+
 
 		$source.addEventListener('firstack', function (e) {
 			if ($source == undefined) {
