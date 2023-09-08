@@ -26,7 +26,7 @@ export function defaultInventory():ItemState[]{
 
 export function addNewUser(heroName: string): { id: string, player: Player } {
 	const startflags: Set<Flag> = new Set()
-	startflags.add('heardAboutHiddenPassage')
+	// startflags.add('heardAboutHiddenPassage')
 	// startflags.add('gotFreeStarterWeapon')
 	// startflags.add('killedGoblins')
 
@@ -77,7 +77,6 @@ export function addNewUser(heroName: string): { id: string, player: Player } {
 	// equipItem(player, poisonDart)
 
 	addSoloScenes(heroName)
-	scenes.get(player.currentScene)?.onEnterScene(player)
 	let userId = v4()
 	users.set(userId, player);
 	return { id: userId, player: player }

@@ -1,6 +1,6 @@
 import { goto } from "$app/navigation"
-import type { AggroModifier, AggroModifierEvent, AnySprite, BattleAnimation, BattleEvent, BattleEventEntity, GameActionSentToClient, HealthModifier, HealthModifierEvent, StatusEffect, StatusModifier, StatusModifierEvent, UnitId, VisualActionSourceId } from "$lib/utils"
-import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, modifyAggroForPlayer, modifiedEnemyHealth, type EnemyTemplateId, spawnEnemy } from "./enemies"
+import type { AggroModifier, AggroModifierEvent, AnySprite, BattleAnimation, BattleEvent, BattleEventEntity, GameActionSentToClient, HealthModifier, HealthModifierEvent, StatusEffect, StatusId, StatusModifier, StatusModifierEvent, UnitId, VisualActionSourceId } from "$lib/utils"
+import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, modifyAggroForPlayer, modifiedEnemyHealth, type EnemyTemplateId, spawnEnemy, type EnemyStatuses } from "./enemies"
 import { items, type Item, equipItem, checkHasItem, type ItemId } from "./items"
 import { pushHappening } from "./messaging"
 import { scenes, type SceneId } from "./scenes"
@@ -16,7 +16,8 @@ export function updatePlayerActions(player: Player) {
 	player.sceneActions = []
 	player.itemActions = []
 	player.visualActionSources = []
-
+	let scene = scenes.get(player.currentScene)
+	if(!scene)return
 	let sceneEnemies = enemiesInScene(player.currentScene)
 	let scenePlayers = activePlayersInScene(player.currentScene)
 
@@ -212,7 +213,14 @@ export function updatePlayerActions(player: Player) {
 	}
 
 	if (!sceneEnemies.length || player.currentScene == 'armory') {
-		scenes.get(player.currentScene)?.actions(player)
+		if(scene.actions){
+			scene.actions(player)
+		}
+		if(scene.vases){
+			for ( const vas of scene.vases){
+				player.visualActionSources.push(vas)
+			}
+		}
 	}
 }
 
@@ -245,9 +253,38 @@ export function enterSceneOrWakeup(player: Player) {
 
 	const wasEnemiesPreEnter = enemiesInScene(player.currentScene)
 
+	if (enteringScene.healsOnEnter) {
+		player.health = player.maxHealth
+	}
+	if (enteringScene.setCheckpointOnEnter) {
+		player.lastCheckpoint = player.currentScene
+	}
+	if (enteringScene.setsFlagOnEnter) {
+		player.flags.add(enteringScene.setsFlagOnEnter)
+	}
+	if (enteringScene.spawnsEnemiesOnEnter) {
+		for (const es of enteringScene.spawnsEnemiesOnEnter) {
+			spawnEnemy(es.eName, es.eTemp, player.currentScene, player.unitId, es.statuses)
+		}
+	}
 	// Always call main enter scene hook
 	if (enteringScene.onEnterScene) {
 		enteringScene.onEnterScene(player);
+	}
+	if(enteringScene.sceneTexts){
+		let {fallback, ...froms} = enteringScene.sceneTexts
+		let useDefault = true
+		for (let [from,txt] of Object.entries(froms)){
+			if(player.previousScene == from && txt){
+				player.sceneTexts.push(txt)
+				useDefault = false
+				break
+			}
+		}
+		if(useDefault){
+			
+			player.sceneTexts.push(fallback)
+		}
 	}
 
 	// If it's the player's first mid-battle join
@@ -255,13 +292,23 @@ export function enterSceneOrWakeup(player: Player) {
 		&& wasEnemiesPreEnter.length
 		&& !enteringScene.hasEntered.has(player.heroName)
 	) {
-		for (const e of wasEnemiesPreEnter){
-			if(!e.aggros.has(player.unitId)){
-				e.aggros.set(player.unitId,e.template.startAggro)
+		for (const e of wasEnemiesPreEnter) {
+			if (!e.aggros.has(player.unitId)) {
+				e.aggros.set(player.unitId, e.template.startAggro)
 			}
 		}
 		scaleEnemyHealthInScene(player.currentScene)
 		enteringScene.onBattleJoin(player)
+		if (enteringScene.spawnsEnemiesOnBattleJoin) {
+			let extraGoblinName = player.heroName.split('').reverse().join('')
+			for (const es of enteringScene.spawnsEnemiesOnBattleJoin) {
+				spawnEnemy(extraGoblinName, es.eTemp, player.currentScene, player.unitId, es.statuses)
+			}
+			for (const playerInScene of scenePlayers) {
+				playerInScene.sceneTexts.push(`${player.heroName} joins the battle, attracting the attention of more enemies.`)
+			}
+
+		}
 	}
 
 
@@ -338,7 +385,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				pushAnimation({
 					sceneId: actionStartedInSceneId,
 					battleAnimation: {
-						triggeredBy:player.unitId,
+						triggeredBy: player.unitId,
 						source: player.unitId,
 						target: actionFromId.target,
 						behavior: { kind: 'melee' },
@@ -354,7 +401,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 
 		if (actionFromId.unlockableActData.spawnsEnemies) {
 			for (const e of actionFromId.unlockableActData.spawnsEnemies) {
-				spawnEnemy(e.eName, e.eTemp, actionStartedInSceneId)
+				spawnEnemy(e.eName, e.eTemp, actionStartedInSceneId, player.unitId, e.statuses)
 			}
 		}
 
@@ -364,7 +411,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				leavingScene: player,
 				sceneId: actionStartedInSceneId,
 				battleAnimation: {
-					triggeredBy:player.unitId,
+					triggeredBy: player.unitId,
 					source: player.unitId,
 					behavior: { kind: 'travel', goTo: actionFromId.unlockableActData.travelTo },
 					target: actionFromId.target
@@ -386,7 +433,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		pushAnimation({
 			sceneId: player.currentScene,
 			battleAnimation: {
-				triggeredBy:player.unitId,
+				triggeredBy: player.unitId,
 				source: player.unitId,
 				behavior: { kind: 'selfInflicted', extraSprite: 'smoke', },
 				putsStatuses: [{ statusId: 'hidden', target: player.unitId, remove: true }]
@@ -413,22 +460,22 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		// const scenePlayers = activePlayersInScene(actionStartedInSceneId)
 		for (const enemy of enemiesInScene(actionStartedInSceneId)) {
 
-			for (const [hId, statusForPlayer] of enemy.statuses){
-				if(hId == player.unitId){
+			for (const [hId, statusForPlayer] of enemy.statuses) {
+				if (hId == player.unitId) {
 					let pois = statusForPlayer.get('poison')
 					if (pois && pois > 0) {
-						takePoisonDamage(enemy,player)
-						statusForPlayer.set('poison',pois-1)
+						takePoisonDamage(enemy, player)
+						statusForPlayer.set('poison', pois - 1)
 					}
 					let rg = statusForPlayer.get('rage')
 					if (rg && rg > 0) {
 						enemy.damage += 10
 						pushHappening(`${enemy.name}'s rage grows!`)
-						statusForPlayer.set('rage', rg -1)
+						statusForPlayer.set('rage', rg - 1)
 					}
 					let hidn = statusForPlayer.get('hidden')
 					if (hidn && hidn > 0) {
-						statusForPlayer.set('hidden',hidn-1)
+						statusForPlayer.set('hidden', hidn - 1)
 					}
 
 				}
@@ -452,7 +499,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				{
 					sceneId: player.currentScene,
 					battleAnimation: {
-						triggeredBy:player.unitId,
+						triggeredBy: player.unitId,
 						source: player.unitId,
 						damageToSource: dmg,
 						behavior: { kind: 'selfInflicted', extraSprite: 'poison', }
@@ -479,13 +526,19 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 
 
 	const playerScene = scenes.get(actionStartedInSceneId);
+	if(!playerScene)return
 	const postReactionEnemies = enemiesInScene(actionStartedInSceneId)
-	if (!postReactionEnemies.length && playerScene?.onVictory) {
+	if (!postReactionEnemies.length) {
 		for (const playerInScene of activePlayersInScene(player.currentScene)) {
-			playerScene.onVictory(playerInScene)
-			if (playerScene.hasEntered) {
-				playerScene.hasEntered.clear()
+			if(playerScene.healsOnVictory){
+				playerInScene.health = playerInScene.maxHealth
 			}
+			if(playerScene.setsFlagOnVictory){
+				playerInScene.flags.add(playerScene.setsFlagOnVictory)
+			}
+		}
+		if (playerScene.hasEntered) {
+			playerScene.hasEntered.clear()
 		}
 	}
 }
@@ -628,7 +681,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 					let exist = found.get(put.statusId)
 
 					if (!exist || exist < put.count) {
-						found.set(put.statusId,put.count)
+						found.set(put.statusId, put.count)
 					}
 					put.targetEnemy.statuses.set(player.unitId, found)
 				}
@@ -701,7 +754,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	}
 
 	let battleAnimation: BattleAnimation = {
-		triggeredBy:player.unitId,
+		triggeredBy: player.unitId,
 		source: battleEvent.source.entity.unitId,
 		target: battleEvent.target?.entity.unitId,
 		damageToSource: dmgToSource,
@@ -790,6 +843,22 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 					txt = `Travel to ${scene.displayName}`
 					targ = vas.unitId
 				}
+				if(unlockableActData.travelToCheckpoint){
+					let travelTo = player.lastCheckpoint
+					unlockableActData.travelTo = travelTo
+					let scene = scenes.get(travelTo)
+					if (!scene) continue
+					txt = `Respawn at checkpoint: ${scene.displayName}`
+					targ = vas.unitId
+				}
+				if(unlockableActData.travelToSolo){
+					let travelTo = `${unlockableActData.travelToSolo}_${player.heroName}` as SceneId
+					unlockableActData.travelTo = travelTo
+					let scene = scenes.get(travelTo)
+					if (!scene) continue
+					txt = `Travel to ${scene.displayName}`
+					targ = vas.unitId
+				}
 
 				if (unlockableActData.bText) {
 					txt = unlockableActData.bText
@@ -855,7 +924,7 @@ export function convertVasToClient(vas: VisualActionSource, player: Player): Vis
 		startsLocked: startLocked,
 		actionsInClient: validUnlockableClientActions,
 		detectStep: detectStep,
-		scene:player.currentScene,
+		scene: player.currentScene,
 	} satisfies VisualActionSourceInClient
 	return result
 }
@@ -882,7 +951,7 @@ export type VisualActionSource = {
 
 export type VisualActionSourceInClient = {
 	displayName: string
-	scene:SceneId
+	scene: SceneId
 	startsLocked?: boolean
 	id: VisualActionSourceId
 	sprite: AnySprite
@@ -899,9 +968,18 @@ export type UnlockableActionData = {
 	requiresGear?: ItemId[]
 	pickupItem?: ItemId
 	travelTo?: SceneId
+	travelToCheckpoint?: boolean
+	travelToSolo?: string
 	setsFlag?: Flag
 	bText?: string
-	spawnsEnemies?: { eName: string, eTemp: EnemyTemplateId }[]
+	spawnsEnemies?: EnemyForSpawning[]
+}
+
+export type EnemyForSpawning = { eName: string, eTemp: EnemyTemplateId, statuses?: EnemyStatusesObject }
+
+// export type EnemyStatusesObject = Record<StatusId,number>
+export type EnemyStatusesObject = {
+	[k in StatusId]?: number;
 }
 
 export type ConversationResponse = {

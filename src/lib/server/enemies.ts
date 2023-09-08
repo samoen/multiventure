@@ -1,4 +1,5 @@
 import type { AnimationBehavior, UnitId, BattleAnimation, EnemyName, StatusEffect, StatusId, EnemyId, BattleEvent, StatusModifierEvent, HeroId, HealthModifierEvent, StatusMod } from "$lib/utils";
+import type { EnemyStatusesObject } from "./logic";
 import { pushHappening } from "./messaging";
 import { scenes, type SceneId } from "./scenes";
 import { playerEquipped, type HeroName, type Player, activePlayers, activePlayersInScene } from "./users";
@@ -114,8 +115,9 @@ export function modifiedEnemyHealth(baseHealth: number, numPlayers:number): numb
 export function spawnEnemy(
 	name: string, 
 	templateId: EnemyTemplateId, 
-	where: SceneId, 
-	statuses: EnemyStatuses = new Map()) {
+	where: SceneId,
+	triggeredBy:HeroId,
+	statuses: EnemyStatusesObject = {}) {
 	let template = enemyTemplates[templateId]
 
 	let modifiedBaseHealth = template.baseHealth
@@ -133,6 +135,16 @@ export function spawnEnemy(
 		aggros.set(p.unitId,template.startAggro)
 	}
 
+	let mapStatuses : EnemyStatuses = new Map();
+
+	
+	let mapForHeroStatuses: Map<StatusId, number> = new Map();
+	for (let [k,v] of Object.entries(statuses)){
+		mapForHeroStatuses.set((k as StatusId),v)
+	}
+
+	mapStatuses.set(triggeredBy,mapForHeroStatuses)
+
 	activeEnemies.push({
 		unitId: `enemy${name}`,
 		name: name,
@@ -143,7 +155,7 @@ export function spawnEnemy(
 		damage: enemyTemplates[templateId].baseDamage,
 		aggros: aggros,
 		template: enemyTemplates[templateId],
-		statuses: statuses,
+		statuses: mapStatuses,
 	})
 }
 export type EnemyStatuses = Map<HeroId, Map<StatusId, number>>
