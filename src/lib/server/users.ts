@@ -1,5 +1,5 @@
 import { v4 } from 'uuid';
-import { items, type Item, type ItemState, type QuickbarSlot, type ItemId, equipItem, fireStaff, plateMail, leatherArmor, poisonDart, findClassFromInventory } from './items';
+import { items, type Item, type ItemState, type QuickbarSlot, type ItemId, equipItem, fireStaff, plateMail, leatherArmor, poisonDart, comboFindClassFromInventory } from './items';
 import { pushHappening } from './messaging';
 import type { UnlockableActionData, VisualActionSource } from './logic';
 import { type SceneId, scenes, addSoloScenes } from './scenes';
@@ -69,7 +69,7 @@ export function addNewUser(heroName: string): { id: string, player: Player } {
 			rage: 0,
 			hidden: 0,
 		},
-		class:findClassFromInventory(startInventory)
+		class:comboFindClassFromInventory(startInventory)
 	}
 
 	// equipItem(player, fireStaff)

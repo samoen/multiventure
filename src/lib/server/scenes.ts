@@ -376,11 +376,11 @@ const trainingRoom2: Scene = {
 		})
 		player.visualActionSources.push({
 			unitId: 'vasEquipCloak',
-			displayName: 'Theif Cloak',
+			displayName: 'Thief Cloak',
 			sprite: 'armorStand',
-			startText: `A theif's cloak lets you become hidden, preventing retaliation from enemies. It's a good way to wait for your magic to warm up. Poison your enemy first to get extra value!`,
+			startText: `A thief's cloak lets you become hidden, preventing retaliation from enemies. It's a good way to wait for your magic to warm up. Poison your enemy first to get extra value!`,
 			startsLocked: true,
-			actionsWithRequirements: [{ pickupItem: 'theifCloak' }]
+			actionsWithRequirements: [{ pickupItem: 'thiefCloak' }]
 		})
 		player.visualActionSources.push({
 			unitId: 'vasGoTrain3',
@@ -389,7 +389,7 @@ const trainingRoom2: Scene = {
 			startText: `The next room looks more like a prison cell than a training room. The bones of previous recruits are strewn about the place..`,
 			actionsWithRequirements: [
 				{
-					requiresGear: ['fireStaff', 'poisonDart', 'theifCloak'],
+					requiresGear: ['fireStaff', 'poisonDart', 'thiefCloak'],
 					travelTo: `trainingRoom3_${player.heroName}`
 				}
 			]

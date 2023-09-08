@@ -1,6 +1,6 @@
 import type { GameActionSentToClient, BattleAnimation, EnemyInClient, LandscapeImage, StatusId, HeroId, AggroInClient, EnemyStatusInClient } from '$lib/utils';
 import { activeEnemies, addAggro, damagePlayer, enemiesInScene, getAggroForPlayer, takePoisonDamage } from './enemies';
-import { findClassFromInventory, items } from './items';
+import { comboFindClassFromInventory, items } from './items';
 import { type VisualActionSourceInClient, convertServerActionToClientAction, convertVasToClient } from './logic';
 import { scenes, forest } from './scenes';
 import { activePlayers, globalFlags, users, type HeroName, type Player, type GameAction, activePlayersInScene, type PlayerInClient, type Flag, type GlobalFlag } from './users';
@@ -79,7 +79,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 			inventory:forPlayer.inventory,
 			currentSceneDisplay: scene.displayName,
 			statuses:forPlayer.statuses,
-			class:findClassFromInventory(forPlayer.inventory)
+			class:comboFindClassFromInventory(forPlayer.inventory)
 		},
 		otherPlayers: activePlayers()
 			.filter((u) => u.heroName != forPlayer.heroName && u.currentScene == forPlayer.currentScene)
@@ -94,7 +94,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 					inventory:u.inventory,
 					currentSceneDisplay: 'somewhere',
 					statuses:u.statuses,
-					class:findClassFromInventory(u.inventory)
+					class:comboFindClassFromInventory(u.inventory)
 				} satisfies PlayerInClient;
 			}),
 			sceneTexts: forPlayer.sceneTexts,

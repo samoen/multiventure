@@ -148,7 +148,6 @@
 			return;
 		}
 		$source.onerror = function (ev) {
-			console.log('huih');
 			if ($source == undefined) {
 				console.log(' got error from undefined source, weird..');
 			}
@@ -160,6 +159,7 @@
 			$clientState.status = 'Event source errored';
 			$sourceErrored = true;
 			$clientState.loading = false;
+			leaveGame()
 			// console.log('costing source')
 			// this.close();
 			// $source?.close();

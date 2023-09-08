@@ -89,7 +89,7 @@ export function getSlotImage(id: ItemId): string {
     if (id == 'poisonDart') return poisonDartSlot;
     if (id == 'potion') return potionSlot;
     if (id == 'leatherArmor') return tunicSlot;
-    if (id == 'theifCloak') return dressSlot;
+    if (id == 'thiefCloak') return dressSlot;
     if (id == 'plateMail') return shieldSlot;
     if(id == 'wait')return waitSlot;
     if(id == 'succumb')return skullSlot;
