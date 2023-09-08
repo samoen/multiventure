@@ -20,18 +20,22 @@
             {itemState.itemId}
         </p>
     </div>
+    {#if itemState.stats}
+    <div class="binaryItems">
+        {#if itemState.stats.style.style == 'allEnemies'}
+            <!-- <div class="noNumber"> -->
+                <img class="binary" src={saw} alt="Splash" />
+            <!-- </div> -->
+        {/if}
+        {#if itemState.stats.grantsImmunity}
+            <!-- <div class="noNumber"> -->
+                <img class="binary" src={crown} alt="No retaliation" />
+            <!-- </div> -->
+        {/if}
+    </div>
+    {/if}
     <div class="stats">
         {#if itemState.stats}
-            {#if itemState.stats.style.style == 'allEnemies'}
-                <!-- <div class="noNumber"> -->
-                    <img src={saw} alt="Splash" />
-                <!-- </div> -->
-            {/if}
-            {#if itemState.stats.grantsImmunity}
-                <!-- <div class="noNumber"> -->
-                    <img src={crown} alt="No retaliation" />
-                <!-- </div> -->
-            {/if}
             {#if itemState.stats.baseDmg}
                 <div class="statLine">
                     <img src={strong} alt="a heart" />
@@ -107,6 +111,17 @@
 		flex-direction: row;
 		border: 1px solid brown;
 	}
+    .binaryItems{
+        /* background-color: aqua; */
+        display: flex;
+        flex-wrap: wrap;
+    }
+    .binary{
+        border: 1px solid brown;
+        height:20px;
+        width:20px;
+        display: inline-block;
+    }
 	.statLine > img {
 		border-right: 1px solid brown;
 	}

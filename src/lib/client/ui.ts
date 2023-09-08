@@ -1,5 +1,5 @@
 import type { Flag, HeroName, PlayerInClient } from "$lib/server/users";
-import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient, AnySprite, LandscapeImage, VisualActionSourceId, SignupResponse } from "$lib/utils";
+import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient, AnySprite, LandscapeImage, VisualActionSourceId, SignupResponse, HeroId, StatusId } from "$lib/utils";
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 
 import type { ItemId, ItemState, QuickbarSlot } from '$lib/server/items';
@@ -12,10 +12,13 @@ import type { VisualActionSourceInClient } from "$lib/server/logic";
 import { anySprites, enemySprites, getHeroPortrait, getPortrait, getSlotImage, heroSpriteFromClass} from "./assets";
 
 
+type HeroSpecificEnemyState = {hName:HeroName,agg:number,sts:{sId:StatusId,count:number}[]}
+
 type UnitDetails = {
     portrait: string
     kind: 'enemy'
     enemy: EnemyInClient
+    heroSpecificStates : HeroSpecificEnemyState[]
 } | {
     kind: 'player',
     portrait: string
@@ -333,6 +336,36 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         )
 
         for (const e of lastMsg.enemiesInScene) {
+
+            let heroSpecifics : HeroSpecificEnemyState[] = []
+            for ( const ag of e.aggros){
+                let find = e.statuses.filter(s=>s.hId==ag.hId)
+                let stsForHero :{sId:StatusId,count:number}[] = []
+                if(find){
+                    for(const s of find){
+                        stsForHero.push({
+                            sId:s.statusId,
+                            count:s.count,
+                        })
+                    }
+                }
+                let findPlayer : PlayerInClient | undefined = undefined
+                if(lastMsg.yourInfo.unitId == ag.hId){
+                    findPlayer = lastMsg.yourInfo
+                }else{
+                    findPlayer = lastMsg.otherPlayers.find(p=>p.unitId == ag.hId)
+                }
+                
+                if(findPlayer){
+                    heroSpecifics.push({
+                        hName:findPlayer.heroName,
+                        agg:ag.agg,
+                        sts:stsForHero,
+                    })
+                }
+
+            }
+
             newVups.push(
                 {
                     id: e.unitId,
@@ -344,7 +377,8 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                     actual: {
                         kind: 'enemy',
                         portrait: e.template.portrait ? getPortrait(e.template.portrait) : enemySprites[e.templateId],
-                        enemy: structuredClone(e)
+                        enemy: structuredClone(e),
+                        heroSpecificStates:heroSpecifics,
                     },
                     actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == e.unitId)
                 } satisfies VisualUnitProps
@@ -465,23 +499,23 @@ export function handlePutsStatuses(anim: BattleAnimation) {
                 if (ps.remove) {
                     if (vup.actual.kind == 'enemy') {
                         // remove enemy status for all sources
-                        for (const sourceId in vup.actual.enemy.statuses) {
-                            const tSourceId = sourceId as UnitId
-                            vup.actual.enemy.statuses[tSourceId][ps.statusId] = 0
-                        }
+                            vup.actual.enemy.statuses = vup.actual.enemy.statuses.filter(s=>s.statusId != ps.statusId)
                     } else if (vup.actual.kind == 'player') {
                         vup.actual.info.statuses[ps.statusId] = 0;
                     }
                 } else {
                     if (ps.count) {
                         if (vup.actual.kind == 'enemy') {
-                            let existingStatusesForSource = vup.actual.enemy.statuses[anim.source];
-                            console.log(vup.actual.enemy.statuses)
-                            if (!existingStatusesForSource) {
-                                console.log('adding statuses for ' + anim.source)
-                                vup.actual.enemy.statuses[anim.source] = { poison: 0, rage: 0, hidden: 0 };
+                            let found = vup.actual.enemy.statuses.find(s=>s.statusId == ps.statusId && s.hId == anim.triggeredBy)
+                            if(found){
+                                found.count += ps.count
+                            }else{
+                                vup.actual.enemy.statuses.push({
+                                    count:ps.count,
+                                    hId:anim.triggeredBy,
+                                    statusId:ps.statusId
+                                })
                             }
-                            vup.actual.enemy.statuses[anim.source][ps.statusId] = ps.count;
                         } else if (vup.actual.kind == 'player') {
                             vup.actual.info.statuses[ps.statusId] = ps.count;
                         }

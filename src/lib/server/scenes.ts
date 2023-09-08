@@ -326,7 +326,9 @@ const trainingRoom2: Scene = {
 			return
 		}
 		let borgusStatuses: EnemyStatuses = new Map()
-		borgusStatuses.set(player.unitId, { poison: 0, rage: 5, hidden: 0 })
+		let borgusRage = new Map()
+		borgusRage.set('rage',5)
+		borgusStatuses.set(player.unitId, borgusRage)
 		player.sceneTexts.push("Borgus: 'Raaargh! What are you hob-doing in MY hob-training room?! How is Glornak by the way? We used to work in the same room but they split us up.'")
 		player.sceneTexts.push("Florgus: 'There you go again Morgus, talking about Glornak like I'm not standing right here. And it's OUR training room now remember? Oh Great, another recruit equipped with a dagger..'")
 		player.sceneTexts.push("Scortchy: 'Burn! I burn you! REEEE HEEE HEEE'")
@@ -915,11 +917,15 @@ const goblinCamp: Scene = {
 			spawnEnemy('Gorlak', 'goblin', 'goblinCamp')
 			// spawnEnemy('Camp Rat', 'rat', 'goblinCamp')
 			// spawnEnemy('Dartah', 'darter', 'goblinCamp')
+			let murkStatuses : EnemyStatuses = new Map()
+			let murkRage = new Map()
+			murkRage.set('rage',5)
+			murkStatuses.set(player.unitId,murkRage)
 			spawnEnemy(
 				'Murk',
 				'goblin',
 				'goblinCamp',
-				new Map([[player.unitId, { poison: 0, rage: 5, hidden: 0 }]])
+				murkStatuses
 			)
 		}
 	},

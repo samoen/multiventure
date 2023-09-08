@@ -127,11 +127,13 @@
 	}
 
 	function subscribeEventsIfNotAlready() {
-		if ($source != undefined && $source.readyState != EventSource.CLOSED) {
-			console.log('no need to subscribe but doing anyway?');
-			// 	$clientState.status = 'subscribing to events';
-			// 	$clientState.loading = false;
-			// 	return;
+		if ($source != undefined 
+		// && $source.readyState != EventSource.CLOSED
+		) {
+			console.log('no need to subscribe');
+				$clientState.status = 'no need to subscribe';
+				$clientState.loading = false;
+				return;
 		}
 		$clientState.loading = true;
 		$clientState.status = 'subscribing to events';
@@ -540,25 +542,6 @@
 				<div class="vupSelectedRest">
 					<div class="selectedStats">
 						<UnitStats vu={$selectedDetail.entity} />
-						
-						{#if $selectedDetail.entity.actual.kind == 'player'}
-							<!-- <div> -->
-							{#each $selectedDetail.entity.actual.info.inventory as itemState}
-								{#if itemState.stats && !itemState.stats.excludeFromDetail}
-									<!-- <button class="inventoryButton"
-									on:click={()=>{
-										console.log('selecting')
-										$selectedItem = itemState
-										console.log($selectedItem)
-									}}
-									>
-										{`${itemState.slot}`}
-									</button> -->
-									<ItemStats itemState="{itemState}"></ItemStats>
-									
-								{/if}
-							{/each}
-						{/if}
 					</div>
 					<div class="slotButtons">
 						{#each $typedInventory as value}
@@ -1182,12 +1165,12 @@
 		/* background-color: aqua; */
 	}
 	.selectedStats {
-		display: flex;
+		/* display: flex; */
 		/* flex-wrap: wrap; */
-		flex-direction: column;
-		align-items: flex-start;
-		flex-shrink: 1;
-		gap:5px;
+		/* flex-direction: column; */
+		/* align-items: flex-start; */
+		/* flex-shrink: 1; */
+		/* gap:5px; */
 		overflow-y: auto;
 		/* padding: 5px; */
 		min-width: 20vw;

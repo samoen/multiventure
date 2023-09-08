@@ -26,18 +26,18 @@ export function defaultInventory():ItemState[]{
 
 export function addNewUser(heroName: string): { id: string, player: Player } {
 	const startflags: Set<Flag> = new Set()
-	// startflags.add('heardAboutHiddenPassage')
+	startflags.add('heardAboutHiddenPassage')
 	// startflags.add('gotFreeStarterWeapon')
 	// startflags.add('killedGoblins')
 
 	let startScene: SceneId = `tutorial_${heroName}`
 	// startScene = `trainingRoom3_${heroName}`
 	// startScene = `forest`
-	startScene = 'forestPassage'
+	// startScene = 'forestPassage'
 	// startScene = 'goblinCamp'
 	// startScene = 'castle'
 	// startScene = 'throne'
-	// startScene = 'armory'
+	startScene = 'armory'
 
 	let startInventory = defaultInventory()
 

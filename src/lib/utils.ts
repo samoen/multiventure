@@ -12,6 +12,7 @@ export type EnemyId = `enemy${string}`
 export type VisualActionSourceId = `vas${string}`
 
 export type BattleAnimation = {
+	triggeredBy:HeroId,
 	source: UnitId,
 	damageToSource?: number,
 	target?: UnitId,
@@ -137,9 +138,12 @@ export type EnemyInClient = {
 	maxHealth: number
 	myAggro: number
 	template:EnemyTemplate
-	statuses: Record<UnitId,Record<StatusId,number>>
+	aggros:AggroInClient[]
+	statuses: EnemyStatusInClient[]
 }
 
+export type EnemyStatusInClient = {hId:HeroId,statusId:StatusId,count:number}
+export type AggroInClient = {hId:HeroId,agg:number}
 
 export type GameActionSelected = {
 	buttonText: string;

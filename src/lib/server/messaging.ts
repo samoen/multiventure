@@ -1,4 +1,4 @@
-import type { GameActionSentToClient, BattleAnimation, EnemyInClient, LandscapeImage } from '$lib/utils';
+import type { GameActionSentToClient, BattleAnimation, EnemyInClient, LandscapeImage, StatusId, HeroId, AggroInClient, EnemyStatusInClient } from '$lib/utils';
 import { activeEnemies, addAggro, damagePlayer, enemiesInScene, getAggroForPlayer, takePoisonDamage } from './enemies';
 import { findClassFromInventory, items } from './items';
 import { type VisualActionSourceInClient, convertServerActionToClientAction, convertVasToClient } from './logic';
@@ -114,6 +114,25 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 		animations: forPlayer.animations,
 		enemiesInScene: enemiesInScene(forPlayer.currentScene).map((e) => {
 			// console.log(`sending ${e.name} statuses ${JSON.stringify(e.statuses)}`)
+			let aggros : AggroInClient[] = []
+			for (let [k,v] of e.aggros){
+				aggros.push({
+					agg:v,
+					hId:k,
+				})
+			}
+
+			let statusesInClient : EnemyStatusInClient[] = []
+			for (let [k,v] of e.statuses){
+				for(let [k2,v2] of v){
+					statusesInClient.push({
+						hId:k,
+						count:v2,
+						statusId:k2,
+					})
+				}
+			}
+
 			return {
 				unitId:e.unitId,
 				health: e.currentHealth,
@@ -122,7 +141,8 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				templateId: e.templateId,
 				template:e.template,
 				myAggro: getAggroForPlayer(e,forPlayer),
-				statuses: Object.fromEntries(e.statuses),
+				aggros: aggros,
+				statuses: statusesInClient,
 			} satisfies EnemyInClient
 		}),
 		playerFlags: Array.from(forPlayer.flags),
@@ -131,6 +151,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 	// console.log('sending vases '+JSON.stringify(nextMsg.visualActionSources.at(0)))
 	return nextMsg;
 }
+
 
 const textEncoder = new TextEncoder();
 export function encode(event: string, data: object, noretry: boolean = false) {

@@ -36,15 +36,15 @@
 			// statuses = $vu.actual.enemy.statuses.map(s=>s.status)
 			if ($vu.actual.enemy.statuses) {
 				// console.log(JSON.stringify($vu.actual.enemy.statuses))
-				let arrayOfStatuses = Array.from(Object.values($vu.actual.enemy.statuses));
+				// let arrayOfStatuses = Array.from(Object.values($vu.actual.enemy.statuses));
 				// console.log(JSON.stringify(arrayOfStatuses))
-				if (arrayOfStatuses.find((s) => s.poison > 0)) {
+				if ($vu.actual.enemy.statuses.find((s) => s.statusId == 'poison' && s.count > 0)) {
 					s.push('poison');
 				}
-				if (arrayOfStatuses.find((s) => s.rage > 0)) {
+				if ($vu.actual.enemy.statuses.find((s) => s.statusId == 'rage' && s.count > 0)) {
 					s.push('rage');
 				}
-				if (arrayOfStatuses.find((s) => s.hidden > 0)) {
+				if ($vu.actual.enemy.statuses.find((s) => s.statusId == 'hidden' && s.count > 0)) {
 					s.push('hidden');
 				}
 			}

@@ -14,15 +14,15 @@ export type ActiveEnemy = {
 	currentHealth: number
 	maxHealth: number
 	damage: number
-	aggros: Map<HeroName, number>
+	aggros: Map<HeroId, number>
 	template: EnemyTemplate
 	statuses: EnemyStatuses
 }
 
 export function getAggroForPlayer(enemy: ActiveEnemy, player: Player): number {
-	let existing = enemy.aggros.get(player.heroName)
+	let existing = enemy.aggros.get(player.unitId)
 	if (existing == undefined) {
-		enemy.aggros.set(player.heroName, enemy.template.startAggro)
+		enemy.aggros.set(player.unitId, enemy.template.startAggro)
 		existing = enemy.template.startAggro
 	}
 	return existing
@@ -113,31 +113,40 @@ export function modifiedEnemyHealth(baseHealth: number, numPlayers:number): numb
 
 export function spawnEnemy(
 	name: string, 
-	template: EnemyTemplateId, 
+	templateId: EnemyTemplateId, 
 	where: SceneId, 
 	statuses: EnemyStatuses = new Map()) {
-	let modifiedBaseHealth = enemyTemplates[template].baseHealth
+	let template = enemyTemplates[templateId]
+
+	let modifiedBaseHealth = template.baseHealth
 	let scene = scenes.get(where)
-	if(scene && !scene.solo){
-		let playersInScene = activePlayersInScene(where).length
-		modifiedBaseHealth = modifiedEnemyHealth(modifiedBaseHealth,playersInScene)
+	if(!scene) return
+	let playersInScene = activePlayersInScene(where)
+	if(!scene.solo){
+		modifiedBaseHealth = modifiedEnemyHealth(modifiedBaseHealth,playersInScene.length)
 	}
 
 	// let modifiedBaseHealth = scenes.get(where)?.solo ? baseHealth : modifiedEnemyHealth(baseHealth)
+
+	let aggros : Map<HeroId,number> = new Map()
+	for(const p of playersInScene){
+		aggros.set(p.unitId,template.startAggro)
+	}
+
 	activeEnemies.push({
 		unitId: `enemy${name}`,
 		name: name,
-		templateId: template,
+		templateId: templateId,
 		currentScene: where,
 		currentHealth: modifiedBaseHealth,
 		maxHealth: modifiedBaseHealth,
-		damage: enemyTemplates[template].baseDamage,
-		aggros: new Map(),
-		template: enemyTemplates[template],
+		damage: enemyTemplates[templateId].baseDamage,
+		aggros: aggros,
+		template: enemyTemplates[templateId],
 		statuses: statuses,
 	})
 }
-export type EnemyStatuses = Map<HeroId, Record<StatusId, number>>
+export type EnemyStatuses = Map<HeroId, Map<StatusId, number>>
 
 export function addAggro(actor: Player, provoke: number) {
 	for (const respondingEnemy of enemiesInScene(actor.currentScene)) {
@@ -147,15 +156,15 @@ export function addAggro(actor: Player, provoke: number) {
 		if (newAggro > 100) {
 			newAggro = 100
 		}
-		respondingEnemy.aggros.set(actor.heroName, newAggro)
+		respondingEnemy.aggros.set(actor.unitId, newAggro)
 	}
 
 }
 
-export function modifyAggroForPlayer(heroName: HeroName, enemy: ActiveEnemy, baseAmount: number): { increasedBy: number } {
-	let existing = enemy.aggros.get(heroName)
+export function modifyAggroForPlayer(player:Player, enemy: ActiveEnemy, baseAmount: number): { increasedBy: number } {
+	let existing = enemy.aggros.get(player.unitId)
 	if (existing == undefined) {
-		enemy.aggros.set(heroName, enemy.template.startAggro)
+		enemy.aggros.set(player.unitId, enemy.template.startAggro)
 		existing = enemy.template.startAggro
 	}
 	let wantNext = existing + baseAmount
@@ -165,7 +174,7 @@ export function modifyAggroForPlayer(heroName: HeroName, enemy: ActiveEnemy, bas
 	if (wantNext < 0) {
 		wantNext = 0
 	}
-	enemy.aggros.set(heroName, wantNext)
+	enemy.aggros.set(player.unitId, wantNext)
 	return { increasedBy: wantNext - existing }
 }
 
@@ -239,11 +248,11 @@ export function pushAnimation(
 	}
 }
 
-export function takePoisonDamage(enemy: ActiveEnemy): { dmgDone: number } {
+export function takePoisonDamage(enemy: ActiveEnemy, player:Player): { dmgDone: number } {
 	if (enemy.currentHealth < 1) return { dmgDone: 0 }
 	let dmg = Math.floor(enemy.maxHealth * 0.25)
 	enemy.currentHealth -= dmg
-	pushHappening(`${enemy.name} took ${dmg} damage from poison`)
+	pushHappening(`${enemy.name} took ${dmg} damage from ${player.heroName}'s poison`)
 	let result = checkEnemyDeath(enemy)
 	if (result.killed) {
 		pushHappening(`${enemy.name} died from poison`)
@@ -252,6 +261,7 @@ export function takePoisonDamage(enemy: ActiveEnemy): { dmgDone: number } {
 		{
 			sceneId: enemy.currentScene,
 			battleAnimation: {
+				triggeredBy:player.unitId,
 				source: enemy.unitId,
 				damageToSource: dmg,
 				behavior: {kind:'selfInflicted', extraSprite:'poison'},

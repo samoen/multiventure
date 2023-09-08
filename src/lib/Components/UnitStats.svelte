@@ -9,7 +9,9 @@
 	import lightShield from '$lib/assets/ui/light-shield.png';
 	import heavyShield from '$lib/assets/ui/heavy-shield.png';
 	import { statusImages } from '$lib/client/assets';
-	import type { StatusId } from '$lib/utils';
+	import type { HeroId, StatusId } from '$lib/utils';
+	import type { HeroName } from '$lib/server/users';
+	import ItemStats from './ItemStats.svelte';
 
 	export let vu: VisualUnitProps;
 	$: enemy = vu.actual.kind == 'enemy' ? vu.actual.enemy : undefined;
@@ -30,112 +32,128 @@
 			}
 		}
 	}
-	let enemyStatuses: Map<StatusId, number> = new Map();
-	$: {
-		if (vu.actual.kind == 'enemy') {
-			enemyStatuses = new Map();
-			for (let [forHero, statuses] of Object.entries(vu.actual.enemy.statuses)) {
-                for(let [key, value] of Object.entries(statuses) ){
-                    if (value > 0) {
-                        let tKey = key as StatusId;
-                        let exist = enemyStatuses.get(tKey)
-                        if(!exist || exist < value){
-                            enemyStatuses.set(tKey, value);
-                        }
-                    }
-                }
-			}
-		}
-	}
 </script>
 
 <div class="top">
-    {#if vu.actual.kind == 'enemy'}
-        <div style="font-weight:bold; margin-bottom:10px;">
-            {vu.actual.enemy.templateId}
-        </div>
-    {/if}
+	<div class="classTitle">
+		{#if vu.actual.kind == 'enemy'}
+			{vu.actual.enemy.templateId}
+		{/if}
+		{#if vu.actual.kind == 'player'}
+			{vu.actual.info.class}
+		{/if}
+	</div>
 	<!-- <div class="statLine">
         <img src={heart} alt='a heart'>
         <div>{vu.displayHp}</div>
     </div> -->
-    <div class="statuses">
-        {#if vu.actual.kind == 'enemy'}
-                {#each enemyStatuses as [key, value]}
-                    {#if value > 0}
-                        <div class="statLine">
-                            <img class="statusIm" src={statusImages[key]} alt="a status" />
-                            <div>{value}</div>
-                        </div>
-                    {/if}
-                {/each}
-        {/if}
-        {#if vu.actual.kind == 'player'}
-                {#each playerStatuses as [key, value]}
-                    {#if value > 0}
-                        <div class="statLine">
-                            <img class="statusIm" src={statusImages[key]} alt="a status" />
-                            <div>{value}</div>
-                        </div>
-                    {/if}
-                {/each}
-        {/if}
+	{#if vu.actual.kind == 'player'}
+		<div class="statuses">
+			{#each playerStatuses as [key, value]}
+				{#if value > 0}
+					<div class="statLine">
+						<img class="statusIm" src={statusImages[key]} alt="a status" />
+						<div>{value}</div>
+					</div>
+				{/if}
+			{/each}
+		</div>
+	{/if}
 
-    </div>
+	<div class="stats">
+		<div class="statLine">
+			<img src={shieldHealth} alt="a heart" />
+			<div>{vu.maxHp}</div>
+		</div>
+		<div class="statLine">
+			<img src={strong} alt="a heart" />
+			<div>{str}</div>
+		</div>
+		{#if strikes > 1}
+			<div class="statLine">
+				<img src={crossedSwords} alt="a heart" />
+				<div>{strikes}</div>
+			</div>
+		{/if}
+		<div class="statLine">
+			<img src={foot} alt="a heart" />
+			<div>{agi}</div>
+		</div>
+		{#if vu.actual.kind == 'enemy'}
+			<div class="statLine">
+				<img src={teeth} alt="a heart" />
+				<div>{aggGain}</div>
+			</div>
+			{#if enemy?.template.damageReduction}
+				<div class="statLine">
+					<img src={lightShield} alt="a heart" />
+					<div>{enemy.template.damageReduction}</div>
+				</div>
+			{/if}
+			{#if enemy?.template.damageLimit}
+				<div class="statLine">
+					<img src={heavyShield} alt="a heart" />
+					<div>{enemy.template.damageLimit}</div>
+				</div>
+			{/if}
+		{/if}
+	</div>
 
-    <div class="stats">
-        <div class="statLine">
-            <img src={shieldHealth} alt="a heart" />
-            <div>{vu.maxHp}</div>
-        </div>
-        <div class="statLine">
-            <img src={strong} alt="a heart" />
-            <div>{str}</div>
-        </div>
-        {#if strikes > 1}
-            <div class="statLine">
-                <img src={crossedSwords} alt="a heart" />
-                <div>{strikes}</div>
-            </div>
-        {/if}
-        <div class="statLine">
-            <img src={foot} alt="a heart" />
-            <div>{agi}</div>
-        </div>
-        {#if vu.actual.kind == 'enemy'}
-            <div class="statLine">
-                <img src={teeth} alt="a heart" />
-                <div>{aggGain}</div>
-            </div>
-            {#if enemy?.template.damageReduction}
-                <div class="statLine">
-                    <img src={lightShield} alt="a heart" />
-                    <div>{enemy.template.damageReduction}</div>
-                </div>
-            {/if}
-            {#if enemy?.template.damageLimit}
-                <div class="statLine">
-                    <img src={heavyShield} alt="a heart" />
-                    <div>{enemy.template.damageLimit}</div>
-                </div>
-            {/if}
-        {/if}
-    </div>
+	{#if vu.actual.kind == 'enemy'}
+		{#each vu.actual.heroSpecificStates as hs}
+			<p>{hs.hName}</p>
+			<div class="statLine">
+				<img class="statusIm" src={teeth} alt="a status" />
+				<div>{hs.agg}</div>
+			</div>
+			{#each hs.sts as s}
+				<div>
+					{#if s.count > 0}
+						<div class="statLine">
+							<img class="statusIm" src={statusImages[s.sId]} alt="a status" />
+							<div>{s.count}</div>
+						</div>
+					{/if}
+				</div>
+			{/each}
+		{/each}
+	{/if}
+	{#if vu.actual.kind == 'player'}
+		<div class="itemStats">
+			{#each vu.actual.info.inventory as itemState}
+				{#if itemState.stats && !itemState.stats.excludeFromDetail}
+					<ItemStats {itemState} />
+				{/if}
+			{/each}
+		</div>
+	{/if}
 </div>
 
 <style>
 	.top {
 		display: inline-block;
 	}
-    .statuses{
-        margin-bottom: 10px;
-    }
+	.itemStats {
+		/* margin-top: 10px; */
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	/* .statuses { */
+	/* margin-bottom: 10px; */
+	/* } */
 	.statusIm {
 		height: 18px;
 		width: 18px;
 	}
-	.statLine {
+	.stats {
 		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		margin-bottom: 10px;
+	}
+	.statLine {
+		display: inline-flex;
 		gap: 5px;
 		padding-right: 5px;
 		flex-direction: row;

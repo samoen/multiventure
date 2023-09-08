@@ -243,7 +243,7 @@ export function enterSceneOrWakeup(player: Player) {
 	// scene texts will be repopulated
 	player.sceneTexts = [];
 
-	const wasEnemiesPreEnter = enemiesInScene(player.currentScene).length
+	const wasEnemiesPreEnter = enemiesInScene(player.currentScene)
 
 	// Always call main enter scene hook
 	if (enteringScene.onEnterScene) {
@@ -252,9 +252,14 @@ export function enterSceneOrWakeup(player: Player) {
 
 	// If it's the player's first mid-battle join
 	if (enteringScene.onBattleJoin
-		&& wasEnemiesPreEnter
+		&& wasEnemiesPreEnter.length
 		&& !enteringScene.hasEntered.has(player.heroName)
 	) {
+		for (const e of wasEnemiesPreEnter){
+			if(!e.aggros.has(player.unitId)){
+				e.aggros.set(player.unitId,e.template.startAggro)
+			}
+		}
 		scaleEnemyHealthInScene(player.currentScene)
 		enteringScene.onBattleJoin(player)
 	}
@@ -333,6 +338,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				pushAnimation({
 					sceneId: actionStartedInSceneId,
 					battleAnimation: {
+						triggeredBy:player.unitId,
 						source: player.unitId,
 						target: actionFromId.target,
 						behavior: { kind: 'melee' },
@@ -358,6 +364,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				leavingScene: player,
 				sceneId: actionStartedInSceneId,
 				battleAnimation: {
+					triggeredBy:player.unitId,
 					source: player.unitId,
 					behavior: { kind: 'travel', goTo: actionFromId.unlockableActData.travelTo },
 					target: actionFromId.target
@@ -379,6 +386,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		pushAnimation({
 			sceneId: player.currentScene,
 			battleAnimation: {
+				triggeredBy:player.unitId,
 				source: player.unitId,
 				behavior: { kind: 'selfInflicted', extraSprite: 'smoke', },
 				putsStatuses: [{ statusId: 'hidden', target: player.unitId, remove: true }]
@@ -402,21 +410,36 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		handleRetaliations(player, true, actionFromId, itemUsed)
 	}
 	if (itemUsed.provoke != undefined) {
+		// const scenePlayers = activePlayersInScene(actionStartedInSceneId)
 		for (const enemy of enemiesInScene(actionStartedInSceneId)) {
-			let statusForPlayer = enemy.statuses.get(player.unitId)
-			if (!statusForPlayer) continue
-			if (statusForPlayer.poison > 0) {
-				takePoisonDamage(enemy)
-				statusForPlayer.poison--
+
+			for (const [hId, statusForPlayer] of enemy.statuses){
+				if(hId == player.unitId){
+					let pois = statusForPlayer.get('poison')
+					if (pois && pois > 0) {
+						takePoisonDamage(enemy,player)
+						statusForPlayer.set('poison',pois-1)
+					}
+					let rg = statusForPlayer.get('rage')
+					if (rg && rg > 0) {
+						enemy.damage += 10
+						pushHappening(`${enemy.name}'s rage grows!`)
+						statusForPlayer.set('rage', rg -1)
+					}
+					let hidn = statusForPlayer.get('hidden')
+					if (hidn && hidn > 0) {
+						statusForPlayer.set('hidden',hidn-1)
+					}
+
+				}
+				// else{
+				// 	if(!scenePlayers.some(p=>hId == p.unitId)){
+				// 		enemy.statuses.delete(hId)
+				// 	}
+				// }
 			}
-			if (statusForPlayer.rage > 0) {
-				enemy.damage += 10
-				pushHappening(`${enemy.name}'s rage grows!`)
-				statusForPlayer.rage--
-			}
-			if (statusForPlayer.hidden > 0) {
-				statusForPlayer.hidden--
-			}
+			// let statusForPlayer = enemy.statuses.get(player.unitId)
+			// if (!statusForPlayer) continue
 		}
 	}
 
@@ -429,6 +452,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				{
 					sceneId: player.currentScene,
 					battleAnimation: {
+						triggeredBy:player.unitId,
 						source: player.unitId,
 						damageToSource: dmg,
 						behavior: { kind: 'selfInflicted', extraSprite: 'poison', }
@@ -599,14 +623,12 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				if (put.targetEnemy) {
 					let found = put.targetEnemy.statuses.get(player.unitId)
 					if (!found) {
-						found = {
-							poison: 0,
-							rage: 0,
-							hidden: 0,
-						}
+						found = new Map()
 					}
-					if (found[put.statusId] < put.count) {
-						found.poison = put.count
+					let exist = found.get(put.statusId)
+
+					if (!exist || exist < put.count) {
+						found.set(put.statusId,put.count)
 					}
 					put.targetEnemy.statuses.set(player.unitId, found)
 				}
@@ -622,7 +644,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				}
 				if (put.targetEnemy) {
 					for (const [key, value] of put.targetEnemy.statuses) {
-						value[put.statusId] = 0
+						value.delete(put.statusId)
 					}
 				}
 			}
@@ -657,7 +679,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	if (battleEvent.alsoModifiesAggro) {
 		for (const modifyEvent of battleEvent.alsoModifiesAggro) {
 			for (const hero of modifyEvent.forHeros) {
-				let r = modifyAggroForPlayer(hero.heroName, modifyEvent.targetEnemy, modifyEvent.baseAmount)
+				let r = modifyAggroForPlayer(hero, modifyEvent.targetEnemy, modifyEvent.baseAmount)
 			}
 
 			aggroModifiedAnimations.push({
@@ -679,6 +701,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	}
 
 	let battleAnimation: BattleAnimation = {
+		triggeredBy:player.unitId,
 		source: battleEvent.source.entity.unitId,
 		target: battleEvent.target?.entity.unitId,
 		damageToSource: dmgToSource,
