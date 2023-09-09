@@ -1,4 +1,4 @@
-import type { LandscapeImage } from '$lib/utils';
+import type { HeroId, LandscapeImage } from '$lib/utils';
 import { enemiesInScene, enemyTemplates, spawnEnemy, type EnemyStatuses, type EnemyTemplateId } from './enemies';
 import { equipItem, items, type ItemId } from './items';
 import type { EnemyForSpawning, VisualActionSource } from './logic';
@@ -24,7 +24,11 @@ export type SceneId =
 	| 'armory'
 	| 'dead';
 
+
+export type SceneIdentify = `m${string}` | `solo${string}`
+
 export type Scene = {
+	identify:SceneIdentify,
 	displayName: string,
 	healsOnEnter?: boolean,
 	healsOnVictory?: boolean,
@@ -41,9 +45,35 @@ export type Scene = {
 	actions?: (player: Player) => void
 	vases?: VisualActionSource[]
 	solo?: boolean
-	hasEntered?: Set<HeroName>
 	landscape?: LandscapeImage
 };
+
+export const alreadySpawnedCurrentBattle : Map<SceneIdentify, Set<HeroId> > = new Map()
+export function hasPlayerAlreadySpawnedForBattle(player:Player):boolean{
+	let scene = scenes.get(player.currentScene)
+	if(!scene)return false
+	let forScene = alreadySpawnedCurrentBattle.get(scene.identify)
+	if(!forScene)return false
+	if(forScene.has(player.unitId))return true
+	return false
+}
+export function spawnedOngoing(player:Player){
+	let scene = scenes.get(player.currentScene)
+	if(!scene)return
+	let forScene = alreadySpawnedCurrentBattle.get(scene.identify)
+	if(!forScene){
+		spawnedNewBattle(player)
+		return
+	}
+	forScene.add(player.unitId)
+}
+export function spawnedNewBattle(player:Player){
+	let scene = scenes.get(player.currentScene)
+	if(!scene)return
+	let set : Set<HeroId> = new Set()
+	set.add(player.unitId)
+	alreadySpawnedCurrentBattle.set(scene.identify,set)
+}
 
 export type SceneTexts = {
 	[k in SceneId]?: string
@@ -52,6 +82,7 @@ export type SceneTexts = {
 }
 
 const dead: Scene = {
+	identify:'mDead',
 	displayName: 'The Halls Of the Dead',
 	healsOnEnter: true,
 	sceneTexts: {
@@ -87,6 +118,7 @@ const dead: Scene = {
 
 
 const tutorial: Scene = {
+	identify:`soloTutorial`,
 	displayName: 'Tutorial',
 	setCheckpointOnEnter: true,
 	sceneTexts: {
@@ -170,6 +202,7 @@ const tutorial: Scene = {
 }
 
 const trainingRoom0: Scene = {
+	identify:`soloTrain0`,
 	displayName: 'Training Room',
 	landscape: 'bridge',
 	solo: true,
@@ -245,6 +278,7 @@ const trainingRoom0: Scene = {
 	],
 }
 const trainingRoom1: Scene = {
+	identify:`soloTrain1`,
 	displayName: 'Training Room',
 	landscape: 'bridge',
 	solo: true,
@@ -333,6 +367,7 @@ const trainingRoom1: Scene = {
 }
 
 const trainingRoom2: Scene = {
+	identify:`soloTrain2`,
 	displayName: 'Training Room',
 	solo: true,
 	setCheckpointOnEnter: true,
@@ -415,6 +450,7 @@ const trainingRoom2: Scene = {
 }
 
 const trainingRoom3: Scene = {
+	identify:`soloTrain3`,
 	displayName: 'Training Room',
 	solo: true,
 	setCheckpointOnEnter: true,
@@ -490,6 +526,7 @@ const trainingRoom3: Scene = {
 }
 
 export const forest: Scene = {
+	identify:`mForest`,
 	displayName: 'Bramblefoot Woods',
 	landscape: 'grimForest',
 	setCheckpointOnEnter: true,
@@ -524,6 +561,7 @@ export const forest: Scene = {
 }
 
 const castle: Scene = {
+	identify:`mCastle`,
 	displayName: 'Castle Bramblemore',
 	landscape: 'castle',
 	sceneTexts: {
@@ -571,6 +609,7 @@ const castle: Scene = {
 };
 
 const house: Scene = {
+	identify:`mHouse`,
 	displayName: `House`,
 	landscape: 'bridge',
 	setsFlagOnEnter: 'heardAboutHiddenPassage',
@@ -649,6 +688,7 @@ const house: Scene = {
 
 
 const throne: Scene = {
+	identify:`mThrone`,
 	displayName: 'Bramblemore Throne Room',
 	sceneTexts: {
 		fallback: `Before you is a great throne. Sitting aside it are two giant sculptures carved from marble. The one of the left depicts an angel, its wings spread to a might span. It wields a sword from which a great fire burns. To the left of the throne is a garoyle, its lips pulled back in a monstrous snarl revealing rows of serrated teeth. One of its arms are raised and it appears to hold a ball of pure electricity which crackles in the dim light. Atop the throne sits an emaciated figure.`,
@@ -777,6 +817,7 @@ const throne: Scene = {
 }
 
 const realmOfMadness: Scene = {
+	identify:`mRealm`,
 	displayName: 'The Realm of Madness',
 	sceneTexts: {
 		fallback: `So stuck, so madness`
@@ -785,6 +826,7 @@ const realmOfMadness: Scene = {
 
 
 const forestPassage: Scene = {
+	identify:`mForestPassage`,
 	landscape: 'grimForest',
 	displayName: 'Hidden Passage',
 	sceneTexts: {
@@ -865,6 +907,7 @@ const forestPassage: Scene = {
 }
 
 const goblinCamp: Scene = {
+	identify:`mGoblinCamp`,
 	displayName: 'Goblin Campsite',
 	setsFlagOnVictory: 'killedGoblins',
 	spawnsEnemiesOnEnter: [
@@ -901,6 +944,7 @@ const goblinCamp: Scene = {
 }
 
 const tunnelChamber: Scene = {
+	identify:`mChamber`,
 	displayName: 'Bramblemore Dungeon',
 	sceneTexts: {
 		fallback: `You wend your way down a neverending series of corridors and pathways that seem to go on for an enternity. It becomes narrower and narrower, and the heat becomes almost unbearable. The path suddenly opens into a great chamber.`
@@ -969,6 +1013,7 @@ const tunnelChamber: Scene = {
 }
 
 const armory: Scene = {
+	identify:`mDevRoom`,
 	displayName: 'Dev Room',
 	sceneTexts: {
 		fallback: `Grab some gear!`

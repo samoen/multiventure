@@ -1,9 +1,9 @@
 import { goto } from "$app/navigation"
 import type { AggroModifier, AggroModifierEvent, AnySprite, BattleAnimation, BattleEvent, BattleEventEntity, GameActionSentToClient, HealthModifier, HealthModifierEvent, StatusEffect, StatusId, StatusModifier, StatusModifierEvent, UnitId, VisualActionSourceId } from "$lib/utils"
-import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, modifyAggroForPlayer, modifiedEnemyHealth, type EnemyTemplateId, spawnEnemy, type EnemyStatuses } from "./enemies"
+import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, modifyAggroForPlayer, modifiedEnemyHealth, type EnemyTemplateId, spawnEnemy, type EnemyStatuses, type ActiveEnemy } from "./enemies"
 import { items, type Item, equipItem, checkHasItem, type ItemId } from "./items"
 import { pushHappening } from "./messaging"
-import { scenes, type SceneId } from "./scenes"
+import { scenes, type SceneId, alreadySpawnedCurrentBattle, spawnedNewBattle, hasPlayerAlreadySpawnedForBattle, spawnedOngoing } from "./scenes"
 import { users, type Player, activePlayersInScene, type GameAction, healPlayer, type Flag } from "./users"
 
 export function updateAllPlayerActions() {
@@ -232,27 +232,54 @@ export function enterSceneOrWakeup(player: Player) {
 	}
 	const scenePlayers = activePlayersInScene(player.currentScene)
 
-	// If no players except me in there, remove all enemies
-	if (!scenePlayers.filter(p => p.heroName != player.heroName).length) {
+	const onlyMeInScene = !scenePlayers.filter(p => p.heroName != player.heroName).length
+
+	if (onlyMeInScene) {
+		// No players except me in here remove enemies
 		for (const e of enemiesInScene(player.currentScene)) {
 			let index = activeEnemies.indexOf(e)
 			if (index != -1) {
 				activeEnemies.splice(index, 1)
 			}
 		}
-		scenes.get(player.currentScene)?.hasEntered?.clear()
+	}
+	
+	const sceneEnemies = enemiesInScene(player.currentScene)
+	
+	if (!sceneEnemies.length) {
+		if(enteringScene.spawnsEnemiesOnEnter){
+			// start new battle
+			spawnedNewBattle(player)
+			
+			for (const es of enteringScene.spawnsEnemiesOnEnter) {
+				spawnEnemy(es.eName, es.eTemp, player.currentScene, player.unitId, es.statuses)
+			}
+		}
+	}else{
+		// we are joining a battle
+
+		for (const e of sceneEnemies) {
+			// init enemy aggro towards me
+			if (!e.aggros.has(player.unitId)) {
+				e.aggros.set(player.unitId, e.template.startAggro)
+			}
+			// scale health to player count
+			if(!enteringScene.solo){
+				scaleEnemyHealth(e, scenePlayers.length)
+			}
+		}
+		
+		if (enteringScene.spawnsEnemiesOnBattleJoin && !hasPlayerAlreadySpawnedForBattle(player)) {
+			// spawn extra enemies
+			spawnedOngoing(player)
+			let extraEnemyName = player.heroName.split('').reverse().join('')
+			for (const es of enteringScene.spawnsEnemiesOnBattleJoin) {
+				spawnEnemy(extraEnemyName, es.eTemp, player.currentScene, player.unitId, es.statuses)
+			}
+		}
 	}
 
-	if (!enteringScene.hasEntered) {
-		enteringScene.hasEntered = new Set()
-	}
-
-
-	// scene texts will be repopulated
-	player.sceneTexts = [];
-
-	const wasEnemiesPreEnter = enemiesInScene(player.currentScene)
-
+	// Always perform these
 	if (enteringScene.healsOnEnter) {
 		player.health = player.maxHealth
 	}
@@ -262,15 +289,10 @@ export function enterSceneOrWakeup(player: Player) {
 	if (enteringScene.setsFlagOnEnter) {
 		player.flags.add(enteringScene.setsFlagOnEnter)
 	}
-	if (enteringScene.spawnsEnemiesOnEnter) {
-		for (const es of enteringScene.spawnsEnemiesOnEnter) {
-			spawnEnemy(es.eName, es.eTemp, player.currentScene, player.unitId, es.statuses)
-		}
-	}
-	// Always call main enter scene hook
-	if (enteringScene.onEnterScene) {
-		enteringScene.onEnterScene(player);
-	}
+
+
+	// scene texts will be repopulated
+	player.sceneTexts = [];
 	if(enteringScene.sceneTexts){
 		let {fallback, ...froms} = enteringScene.sceneTexts
 		let useDefault = true
@@ -282,49 +304,15 @@ export function enterSceneOrWakeup(player: Player) {
 			}
 		}
 		if(useDefault){
-			
 			player.sceneTexts.push(fallback)
 		}
 	}
-
-	// If it's the player's first mid-battle join
-	if (enteringScene.onBattleJoin
-		&& wasEnemiesPreEnter.length
-		&& !enteringScene.hasEntered.has(player.heroName)
-	) {
-		for (const e of wasEnemiesPreEnter) {
-			if (!e.aggros.has(player.unitId)) {
-				e.aggros.set(player.unitId, e.template.startAggro)
-			}
-		}
-		scaleEnemyHealthInScene(player.currentScene)
-		enteringScene.onBattleJoin(player)
-		if (enteringScene.spawnsEnemiesOnBattleJoin) {
-			let extraGoblinName = player.heroName.split('').reverse().join('')
-			for (const es of enteringScene.spawnsEnemiesOnBattleJoin) {
-				spawnEnemy(extraGoblinName, es.eTemp, player.currentScene, player.unitId, es.statuses)
-			}
-			for (const playerInScene of scenePlayers) {
-				playerInScene.sceneTexts.push(`${player.heroName} joins the battle, attracting the attention of more enemies.`)
-			}
-
-		}
-	}
-
-
-	// Remember this player has entered
-	enteringScene.hasEntered.add(player.heroName)
 }
 
-export function scaleEnemyHealthInScene(sceneId: SceneId) {
-	let eScene = scenes.get(sceneId)
-	if (eScene && eScene.solo) return
-
-	for (const enemy of enemiesInScene(sceneId)) {
+export function scaleEnemyHealth(enemy:ActiveEnemy, playerCount:number) {
 		let percentHealthBefore = enemy.currentHealth / enemy.maxHealth
-		enemy.maxHealth = Math.floor(modifiedEnemyHealth(enemy.template.baseHealth, activePlayersInScene(sceneId).length))
+		enemy.maxHealth = Math.floor(modifiedEnemyHealth(enemy.template.baseHealth, playerCount))
 		enemy.currentHealth = Math.floor(percentHealthBefore * enemy.maxHealth)
-	}
 }
 
 export function changeScene(player: Player, goTo: SceneId) {
@@ -524,7 +512,6 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		addAggro(player, itemUsed.provoke)
 	}
 
-
 	const playerScene = scenes.get(actionStartedInSceneId);
 	if(!playerScene)return
 	const postReactionEnemies = enemiesInScene(actionStartedInSceneId)
@@ -536,9 +523,6 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 			if(playerScene.setsFlagOnVictory){
 				playerInScene.flags.add(playerScene.setsFlagOnVictory)
 			}
-		}
-		if (playerScene.hasEntered) {
-			playerScene.hasEntered.clear()
 		}
 	}
 }

@@ -46,10 +46,7 @@
 	import UnitStats from '$lib/Components/UnitStats.svelte';
 	import VisualActionSource from '$lib/Components/VisualActionSource.svelte';
 	import { anySprites, getLandscape, getPortrait } from '$lib/client/assets';
-	import {
-		isSignupResponse,
-		type DataFirstLoad
-	} from '$lib/utils';
+	import { isSignupResponse, type DataFirstLoad } from '$lib/utils';
 	import { writable, type Writable } from 'svelte/store';
 	import { fade } from 'svelte/transition';
 	import ItemStats from '$lib/Components/ItemStats.svelte';
@@ -71,12 +68,12 @@
 
 	onMount(async () => {
 		console.log('mounted with ssr data ' + JSON.stringify(data));
-		
+
 		// In dev sometimes the page mounts but the page data is old and innaccurate
-		await invalidateAll()
+		await invalidateAll();
 		console.log('invalidated, now have ssr data ' + JSON.stringify(data));
 		// In dev sometimes we mount with existing state and messes up our flow
-		if ($successcreds || $lastMsgFromServer) {	
+		if ($successcreds || $lastMsgFromServer) {
 			console.log(' mounted with existing state. clearing state');
 			leaveGame();
 			// invalidateAll()
@@ -127,29 +124,30 @@
 		if (sceneTexts) sceneTexts.scroll({ top: sceneTexts.scrollHeight, behavior: 'smooth' });
 	}
 
-	function onSourceError(this : EventSource, ev : Event){
+	function onSourceError(this: EventSource, ev: Event) {
 		if ($source == undefined) {
-				console.log(' got error from undefined source, weird..');
-			}
-			if ($source !== this) {
-				console.log('got error from a different source ');
-			}
-			$source = this;
-			console.log(`event source error ${JSON.stringify(ev)}`, ev);
-			$clientState.status = 'Event source errored';
-			$sourceErrored = true;
-			$clientState.loading = false;
-			leaveGame()
+			console.log(' got error from undefined source, weird..');
+		}
+		if ($source !== this) {
+			console.log('got error from a different source ');
+		}
+		$source = this;
+		console.log(`event source error ${JSON.stringify(ev)}`, ev);
+		$clientState.status = 'Event source errored';
+		$sourceErrored = true;
+		$clientState.loading = false;
+		leaveGame();
 	}
 
 	function subscribeEventsIfNotAlready() {
-		if ($source != undefined 
-		// && $source.readyState != EventSource.CLOSED
+		if (
+			$source != undefined
+			// && $source.readyState != EventSource.CLOSED
 		) {
 			console.log('no need to subscribe');
-				$clientState.status = 'no need to subscribe';
-				$clientState.loading = false;
-				return;
+			$clientState.status = 'no need to subscribe';
+			$clientState.loading = false;
+			return;
 		}
 		$clientState.loading = true;
 		$clientState.status = 'subscribing to events';
@@ -163,7 +161,7 @@
 			console.log(e);
 			return;
 		}
-		$source.addEventListener('error',onSourceError)
+		$source.addEventListener('error', onSourceError);
 
 		$source.addEventListener('firstack', function (e) {
 			if ($source == undefined) {
@@ -269,7 +267,7 @@
 			return;
 		}
 		console.log(`guest sign up response ${res}`);
-		
+
 		$successcreds = res;
 
 		$clientState.status = 'we signed up as guest, subscribing';
@@ -594,15 +592,10 @@
 					<div
 						class="portrait"
 						on:click={() => {
-							if (
-								!(
-									$selectedDetail &&
-									$selectedDetail.kind == 'vas'
-								)
-							){
+							if (!($selectedDetail && $selectedDetail.kind == 'vas')) {
 								return;
 							}
-							resetSceneConvos($selectedDetail.entity.scene)
+							resetSceneConvos($selectedDetail.entity.scene);
 						}}
 						role="button"
 						tabindex="0"
