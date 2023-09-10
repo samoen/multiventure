@@ -165,7 +165,7 @@ const tutorial: Scene = {
 				{
 					responseId: 'scared',
 					responseText: `Huh? Danger? I didn't sign up for this!`,
-					retort: `Oh, there must have been a mistake. I only train willing recruits in this tutorial. Here's a portal to the real world`,
+					retort: `Oh, I mistook you for our new recruit. Here's a portal to skip the tutorial.`,
 					unlock: ['saidWrong'],
 					lock: ['cheeky', 'brave', 'open'],
 					lockVas: ['vasGoTrainTutorial'],
@@ -173,34 +173,42 @@ const tutorial: Scene = {
 				},
 				{
 					responseId: 'open',
-					responseText: `Reporting for duty sir.`,
-					retort: `Welcome aboard. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.`,
-					unlock: ['brave', 'cheeky'],
-					lock: ['scared'],
+					responseText: `Aye sir, Reporting for duty!`,
+					retort: `Welcome to basic training. Many great heroes started their journey on the very ground you stand. Follow orders and you might just join their ranks.`,
+					unlock: ['brave','cautious', 'saidWrong'],
+					lock: ['scared', 'cheeky'],
 					lockVas: ['vasSkipTutorial'],
 				},
 				{
 					responseId: 'cheeky',
-					responseText: `Don't break the fourth wall, I'm into serious RPGs.`,
-					startsLocked: true,
-					retort: `Things will get plenty dark and gritty soon enough. If it makes you feel better I'll tell all the NPCs we've got a serious roleplayer coming through.`,
-					unlock: ['saidWrong', 'brave'],
-					lock: ['scared']
+					responseText: `Yeah yeah, get on with it.`,
+					retort: `Watch your tone, recruit. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.`,
+					unlock: ['saidWrong', 'brave','cautious'],
+					lock: ['scared','open']
 				},
 				{
 					startsLocked: true,
-					responseId: 'saidWrong',
-					responseText: `I said the wrong thing! Can I reset our conversation?`,
-					retort: `Yep, just click my portrait to reset - NPC conversations are just for fun! However, actions that reach the server are serious business.`
+					responseId: 'cautious',
+					responseText: `I'll do my best sir!`,
+					retort: `Great to hear. You can select a unit by tapping or clicking it. When a unit is selected you will see available actions. Select the training room and enter.`,
+					unlockVas: ['vasGoTrainTutorial'],
+					lockVas: ['vasSkipTutorial'],
+					lock: ['wantsToSkip', 'scared', 'cheeky', 'saidWrong','brave'],
 				},
 				{
 					startsLocked: true,
 					responseId: 'brave',
-					responseText: `I tend to breeze through tutorials pretty easily so get on with it.`,
-					retort: `Great to hear! You can select a unit by tapping or clicking it. When a unit is selected you will see available actions. Select the training room and enter.`,
+					responseText: `I'm a hero already, this will be easy.`,
+					retort: `We will see. You can select a unit by tapping or clicking it. When a unit is selected you will see available actions. Select the training room and enter.`,
 					unlockVas: ['vasGoTrainTutorial'],
 					lockVas: ['vasSkipTutorial'],
-					lock: ['wantsToSkip', 'scared', 'cheeky', 'saidWrong'],
+					lock: ['wantsToSkip', 'scared', 'cheeky', 'saidWrong','cautious'],
+				},
+				{
+					startsLocked: true,
+					responseId: 'saidWrong',
+					responseText: `Oops, can I reset our conversation?`,
+					retort: `Yep, click my portrait to the left of this text to reset the conversation.`
 				},
 			],
 			sprite: 'general',
@@ -236,8 +244,6 @@ const trainingRoom0: Scene = {
 	sceneTexts: {
 		fallback: "You enter the training room. It is well worn by many training sessions. The walls are covered in blast marks, dents and splinters."
 	},
-	onEnterScene(player) {
-	},
 	vases: [
 		{
 			unitId: 'vasEquipClub',
@@ -251,7 +257,7 @@ const trainingRoom0: Scene = {
 			unitId: 'vasEquipBomb',
 			displayName: 'Bomb',
 			sprite: 'bombPadded',
-			startText: 'A powderbomb deals splash damage and reduces aggro of all nearby enemies. It should clear out the rats nicely.',
+			startText: 'A powderbomb deals splash damage and reduces aggression of all nearby enemies.',
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'bomb' }],
 		},
@@ -271,7 +277,7 @@ const trainingRoom0: Scene = {
 					responseId: 'gimmie',
 					responseText: `Can I get some equipment?`,
 					retort: `Sure, here's some gear. Select the items and and equip them.`,
-					unlockVas: ['vasEquipClub', `vasEquipBomb`]
+					unlockVas: ['vasEquipClub', `vasEquipBomb`],
 				},
 				{
 					responseId: 'explainNext',
@@ -343,7 +349,7 @@ const trainingRoom1: Scene = {
 				{
 					responseId: 'whyslow',
 					responseText: `I attacked the goblin but he hit me first, what's that about?`,
-					retort: `An enemy with a higher agility than you will strike first. Some weapons give bonus agility, like this dagger`,
+					retort: `An enemy with a higher agility than you will strike first. Some weapons give bonus agility, take this dagger.`,
 					unlockVas: ['vasEquipDagger']
 				},
 				{
@@ -358,7 +364,7 @@ const trainingRoom1: Scene = {
 			unitId: 'vasEquipDagger',
 			displayName: 'Dagger',
 			sprite: 'dagger',
-			startText: 'A dagger strikes multiple times per attack. That makes it effective against heavy armor',
+			startText: 'A dagger is fast and strikes multiple times per attack. It is effective against heavy armor.',
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'dagger' },]
 		},
@@ -415,7 +421,7 @@ const trainingRoom2: Scene = {
 			displayName: 'Arthur',
 			sprite: 'general',
 			portrait: 'general',
-			startText: `Brilliant work recruit! Alright, last one. We don't normally do this but I see something great in you. You are going to fight a cave troll.. if you need to heal do it now.`,
+			startText: `Brilliant work recruit! Alright, last one. We don't normally do this but I see something great in you. You are going to fight a troll.`,
 			responses: [
 				{
 					responseId: 'ok',
@@ -426,15 +432,15 @@ const trainingRoom2: Scene = {
 				{
 					responseId: 'whatifdie',
 					responseText: `What if the troll wins the battle?`,
-					retort: `It's not a problem, you have a checkpoint right here. If you run out of health, just succumb to your wounds, respawn and try again.`,
+					retort: `It's not a problem. Just succumb to your wounds, respawn at your checkpoint and try again.`,
 				},
 			]
 		},
 		{
 			unitId: 'vasEquipStaff',
-			displayName: 'Fire Staff',
+			displayName: 'Staff',
 			sprite: 'staff',
-			startText: `A fire staff will need a while to warmup before using it. Take other actions first.`,
+			startText: `A magic staff will take a while to warmup before use. You must take other actions first.`,
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'fireStaff' },]
 		},
@@ -442,7 +448,7 @@ const trainingRoom2: Scene = {
 			unitId: 'vasEquipDart',
 			displayName: 'Poison Dart',
 			sprite: 'arrow',
-			startText: `Poison deals more damage the bigger the enemy. It deals it's damage over 3 turns, so you need to be able to survive that long.`,
+			startText: `Poison deals more damage the bigger the enemy. It deals it's damage over 3 turns, so you need to be able to survive in the meantime.`,
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'poisonDart' }]
 		},
@@ -450,7 +456,7 @@ const trainingRoom2: Scene = {
 			unitId: 'vasEquipCloak',
 			displayName: 'Thief Cloak',
 			sprite: 'armorStand',
-			startText: `A thief's cloak lets you become hidden, preventing retaliation from enemies. It's a good way to wait for your magic to warm up. Poison your enemy first to get extra value!`,
+			startText: `A thief's cloak lets you become hidden, preventing retaliation from enemies. Hiding is a good way to wait for your magic to warm up. Poison your enemy first for extra value!`,
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'thiefCloak' }]
 		},

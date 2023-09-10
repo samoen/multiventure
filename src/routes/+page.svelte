@@ -73,9 +73,11 @@
 		await invalidateAll();
 		console.log('invalidated, now have ssr data ' + JSON.stringify(data));
 		// In dev sometimes we mount with existing state and messes up our flow
-		if ($successcreds || $lastMsgFromServer) {
+		if ($successcreds || $lastMsgFromServer || $source) {
 			console.log(' mounted with existing state. clearing state');
 			leaveGame();
+			// wait for old source to close
+			await new Promise(r=>setTimeout(r,300))
 			// invalidateAll()
 			// location.reload()
 			// return
@@ -124,7 +126,7 @@
 		if (sceneTexts) sceneTexts.scroll({ top: sceneTexts.scrollHeight, behavior: 'smooth' });
 	}
 
-	function onSourceError(this: EventSource, ev: Event) {
+	function onSourceError(this: EventSource, ev: MessageEvent<any>) {
 		if ($source == undefined) {
 			console.log(' got error from undefined source, weird..');
 		}
@@ -137,6 +139,38 @@
 		$sourceErrored = true;
 		$clientState.loading = false;
 		leaveGame();
+	}
+
+	function onSourceAck(this: EventSource, ev: MessageEvent<any>) {
+		if ($source == undefined) {
+				console.log('got ack from undefined source, weird..');
+			}
+			if ($source !== this) {
+				console.log('got ack from a different source');
+			}
+			$source = this;
+			$sourceErrored = false;
+			getWorld();
+			$clientState.loading = false;
+	}
+
+	function onSourceMsg(this: EventSource, ev: MessageEvent<any>) {
+	// console.log('got msg from source and source is ' + $source);
+	if ($source == undefined) {
+				console.log(' got msg from undefined source, weird..');
+			}
+			if ($source !== this) {
+				console.log('got msg from a different source');
+			}
+			$source = this;
+			$sourceErrored = false;
+			let sMsg = JSON.parse(ev.data);
+			if (!isMsgFromServer(sMsg)) {
+				console.log('malformed event from server');
+				return;
+			}
+			worldReceived(sMsg);
+			$clientState.loading = false;
 	}
 
 	function subscribeEventsIfNotAlready() {
@@ -163,43 +197,17 @@
 		}
 		$source.addEventListener('error', onSourceError);
 
-		$source.addEventListener('firstack', function (e) {
-			if ($source == undefined) {
-				console.log('got ack from undefined source, weird..');
-			}
-			if ($source !== this) {
-				console.log('got ack from a different source');
-			}
-			$source = this;
-			$sourceErrored = false;
-			getWorld();
-			$clientState.loading = false;
-		});
 
-		$source.addEventListener('world', function (e) {
-			// console.log('got msg from source and source is ' + $source);
-			if ($source == undefined) {
-				console.log(' got msg from undefined source, weird..');
-			}
-			if ($source !== this) {
-				console.log('got msg from a different source');
-			}
-			$source = this;
-			$sourceErrored = false;
-			let sMsg = JSON.parse(e.data);
-			if (!isMsgFromServer(sMsg)) {
-				console.log('malformed event from server');
-				return;
-			}
-			worldReceived(sMsg);
-			$clientState.loading = false;
-		});
+		$source.addEventListener('firstack', onSourceAck);
 
-		$source.addEventListener('closing', (e) => {
-			console.log('server requested close source');
-			$clientState.status = 'server asked to close source';
-			leaveGame();
-		});
+		$source.addEventListener('world', onSourceMsg);
+
+		// $source.addEventListener('closing', (e) => {
+		// 	console.log('server requested close source');
+		// 	$clientState.status = 'server asked to close source';
+		// 	leaveGame();
+		// });
+
 		console.log('subscribed');
 		$clientState.status = 'done subscribing';
 	}
@@ -248,13 +256,22 @@
 	}
 
 	async function guestSignUp() {
-		let joincall = await fetch('/api/guestsignup', {
-			method: 'POST',
-			body: JSON.stringify({ hi: 'yes' }),
-			headers: {
-				'Content-Type': 'application/json'
-			}
-		});
+		let joincall : Response | undefined = undefined
+		try{
+			joincall = await fetch('/api/guestsignup', {
+				method: 'POST',
+				body: JSON.stringify({ hi: 'yes' }),
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+		}catch(e){
+			console.log('failed to fetch guestsignup')
+			console.log(e)
+			$clientState.status = 'signup failed, need manual';
+			$clientState.loading = false;
+			return
+		}
 		let res = await joincall.json();
 		if (!joincall.ok) {
 			$clientState.status = 'signup failed, need manual';
@@ -278,14 +295,21 @@
 		$clientState.loading = true;
 		$clientState.status = 'signing up';
 		console.log('signing up');
-
-		let joincall = await fetch('/api/signup', {
-			method: 'POST',
-			body: JSON.stringify({ join: usrName }),
-			headers: {
-				'Content-Type': 'application/json'
-			}
-		});
+		let joincall : Response | undefined = undefined
+		try{
+			joincall = await fetch('/api/signup', {
+				method: 'POST',
+				body: JSON.stringify({ join: usrName }),
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+		}catch(e){
+			console.log('failed to fetch signup')
+			$clientState.status = 'signup failed, need manual';
+			$clientState.loading = false;
+			return
+		}
 		if (!joincall.ok) {
 			console.log('signup fail response');
 			$clientState.status = 'signup failed, need manual';
@@ -300,7 +324,7 @@
 			$clientState.loading = false;
 			return;
 		}
-		console.log(`named sign up response ${res}`);
+		console.log(`named sign up response ${JSON.stringify(res)}`);
 
 		if (res.needsAuth.length) {
 			signInNameInput = res.needsAuth;
