@@ -1,5 +1,6 @@
 import type { AnimationBehavior, UnitId, BattleAnimation, EnemyName, StatusEffect, StatusId, EnemyId, BattleEvent, StatusModifierEvent, HeroId, HealthModifierEvent, StatusMod } from "$lib/utils";
-import { deepEqual, type EnemyStatusesObject } from "./logic";
+import { v4 } from "uuid";
+import { deepEqual, type EnemyForSpawning, type EnemyStatusesObject } from "./logic";
 import { pushHappening } from "./messaging";
 import {type UniqueSceneIdenfitier, scenesData, type SceneDataId } from "./scenes";
 import { playerEquipped, type HeroName, type Player, activePlayers, activePlayersInScene } from "./users";
@@ -113,12 +114,12 @@ export function modifiedEnemyHealth(baseHealth: number, numPlayers:number): numb
 }
 
 export function spawnEnemy(
-	name: string, 
-	templateId: EnemyTemplateId, 
+	eFs : EnemyForSpawning,
 	where2:UniqueSceneIdenfitier,
-	triggeredBy:HeroId,
-	statuses: EnemyStatusesObject = {}) {
-	let template = enemyTemplates[templateId]
+	triggeredBy:HeroId
+	) {
+
+	let template = enemyTemplates[eFs.eTemp]
 
 	let modifiedBaseHealth = template.baseHealth
 	let scene = scenesData.find(s=>s.sceneDataId == where2.dataId)
@@ -137,24 +138,26 @@ export function spawnEnemy(
 
 	let mapStatuses : EnemyStatuses = new Map();
 
-	
-	let mapForHeroStatuses: Map<StatusId, number> = new Map();
-	for (let [k,v] of Object.entries(statuses)){
-		mapForHeroStatuses.set((k as StatusId),v)
+	if(eFs.statuses){
+		let mapForHeroStatuses: Map<StatusId, number> = new Map();
+		for (let [k,v] of Object.entries(eFs.statuses)){
+			mapForHeroStatuses.set((k as StatusId),v)
+		}
+		mapStatuses.set(triggeredBy,mapForHeroStatuses)
 	}
 
-	mapStatuses.set(triggeredBy,mapForHeroStatuses)
+	let uid = v4()
 
 	activeEnemies.push({
-		unitId: `enemy${name}`,
-		name: name,
-		templateId: templateId,
+		unitId: `enemy${uid}`,
+		name: eFs.eName ?? eFs.eTemp,
+		templateId: eFs.eTemp,
 		currentUniqueSceneId:where2,
 		currentHealth: modifiedBaseHealth,
 		maxHealth: modifiedBaseHealth,
-		damage: enemyTemplates[templateId].baseDamage,
+		damage: template.baseDamage,
 		aggros: aggros,
-		template: enemyTemplates[templateId],
+		template: template,
 		statuses: mapStatuses,
 	})
 }

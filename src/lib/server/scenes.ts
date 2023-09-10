@@ -928,7 +928,6 @@ const goblinCamp: Scene = {
 	],
 	spawnsEnemiesOnBattleJoin: [
 		{
-			eName: 'extraGoblin',
 			eTemp: 'goblin'
 		},
 	],
@@ -1034,7 +1033,8 @@ const armory: Scene = {
 			player.sceneActions.push({
 				buttonText: `Spawn ${id}`,
 				devAction() {
-					spawnEnemy(`${id}${Math.round(Math.random() * 1000)}`, id as EnemyTemplateId, player.currentUniqueSceneId, player.unitId)
+					let e : EnemyForSpawning = {eTemp:id as EnemyTemplateId}
+					spawnEnemy(e, player.currentUniqueSceneId, player.unitId)
 				},
 			})
 		}

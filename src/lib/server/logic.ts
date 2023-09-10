@@ -248,7 +248,7 @@ export function enterSceneOrWakeup(player: Player) {
 			spawnedNewBattle(player)
 			
 			for (const es of enteringScene.spawnsEnemiesOnEnter) {
-				spawnEnemy(es.eName, es.eTemp, player.currentUniqueSceneId, player.unitId, es.statuses)
+				spawnEnemy(es, player.currentUniqueSceneId, player.unitId)
 			}
 		}
 	}else{
@@ -269,9 +269,9 @@ export function enterSceneOrWakeup(player: Player) {
 			console.log('spawning on join')
 			// spawn extra enemies
 			spawnedOngoing(player)
-			let extraEnemyName = player.heroName.split('').reverse().join('')
+			// let extraEnemyName = player.heroName.split('').reverse().join('')
 			for (const es of enteringScene.spawnsEnemiesOnBattleJoin) {
-				spawnEnemy(extraEnemyName, es.eTemp, player.currentUniqueSceneId, player.unitId, es.statuses)
+				spawnEnemy(es, player.currentUniqueSceneId, player.unitId)
 			}
 		}
 	}
@@ -383,7 +383,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 
 		if (actionFromId.unlockableActData.spawnsEnemies) {
 			for (const e of actionFromId.unlockableActData.spawnsEnemies) {
-				spawnEnemy(e.eName, e.eTemp, player.currentUniqueSceneId, player.unitId, e.statuses)
+				spawnEnemy(e, player.currentUniqueSceneId, player.unitId)
 			}
 		}
 
@@ -939,7 +939,7 @@ export type UnlockableActionData = {
 	spawnsEnemies?: EnemyForSpawning[]
 }
 
-export type EnemyForSpawning = { eName: string, eTemp: EnemyTemplateId, statuses?: EnemyStatusesObject }
+export type EnemyForSpawning = { eName?: string, eTemp: EnemyTemplateId, statuses?: EnemyStatusesObject }
 
 // export type EnemyStatusesObject = Record<StatusId,number>
 export type EnemyStatusesObject = {
