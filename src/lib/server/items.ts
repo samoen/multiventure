@@ -266,9 +266,12 @@ export const itemCombinations = [
 	{className:'thief',combos:['dagger']},
 	{className:'rogue',combos:['dagger','leatherArmor']},
 	{className:'rogue',combos:['dagger','thiefCloak']},
+	{className:'rogue',combos:['dagger','plateMail']},
 	{className:'ruffian',combos:['club']},
 	{className:'thug',combos:['club','leatherArmor']},
-	{className:'mage',combos:['fireStaff']}
+	{className:'heavy',combos:['club','plateMail']},
+	{className:'mage',combos:['fireStaff']},
+	{className:'cleric',combos:['fireStaff','potion']},
 ]
 
 export function comboFindClassFromInventory(inv:ItemState[]):string{
