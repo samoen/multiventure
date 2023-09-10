@@ -38,6 +38,7 @@ export function addNewUser(heroName: string): { id: string, player: Player } | u
 
 	let startSceneId: SceneDataId = startSceneDataId
 	// startSceneId = 'forestPassage'
+	// startSceneId = 'throne'
 	// startSceneId = 'armory'
 
 	let startUnique = uniqueFromSceneDataId(pId,startSceneId)
@@ -119,7 +120,6 @@ export type PlayerInClient = {
 	unitId: HeroId;
 	heroName: HeroName;
 	currentSceneDisplay: string;
-	// currentScene:SceneId;
 	health: number;
 	agility: number;
 	strength: number;
@@ -142,29 +142,13 @@ export type GameAction = {
 export function playerEquipped(player: Player): Item[] {
 	let equippedItems : Item[] = []
 	for(const iId of player.inventory){
-		// if(slot in ItemId){
-
-		// }
 		let found = items.find(i=>i.id == iId.itemId)
 		if(found){
 			equippedItems.push(found)
-
 		}
 	}
 	return equippedItems
-	// return [
-	// 	items[player.inventory.weapon.itemId],
-	// 	items[player.inventory.body.itemId],
-	// 	items[player.inventory.utility.itemId]]
 }
-
-// export function playerItemStates(player: Player): ItemState[] {
-// 	return [
-// 		player.inventory.weapon,
-// 		player.inventory.body,
-// 		player.inventory.utility
-// 	]
-// }
 
 export function healPlayer(player: Player, amount: number): { healed: number } {
 	let missing = player.maxHealth - player.health

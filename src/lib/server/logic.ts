@@ -211,10 +211,10 @@ export function updatePlayerActions(player: Player) {
 		}
 	}
 
-	if (!sceneEnemies.length || player.currentUniqueSceneId.dataId == 'armory') {
-		if(scene.actions){
-			scene.actions(player)
-		}
+	if(scene.actions){
+		scene.actions(player)
+	}
+	if (!sceneEnemies.length) {
 		if(scene.vases){
 			for ( const vas of scene.vases){
 				player.visualActionSources.push(vas)

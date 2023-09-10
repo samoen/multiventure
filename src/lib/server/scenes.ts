@@ -86,7 +86,7 @@ export const startSceneDataId = 'tutorial'
 
 export const dead: Scene = {
 	sceneDataId:'dead',
-	displayName: 'The Halls Of the Dead',
+	displayName: 'Halls Of the Dead',
 	healsOnEnter: true,
 	sceneTexts: {
 		fallback: "You see a bright light and follow it. After a short eternity you decide wandering the halls of the dead is not for you."
@@ -102,7 +102,13 @@ export const dead: Scene = {
 					responseId: 'howAreYou',
 					responseText: `Hows running the underworld treating you?`,
 					retort: `Oh you know, same old.`
-				}
+				},
+				{
+					responseId: 'dev',
+					responseText: `I'm testing the game.`,
+					retort: `Here's a special room for that.`,
+					unlockVas: [`vasDev`],
+				},
 			],
 			actionsWithRequirements: []
 		},
@@ -110,12 +116,21 @@ export const dead: Scene = {
 			unitId: 'vasCheckpoint',
 			displayName: 'Portal',
 			sprite: 'portal',
-			startText: `A portal`,
+			startText: `A portal that takes you to your last checkpoint`,
 			actionsWithRequirements: [
 				{ travelToCheckpoint: true },
+			]
+		},
+		{
+			unitId: 'vasDev',
+			startsLocked:true,
+			displayName: 'Dev Room',
+			sprite: 'portal',
+			startText: `A room for testing battles`,
+			actionsWithRequirements: [
 				{ travelTo: 'armory' },
 			]
-		}
+		},
 	],
 }
 
@@ -699,8 +714,6 @@ const throne: Scene = {
 		fallback: `Before you is a great throne. Sitting aside it are two giant sculptures carved from marble. The one of the left depicts an angel, its wings spread to a might span. It wields a sword from which a great fire burns. To the left of the throne is a garoyle, its lips pulled back in a monstrous snarl revealing rows of serrated teeth. One of its arms are raised and it appears to hold a ball of pure electricity which crackles in the dim light. Atop the throne sits an emaciated figure.`,
 		tunnelChamber: `The dishevelled king turns to you and opens his arms as if to welcome you back.`
 	},
-	onEnterScene(player) {
-	},
 	vases: [
 		{
 			unitId: 'vasThroneGuard',
@@ -714,17 +727,28 @@ const throne: Scene = {
 					retort: 'Go do a quest or something',
 				}
 			],
-			detect: [{
-				flag: 'killedGoblins',
-				startText: `Word of your deeds has reached the king and he has decided to give you and audience.`,
-				responses: [{
-					responseId: 'thanks',
-					responseText: `Great`,
-					retort: `You don't see this retort`,
-					unlockVas: ['vasKing'],
-					lockVas: ['vasThroneGuard']
-				}]
-			}],
+			detect: [
+				{
+					flag: 'killedGoblins',
+					startText: `Word of your deeds has reached the king and he has decided to give you and audience.`,
+					responses: [{
+						responseId: 'thanks',
+						responseText: `Great`,
+						retort: `You don't see this retort`,
+						unlockVas: ['vasKing'],
+						lockVas: ['vasThroneGuard']
+					}]
+				},
+				{
+					flag:'smashedMedallion',
+					locked:true,
+				},
+				{
+					flag:'placedMedallion',
+					locked:true,
+				}
+			
+			],
 		},
 		{
 			unitId: 'vasKing',
@@ -779,9 +803,11 @@ const throne: Scene = {
 			actionsWithRequirements: [{ travelTo: 'realmOfMadness' }],
 			detect: [
 				{
+					locked:false,
 					flag: 'smashedMedallion'
 				},
 				{
+					locked:false,
 					flag: 'placedMedallion'
 				},
 			],
@@ -797,7 +823,11 @@ const throne: Scene = {
 				{
 					flag: 'smashedMedallion',
 					locked: true
-				}
+				},
+				{
+					flag: 'placedMedallion',
+					locked: false
+				},
 			],
 		},
 		{
@@ -823,8 +853,27 @@ const realmOfMadness: Scene = {
 	sceneDataId:`realmOfMadness`,
 	displayName: 'The Realm of Madness',
 	sceneTexts: {
-		fallback: `So stuck, so madness`
+		fallback: `Such madness`
 	},
+	spawnsEnemiesOnEnter:[
+		{
+			eName:'Mad Troll',
+			eTemp:'troll',
+		}
+	],
+	vases:[
+		{
+			displayName:'Portal',
+			sprite:'portal',
+			startText:`A portal back to the throne room`,
+			unitId:'vasPortalMad',
+			actionsWithRequirements:[
+				{
+					travelTo:'throne',
+				},
+			],
+		},
+	],
 }
 
 
@@ -835,8 +884,6 @@ const forestPassage: Scene = {
 	sceneTexts: {
 		fallback: `After what feels like hours scrambling in the fetid soil and dodging the bites of the foul crawling creatures that call the forest home, you stumble upon an entrace.\n\nIt's so dark that you can hardly make out an exit. Feeling around, your hand brush against the walls. They feel warm. As if they were alive.`,
 		goblinCamp: `You leave the camp and squeeze back into the dank passage`,
-	},
-	onEnterScene(player) {
 	},
 	vases: [
 		{
@@ -980,7 +1027,7 @@ const tunnelChamber: Scene = {
 			detect: [
 				{
 					flag: 'smashedMedallion',
-					startText: `The altar's energies dissapated`
+					startText: `The altar's energies dissapated. A secret door opens, revealing an item`
 				},
 				{
 					flag: 'placedMedallion',
@@ -989,7 +1036,7 @@ const tunnelChamber: Scene = {
 			]
 		},
 		{
-			unitId: 'vasAltarReward',
+			unitId: 'vasAltarReward1',
 			displayName: 'Plate Mail',
 			sprite: 'armorStand',
 			startsLocked: true,
@@ -1000,6 +1047,25 @@ const tunnelChamber: Scene = {
 			detect: [
 				{
 					flag: 'placedMedallion',
+					locked: false,
+				},
+			],
+		},
+		{
+			unitId:'vasAltarReward2',
+			displayName:'Staff',
+			sprite:'staff',
+			startText:`An awesome staff`,
+			startsLocked:true,
+			actionsWithRequirements:[
+				{
+					requiresFlags:['smashedMedallion'],
+					pickupItem:'fireStaff',
+				},
+			],
+			detect: [
+				{
+					flag: 'smashedMedallion',
 					locked: false,
 				},
 			],
@@ -1039,32 +1105,19 @@ const armory: Scene = {
 			})
 		}
 	},
+	vases:[
+		{
+			unitId: 'vasLeaveDev',
+			displayName: 'Portal',
+			sprite: 'portal',
+			startText: `A portal that takes you to your last checkpoint`,
+			actionsWithRequirements: [
+				{ travelToCheckpoint: true },
+			]
+		},
+	]
 }
 
-
-// export function addSoloScenes(name: string) {
-// 	let t = Object.assign({}, tutorial)
-// 	scenes.set(`tutorial_${name}`, t)
-// 	scenes.set(`trainingRoom0_${name}`, trainingRoom0)
-// 	scenes.set(`trainingRoom1_${name}`, trainingRoom1)
-// 	scenes.set(`trainingRoom2_${name}`, trainingRoom2)
-// 	scenes.set(`trainingRoom3_${name}`, trainingRoom3)	
-// }
-
-
-// scenes.set('dead', dead)
-// scenes.set('forest', forest)
-// scenes.set('castle', castle)
-// scenes.set('throne', throne)
-// scenes.set('house', house)
-// scenes.set('forestPassage', forestPassage)
-// scenes.set('goblinCamp', goblinCamp)
-// scenes.set('tunnelChamber', tunnelChamber)
-// scenes.set('realmOfMadness', realmOfMadness)
-// scenes.set('armory', armory)
-
-
-// const soloScenes : Scene[] = []
 
 scenesData.push(dead)
 scenesData.push(forest)
