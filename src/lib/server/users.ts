@@ -1,8 +1,8 @@
 import { v4 } from 'uuid';
 import { items, type Item, type ItemState, type QuickbarSlot, type ItemId, equipItem, fireStaff, plateMail, leatherArmor, poisonDart, comboFindClassFromInventory } from './items';
 import { pushHappening } from './messaging';
-import type { UnlockableActionData, VisualActionSource } from './logic';
-import { type SceneId, scenes, addSoloScenes } from './scenes';
+import { deepEqual, type UnlockableActionData, type VisualActionSource } from './logic';
+import { type SceneDataId, scenesData, type UniqueSceneIdenfitier, startSceneDataId, dead, uniqueFromSceneDataId, getSceneDataSimple } from './scenes';
 import type { BattleAnimation, HeroId, StatusId, BattleEvent, UnitId } from '$lib/utils';
 
 export const users = new Map<UserId, Player>();
@@ -24,35 +24,36 @@ export function defaultInventory():ItemState[]{
 
 }
 
-export function addNewUser(heroName: string): { id: string, player: Player } {
+export function addNewUser(heroName: string): { id: string, player: Player } | undefined{
+
+	let pId : HeroId = `hero${heroName}`
+
 	const startflags: Set<Flag> = new Set()
 	// startflags.add('heardAboutHiddenPassage')
 	// startflags.add('gotFreeStarterWeapon')
 	// startflags.add('killedGoblins')
-
-	let startScene: SceneId = `tutorial_${heroName}`
-	// startScene = `trainingRoom3_${heroName}`
-	// startScene = `forest`
-	// startScene = 'forestPassage'
-	// startScene = 'goblinCamp'
-	// startScene = 'castle'
-	// startScene = 'throne'
-	// startScene = 'armory'
-
+	
 	let startInventory = defaultInventory()
 
 
+	let startSceneId: SceneDataId = startSceneDataId
+	// startSceneId = 'forestPassage'
+
+	let startUnique = uniqueFromSceneDataId(pId,startSceneId)
+	let startScene = getSceneDataSimple(startSceneId)
+
+
 	let player: Player = {
-		unitId: `hero${heroName}`,
+		unitId: pId,
 		connectionState: {
 			con:undefined,
 			stream:undefined,
 		},
 		heroName: heroName,
-		previousScene: 'dead',
-		lastCheckpoint: 'forest',
-		currentScene: startScene,
-		currentSceneDisplay: scenes.get(startScene)?.displayName ?? 'Somewhere',
+		previousScene: startUnique,
+		lastCheckpoint: startUnique,
+		currentUniqueSceneId:startUnique,
+		currentSceneDisplay: startScene.displayName,
 		inventory: startInventory,
 		health: 100,
 		maxHealth: 100,
@@ -76,7 +77,6 @@ export function addNewUser(heroName: string): { id: string, player: Player } {
 	// equipItem(player,leatherArmor)
 	// equipItem(player, poisonDart)
 
-	addSoloScenes(heroName)
 	let userId = v4()
 	users.set(userId, player);
 	return { id: userId, player: player }
@@ -102,15 +102,15 @@ export type Player = {
 		con: ReadableStreamController<unknown> | undefined;
 		stream: ReadableStream | undefined;
 	};
-	previousScene: SceneId;
-	lastCheckpoint: SceneId;
+	previousScene: UniqueSceneIdenfitier;
+	lastCheckpoint: UniqueSceneIdenfitier;
 	itemActions: GameAction[];
 	sceneActions: GameAction[];
 	sceneTexts: string[];
 	flags: Set<Flag>;
 	animations: BattleAnimation[];
 	visualActionSources: VisualActionSource[];
-	currentScene: SceneId;
+	currentUniqueSceneId:UniqueSceneIdenfitier;
 } & PlayerInClient;
 
 export type PlayerInClient = {
@@ -128,7 +128,7 @@ export type PlayerInClient = {
 };
 
 export type GameAction = {
-	goTo?: SceneId;
+	// goTo?: SceneId;
 	devAction?:()=>void;
 	performAction?: () => BattleEvent | void;
 	buttonText: string;
@@ -187,9 +187,10 @@ export function activePlayers(): Player[] {
 		)
 }
 
-export function activePlayersInScene(scene: SceneId): Player[] {
-	return activePlayers()
-		.filter((usr) => usr.currentScene == scene)
+export function activePlayersInScene(scene:UniqueSceneIdenfitier){
+	let ap = activePlayers()
+	let apIs = ap.filter((usr) => deepEqual(usr.currentUniqueSceneId,scene))
+	return apIs
 }
 
 export function cleanConnections() {

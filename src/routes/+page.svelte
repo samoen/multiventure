@@ -266,7 +266,7 @@
 			$clientState.loading = false;
 			return;
 		}
-		console.log(`guest sign up response ${res}`);
+		console.log(`guest sign up response ${JSON.stringify(res)}`);
 
 		$successcreds = res;
 
@@ -373,7 +373,7 @@
 {/if}
 
 {#if !$clientState.loading && !$lastMsgFromServer}
-	<div class="landing" style="background-image:url({getLandscape($visualLandscape)});">
+	<div class="landing" style="background-image:url({getLandscape('plains')});">
 		<div class="landingUnits">
 			<img class="landingHero" src={anySprites.general} alt="a bg" />
 			<img class="landingHero flipped" src={anySprites.lady} alt="a bg" />

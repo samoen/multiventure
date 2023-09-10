@@ -1,7 +1,7 @@
 import type { AnimationBehavior, UnitId, BattleAnimation, EnemyName, StatusEffect, StatusId, EnemyId, BattleEvent, StatusModifierEvent, HeroId, HealthModifierEvent, StatusMod } from "$lib/utils";
-import type { EnemyStatusesObject } from "./logic";
+import { deepEqual, type EnemyStatusesObject } from "./logic";
 import { pushHappening } from "./messaging";
-import { scenes, type SceneId } from "./scenes";
+import {type UniqueSceneIdenfitier, scenesData, type SceneDataId } from "./scenes";
 import { playerEquipped, type HeroName, type Player, activePlayers, activePlayersInScene } from "./users";
 
 
@@ -11,7 +11,7 @@ export type ActiveEnemy = {
 	unitId: EnemyId
 	name: EnemyName
 	templateId: EnemyTemplateId
-	currentScene: SceneId
+	currentUniqueSceneId:UniqueSceneIdenfitier
 	currentHealth: number
 	maxHealth: number
 	damage: number
@@ -115,15 +115,15 @@ export function modifiedEnemyHealth(baseHealth: number, numPlayers:number): numb
 export function spawnEnemy(
 	name: string, 
 	templateId: EnemyTemplateId, 
-	where: SceneId,
+	where2:UniqueSceneIdenfitier,
 	triggeredBy:HeroId,
 	statuses: EnemyStatusesObject = {}) {
 	let template = enemyTemplates[templateId]
 
 	let modifiedBaseHealth = template.baseHealth
-	let scene = scenes.get(where)
+	let scene = scenesData.find(s=>s.sceneDataId == where2.dataId)
 	if(!scene) return
-	let playersInScene = activePlayersInScene(where)
+	let playersInScene = activePlayersInScene(where2)
 	if(!scene.solo){
 		modifiedBaseHealth = modifiedEnemyHealth(modifiedBaseHealth,playersInScene.length)
 	}
@@ -149,7 +149,7 @@ export function spawnEnemy(
 		unitId: `enemy${name}`,
 		name: name,
 		templateId: templateId,
-		currentScene: where,
+		currentUniqueSceneId:where2,
 		currentHealth: modifiedBaseHealth,
 		maxHealth: modifiedBaseHealth,
 		damage: enemyTemplates[templateId].baseDamage,
@@ -161,7 +161,7 @@ export function spawnEnemy(
 export type EnemyStatuses = Map<HeroId, Map<StatusId, number>>
 
 export function addAggro(actor: Player, provoke: number) {
-	for (const respondingEnemy of enemiesInScene(actor.currentScene)) {
+	for (const respondingEnemy of enemiesInScene(actor.currentUniqueSceneId)) {
 		const aggroGain = provoke + respondingEnemy.template.aggroGain
 		let existingAggro = getAggroForPlayer(respondingEnemy, actor)
 		let newAggro = existingAggro + aggroGain
@@ -190,8 +190,8 @@ export function modifyAggroForPlayer(player:Player, enemy: ActiveEnemy, baseAmou
 	return { increasedBy: wantNext - existing }
 }
 
-export function enemiesInScene(sceneKey: SceneId): ActiveEnemy[] {
-	return activeEnemies.filter(e => e.currentScene == sceneKey)
+export function enemiesInScene(sceneKey: UniqueSceneIdenfitier): ActiveEnemy[] {
+	return activeEnemies.filter(e =>  deepEqual(e.currentUniqueSceneId, sceneKey))
 }
 
 export function damagePlayer(enemy: ActiveEnemy, player: Player, baseDmg:number): { dmgDone: number } {
@@ -250,7 +250,7 @@ export function damageEnemy(attackerName: string, enemy: ActiveEnemy, damage: nu
 }
 
 export function pushAnimation(
-	{ sceneId, battleAnimation, leavingScene }: { sceneId: SceneId, battleAnimation: BattleAnimation, leavingScene?:Player }
+	{ sceneId, battleAnimation, leavingScene }: { sceneId: UniqueSceneIdenfitier, battleAnimation: BattleAnimation, leavingScene?:Player }
 ) {
 	activePlayersInScene(sceneId).forEach(p => {
 		p.animations.push(battleAnimation)
@@ -271,7 +271,7 @@ export function takePoisonDamage(enemy: ActiveEnemy, player:Player): { dmgDone: 
 	}
 	pushAnimation(
 		{
-			sceneId: enemy.currentScene,
+			sceneId: enemy.currentUniqueSceneId,
 			battleAnimation: {
 				triggeredBy:player.unitId,
 				source: enemy.unitId,

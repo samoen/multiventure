@@ -5,11 +5,11 @@ import { users } from '$lib/server/users';
 
 // Get the world without performing an action. 
 export const POST: RequestHandler = async (r) => {
+	console.log('first world requested')
     await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));
 	let cookieHero = r.cookies.get('hero');
 	let uid = r.cookies.get('uid');
 	if (!uid) {
-		console.log(`rejected action no uid`);
 		return json('need uid cookie for action', { status: 401 });
 	}
 	let player = users.get(uid);
@@ -21,5 +21,6 @@ export const POST: RequestHandler = async (r) => {
 		return json(`cookie hero not matching hero from uid ${uid}`, { status: 401 });
 	}
     let msg = buildNextMessage(player,player.heroName)
+	console.log(`success first world for ${player.heroName}`);
     return json(msg);
 };

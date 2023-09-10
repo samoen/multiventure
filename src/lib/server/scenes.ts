@@ -5,30 +5,35 @@ import type { EnemyForSpawning, VisualActionSource } from './logic';
 import type { HeroName, Flag, Player } from './users';
 
 
-export const scenes: Map<SceneId, Scene> = new Map()
+export const scenesData: Scene[] = []
 
-export type SceneId =
-	| `tutorial_${HeroName}`
-	| `trainingRoom0_${HeroName}`
-	| `trainingRoom1_${HeroName}`
-	| `trainingRoom2_${HeroName}`
-	| `trainingRoom3_${HeroName}`
-	| 'forest'
-	| 'castle'
-	| 'house'
-	| 'throne'
-	| 'forestPassage'
-	| 'goblinCamp'
-	| 'tunnelChamber'
-	| 'realmOfMadness'
-	| 'armory'
-	| 'dead';
+export type SceneDataId = string
+export type UniqueSceneIdenfitier = {kind:'solo', dataId:SceneDataId, p:HeroId}  | {kind:'multi',dataId:string}
 
+export function getSceneData(player:Player):Scene{
+	let s = getSceneDataSimple(player.currentUniqueSceneId.dataId)
+	return s
+}
+export function getSceneDataSimple(id:SceneDataId):Scene{
+	let s = scenesData.find(sd => sd.sceneDataId == id)
+	if(!s)return dead
+	return s
+}
 
-export type SceneIdentify = `m${string}` | `solo${string}`
+export function uniqueFromSceneDataId(hId:HeroId, sId:SceneDataId):UniqueSceneIdenfitier{
+	let startSceneData = getSceneDataSimple(sId)
+	let startUnique :UniqueSceneIdenfitier | undefined = undefined
+	if(startSceneData.solo){
+		startUnique = {kind:'solo',dataId:startSceneData.sceneDataId,p:hId}
+	}else{
+		startUnique = {kind:'multi',dataId:startSceneData.sceneDataId}
+	}
+	return startUnique
+}
+		
 
 export type Scene = {
-	identify:SceneIdentify,
+	sceneDataId:SceneDataId,
 	displayName: string,
 	healsOnEnter?: boolean,
 	healsOnVictory?: boolean,
@@ -39,7 +44,6 @@ export type Scene = {
 	spawnsEnemiesOnBattleJoin?: EnemyForSpawning[],
 	sceneTexts?: SceneTexts,
 	onEnterScene?: (player: Player) => void
-	onLeaveScene?: (player: Player) => void
 	onBattleJoin?: (player: Player) => void
 	onVictory?: (player: Player) => void
 	actions?: (player: Player) => void
@@ -48,19 +52,17 @@ export type Scene = {
 	landscape?: LandscapeImage
 };
 
-export const alreadySpawnedCurrentBattle : Map<SceneIdentify, Set<HeroId> > = new Map()
+export const alreadySpawnedCurrentBattle : Map<SceneDataId, Set<HeroId> > = new Map()
 export function hasPlayerAlreadySpawnedForBattle(player:Player):boolean{
-	let scene = scenes.get(player.currentScene)
-	if(!scene)return false
-	let forScene = alreadySpawnedCurrentBattle.get(scene.identify)
+	let scene = getSceneData(player)
+	let forScene = alreadySpawnedCurrentBattle.get(scene.sceneDataId)
 	if(!forScene)return false
 	if(forScene.has(player.unitId))return true
 	return false
 }
 export function spawnedOngoing(player:Player){
-	let scene = scenes.get(player.currentScene)
-	if(!scene)return
-	let forScene = alreadySpawnedCurrentBattle.get(scene.identify)
+	let scene = getSceneData(player)
+	let forScene = alreadySpawnedCurrentBattle.get(scene.sceneDataId)
 	if(!forScene){
 		spawnedNewBattle(player)
 		return
@@ -68,21 +70,22 @@ export function spawnedOngoing(player:Player){
 	forScene.add(player.unitId)
 }
 export function spawnedNewBattle(player:Player){
-	let scene = scenes.get(player.currentScene)
-	if(!scene)return
+	let scene = getSceneData(player)
 	let set : Set<HeroId> = new Set()
 	set.add(player.unitId)
-	alreadySpawnedCurrentBattle.set(scene.identify,set)
+	alreadySpawnedCurrentBattle.set(scene.sceneDataId,set)
 }
 
 export type SceneTexts = {
-	[k in SceneId]?: string
+	[k :SceneDataId]: string
 } & {
 	fallback: string
 }
 
-const dead: Scene = {
-	identify:'mDead',
+export const startSceneDataId = 'tutorial'
+
+export const dead: Scene = {
+	sceneDataId:'dead',
 	displayName: 'The Halls Of the Dead',
 	healsOnEnter: true,
 	sceneTexts: {
@@ -117,10 +120,12 @@ const dead: Scene = {
 }
 
 
+
 const tutorial: Scene = {
-	identify:`soloTutorial`,
+	sceneDataId:`tutorial`,
 	displayName: 'Tutorial',
 	setCheckpointOnEnter: true,
+	solo:true,
 	sceneTexts: {
 		fallback: `You are standing at a castle barracks. Soliders mill around swinging swords and grunting in cool morning air. You see Arthur, the captain of the castle guard marching towards you.`
 	},
@@ -194,7 +199,7 @@ const tutorial: Scene = {
 			startText: `An entrance to a training room. You will fight one rat, just punch it!`,
 			actionsWithRequirements: [
 				{
-					travelToSolo: `trainingRoom0`
+					travelTo: `soloTrain0`
 				},
 			],
 		}
@@ -202,7 +207,7 @@ const tutorial: Scene = {
 }
 
 const trainingRoom0: Scene = {
-	identify:`soloTrain0`,
+	sceneDataId:`soloTrain0`,
 	displayName: 'Training Room',
 	landscape: 'bridge',
 	solo: true,
@@ -270,7 +275,7 @@ const trainingRoom0: Scene = {
 			actionsWithRequirements: [
 				{
 					requiresGear: ['bomb', 'club'],
-					travelToSolo: `trainingRoom1`
+					travelTo: `soloTrain1`
 				}
 			]
 		}
@@ -278,7 +283,7 @@ const trainingRoom0: Scene = {
 	],
 }
 const trainingRoom1: Scene = {
-	identify:`soloTrain1`,
+	sceneDataId:`soloTrain1`,
 	displayName: 'Training Room',
 	landscape: 'bridge',
 	solo: true,
@@ -359,7 +364,7 @@ const trainingRoom1: Scene = {
 			actionsWithRequirements: [
 				{
 					requiresGear: ['dagger', 'potion'],
-					travelToSolo: `trainingRoom2`
+					travelTo: `soloTrain2`
 				}
 			]
 		},
@@ -367,7 +372,7 @@ const trainingRoom1: Scene = {
 }
 
 const trainingRoom2: Scene = {
-	identify:`soloTrain2`,
+	sceneDataId:`soloTrain2`,
 	displayName: 'Training Room',
 	solo: true,
 	setCheckpointOnEnter: true,
@@ -442,7 +447,7 @@ const trainingRoom2: Scene = {
 			actionsWithRequirements: [
 				{
 					requiresGear: ['fireStaff', 'poisonDart', 'thiefCloak'],
-					travelToSolo: `trainingRoom3`
+					travelTo: `soloTrain3`
 				}
 			]
 		}
@@ -450,7 +455,7 @@ const trainingRoom2: Scene = {
 }
 
 const trainingRoom3: Scene = {
-	identify:`soloTrain3`,
+	sceneDataId:`soloTrain3`,
 	displayName: 'Training Room',
 	solo: true,
 	setCheckpointOnEnter: true,
@@ -526,7 +531,7 @@ const trainingRoom3: Scene = {
 }
 
 export const forest: Scene = {
-	identify:`mForest`,
+	sceneDataId:`forest`,
 	displayName: 'Bramblefoot Woods',
 	landscape: 'grimForest',
 	setCheckpointOnEnter: true,
@@ -561,7 +566,7 @@ export const forest: Scene = {
 }
 
 const castle: Scene = {
-	identify:`mCastle`,
+	sceneDataId:`castle`,
 	displayName: 'Castle Bramblemore',
 	landscape: 'castle',
 	sceneTexts: {
@@ -609,7 +614,7 @@ const castle: Scene = {
 };
 
 const house: Scene = {
-	identify:`mHouse`,
+	sceneDataId:`house`,
 	displayName: `House`,
 	landscape: 'bridge',
 	setsFlagOnEnter: 'heardAboutHiddenPassage',
@@ -688,7 +693,7 @@ const house: Scene = {
 
 
 const throne: Scene = {
-	identify:`mThrone`,
+	sceneDataId:`throne`,
 	displayName: 'Bramblemore Throne Room',
 	sceneTexts: {
 		fallback: `Before you is a great throne. Sitting aside it are two giant sculptures carved from marble. The one of the left depicts an angel, its wings spread to a might span. It wields a sword from which a great fire burns. To the left of the throne is a garoyle, its lips pulled back in a monstrous snarl revealing rows of serrated teeth. One of its arms are raised and it appears to hold a ball of pure electricity which crackles in the dim light. Atop the throne sits an emaciated figure.`,
@@ -812,12 +817,10 @@ const throne: Scene = {
 			],
 		},
 	],
-	actions(player: Player) {
-	}
 }
 
 const realmOfMadness: Scene = {
-	identify:`mRealm`,
+	sceneDataId:`realmOfMadness`,
 	displayName: 'The Realm of Madness',
 	sceneTexts: {
 		fallback: `So stuck, so madness`
@@ -826,7 +829,7 @@ const realmOfMadness: Scene = {
 
 
 const forestPassage: Scene = {
-	identify:`mForestPassage`,
+	sceneDataId:`forestPassage`,
 	landscape: 'grimForest',
 	displayName: 'Hidden Passage',
 	sceneTexts: {
@@ -907,7 +910,7 @@ const forestPassage: Scene = {
 }
 
 const goblinCamp: Scene = {
-	identify:`mGoblinCamp`,
+	sceneDataId:`goblinCamp`,
 	displayName: 'Goblin Campsite',
 	setsFlagOnVictory: 'killedGoblins',
 	spawnsEnemiesOnEnter: [
@@ -944,7 +947,7 @@ const goblinCamp: Scene = {
 }
 
 const tunnelChamber: Scene = {
-	identify:`mChamber`,
+	sceneDataId:`tunnelChamber`,
 	displayName: 'Bramblemore Dungeon',
 	sceneTexts: {
 		fallback: `You wend your way down a neverending series of corridors and pathways that seem to go on for an enternity. It becomes narrower and narrower, and the heat becomes almost unbearable. The path suddenly opens into a great chamber.`
@@ -1013,7 +1016,7 @@ const tunnelChamber: Scene = {
 }
 
 const armory: Scene = {
-	identify:`mDevRoom`,
+	sceneDataId:`armory`,
 	displayName: 'Dev Room',
 	sceneTexts: {
 		fallback: `Grab some gear!`
@@ -1031,7 +1034,7 @@ const armory: Scene = {
 			player.sceneActions.push({
 				buttonText: `Spawn ${id}`,
 				devAction() {
-					spawnEnemy(`${id}${Math.round(Math.random() * 1000)}`, id as EnemyTemplateId, 'armory', player.unitId)
+					spawnEnemy(`${id}${Math.round(Math.random() * 1000)}`, id as EnemyTemplateId, player.currentUniqueSceneId, player.unitId)
 				},
 			})
 		}
@@ -1039,22 +1042,43 @@ const armory: Scene = {
 }
 
 
-export function addSoloScenes(name: string) {
-	let t = Object.assign({}, tutorial)
-	scenes.set(`tutorial_${name}`, t)
-	scenes.set(`trainingRoom0_${name}`, trainingRoom0)
-	scenes.set(`trainingRoom1_${name}`, trainingRoom1)
-	scenes.set(`trainingRoom2_${name}`, trainingRoom2)
-	scenes.set(`trainingRoom3_${name}`, trainingRoom3)
-}
+// export function addSoloScenes(name: string) {
+// 	let t = Object.assign({}, tutorial)
+// 	scenes.set(`tutorial_${name}`, t)
+// 	scenes.set(`trainingRoom0_${name}`, trainingRoom0)
+// 	scenes.set(`trainingRoom1_${name}`, trainingRoom1)
+// 	scenes.set(`trainingRoom2_${name}`, trainingRoom2)
+// 	scenes.set(`trainingRoom3_${name}`, trainingRoom3)	
+// }
 
-scenes.set('dead', dead)
-scenes.set('forest', forest)
-scenes.set('castle', castle)
-scenes.set('throne', throne)
-scenes.set('house', house)
-scenes.set('forestPassage', forestPassage)
-scenes.set('goblinCamp', goblinCamp)
-scenes.set('tunnelChamber', tunnelChamber)
-scenes.set('realmOfMadness', realmOfMadness)
-scenes.set('armory', armory)
+
+// scenes.set('dead', dead)
+// scenes.set('forest', forest)
+// scenes.set('castle', castle)
+// scenes.set('throne', throne)
+// scenes.set('house', house)
+// scenes.set('forestPassage', forestPassage)
+// scenes.set('goblinCamp', goblinCamp)
+// scenes.set('tunnelChamber', tunnelChamber)
+// scenes.set('realmOfMadness', realmOfMadness)
+// scenes.set('armory', armory)
+
+
+// const soloScenes : Scene[] = []
+
+scenesData.push(dead)
+scenesData.push(forest)
+scenesData.push(castle)
+scenesData.push(throne)
+scenesData.push(house)
+scenesData.push(forestPassage)
+scenesData.push(goblinCamp)
+scenesData.push(tunnelChamber)
+scenesData.push(realmOfMadness)
+scenesData.push(armory)
+
+scenesData.push(tutorial)
+scenesData.push(trainingRoom0)
+scenesData.push(trainingRoom1)
+scenesData.push(trainingRoom2)
+scenesData.push(trainingRoom3)

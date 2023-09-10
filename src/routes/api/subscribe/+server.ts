@@ -1,4 +1,4 @@
-import { activePlayers, activePlayersInScene, users } from '$lib/server/users';
+import { activePlayers, users } from '$lib/server/users';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { FAKE_LATENCY, encode, pushHappening, sendEveryoneWorld } from '$lib/server/messaging';

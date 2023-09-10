@@ -11,7 +11,7 @@ export const POST: RequestHandler = async (r) => {
 	if (!isJoin(msg)) {
 		return json({error: 'malformed sign up request'}, { status: 400 });
 	}
-	
+
 	let resp : SignupResponse = {
 		alreadyConnected:false,
 		needsAuth:'',
@@ -27,15 +27,18 @@ export const POST: RequestHandler = async (r) => {
 		return json(resp);
 	}
 		
-	let {id, player} =	addNewUser(msg.join)
+	let addUserResult =	addNewUser(msg.join)
+	if(!addUserResult){
+		return json(resp)
+	}
 	
 	console.log('added player, setting cookies ' + msg.join);
 	r.cookies.set('hero', msg.join, { path: '/', secure: false });
-	r.cookies.set('uid', id, { path: '/', secure: false });
+	r.cookies.set('uid', addUserResult.id, { path: '/', secure: false });
 	resp.yourHeroName = msg.join
-	resp.yourId = id
+	resp.yourId = addUserResult.id
 
-	if (player && player.connectionState != null) {
+	if (addUserResult.player.connectionState != null) {
 		resp.alreadyConnected = true
 	}
 

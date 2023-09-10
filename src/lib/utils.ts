@@ -2,7 +2,7 @@
 
 import type { ActiveEnemy, EnemyTemplate, EnemyTemplateId } from './server/enemies';
 import type { ItemId, QuickbarSlot, ItemState } from './server/items';
-import type { SceneId } from './server/scenes';
+import type { SceneDataId, UniqueSceneIdenfitier } from './server/scenes';
 import type { Flag, GlobalFlag, HeroName, Player } from './server/users';
 
 
@@ -119,7 +119,7 @@ export type LandscapeImage = 'plains' | 'castle' | 'bridge' | 'grimForest'
 export type AnimationBehavior = 
 	| {kind:'missile', extraSprite:AnySprite} 
 	| {kind: 'melee'} 
-	| {kind: 'travel', goTo:SceneId} 
+	| {kind: 'travel', goTo:SceneDataId} 
 	| {kind: 'center', extraSprite:AnySprite} 
 	| {kind: 'selfInflicted', extraSprite:AnySprite}
 

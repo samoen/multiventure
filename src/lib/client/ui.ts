@@ -10,7 +10,7 @@ import type { EnemyTemplateId } from "$lib/server/enemies";
 import type { MessageFromServer } from "$lib/server/messaging";
 import type { VisualActionSourceInClient } from "$lib/server/logic";
 import { anySprites, enemySprites, getHeroPortrait, getPortrait, getSlotImage, heroSpriteFromClass } from "./assets";
-import type { SceneId } from "$lib/server/scenes";
+import type { SceneDataId } from "$lib/server/scenes";
 
 
 type HeroSpecificEnemyState = { hName: HeroName, agg: number, sts: { sId: StatusId, count: number }[] }
@@ -70,7 +70,7 @@ export const visualActionSources: Writable<VisualActionSourceInClient[]> = writa
 export const currentAnimationIndex: Writable<number> = writable(999)
 export const currentAnimationsWithData: Writable<BattleAnimation[]> = writable([])
 export const subAnimationStage: Writable<'start' | 'fire' | 'sentHome'> = writable('start')
-export const convoStateForEachVAS: Writable<Map<SceneId, Map<VisualActionSourceId, ConvoState>>> = writable(new Map())
+export const convoStateForEachVAS: Writable<Map<SceneDataId, Map<VisualActionSourceId, ConvoState>>> = writable(new Map())
 export const latestSlotButtonInput: Writable<ItemId | undefined> = writable(undefined)
 export const lastUnitClicked: Writable<UnitId | 'background' | undefined> = writable(undefined)
 export const visualLandscape: Writable<LandscapeImage> = writable('plains')
@@ -96,7 +96,7 @@ export const vasesToShow = derived([visualActionSources, convoStateForEachVAS], 
     })
 });
 
-export function resetSceneConvos(sceneId: SceneId) {
+export function resetSceneConvos(sceneId: SceneDataId) {
     let vasesToReset = get(visualActionSources).filter(v => v.scene == sceneId)
     convoStateForEachVAS.update(scs => {
         scs.delete(sceneId)
@@ -465,7 +465,7 @@ export function syncConvoStateToVas(vas: VisualActionSourceInClient) {
             lockedResponseHandles: startResponsesLocked,
             isLocked: startLocked,
         })
-        
+
         cs.set(vas.scene, sceneEntry)
         return cs
     })

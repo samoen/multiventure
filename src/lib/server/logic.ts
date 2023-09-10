@@ -3,8 +3,8 @@ import type { AggroModifier, AggroModifierEvent, AnySprite, BattleAnimation, Bat
 import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, modifyAggroForPlayer, modifiedEnemyHealth, type EnemyTemplateId, spawnEnemy, type EnemyStatuses, type ActiveEnemy } from "./enemies"
 import { items, type Item, equipItem, checkHasItem, type ItemId } from "./items"
 import { pushHappening } from "./messaging"
-import { scenes, type SceneId, alreadySpawnedCurrentBattle, spawnedNewBattle, hasPlayerAlreadySpawnedForBattle, spawnedOngoing } from "./scenes"
-import { users, type Player, activePlayersInScene, type GameAction, healPlayer, type Flag } from "./users"
+import { alreadySpawnedCurrentBattle, spawnedNewBattle, hasPlayerAlreadySpawnedForBattle, spawnedOngoing, getSceneData, type UniqueSceneIdenfitier, type SceneDataId, getSceneDataSimple, dead, uniqueFromSceneDataId } from "./scenes"
+import { users, type Player, type GameAction, healPlayer, type Flag, activePlayersInScene } from "./users"
 
 export function updateAllPlayerActions() {
 	for (const allPlayer of users.values()) {
@@ -16,10 +16,9 @@ export function updatePlayerActions(player: Player) {
 	player.sceneActions = []
 	player.itemActions = []
 	player.visualActionSources = []
-	let scene = scenes.get(player.currentScene)
-	if(!scene)return
-	let sceneEnemies = enemiesInScene(player.currentScene)
-	let scenePlayers = activePlayersInScene(player.currentScene)
+	let scene = getSceneData(player)
+	let sceneEnemies = enemiesInScene(player.currentUniqueSceneId)
+	let scenePlayers = activePlayersInScene(player.currentUniqueSceneId)
 
 	for (const cd of player.inventory) {
 		const i = items.find(item => item.id == cd.itemId)
@@ -212,7 +211,7 @@ export function updatePlayerActions(player: Player) {
 		}
 	}
 
-	if (!sceneEnemies.length || player.currentScene == 'armory') {
+	if (!sceneEnemies.length || player.currentUniqueSceneId.dataId == 'armory') {
 		if(scene.actions){
 			scene.actions(player)
 		}
@@ -226,17 +225,14 @@ export function updatePlayerActions(player: Player) {
 
 export function enterSceneOrWakeup(player: Player) {
 
-	const enteringScene = scenes.get(player.currentScene);
-	if (!enteringScene) {
-		return
-	}
-	const scenePlayers = activePlayersInScene(player.currentScene)
+	const enteringScene = getSceneData(player);
+	const scenePlayers = activePlayersInScene(player.currentUniqueSceneId)
 
 	const onlyMeInScene = !scenePlayers.filter(p => p.heroName != player.heroName).length
 
 	if (onlyMeInScene) {
 		// No players except me in here remove enemies
-		for (const e of enemiesInScene(player.currentScene)) {
+		for (const e of enemiesInScene(player.currentUniqueSceneId)) {
 			let index = activeEnemies.indexOf(e)
 			if (index != -1) {
 				activeEnemies.splice(index, 1)
@@ -244,7 +240,7 @@ export function enterSceneOrWakeup(player: Player) {
 		}
 	}
 	
-	const sceneEnemies = enemiesInScene(player.currentScene)
+	const sceneEnemies = enemiesInScene(player.currentUniqueSceneId)
 	
 	if (!sceneEnemies.length) {
 		if(enteringScene.spawnsEnemiesOnEnter){
@@ -252,12 +248,12 @@ export function enterSceneOrWakeup(player: Player) {
 			spawnedNewBattle(player)
 			
 			for (const es of enteringScene.spawnsEnemiesOnEnter) {
-				spawnEnemy(es.eName, es.eTemp, player.currentScene, player.unitId, es.statuses)
+				spawnEnemy(es.eName, es.eTemp, player.currentUniqueSceneId, player.unitId, es.statuses)
 			}
 		}
 	}else{
 		// we are joining a battle
-
+		console.log('joining battle')
 		for (const e of sceneEnemies) {
 			// init enemy aggro towards me
 			if (!e.aggros.has(player.unitId)) {
@@ -270,11 +266,12 @@ export function enterSceneOrWakeup(player: Player) {
 		}
 		
 		if (enteringScene.spawnsEnemiesOnBattleJoin && !hasPlayerAlreadySpawnedForBattle(player)) {
+			console.log('spawning on join')
 			// spawn extra enemies
 			spawnedOngoing(player)
 			let extraEnemyName = player.heroName.split('').reverse().join('')
 			for (const es of enteringScene.spawnsEnemiesOnBattleJoin) {
-				spawnEnemy(extraEnemyName, es.eTemp, player.currentScene, player.unitId, es.statuses)
+				spawnEnemy(extraEnemyName, es.eTemp, player.currentUniqueSceneId, player.unitId, es.statuses)
 			}
 		}
 	}
@@ -284,7 +281,7 @@ export function enterSceneOrWakeup(player: Player) {
 		player.health = player.maxHealth
 	}
 	if (enteringScene.setCheckpointOnEnter) {
-		player.lastCheckpoint = player.currentScene
+		player.lastCheckpoint = player.currentUniqueSceneId
 	}
 	if (enteringScene.setsFlagOnEnter) {
 		player.flags.add(enteringScene.setsFlagOnEnter)
@@ -297,7 +294,7 @@ export function enterSceneOrWakeup(player: Player) {
 		let {fallback, ...froms} = enteringScene.sceneTexts
 		let useDefault = true
 		for (let [from,txt] of Object.entries(froms)){
-			if(player.previousScene == from && txt){
+			if(player.previousScene.dataId == from && txt){
 				player.sceneTexts.push(txt)
 				useDefault = false
 				break
@@ -315,15 +312,12 @@ export function scaleEnemyHealth(enemy:ActiveEnemy, playerCount:number) {
 		enemy.currentHealth = Math.floor(percentHealthBefore * enemy.maxHealth)
 }
 
-export function changeScene(player: Player, goTo: SceneId) {
-	let left = scenes.get(player.currentScene)
-	if (!left) return
-	if (left.onLeaveScene) {
-		left.onLeaveScene(player)
-	}
+export function changeScene(player: Player, goTo: SceneDataId) {
 
-	player.previousScene = player.currentScene
-	player.currentScene = goTo
+	let uniqueTo = uniqueFromSceneDataId(player.unitId,goTo)
+
+	player.previousScene = player.currentUniqueSceneId
+	player.currentUniqueSceneId = uniqueTo
 
 	// When entering a new scene, state cooldowns to 0,
 	// state warmups to the item warmup, stocks to start
@@ -353,12 +347,12 @@ export function changeScene(player: Player, goTo: SceneId) {
 }
 
 export function handleAction(player: Player, actionFromId: GameAction) {
-	const actionStartedInSceneId = player.currentScene
+	const actionStartedInSceneId = player.currentUniqueSceneId
 
-	if (actionFromId.goTo) {
-		changeScene(player, actionFromId.goTo)
-		return
-	}
+	// if (actionFromId.goTo) {
+	// 	changeScene(player, actionFromId.goTo)
+	// 	return
+	// }
 	if (actionFromId.devAction) {
 		actionFromId.devAction()
 		return
@@ -389,11 +383,12 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 
 		if (actionFromId.unlockableActData.spawnsEnemies) {
 			for (const e of actionFromId.unlockableActData.spawnsEnemies) {
-				spawnEnemy(e.eName, e.eTemp, actionStartedInSceneId, player.unitId, e.statuses)
+				spawnEnemy(e.eName, e.eTemp, player.currentUniqueSceneId, player.unitId, e.statuses)
 			}
 		}
 
 		if (actionFromId.unlockableActData.travelTo) {
+			
 			changeScene(player, actionFromId.unlockableActData.travelTo)
 			pushAnimation({
 				leavingScene: player,
@@ -401,7 +396,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				battleAnimation: {
 					triggeredBy: player.unitId,
 					source: player.unitId,
-					behavior: { kind: 'travel', goTo: actionFromId.unlockableActData.travelTo },
+					behavior: { kind: 'travel', goTo:actionFromId.unlockableActData.travelTo},
 					target: actionFromId.target
 				}
 			})
@@ -419,7 +414,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	if (itemUsed.provoke && itemUsed.provoke > 0 && player.statuses.hidden > 0) {
 		player.statuses.hidden = 0
 		pushAnimation({
-			sceneId: player.currentScene,
+			sceneId: player.currentUniqueSceneId,
 			battleAnimation: {
 				triggeredBy: player.unitId,
 				source: player.unitId,
@@ -485,7 +480,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 			pushHappening(`${player.heroName} took ${dmg} damage from poison`)
 			pushAnimation(
 				{
-					sceneId: player.currentScene,
+					sceneId: player.currentUniqueSceneId,
 					battleAnimation: {
 						triggeredBy: player.unitId,
 						source: player.unitId,
@@ -512,11 +507,10 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		addAggro(player, itemUsed.provoke)
 	}
 
-	const playerScene = scenes.get(actionStartedInSceneId);
-	if(!playerScene)return
+	const playerScene = getSceneDataSimple(actionStartedInSceneId.dataId);
 	const postReactionEnemies = enemiesInScene(actionStartedInSceneId)
 	if (!postReactionEnemies.length) {
-		for (const playerInScene of activePlayersInScene(player.currentScene)) {
+		for (const playerInScene of activePlayersInScene(player.currentUniqueSceneId)) {
 			if(playerScene.healsOnVictory){
 				playerInScene.health = playerInScene.maxHealth
 			}
@@ -561,7 +555,7 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 	if (itemUsed.speed) {
 		playerHitSpeed += itemUsed.speed
 	}
-	let sceneEnemies = enemiesInScene(player.currentScene)
+	let sceneEnemies = enemiesInScene(player.currentUniqueSceneId)
 	for (const enemyInScene of sceneEnemies.sort((a, b) => b.template.speed - a.template.speed)) {
 		if (enemyInScene.currentHealth < 1) continue
 		if (
@@ -730,11 +724,11 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 
 
 	let leavingScene = undefined
-	let sceneToPlayAnim = player.currentScene
+	let sceneToPlayAnim = player.currentUniqueSceneId
 
 	if (battleEvent.succumb) {
 		leavingScene = player
-		changeScene(player, 'dead')
+		changeScene(player, dead.sceneDataId)
 	}
 
 	let battleAnimation: BattleAnimation = {
@@ -821,26 +815,16 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 					targ = vas.unitId
 				}
 				if (unlockableActData.travelTo) {
-					let travelTo = unlockableActData.travelTo
-					let scene = scenes.get(travelTo)
-					if (!scene) continue
+					let scene = getSceneDataSimple(unlockableActData.travelTo)
 					txt = `Travel to ${scene.displayName}`
 					targ = vas.unitId
 				}
 				if(unlockableActData.travelToCheckpoint){
-					let travelTo = player.lastCheckpoint
+					let travelTo = player.lastCheckpoint.dataId
 					unlockableActData.travelTo = travelTo
-					let scene = scenes.get(travelTo)
-					if (!scene) continue
+					
+					let scene = getSceneDataSimple(travelTo)
 					txt = `Respawn at checkpoint: ${scene.displayName}`
-					targ = vas.unitId
-				}
-				if(unlockableActData.travelToSolo){
-					let travelTo = `${unlockableActData.travelToSolo}_${player.heroName}` as SceneId
-					unlockableActData.travelTo = travelTo
-					let scene = scenes.get(travelTo)
-					if (!scene) continue
-					txt = `Travel to ${scene.displayName}`
 					targ = vas.unitId
 				}
 
@@ -853,10 +837,6 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 					unlockableActData: unlockableActData,
 					target: targ
 				}
-
-				// else {
-				// 	continue
-				// }
 
 				validUnlockableActions.push(ga)
 			}
@@ -908,7 +888,7 @@ export function convertVasToClient(vas: VisualActionSource, player: Player): Vis
 		startsLocked: startLocked,
 		actionsInClient: validUnlockableClientActions,
 		detectStep: detectStep,
-		scene: player.currentScene,
+		scene: player.currentUniqueSceneId.dataId,
 	} satisfies VisualActionSourceInClient
 	return result
 }
@@ -935,7 +915,7 @@ export type VisualActionSource = {
 
 export type VisualActionSourceInClient = {
 	displayName: string
-	scene: SceneId
+	scene: SceneDataId
 	startsLocked?: boolean
 	id: VisualActionSourceId
 	sprite: AnySprite
@@ -951,9 +931,9 @@ export type UnlockableActionData = {
 	requiresNotFlags?: Flag[]
 	requiresGear?: ItemId[]
 	pickupItem?: ItemId
-	travelTo?: SceneId
+	travelTo?: SceneDataId
 	travelToCheckpoint?: boolean
-	travelToSolo?: string
+	// travelToSolo?: SceneDataId
 	setsFlag?: Flag
 	bText?: string
 	spawnsEnemies?: EnemyForSpawning[]
@@ -976,3 +956,33 @@ export type ConversationResponse = {
 	responseText: string,
 	retort?: string,
 }
+
+export function deepEqual(objA: any, objB: any): boolean {
+	// Check if both objects are of the same type
+	if (typeof objA !== typeof objB) {
+	  return false;
+	}
+  
+	if (typeof objA !== 'object' || objA === null || objB === null) {
+	  // If both objects are not objects or are null, compare them directly
+	  return objA === objB;
+	}
+  
+	// Get the keys of both objects
+	const keysA = Object.keys(objA);
+	const keysB = Object.keys(objB);
+  
+	// Check if the number of keys is the same
+	if (keysA.length !== keysB.length) {
+	  return false;
+	}
+  
+	// Check if all keys in objA are also in objB and have equal values
+	for (const key of keysA) {
+	  if (!keysB.includes(key) || !deepEqual(objA[key], objB[key])) {
+		return false;
+	  }
+	}
+  
+	return true;
+  }

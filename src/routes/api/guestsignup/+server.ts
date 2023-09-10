@@ -2,7 +2,6 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { FAKE_LATENCY } from '$lib/server/messaging';
 import { users, type Player, type Flag, globalFlags, addNewUser } from '$lib/server/users';
-import { scenes, type SceneId, addSoloScenes } from '$lib/server/scenes';
 import type { SignupResponse } from '$lib/utils';
 
 
@@ -36,15 +35,19 @@ export const POST: RequestHandler = async (r) => {
 		}
 	}
 		
-	let {id, player} =	addNewUser(guestName)
+	let addUserResult =	addNewUser(guestName)
+	if(!addUserResult){
+		console.log('failed to add user')
+		return json(resp)
+	}
 		
 	console.log('added guest player, setting cookies ' + guestName);
 	r.cookies.set('hero', guestName, { path: '/', secure: false });
-	r.cookies.set('uid', id, { path: '/', secure: false });
+	r.cookies.set('uid', addUserResult.id, { path: '/', secure: false });
 	resp.yourHeroName = guestName
-	resp.yourId = id
+	resp.yourId = addUserResult.id
 
-	if (player && player.connectionState != null) {
+	if (addUserResult.player.connectionState != null) {
 		resp.alreadyConnected = true
 	}
 
