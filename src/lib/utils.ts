@@ -1,9 +1,9 @@
 // This file is for stuff available to both the server and browser
 
 import type { ActiveEnemy, EnemyTemplate, EnemyTemplateId } from './server/enemies';
-import type { ItemId, QuickbarSlot, ItemState } from './server/items';
-import type { SceneDataId, UniqueSceneIdenfitier } from './server/scenes';
-import type { Flag, GlobalFlag, HeroName, Player } from './server/users';
+import type { ItemId } from './server/items';
+import type { SceneDataId } from './server/scenes';
+import type { HeroName, Player } from './server/users';
 
 
 export type UnitId = HeroId | EnemyId | VisualActionSourceId

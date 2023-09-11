@@ -1,16 +1,15 @@
 import type { Flag, HeroName, PlayerInClient } from "$lib/server/users";
-import type { UnitId, BattleAnimation, EnemyInClient, EnemyName, GameActionSentToClient, AnySprite, LandscapeImage, VisualActionSourceId, SignupResponse, HeroId, StatusId } from "$lib/utils";
+import type { BattleAnimation, EnemyInClient, GameActionSentToClient, LandscapeImage, SignupResponse, StatusId, UnitId, VisualActionSourceId } from "$lib/utils";
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 
-import type { ItemId, ItemState, QuickbarSlot } from '$lib/server/items';
-import { crossfade } from "svelte/transition";
-import { expoInOut, linear, quadInOut, quintInOut, quintOut } from "svelte/easing";
-import { tick } from "svelte";
-import type { EnemyTemplateId } from "$lib/server/enemies";
-import type { MessageFromServer } from "$lib/server/messaging";
+import type { ItemId, ItemState } from '$lib/server/items';
 import type { VisualActionSourceInClient } from "$lib/server/logic";
-import { anySprites, enemySprites, getHeroPortrait, getPortrait, getSlotImage, heroSpriteFromClass } from "./assets";
+import type { MessageFromServer } from "$lib/server/messaging";
 import type { SceneDataId } from "$lib/server/scenes";
+import { tick } from "svelte";
+import { linear, quintInOut, quintOut } from "svelte/easing";
+import { crossfade } from "svelte/transition";
+import { anySprites, enemySprites, getHeroPortrait, getPortrait, getSlotImage, heroSpriteFromClass } from "./assets";
 
 
 type HeroSpecificEnemyState = { hName: HeroName, agg: number, sts: { sId: StatusId, count: number }[] }
@@ -567,7 +566,6 @@ export async function nextAnimationIndex(
         waitingForMyAnimation.set(false)
         return
     }
-    let animsInWaiting = get(animationsInWaiting)
     let cai = get(currentAnimationIndex)
     if (start) {
         cai = 0
@@ -575,8 +573,9 @@ export async function nextAnimationIndex(
         cai++
     }
     currentAnimationIndex.set(cai)
-
+    
     if (cai > curAnimations.length - 1) {
+        let animsInWaiting = get(animationsInWaiting)
         if (!animsInWaiting) {
             // give some time for enemies slain on the last animation to fade out.
             if (someoneDied) {
@@ -588,13 +587,11 @@ export async function nextAnimationIndex(
         }
         if (animsInWaiting) {
             // console.log('playing anims in waiting')
-            syncVisualsToMsg(animsInWaiting.prev)
-            currentAnimationsWithData.set(animsInWaiting.withAnims.animations)
+
             animationsInWaiting.set(undefined)
-            currentAnimationIndex.set(0)
-            subAnimationStage.set('start')
-            await tick()
-            subAnimationStage.set('fire')
+            syncVisualsToMsg(animsInWaiting.prev)
+            startAnimating(animsInWaiting.withAnims)
+            return
         }
 
         return

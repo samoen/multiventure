@@ -2,9 +2,12 @@ import type { AnimationBehavior, StatusId, StatusMod } from '$lib/utils';
 import type { SceneDataId } from './scenes';
 import type { Player } from './users';
 
+export type ItemId = string
+export type QuickbarSlot = string
+
 export type Item = {
-	id: string
-	slot: string
+	id: ItemId,
+	slot: QuickbarSlot
 	speed?: number,
 	damageLimit?: number,
 	damageReduction?: number,
@@ -112,7 +115,6 @@ export const plateMail: Item = {
 	grantsImmunity: true,
 	behavior: { kind: 'selfInflicted', extraSprite: 'flame' },
 	style: { style: 'allEnemies', putsStatusOnSelf: { statusId: 'rage', count: 2 } },
-
 }
 
 const thiefCloak: Item = {
@@ -210,9 +212,6 @@ export const items = [
 ] as const satisfies Item[]
 
 
-export type ItemId = typeof items[number]['id']
-export type QuickbarSlot = typeof items[number]['slot']
-
 export type ItemState = {
 	itemId: ItemId;
 	slot: QuickbarSlot;
@@ -222,8 +221,9 @@ export type ItemState = {
 	stats?: Item;
 }
 
-
-export function equipItem(player: Player, item: Item) {
+export function equipItem(player: Player, itemId: ItemId) {
+	const item = items.find(i => i.id == itemId)
+	if(!item)return
 	let state = player.inventory.find(i => i.slot == item.slot)
 	if (!state) {
 		let createState: ItemState = {

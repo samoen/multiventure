@@ -13,7 +13,7 @@ export function updateAllPlayerActions() {
 }
 
 export function updatePlayerActions(player: Player) {
-	player.sceneActions = []
+	player.devActions = []
 	player.itemActions = []
 	player.visualActionSources = []
 	player.vasActions = []
@@ -41,7 +41,6 @@ export function updatePlayerActions(player: Player) {
 			let ga: GameAction = {
 				buttonText: `use ${i.id}`,
 				battleEvent:be,
-				slot: i.slot,
 				itemId: i.id,
 			}
 			player.itemActions.push(ga)
@@ -96,7 +95,6 @@ export function updatePlayerActions(player: Player) {
 			let ga: GameAction = {
 				buttonText: `use ${i.id}`,
 				battleEvent:be,
-				slot: i.slot,
 				itemId: i.id,
 			}
 			player.itemActions.push(ga)
@@ -125,7 +123,6 @@ export function updatePlayerActions(player: Player) {
 				let ga: GameAction = {
 					buttonText: `use ${i.id} on ${enemy.unitId}`,
 					battleEvent:be,
-					slot: i.slot,
 					itemId: i.id,
 					target: enemy.unitId,
 				}
@@ -159,7 +156,6 @@ export function updatePlayerActions(player: Player) {
 					let ga: GameAction = {
 						buttonText: `use ${i.id} on ${friend.unitId}`,
 						battleEvent:be,
-						slot: i.slot,
 						itemId: i.id,
 						target: friend.unitId,
 					}
@@ -192,7 +188,6 @@ export function updatePlayerActions(player: Player) {
 				let ga: GameAction = {
 					buttonText: `use ${i.id} on self`,
 					battleEvent:be,
-					slot: i.slot,
 					itemId: i.id,
 					target: player.unitId,
 				}
@@ -355,9 +350,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	if (actionFromId.unlockableActData) {
 		if (actionFromId.unlockableActData.pickupItem) {
 			const idToPickup = actionFromId.unlockableActData.pickupItem
-			let toPickup = items.find(i => i.id == idToPickup)
-			if (toPickup) {
-				equipItem(player, toPickup)
+				equipItem(player, idToPickup)
 				pushAnimation({
 					sceneId: actionStartedInSceneId,
 					battleAnimation: {
@@ -368,7 +361,6 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 						takesItem: true,
 					}
 				})
-			}
 		}
 
 		if (actionFromId.unlockableActData.setsFlag) {
@@ -872,7 +864,7 @@ export type VisualActionSource = {
 	displayName: string
 	sprite: AnySprite
 	portrait?: string
-	actionsWithRequirements?: UnlockableActionData[]
+	actionsWithRequirements?: VasActionData[]
 	startText: string,
 	responses?: ConversationResponse[]
 	detect?: { flag: Flag, startText?: string, responses?: ConversationResponse[], locked?: boolean }[]
@@ -891,7 +883,7 @@ export type VisualActionSourceInClient = {
 	detectStep?: Flag
 }
 
-export type UnlockableActionData = {
+export type VasActionData = {
 	requiresFlags?: Flag[]
 	requiresNotFlags?: Flag[]
 	requiresGear?: ItemId[]

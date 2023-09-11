@@ -1,28 +1,13 @@
+import type { BattleAnimation, BattleEvent, HeroId, StatusId, UnitId, VisualActionSourceId } from '$lib/utils';
 import { v4 } from 'uuid';
-import { items, type Item, type ItemState, type QuickbarSlot, type ItemId, equipItem, fireStaff, plateMail, leatherArmor, poisonDart, comboFindClassFromInventory } from './items';
+import { equipItem, items, type Item, type ItemId, type ItemState } from './items';
+import { deepEqual, type VasActionData, type VisualActionSource } from './logic';
 import { pushHappening } from './messaging';
-import { deepEqual, type UnlockableActionData, type VisualActionSource } from './logic';
-import { type SceneDataId, scenesData, type UniqueSceneIdenfitier, startSceneDataId, dead, uniqueFromSceneDataId, getSceneDataSimple } from './scenes';
-import type { BattleAnimation, HeroId, StatusId, BattleEvent, UnitId, VisualActionSourceId } from '$lib/utils';
+import { startSceneDataId, uniqueFromSceneDataId, type SceneDataId, type UniqueSceneIdenfitier } from './scenes';
 
 export const users = new Map<UserId, Player>();
 export const globalFlags = new Set<GlobalFlag>();
 
-export function defaultInventory():ItemState[]{
-	let defaultItems = items.filter(i=>i.default)
-	
-	return defaultItems.map(i=>{
-		return{
-			itemId:i.id,
-			cooldown:0,
-			slot:i.slot,
-			warmup:i.warmup ?? 0,
-			stock:i.startStock,
-			stats:i,
-		} satisfies ItemState
-	})
-
-}
 
 export function addNewUser(heroName: string): { id: string, player: Player } | undefined{
 
@@ -33,18 +18,15 @@ export function addNewUser(heroName: string): { id: string, player: Player } | u
 	// startflags.add('gotFreeStarterWeapon')
 	// startflags.add('killedGoblins')
 	
-	let startInventory = defaultInventory()
-
 
 	let startSceneId: SceneDataId = startSceneDataId
 	// startSceneId = 'forestPassage'
 	// startSceneId = 'throne'
-	startSceneId = 'armory'
-
+	// startSceneId = 'armory'
+	
 	let startUnique = uniqueFromSceneDataId(pId,startSceneId)
-	let startScene = getSceneDataSimple(startSceneId)
-
-
+	
+	
 	let player: Player = {
 		unitId: pId,
 		connectionState: {
@@ -55,13 +37,12 @@ export function addNewUser(heroName: string): { id: string, player: Player } | u
 		previousScene: startUnique,
 		lastCheckpoint: startUnique,
 		currentUniqueSceneId:startUnique,
-		currentSceneDisplay: startScene.displayName,
-		inventory: startInventory,
+		inventory: [],
 		health: 100,
 		maxHealth: 100,
 		agility: 1,
 		strength: 1,
-		sceneActions: [],
+		devActions: [],
 		itemActions: [],
 		vasActions: [],
 		visualActionSources: [],
@@ -73,12 +54,14 @@ export function addNewUser(heroName: string): { id: string, player: Player } | u
 			rage: 0,
 			hidden: 0,
 		},
-		class:comboFindClassFromInventory(startInventory)
 	}
 
-	// equipItem(player, fireStaff)
-	// equipItem(player,leatherArmor)
-	// equipItem(player, poisonDart)
+	items.filter(i=>i.default).forEach(i=>{
+		equipItem(player,i.id)
+	})
+	// equipItem(player, 'fireStaff')
+	// equipItem(player,'leatherArmor')
+	// equipItem(player, 'poisonDart')
 
 	let userId = v4()
 	users.set(userId, player);
@@ -108,14 +91,22 @@ export type Player = {
 	previousScene: UniqueSceneIdenfitier;
 	lastCheckpoint: UniqueSceneIdenfitier;
 	itemActions: GameAction[];
-	sceneActions: GameAction[];
+	devActions: GameAction[];
 	vasActions: GameAction[];
 	sceneTexts: string[];
 	flags: Set<Flag>;
 	animations: BattleAnimation[];
 	visualActionSources: VisualActionSource[];
 	currentUniqueSceneId:UniqueSceneIdenfitier;
-} & PlayerInClient;
+	inventory:ItemState[];
+	unitId: HeroId;
+	heroName: HeroName;
+	health: number;
+	agility: number;
+	strength: number;
+	maxHealth: number;
+	statuses: Record<StatusId, number>
+};
 
 export type PlayerInClient = {
 	inventory:ItemState[];
@@ -134,11 +125,10 @@ export type GameAction = {
 	devAction?:()=>void;
 	battleEvent?:BattleEvent;
 	buttonText: string;
-	slot?: QuickbarSlot;
 	itemId?:ItemId;
 	vasId?:VisualActionSourceId;
 	target?: UnitId;
-	unlockableActData?:UnlockableActionData;
+	unlockableActData?:VasActionData;
 };
 
 export function playerEquipped(player: Player): Item[] {

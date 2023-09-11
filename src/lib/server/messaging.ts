@@ -15,7 +15,7 @@ export type MessageFromServer = {
 	otherPlayers: PlayerInClient[];
 	userList:HeroName[];
 	sceneTexts: string[];
-	sceneActions: GameActionSentToClient[];
+	devActions: GameActionSentToClient[];
 	itemActions: GameActionSentToClient[];
 	vasActions: GameActionSentToClient[];
 	happenings: string[];
@@ -100,10 +100,9 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				} satisfies PlayerInClient;
 			}),
 			sceneTexts: forPlayer.sceneTexts,
-			sceneActions: forPlayer.sceneActions.map((gameAction) => {
+			devActions: forPlayer.devActions.map((gameAction) => {
 			return {
 				buttonText: gameAction.buttonText,
-				// target:gameAction.target
 			};
 		}),
 		userList:activePlayers().map(u=>u.heroName),

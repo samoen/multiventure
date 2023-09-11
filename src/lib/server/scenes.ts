@@ -1093,15 +1093,15 @@ const armory: Scene = {
 	},
 	actions(player) {
 		for (const item of items) {
-			player.sceneActions.push({
+			player.devActions.push({
 				buttonText: `Equip ${item.id}`,
 				devAction() {
-					equipItem(player, item)
+					equipItem(player, item.id)
 				},
 			})
 		}
 		for (const id in enemyTemplates) {
-			player.sceneActions.push({
+			player.devActions.push({
 				buttonText: `Spawn ${id}`,
 				devAction() {
 					let e : EnemyForSpawning = {eTemp:id as EnemyTemplateId}

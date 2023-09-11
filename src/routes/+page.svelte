@@ -70,7 +70,7 @@
 		console.log('mounted with ssr data ' + JSON.stringify(data));
 
 		// In dev sometimes the page mounts but the page data is old and innaccurate
-		// await invalidateAll();
+		await invalidateAll();
 		// console.log('invalidated, now have ssr data ' + JSON.stringify(data));
 		// In dev sometimes we mount with existing state and messes up our flow
 		if ($successcreds || $lastMsgFromServer || $source) {
@@ -738,9 +738,9 @@
 		</div>
 	{/if}
 
-	{#if $lastMsgFromServer.sceneActions.length}
+	{#if $lastMsgFromServer.devActions.length}
 		<div class="sceneButtons">
-			{#each $lastMsgFromServer.sceneActions as op, i}
+			{#each $lastMsgFromServer.devActions as op, i}
 				<button on:click={() => choose(op)} disabled={$clientState.waitingForMyEvent}>
 					{op.buttonText}
 				</button>
