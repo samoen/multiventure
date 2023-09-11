@@ -1,4 +1,5 @@
 import type { AnimationBehavior, StatusId, StatusMod } from '$lib/utils';
+import type { SceneDataId } from './scenes';
 import type { Player } from './users';
 
 export type Item = {
@@ -25,7 +26,7 @@ export type Item = {
 	behavior: AnimationBehavior,
 	strikes?: number
 	style: TargetStyle
-	succumb?: boolean
+	teleportTo?: SceneDataId
 }
 
 
@@ -180,7 +181,7 @@ const succumb: Item = {
 	id: 'succumb',
 	slot: 'succumb',
 	excludeFromDetail:true,
-	succumb: true,
+	teleportTo: 'dead',
 	default: true,
 	speed: -999,
 	grantsImmunity: true,
@@ -220,7 +221,6 @@ export type ItemState = {
 	stock?: number;
 	stats?: Item;
 }
-
 
 
 export function equipItem(player: Player, item: Item) {

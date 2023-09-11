@@ -62,7 +62,7 @@ export let clientState = writable({
     loading: true,
 })
 
-export type UIVas = VisualActionSourceInClient & {actionsInClient: GameActionSentToClient[]}
+export type UIVas = VisualActionSourceInClient & { actionsInClient: GameActionSentToClient[] }
 
 export const triedSignupButTaken: Writable<string | undefined> = writable(undefined)
 export const source: Writable<EventSource | undefined> = writable(undefined);
@@ -416,11 +416,11 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
             syncConvoStateToVas(vas)
         }
 
-        let uiVases = lastMsg.visualActionSources.map(v=>{
-            let actionsFromVas = lastMsg.vasActions.filter(va=>va.vasId == v.id)
+        let uiVases = lastMsg.visualActionSources.map(v => {
+            let actionsFromVas = lastMsg.vasActions.filter(va => va.vasId == v.id)
             return {
                 ...v,
-                actionsInClient:actionsFromVas
+                actionsInClient: actionsFromVas
             } satisfies UIVas
 
         })
@@ -559,8 +559,15 @@ export async function nextAnimationIndex(
     start: boolean,
     someoneDied: boolean,
 ) {
+    visualOpacity.set(false)
     let curAnimations = get(currentAnimationsWithData)
     let latest = get(lastMsgFromServer)
+    if (!latest) {
+        console.log('tried next anim but last msg from server undefined!')
+        currentAnimationIndex.set(999)
+        waitingForMyAnimation.set(false)
+        return
+    }
     let animsInWaiting = get(animationsInWaiting)
     let cai = get(currentAnimationIndex)
     if (start) {
@@ -603,7 +610,11 @@ export async function nextAnimationIndex(
         return
     }
 
-
+    if (nextAnim.behavior.kind == 'travel' || nextAnim.teleporting) {
+        if (nextAnim.source == latest?.yourInfo.unitId) {
+            visualOpacity.set(true);
+        }
+    }
 
     subAnimationStage.set('start')
 
@@ -614,7 +625,6 @@ export async function nextAnimationIndex(
 }
 
 function checkAnimationValid(ba: BattleAnimation): boolean {
-    let valid = true
     let enemiesToCheck = get(enemies)
     let alliesToCheck = get(allies)
     let vasesToCheck = get(vasesToShow)
@@ -741,7 +751,7 @@ function handleAnimationsOnMessage(
 
 function startAnimating(msgWithAnims: MessageFromServer) {
     currentAnimationsWithData.set(msgWithAnims.animations);
-    // console.log(`starting anims ${JSON.stringify($currentAnimationsWithData)}`);
+    // console.log(`starting anims ${JSON.stringify(msgWithAnims.animations)}`);
     nextAnimationIndex(
         true,
         false,

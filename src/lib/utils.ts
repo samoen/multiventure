@@ -23,6 +23,7 @@ export type BattleAnimation = {
 	alsoDamages?:HealthModifier[],
 	alsoModifiesAggro?:AggroModifier[],
 	takesItem?:boolean,
+	teleporting?:boolean,
 }
 
 export type DataFirstLoad = {
@@ -62,7 +63,7 @@ export type BattleEvent = {
 	behavior: AnimationBehavior,
 	alsoDamages?:HealthModifierEvent[],
 	alsoModifiesAggro?:AggroModifierEvent[],
-	succumb?:boolean,
+	teleportsTo?:SceneDataId,
 }
 
 export type StatusMod = {statusId:StatusId, remove?:boolean, count?:number}
@@ -119,7 +120,7 @@ export type LandscapeImage = 'plains' | 'castle' | 'bridge' | 'grimForest'
 export type AnimationBehavior = 
 	| {kind:'missile', extraSprite:AnySprite} 
 	| {kind: 'melee'} 
-	| {kind: 'travel', goTo:SceneDataId} 
+	| {kind: 'travel'} 
 	| {kind: 'center', extraSprite:AnySprite} 
 	| {kind: 'selfInflicted', extraSprite:AnySprite}
 

@@ -51,7 +51,6 @@
 
 		let guestIsMe = $guestId == $lastMsgFromServer.yourInfo.unitId;
 		if ($currentAnimation.behavior.kind == 'travel') {
-			$visualOpacity = false;
 
 			// remove the traveller from visuals
 			$allVisualUnitProps = $allVisualUnitProps.filter((v) => v.id != $guestId);

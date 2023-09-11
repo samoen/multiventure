@@ -35,7 +35,7 @@ export function updatePlayerActions(player: Player) {
 		if (i.style.style == 'onlySelf') {
 			const be: BattleEvent = {
 				source: { kind: 'player', entity: player },
-				succumb: i.succumb,
+				teleportsTo: i.teleportTo,
 				behavior: i.behavior,
 			}
 			let ga: GameAction = {
@@ -390,7 +390,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				battleAnimation: {
 					triggeredBy: player.unitId,
 					source: player.unitId,
-					behavior: { kind: 'travel', goTo:actionFromId.unlockableActData.travelTo},
+					behavior: { kind: 'travel'},
 					target: actionFromId.target
 				}
 			})
@@ -708,9 +708,9 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	let leavingScene = undefined
 	let sceneToPlayAnim = player.currentUniqueSceneId
 
-	if (battleEvent.succumb) {
+	if (battleEvent.teleportsTo) {
 		leavingScene = player
-		changeScene(player, dead.sceneDataId)
+		changeScene(player, battleEvent.teleportsTo)
 	}
 
 	let battleAnimation: BattleAnimation = {
@@ -738,6 +738,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				remove: m.remove
 			} satisfies StatusModifier
 		}),
+		teleporting: battleEvent.teleportsTo ? true : undefined
 
 	}
 	pushAnimation({

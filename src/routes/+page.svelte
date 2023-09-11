@@ -661,16 +661,10 @@
 										}
 										$lastUnitClicked = $selectedDetail.entity.id;
 										$selectedDetail.entity;
-										await choose(act);
-										if ($currentAnimation != undefined) {
-											if ($currentAnimation.behavior.kind == 'travel') {
-												$visualOpacity = true;
-												// await tick()
-											}
-										}
-
-										$convoStateForEachVAS = $convoStateForEachVAS;
-										$visualActionSources = $visualActionSources;
+										choose(act);
+										
+										// $convoStateForEachVAS = $convoStateForEachVAS;
+										// $visualActionSources = $visualActionSources;
 									}}>{act.buttonText}</button
 								>
 							{/each}
