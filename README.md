@@ -1,6 +1,6 @@
 # Multiventure
 
-A multiplayer text aventure just for fun!
+A multiplayer online role playing game
 
 ![alt text](https://www.gnu.org/graphics/gplv3-with-text-136x68.png)
 

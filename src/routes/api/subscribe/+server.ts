@@ -63,7 +63,10 @@ export const GET: RequestHandler = async (event) => {
 		let rs = new ReadableStream({
 			start(c) {
 
-				if (!player || !player.connectionState) return
+				if (!player || !player.connectionState){
+					console.log('tried to start stream but undefined player or con')
+					return
+				} 
 				console.log(`stream started for hero ${player.heroName}`);
 				// player.connectionState.ip = ip;
 				player.connectionState.con = c;
@@ -104,7 +107,9 @@ export const GET: RequestHandler = async (event) => {
 					pushHappening(`${player.heroName} left the game`)
 					sendEveryoneWorld(player.heroName);
 				// }, 1);
-			}
+			},
+			
+
 		});
 		player.connectionState.stream = rs;
 
@@ -122,4 +127,6 @@ export const GET: RequestHandler = async (event) => {
 		return json({ oops: true }, { status: 500 })
 	}
 };
+
+
 

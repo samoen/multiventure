@@ -390,7 +390,6 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
             )
         }
         for (const p of lastMsg.otherPlayers) {
-            console.log(p.heroName + ` is class ` + p.class)
             newVups.push(
                 {
                     id: p.unitId,

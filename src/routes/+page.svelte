@@ -237,7 +237,6 @@
 		leaveGame();
 	}
 	function leaveGame() {
-		$clientState.status = 'leaving game';
 		$clientState.waitingForMyEvent = false;
 		$source?.close();
 		$source = undefined;
@@ -253,6 +252,7 @@
 		$lastUnitClicked = undefined;
 		$clientState.status = 'left game';
 		$clientState.loading = false;
+		invalidateAll()
 	}
 
 	async function guestSignUp() {
