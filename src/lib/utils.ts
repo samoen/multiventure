@@ -14,7 +14,6 @@ export type VisualActionSourceId = `vas${string}`
 export type BattleAnimation = {
 	triggeredBy:HeroId,
 	source: UnitId,
-	damageToSource?: number,
 	target?: UnitId,
 	damageToTarget?: number,
 	strikes?:number,
@@ -55,7 +54,6 @@ export type BattleEventEntity = {kind:'player',entity:Player}|{kind:'enemy',enti
 export type BattleEvent = {
 	source: BattleEventEntity
 	target?:BattleEventEntity
-	baseHealingToSource?: number,
 	baseHealingToTarget?: number,
 	baseDamageToTarget?:number,
 	strikes?:number,

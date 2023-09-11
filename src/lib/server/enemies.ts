@@ -13,7 +13,7 @@ export type ActiveEnemy = {
 	name: EnemyName
 	templateId: EnemyTemplateId
 	currentUniqueSceneId:UniqueSceneIdenfitier
-	currentHealth: number
+	health: number
 	maxHealth: number
 	damage: number
 	aggros: Map<HeroId, number>
@@ -153,7 +153,7 @@ export function spawnEnemy(
 		name: eFs.eName ?? eFs.eTemp,
 		templateId: eFs.eTemp,
 		currentUniqueSceneId:where2,
-		currentHealth: modifiedBaseHealth,
+		health: modifiedBaseHealth,
 		maxHealth: modifiedBaseHealth,
 		damage: template.baseDamage,
 		aggros: aggros,
@@ -225,7 +225,7 @@ export function damagePlayer(enemy: ActiveEnemy, player: Player, baseDmg:number)
 }
 
 export function damageEnemy(attackerName: string, enemy: ActiveEnemy, damage: number, bonusDmg:number, strikes: number = 1): { dmgDone: number } {
-	if (enemy.currentHealth < 1) return { dmgDone: 0 }
+	if (enemy.health < 1) return { dmgDone: 0 }
 
 	let dmgDone = 0
 	for (const _ of Array.from({ length: strikes })) {
@@ -239,7 +239,7 @@ export function damageEnemy(attackerName: string, enemy: ActiveEnemy, damage: nu
 				dmg = enemy.template.damageLimit
 			} 
 		}
-		enemy.currentHealth -= dmg
+		enemy.health -= dmg
 		dmgDone += dmg
 	}
 
@@ -264,9 +264,9 @@ export function pushAnimation(
 }
 
 export function takePoisonDamage(enemy: ActiveEnemy, player:Player): { dmgDone: number } {
-	if (enemy.currentHealth < 1) return { dmgDone: 0 }
+	if (enemy.health < 1) return { dmgDone: 0 }
 	let dmg = Math.floor(enemy.maxHealth * 0.25)
-	enemy.currentHealth -= dmg
+	enemy.health -= dmg
 	pushHappening(`${enemy.name} took ${dmg} damage from ${player.heroName}'s poison`)
 	let result = checkEnemyDeath(enemy)
 	if (result.killed) {
@@ -278,7 +278,8 @@ export function takePoisonDamage(enemy: ActiveEnemy, player:Player): { dmgDone: 
 			battleAnimation: {
 				triggeredBy:player.unitId,
 				source: enemy.unitId,
-				damageToSource: dmg,
+				target:enemy.unitId,
+				damageToTarget: dmg,
 				behavior: {kind:'selfInflicted', extraSprite:'poison'},
 			}
 		}
@@ -287,7 +288,7 @@ export function takePoisonDamage(enemy: ActiveEnemy, player:Player): { dmgDone: 
 }
 
 export function checkEnemyDeath(target: ActiveEnemy): { killed: boolean } {
-	if (target.currentHealth < 1) {
+	if (target.health < 1) {
 		const i = activeEnemies.findIndex(e => e === target)
 		if (i >= 0) {
 			activeEnemies.splice(i, 1)

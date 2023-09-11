@@ -1,7 +1,7 @@
 import { goto } from "$app/navigation"
 import type { AggroModifier, AggroModifierEvent, AnySprite, BattleAnimation, BattleEvent, BattleEventEntity, GameActionSentToClient, HealthModifier, HealthModifierEvent, StatusEffect, StatusId, StatusModifier, StatusModifierEvent, UnitId, VisualActionSourceId } from "$lib/utils"
 import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, modifyAggroForPlayer, modifiedEnemyHealth, type EnemyTemplateId, spawnEnemy, type EnemyStatuses, type ActiveEnemy } from "./enemies"
-import { items, type Item, equipItem, checkHasItem, type ItemId } from "./items"
+import { items, type Item, equipItem, checkHasItem, type ItemId, type AffectStyle } from "./items"
 import { pushHappening } from "./messaging"
 import { alreadySpawnedCurrentBattle, spawnedNewBattle, hasPlayerAlreadySpawnedForBattle, spawnedOngoing, getSceneData, type UniqueSceneIdenfitier, type SceneDataId, getSceneDataSimple, dead, uniqueFromSceneDataId } from "./scenes"
 import { users, type Player, type GameAction, healPlayer, type Flag, activePlayersInScene } from "./users"
@@ -31,185 +31,205 @@ export function updatePlayerActions(player: Player) {
 		if (cd.cooldown > 0) continue
 		if (cd.warmup > 0) continue
 		if (cd.stock != undefined && cd.stock < 1) continue
+		if (i.targetStyle.kind == 'noAction') continue
 
-		if (i.style.style == 'onlySelf') {
-			const be: BattleEvent = {
-				source: { kind: 'player', entity: player },
-				teleportsTo: i.teleportTo,
-				behavior: i.behavior,
+
+		let nBe = (
+			targ?: BattleEventEntity
+		) => {
+			let affected: BattleEventEntity[] = []
+			if (i.affectStyle) {
+				if ((i.affectStyle.kind == 'AllEnemy')) {
+					affected = sceneEnemies.map(se => {
+						return {
+							kind: 'enemy',
+							entity: se,
+						}
+					})
+				}
+				if (i.affectStyle.kind == 'SelfOnly') {
+					affected = [{ kind: 'player', entity: player }]
+				}
+				if (i.affectStyle.kind == 'TargetOnly' && targ) {
+					affected = [targ]
+				}
 			}
+
+			let alsoDmgs: HealthModifierEvent[] = []
+			let modagro: AggroModifierEvent[] = []
+			let ptstatuses: StatusModifierEvent[] = []
+			for (const aff of affected) {
+				let hModEvent = HealthModifierEventFromItem(aff, i)
+				if (hModEvent) {
+					alsoDmgs.push(hModEvent)
+				}
+				let aModEvent = AggroModifierEventFromItem(aff, i, player, scenePlayers)
+				if (aModEvent) {
+					modagro.push(aModEvent)
+				}
+				let sModEvent = StatusModifierEventFromItem(aff, i)
+				if (sModEvent) {
+					ptstatuses.push(sModEvent)
+				}
+			}
+			let result: BattleEvent = {
+				source: { kind: 'player', entity: player },
+				behavior: i.behavior,
+				teleportsTo: i.teleportTo,
+				strikes: i.strikes,
+				baseHealingToTarget: i.baseHealToTarget,
+				alsoDamages: alsoDmgs,
+				alsoModifiesAggro: modagro,
+				putsStatuses: ptstatuses,
+			} satisfies BattleEvent
+
+			return result
+		}
+
+		let targetable: BattleEventEntity[] | undefined = undefined
+
+		if ((i.targetStyle.kind == 'anyEnemy')) {
+			targetable = sceneEnemies.map(se => {
+				return {
+					kind: 'enemy',
+					entity: se
+				}
+			})
+		}
+		if ((i.targetStyle.kind == 'anyFriendly')) {
+			targetable = scenePlayers.map(sp => {
+				return {
+					kind: 'player',
+					entity: sp
+				}
+			})
+		}
+
+		if (i.targetStyle.kind == 'noTarget') {
+			let noTargBe = nBe()
 			let ga: GameAction = {
-				buttonText: `use ${i.id}`,
-				battleEvent:be,
+				buttonText: `use ${i.id} without target`,
+				battleEvent: noTargBe,
 				itemId: i.id,
 			}
 			player.itemActions.push(ga)
-		}
+		} else {
+			let targetable: BattleEventEntity[] = []
 
-		if ((i.style.style == 'allEnemies')) {
-			const be: BattleEvent = {
-				source: { kind: 'player', entity: player },
-				behavior: i.behavior,
-			}
-			if (i.baseDmg) {
-				be.alsoDamages = []
-				for (const enemy of sceneEnemies) {
-					be.alsoDamages.push({
-						baseDamage: i.baseDmg,
-						targetEnemy: enemy
-					})
-				}
-			}
-			if (i.aggroModifyForAll) {
-				be.alsoModifiesAggro = []
-				for (const enemy of sceneEnemies) {
-					be.alsoModifiesAggro.push({
-						targetEnemy: enemy,
-						forHeros: scenePlayers,
-						baseAmount: i.aggroModifyForAll,
-					})
-				}
-			}
-			if (i.putsStatusOnAffected) {
-				be.putsStatuses = []
-				for (const enemy of sceneEnemies) {
-					be.putsStatuses.push({
-						targetEnemy: enemy,
-						statusId: i.putsStatusOnAffected.statusId,
-						count: i.putsStatusOnAffected.count,
-						remove: i.putsStatusOnAffected.remove,
-
-					})
-				}
-			}
-			if (i.style.putsStatusOnSelf) {
-				be.putsStatuses = []
-				be.putsStatuses.push({
-					targetPlayer: player,
-					statusId: i.style.putsStatusOnSelf.statusId,
-					count: i.style.putsStatusOnSelf.count,
-					remove: i.style.putsStatusOnSelf.remove,
+			if ((i.targetStyle.kind == 'anyEnemy')) {
+				targetable = sceneEnemies.map(se => {
+					return {
+						kind: 'enemy',
+						entity: se
+					}
 				})
 			}
-
-			let ga: GameAction = {
-				buttonText: `use ${i.id}`,
-				battleEvent:be,
-				itemId: i.id,
-			}
-			player.itemActions.push(ga)
-
-
-		}
-		if ((i.style.style == 'anyEnemy')) {
-			for (const enemy of sceneEnemies) {
-				const be: BattleEvent = {
-					source: { kind: 'player', entity: player },
-					target: { kind: 'enemy', entity: enemy },
-					baseDamageToTarget: i.baseDmg,
-					behavior: i.behavior,
-					strikes: i.strikes,
-				}
-				if (i.putsStatusOnAffected) {
-					be.putsStatuses = []
-					be.putsStatuses.push({
-						targetEnemy: enemy,
-						statusId: i.putsStatusOnAffected.statusId,
-						count: i.putsStatusOnAffected.count,
-						remove: i.putsStatusOnAffected.remove,
-					})
-				}
-
-				let ga: GameAction = {
-					buttonText: `use ${i.id} on ${enemy.unitId}`,
-					battleEvent:be,
-					itemId: i.id,
-					target: enemy.unitId,
-				}
-				player.itemActions.push(ga)
-
-
-
-			}
-		}
-		if ((i.style.style == 'anyFriendly')) {
-			for (const friend of scenePlayers.filter(f => f.unitId != player.unitId)) {
-				if (
-					(!i.requiresHealth || friend.health < friend.maxHealth && friend.health > 0) &&
-					(!i.requiresStatus || friend.statuses[i.requiresStatus] > 0)
-				) {
-					const be: BattleEvent = {
-						source: { kind: 'player', entity: player },
-						target: { kind: 'player', entity: friend },
-						behavior: { kind: 'melee' },
-						baseHealingToTarget: i.baseHeal
+			if ((i.targetStyle.kind == 'anyFriendly')) {
+				targetable = scenePlayers.map(sp => {
+					return {
+						kind: 'player',
+						entity: sp
 					}
-					if (i.putsStatusOnAffected) {
-						be.putsStatuses = []
-						be.putsStatuses.push({
-							targetPlayer: friend,
-							statusId: i.putsStatusOnAffected.statusId,
-							count: i.putsStatusOnAffected.count,
-							remove: i.putsStatusOnAffected.remove,
-						})
+				})
+			}
+			for (const t of targetable) {
+				let perTargbe = nBe(t)
+				if ((!i.requiresTargetDamaged || t.entity.health < t.entity.maxHealth && t.entity.health > 0) &&
+					(!i.requiresStatus || checkHasStatus(t, i.requiresStatus))) {
+					if (i.targetStyle.kind == 'anyFriendly') {
+						let behav = i.behavior
+						if (t.entity.unitId == player.unitId) {
+							behav = i.targetStyle.selfBehavior
+						}
+						perTargbe.behavior = behav
 					}
+					perTargbe.target = t
+					perTargbe.baseDamageToTarget = i.baseDmg
+					perTargbe.baseHealingToTarget = i.baseHealToTarget
 					let ga: GameAction = {
-						buttonText: `use ${i.id} on ${friend.unitId}`,
-						battleEvent:be,
+						buttonText: `use ${i.id} on ${t.entity.unitId}`,
+						battleEvent: perTargbe,
 						itemId: i.id,
-						target: friend.unitId,
+						target: t.entity.unitId
 					}
 					player.itemActions.push(ga)
-
-
 				}
-			}
-		}
-		if ((i.style.style == 'anyFriendly')) {
-			if (
-				(!i.requiresHealth || player.health < player.maxHealth && player.health > 0) &&
-				(!i.requiresStatus || player.statuses[i.requiresStatus] > 0)
-			) {
-
-				const be: BattleEvent = {
-					source: { kind: 'player', entity: player },
-					behavior: i.style.selfBehavior,
-					baseHealingToSource: i.baseHeal
-				}
-				if (i.putsStatusOnAffected) {
-					be.putsStatuses = []
-					be.putsStatuses.push({
-						targetPlayer: player,
-						statusId: i.putsStatusOnAffected.statusId,
-						count: i.putsStatusOnAffected.count,
-						remove: i.putsStatusOnAffected.remove,
-					})
-				}
-				let ga: GameAction = {
-					buttonText: `use ${i.id} on self`,
-					battleEvent:be,
-					itemId: i.id,
-					target: player.unitId,
-				}
-				player.itemActions.push(ga)
-
 
 			}
 		}
+
 	}
 
-	if(scene.actions){
+	if (scene.actions) {
 		scene.actions(player)
 	}
 	if (!sceneEnemies.length) {
-		if(scene.vases){
-			for ( const vas of scene.vases){
+		if (scene.vases) {
+			for (const vas of scene.vases) {
 				player.visualActionSources.push(vas)
 				let acts = getValidGameActionsFromVas(vas, player)
 				player.vasActions.push(...acts)
 			}
 		}
 	}
+}
+
+export function checkHasStatus(bee: BattleEventEntity, st: StatusId): boolean {
+	if (bee.kind == 'player') {
+		return bee.entity.statuses[st] > 0
+	}
+	if (bee.kind == 'enemy') {
+		if (Array.from(bee.entity.statuses.values()).some(s => {
+			let c = s.get(st)
+			return c && c > 0
+		})) {
+			return true
+		}
+	}
+
+	return false
+
+}
+
+function HealthModifierEventFromItem(aff: BattleEventEntity, i: Item): HealthModifierEvent | undefined {
+	if (i.baseDmg) {
+		return {
+			baseDamage: i.baseDmg,
+			targetEnemy: aff.kind == 'enemy' ? aff.entity : undefined,
+			targetPlayer: aff.kind == 'player' ? aff.entity : undefined,
+		}
+	}
+	return undefined
+}
+
+function AggroModifierEventFromItem(aff: BattleEventEntity, i: Item, player: Player, scenePlayers: Player[]): AggroModifierEvent | undefined {
+	if (i.modifiesAggroOnAffected) {
+		if (aff.kind == 'enemy') {
+			let fHeroes = [player]
+			if (i.modifiesAggroOnAffected.kind == 'allPlayers') {
+				fHeroes = scenePlayers
+			}
+			return {
+				targetEnemy: aff.entity,
+				forHeros: fHeroes,
+				baseAmount: i.modifiesAggroOnAffected.amount,
+			}
+		}
+	}
+	return undefined
+}
+
+function StatusModifierEventFromItem(aff: BattleEventEntity, i: Item): StatusModifierEvent | undefined {
+	if (i.putsStatusOnAffected) {
+		return {
+			targetEnemy: aff.kind == 'enemy' ? aff.entity : undefined,
+			targetPlayer: aff.kind == 'player' ? aff.entity : undefined,
+			statusId: i.putsStatusOnAffected.statusId,
+			count: i.putsStatusOnAffected.count,
+			remove: i.putsStatusOnAffected.remove,
+		}
+	}
+	return undefined
 }
 
 export function enterSceneOrWakeup(player: Player) {
@@ -228,19 +248,19 @@ export function enterSceneOrWakeup(player: Player) {
 			}
 		}
 	}
-	
+
 	const sceneEnemies = enemiesInScene(player.currentUniqueSceneId)
-	
+
 	if (!sceneEnemies.length) {
-		if(enteringScene.spawnsEnemiesOnEnter){
+		if (enteringScene.spawnsEnemiesOnEnter) {
 			// start new battle
 			spawnedNewBattle(player)
-			
+
 			for (const es of enteringScene.spawnsEnemiesOnEnter) {
 				spawnEnemy(es, player.currentUniqueSceneId, player.unitId)
 			}
 		}
-	}else{
+	} else {
 		// we are joining a battle
 		console.log('joining battle')
 		for (const e of sceneEnemies) {
@@ -249,11 +269,11 @@ export function enterSceneOrWakeup(player: Player) {
 				e.aggros.set(player.unitId, e.template.startAggro)
 			}
 			// scale health to player count
-			if(!enteringScene.solo){
+			if (!enteringScene.solo) {
 				scaleEnemyHealth(e, scenePlayers.length)
 			}
 		}
-		
+
 		if (enteringScene.spawnsEnemiesOnBattleJoin && !hasPlayerAlreadySpawnedForBattle(player)) {
 			console.log('spawning on join')
 			// spawn extra enemies
@@ -279,31 +299,31 @@ export function enterSceneOrWakeup(player: Player) {
 
 	// scene texts will be repopulated
 	player.sceneTexts = [];
-	if(enteringScene.sceneTexts){
-		let {fallback, ...froms} = enteringScene.sceneTexts
+	if (enteringScene.sceneTexts) {
+		let { fallback, ...froms } = enteringScene.sceneTexts
 		let useDefault = true
-		for (let [from,txt] of Object.entries(froms)){
-			if(player.previousScene.dataId == from && txt){
+		for (let [from, txt] of Object.entries(froms)) {
+			if (player.previousScene.dataId == from && txt) {
 				player.sceneTexts.push(txt)
 				useDefault = false
 				break
 			}
 		}
-		if(useDefault){
+		if (useDefault) {
 			player.sceneTexts.push(fallback)
 		}
 	}
 }
 
-export function scaleEnemyHealth(enemy:ActiveEnemy, playerCount:number) {
-		let percentHealthBefore = enemy.currentHealth / enemy.maxHealth
-		enemy.maxHealth = Math.floor(modifiedEnemyHealth(enemy.template.baseHealth, playerCount))
-		enemy.currentHealth = Math.floor(percentHealthBefore * enemy.maxHealth)
+export function scaleEnemyHealth(enemy: ActiveEnemy, playerCount: number) {
+	let percentHealthBefore = enemy.health / enemy.maxHealth
+	enemy.maxHealth = Math.floor(modifiedEnemyHealth(enemy.template.baseHealth, playerCount))
+	enemy.health = Math.floor(percentHealthBefore * enemy.maxHealth)
 }
 
 export function changeScene(player: Player, goTo: SceneDataId) {
 
-	let uniqueTo = uniqueFromSceneDataId(player.unitId,goTo)
+	let uniqueTo = uniqueFromSceneDataId(player.unitId, goTo)
 
 	player.previousScene = player.currentUniqueSceneId
 	player.currentUniqueSceneId = uniqueTo
@@ -350,17 +370,17 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	if (actionFromId.unlockableActData) {
 		if (actionFromId.unlockableActData.pickupItem) {
 			const idToPickup = actionFromId.unlockableActData.pickupItem
-				equipItem(player, idToPickup)
-				pushAnimation({
-					sceneId: actionStartedInSceneId,
-					battleAnimation: {
-						triggeredBy: player.unitId,
-						source: player.unitId,
-						target: actionFromId.target,
-						behavior: { kind: 'melee' },
-						takesItem: true,
-					}
-				})
+			equipItem(player, idToPickup)
+			pushAnimation({
+				sceneId: actionStartedInSceneId,
+				battleAnimation: {
+					triggeredBy: player.unitId,
+					source: player.unitId,
+					target: actionFromId.target,
+					behavior: { kind: 'melee' },
+					takesItem: true,
+				}
+			})
 		}
 
 		if (actionFromId.unlockableActData.setsFlag) {
@@ -374,7 +394,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		}
 
 		if (actionFromId.unlockableActData.travelTo) {
-			
+
 			changeScene(player, actionFromId.unlockableActData.travelTo)
 			pushAnimation({
 				leavingScene: player,
@@ -382,7 +402,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				battleAnimation: {
 					triggeredBy: player.unitId,
 					source: player.unitId,
-					behavior: { kind: 'travel'},
+					behavior: { kind: 'travel' },
 					target: actionFromId.target
 				}
 			})
@@ -414,8 +434,8 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 
 	if (player.health > 0 || itemUsed.requiresSourceDead) {
 		preCombatActionPerformed(player, actionFromId, itemUsed)
-		if(actionFromId.battleEvent){
-			processBattleEvent(actionFromId.battleEvent,player)
+		if (actionFromId.battleEvent) {
+			processBattleEvent(actionFromId.battleEvent, player)
 		}
 	}
 
@@ -458,7 +478,8 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 					battleAnimation: {
 						triggeredBy: player.unitId,
 						source: player.unitId,
-						damageToSource: dmg,
+						target: player.unitId,
+						damageToTarget: dmg,
 						behavior: { kind: 'selfInflicted', extraSprite: 'poison', }
 
 					}
@@ -485,10 +506,10 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	const postReactionEnemies = enemiesInScene(actionStartedInSceneId)
 	if (!postReactionEnemies.length) {
 		for (const playerInScene of activePlayersInScene(player.currentUniqueSceneId)) {
-			if(playerScene.healsOnVictory){
+			if (playerScene.healsOnVictory) {
 				playerInScene.health = playerInScene.maxHealth
 			}
-			if(playerScene.setsFlagOnVictory){
+			if (playerScene.setsFlagOnVictory) {
 				playerInScene.flags.add(playerScene.setsFlagOnVictory)
 			}
 		}
@@ -531,7 +552,7 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 	}
 	let sceneEnemies = enemiesInScene(player.currentUniqueSceneId)
 	for (const enemyInScene of sceneEnemies.sort((a, b) => b.template.speed - a.template.speed)) {
-		if (enemyInScene.currentHealth < 1) continue
+		if (enemyInScene.health < 1) continue
 		if (
 			(postAction && (playerHitSpeed >= enemyInScene.template.speed))
 			|| (!postAction && (playerHitSpeed < enemyInScene.template.speed))
@@ -591,19 +612,20 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 
 	if (
-		(battleEvent.target && battleEvent.target.kind == 'enemy' && battleEvent.target.entity.currentHealth < 1) ||
+		(battleEvent.target && battleEvent.target.kind == 'enemy' && battleEvent.target.entity.health < 1) ||
 		(battleEvent.target && battleEvent.target.kind == 'player' && battleEvent.target.entity.health < 1)
 	) {
 		return
 	}
 
-	let dmgToSource = 0
+	// let dmgToSource = 0
 	let dmgToTarget = 0
-	if (battleEvent.source.kind == 'player' && battleEvent.baseHealingToSource) {
-		let r = healPlayer(battleEvent.source.entity, battleEvent.baseHealingToSource)
-		dmgToSource = r.healed * -1
-	}
+	// if (battleEvent.source.kind == 'player' && battleEvent.baseHealingToSource) {
+	// 	let r = healPlayer(battleEvent.source.entity, battleEvent.baseHealingToSource)
+	// 	dmgToSource = r.healed * -1
+	// }
 	if (battleEvent.target?.kind == 'player' && battleEvent.baseHealingToTarget) {
+		console.log('healing ' + battleEvent.target.entity.unitId)
 		let r = healPlayer(battleEvent.target.entity, battleEvent.baseHealingToTarget)
 		dmgToTarget = r.healed * -1
 	}
@@ -709,7 +731,6 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		triggeredBy: player.unitId,
 		source: battleEvent.source.entity.unitId,
 		target: battleEvent.target?.entity.unitId,
-		damageToSource: dmgToSource,
 		damageToTarget: dmgToTarget,
 		strikes: battleEvent.strikes,
 		behavior: battleEvent.behavior,
@@ -782,10 +803,10 @@ export function getValidGameActionsFromVas(vas: VisualActionSource, player: Play
 					txt = `Travel to ${scene.displayName}`
 					targ = vas.unitId
 				}
-				if(unlockableActData.travelToCheckpoint){
+				if (unlockableActData.travelToCheckpoint) {
 					let travelTo = player.lastCheckpoint.dataId
 					unlockableActData.travelTo = travelTo
-					
+
 					let scene = getSceneDataSimple(travelTo)
 					txt = `Respawn at checkpoint: ${scene.displayName}`
 					targ = vas.unitId
@@ -916,29 +937,29 @@ export type ConversationResponse = {
 export function deepEqual(objA: any, objB: any): boolean {
 	// Check if both objects are of the same type
 	if (typeof objA !== typeof objB) {
-	  return false;
+		return false;
 	}
-  
+
 	if (typeof objA !== 'object' || objA === null || objB === null) {
-	  // If both objects are not objects or are null, compare them directly
-	  return objA === objB;
+		// If both objects are not objects or are null, compare them directly
+		return objA === objB;
 	}
-  
+
 	// Get the keys of both objects
 	const keysA = Object.keys(objA);
 	const keysB = Object.keys(objB);
-  
+
 	// Check if the number of keys is the same
 	if (keysA.length !== keysB.length) {
-	  return false;
+		return false;
 	}
-  
+
 	// Check if all keys in objA are also in objB and have equal values
 	for (const key of keysA) {
-	  if (!keysB.includes(key) || !deepEqual(objA[key], objB[key])) {
-		return false;
-	  }
+		if (!keysB.includes(key) || !deepEqual(objA[key], objB[key])) {
+			return false;
+		}
 	}
-  
+
 	return true;
-  }
+}

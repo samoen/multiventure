@@ -255,7 +255,9 @@
 					const anim = $currentAnimation;
 					if (!anim) return;
 					updateUnit(hostId, (vup) => {
-						vup.displayHp -= anim.damageToSource ?? 0;
+						if(anim.target == vup.id){
+							vup.displayHp -= anim.damageToTarget ?? 0;
+						}
 					});
 					handlePutsStatuses(anim);
 				}}

@@ -137,7 +137,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 
 			return {
 				unitId:e.unitId,
-				health: e.currentHealth,
+				health: e.health,
 				maxHealth: e.maxHealth,
 				name: e.name,
 				templateId: e.templateId,

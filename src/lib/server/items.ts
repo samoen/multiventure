@@ -18,22 +18,32 @@ export type Item = {
 	cooldown?: number
 	startStock?: number
 	useableOutOfBattle?: boolean
-	requiresHealth?: boolean
+	requiresTargetDamaged?: boolean
 	requiresStatus?: StatusId
 	requiresSourceDead?: boolean
 	excludeFromDetail?:boolean
-	baseHeal?: number,
+	baseHealToTarget?: number,
 	baseDmg?: number,
 	putsStatusOnAffected?: StatusMod,
-	aggroModifyForAll?: number,
+	modifiesAggroOnAffected?: {kind:'allPlayers' | 'justMe', amount:number},
 	behavior: AnimationBehavior,
 	strikes?: number
-	style: TargetStyle
+	targetStyle: TargetStyle
+	affectStyle? : AffectStyle
 	teleportTo?: SceneDataId
 }
 
 
-export type TargetStyle = { style: 'anyEnemy' } | { style: 'allEnemies', putsStatusOnSelf?: StatusMod } | { style: 'anyFriendly', selfBehavior: AnimationBehavior } | { style: 'noAction' } | { style: 'onlySelf' }
+export type TargetStyle = 
+	| { kind: 'anyEnemy' } 
+	| { kind: 'noTarget'} 
+	| { kind: 'anyFriendly', selfBehavior: AnimationBehavior } 
+	| { kind: 'noAction' } 
+
+export type AffectStyle = 
+| { kind:'AllEnemy' }
+| { kind:'TargetOnly' }
+| { kind:'SelfOnly' }
 
 const dagger: Item = {
 	id: 'dagger',
@@ -43,7 +53,7 @@ const dagger: Item = {
 	baseDmg: 7,
 	behavior: { kind: 'melee' },
 	strikes: 3,
-	style: { style: 'anyEnemy' }
+	targetStyle: { kind: 'anyEnemy' }
 }
 
 const club: Item = {
@@ -53,7 +63,7 @@ const club: Item = {
 	speed: 1,
 	baseDmg: 28,
 	behavior: { kind: 'melee' },
-	style: { style: 'anyEnemy' }
+	targetStyle: { kind: 'anyEnemy' }
 }
 
 export const fireStaff: Item = {
@@ -61,11 +71,13 @@ export const fireStaff: Item = {
 	slot: 'weapon',
 	warmup: 2,
 	cooldown: 1,
-	provoke: 60,
+	provoke: 10,
 	speed: 2,
-	baseDmg: 100,
+	baseDmg: 50,
 	behavior: { kind: 'missile', extraSprite: 'flame' },
-	style: { style: 'anyEnemy' }
+	modifiesAggroOnAffected:{kind:'justMe',amount:80},
+	affectStyle:{kind:'TargetOnly'},
+	targetStyle: { kind: 'anyEnemy' },
 }
 
 const potion: Item = {
@@ -73,12 +85,12 @@ const potion: Item = {
 	slot: 'utility',
 	startStock: 2,
 	useableOutOfBattle: true,
-	requiresHealth: true,
+	requiresTargetDamaged: true,
 	speed: 15,
 	provoke: 1,
-	style: { style: 'anyFriendly', selfBehavior: { kind: 'selfInflicted', extraSprite: 'heal' } },
+	targetStyle: { kind: 'anyFriendly', selfBehavior: { kind: 'selfInflicted', extraSprite: 'heal' } },
 	behavior: { kind: 'melee' },
-	baseHeal: 90,
+	baseHealToTarget: 50,
 }
 
 const bomb: Item = {
@@ -87,10 +99,11 @@ const bomb: Item = {
 	startStock: 1,
 	speed: 12,
 	provoke: 5,
-	style: { style: 'allEnemies' },
+	targetStyle: { kind: 'noTarget' },
+	affectStyle: {kind:'AllEnemy'},
 	behavior: { kind: 'center', extraSprite: 'bomb' },
 	baseDmg: 5,
-	aggroModifyForAll: -20
+	modifiesAggroOnAffected: {kind:'allPlayers', amount:-20}
 }
 
 export const poisonDart: Item = {
@@ -100,7 +113,8 @@ export const poisonDart: Item = {
 	provoke: 40,
 	speed: 20,
 	behavior: { kind: 'missile', extraSprite: 'arrow' },
-	style: { style: 'anyEnemy' },
+	targetStyle: { kind: 'anyEnemy' },
+	affectStyle:{kind:'TargetOnly'},
 	putsStatusOnAffected: { statusId: 'poison', count: 3 },
 	baseDmg: 3,
 }
@@ -114,7 +128,9 @@ export const plateMail: Item = {
 	damageLimit: 20,
 	grantsImmunity: true,
 	behavior: { kind: 'selfInflicted', extraSprite: 'flame' },
-	style: { style: 'allEnemies', putsStatusOnSelf: { statusId: 'rage', count: 2 } },
+	putsStatusOnAffected:{ statusId: 'rage', count: 2 },
+	targetStyle: { kind: 'noTarget'},
+	affectStyle: {kind:'SelfOnly'}
 }
 
 const thiefCloak: Item = {
@@ -125,7 +141,9 @@ const thiefCloak: Item = {
 	provoke: 30,
 	grantsImmunity: true,
 	behavior: { kind: 'selfInflicted', extraSprite: 'smoke' },
-	style: { style: 'allEnemies', putsStatusOnSelf: { statusId: 'hidden', count: 2 } },
+	putsStatusOnAffected:{ statusId: 'hidden', count: 2 },
+	targetStyle: { kind: 'noTarget' },
+	affectStyle: {kind:'SelfOnly'},
 }
 
 export const leatherArmor: Item = {
@@ -138,7 +156,8 @@ export const leatherArmor: Item = {
 	grantsImmunity: true,
 	damageReduction: 5,
 	behavior: { kind: 'melee' },
-	style: { style: 'anyFriendly', selfBehavior: { kind: 'selfInflicted', extraSprite: 'heal' } },
+	targetStyle: { kind: 'anyFriendly', selfBehavior: { kind: 'selfInflicted', extraSprite: 'heal' } },
+	affectStyle:{kind:'TargetOnly'},
 	putsStatusOnAffected: { statusId: 'poison', remove: true }
 }
 
@@ -149,7 +168,7 @@ const fist: Item = {
 	provoke: 1,
 	speed: 10,
 	behavior: { kind: 'melee' },
-	style: { style: 'anyEnemy' },
+	targetStyle: { kind: 'anyEnemy' },
 	baseDmg: 10,
 }
 const belt: Item = {
@@ -157,7 +176,7 @@ const belt: Item = {
 	slot: 'utility',
 	default: true,
 	excludeFromDetail:true,
-	style: { style: 'noAction' },
+	targetStyle: { kind: 'noAction' },
 	behavior: { kind: 'melee' }
 }
 const rags: Item = {
@@ -165,7 +184,7 @@ const rags: Item = {
 	slot: 'body',
 	default: true,
 	excludeFromDetail:true,
-	style: { style: 'noAction' },
+	targetStyle: { kind: 'noAction' },
 	behavior: { kind: 'melee' }
 }
 
@@ -177,7 +196,7 @@ const wait: Item = {
 	speed: 999,
 	provoke: 0,
 	behavior: { kind: 'selfInflicted', extraSprite: 'shield' },
-	style: { style: 'onlySelf' }
+	targetStyle: { kind: 'noTarget' }
 }
 const succumb: Item = {
 	id: 'succumb',
@@ -190,7 +209,7 @@ const succumb: Item = {
 	requiresSourceDead: true,
 	useableOutOfBattle: true,
 	behavior: { kind: 'selfInflicted', extraSprite: 'skull' },
-	style: { style: 'onlySelf' },
+	targetStyle: { kind: 'noTarget' },
 }
 
 
@@ -232,6 +251,7 @@ export function equipItem(player: Player, itemId: ItemId) {
 			cooldown: 0,
 			warmup: item.warmup ?? 0,
 			stats:item,
+			stock:item.startStock,
 		}
 		player.inventory.push(createState)
 		// player.inventory.sort((a, b) => {
