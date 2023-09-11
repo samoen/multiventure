@@ -62,11 +62,13 @@ export let clientState = writable({
     loading: true,
 })
 
+export type UIVas = VisualActionSourceInClient & {actionsInClient: GameActionSentToClient[]}
+
 export const triedSignupButTaken: Writable<string | undefined> = writable(undefined)
 export const source: Writable<EventSource | undefined> = writable(undefined);
 export const lastMsgFromServer: Writable<MessageFromServer | undefined> = writable();
 export const allVisualUnitProps: Writable<VisualUnitProps[]> = writable([])
-export const visualActionSources: Writable<VisualActionSourceInClient[]> = writable([])
+export const visualActionSources: Writable<UIVas[]> = writable([])
 export const currentAnimationIndex: Writable<number> = writable(999)
 export const currentAnimationsWithData: Writable<BattleAnimation[]> = writable([])
 export const subAnimationStage: Writable<'start' | 'fire' | 'sentHome'> = writable('start')
@@ -159,22 +161,8 @@ export let typedInventory = derived([
 
     return inventory
 })
-export let wepSlotActions = derived(lastMsgFromServer, ($lastMsgFromServer) => {
-    return $lastMsgFromServer?.itemActions.filter(ia => ia.slot == 'weapon')
-})
 
-export let utilitySlotActions = derived(lastMsgFromServer, ($lastMsgFromServer) => {
-    return $lastMsgFromServer?.itemActions.filter(ia => ia.slot == 'utility')
-})
-export let bodySlotActions = derived(lastMsgFromServer, ($lastMsgFromServer) => {
-    return $lastMsgFromServer?.itemActions.filter(ia => ia.slot == 'body')
-})
-export let slotlessBattleActions = derived(lastMsgFromServer, ($lastMsgFromServer) => {
-    return $lastMsgFromServer?.itemActions.filter(ia => ia.slot == 'wait' || ia.slot == 'succumb') ?? []
-})
-
-
-export type DetailWindow = { kind: 'vup', entity: VisualUnitProps } | { kind: 'vas', entity: VisualActionSourceInClient } | { kind: 'bg' }
+export type DetailWindow = { kind: 'vup', entity: VisualUnitProps } | { kind: 'vas', entity: UIVas } | { kind: 'bg' }
 
 
 export const selectedDetail: Readable<DetailWindow | undefined> = derived([
@@ -428,7 +416,16 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
             syncConvoStateToVas(vas)
         }
 
-        visualActionSources.set(lastMsg.visualActionSources)
+        let uiVases = lastMsg.visualActionSources.map(v=>{
+            let actionsFromVas = lastMsg.vasActions.filter(va=>va.vasId == v.id)
+            return {
+                ...v,
+                actionsInClient:actionsFromVas
+            } satisfies UIVas
+
+        })
+
+        visualActionSources.set(uiVases)
     }
 }
 

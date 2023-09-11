@@ -1,6 +1,6 @@
-import { getServerActionsMetRequirementsFromVases, handleAction, updateAllPlayerActions, updatePlayerActions } from '$lib/server/logic';
+import { handleAction, updateAllPlayerActions } from '$lib/server/logic';
 import { FAKE_LATENCY, buildNextMessage, pushHappening, sendEveryoneWorld } from '$lib/server/messaging';
-import { users, type GameAction } from '$lib/server/users';
+import { users } from '$lib/server/users';
 import { isGameActionSelected } from '$lib/utils';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
@@ -29,12 +29,7 @@ export const POST = (async (r) => {
 	}
 
 	// ensure action is still valid
-	// updatePlayerActions(player)
-
-	
-	let validActionsFromVases : GameAction[] = getServerActionsMetRequirementsFromVases(player.visualActionSources,player)
-
-	let actionFromId = [...player.sceneActions, ...player.itemActions, ...validActionsFromVases].find((g) => g.buttonText == msg.buttonText);
+	let actionFromId = [...player.sceneActions, ...player.itemActions, ...player.vasActions].find((g) => g.buttonText == msg.buttonText);
 	if (!actionFromId) {
 		console.log(`rejected action ${JSON.stringify(msg)} because not available`);
 		return json(`action ${msg.buttonText} not available`, { status: 400 });

@@ -17,6 +17,7 @@ export type MessageFromServer = {
 	sceneTexts: string[];
 	sceneActions: GameActionSentToClient[];
 	itemActions: GameActionSentToClient[];
+	vasActions: GameActionSentToClient[];
 	happenings: string[];
 	animations: BattleAnimation[];
 	enemiesInScene: EnemyInClient[];
@@ -108,6 +109,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 		userList:activePlayers().map(u=>u.heroName),
 		itemActions: forPlayer.itemActions.map((gameAction) => convertServerActionToClientAction(gameAction)),
 		// visualActionSources:[],
+		vasActions:forPlayer.vasActions,
 		visualActionSources:forPlayer.visualActionSources.map(s=>{
 			return convertVasToClient(s,forPlayer)
 		}),

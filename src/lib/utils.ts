@@ -22,7 +22,7 @@ export type BattleAnimation = {
 	behavior: AnimationBehavior,
 	alsoDamages?:HealthModifier[],
 	alsoModifiesAggro?:AggroModifier[],
-	takesItem?:{slot:string, id:ItemId},
+	takesItem?:boolean,
 }
 
 export type DataFirstLoad = {
@@ -154,9 +154,9 @@ export function isGameActionSelected(msg: object): msg is GameActionSelected {
 
 export type GameActionSentToClient = {
 	buttonText: string;
-	slot?:QuickbarSlot;
 	itemId?:ItemId;
 	target?: UnitId;
+	vasId?: VisualActionSourceId;
 };
 
 export type EnemyName = string

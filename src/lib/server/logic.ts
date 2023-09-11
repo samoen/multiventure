@@ -16,6 +16,8 @@ export function updatePlayerActions(player: Player) {
 	player.sceneActions = []
 	player.itemActions = []
 	player.visualActionSources = []
+	player.vasActions = []
+
 	let scene = getSceneData(player)
 	let sceneEnemies = enemiesInScene(player.currentUniqueSceneId)
 	let scenePlayers = activePlayersInScene(player.currentUniqueSceneId)
@@ -38,9 +40,7 @@ export function updatePlayerActions(player: Player) {
 			}
 			let ga: GameAction = {
 				buttonText: `use ${i.id}`,
-				performAction() {
-					return be
-				},
+				battleEvent:be,
 				slot: i.slot,
 				itemId: i.id,
 			}
@@ -95,9 +95,7 @@ export function updatePlayerActions(player: Player) {
 
 			let ga: GameAction = {
 				buttonText: `use ${i.id}`,
-				performAction() {
-					return be
-				},
+				battleEvent:be,
 				slot: i.slot,
 				itemId: i.id,
 			}
@@ -126,9 +124,7 @@ export function updatePlayerActions(player: Player) {
 
 				let ga: GameAction = {
 					buttonText: `use ${i.id} on ${enemy.unitId}`,
-					performAction() {
-						return be
-					},
+					battleEvent:be,
 					slot: i.slot,
 					itemId: i.id,
 					target: enemy.unitId,
@@ -162,9 +158,7 @@ export function updatePlayerActions(player: Player) {
 					}
 					let ga: GameAction = {
 						buttonText: `use ${i.id} on ${friend.unitId}`,
-						performAction() {
-							return be
-						},
+						battleEvent:be,
 						slot: i.slot,
 						itemId: i.id,
 						target: friend.unitId,
@@ -197,9 +191,7 @@ export function updatePlayerActions(player: Player) {
 				}
 				let ga: GameAction = {
 					buttonText: `use ${i.id} on self`,
-					performAction() {
-						return be
-					},
+					battleEvent:be,
 					slot: i.slot,
 					itemId: i.id,
 					target: player.unitId,
@@ -218,6 +210,8 @@ export function updatePlayerActions(player: Player) {
 		if(scene.vases){
 			for ( const vas of scene.vases){
 				player.visualActionSources.push(vas)
+				let acts = getValidGameActionsFromVas(vas, player)
+				player.vasActions.push(...acts)
 			}
 		}
 	}
@@ -371,7 +365,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 						source: player.unitId,
 						target: actionFromId.target,
 						behavior: { kind: 'melee' },
-						takesItem: { id: idToPickup, slot: toPickup.slot },
+						takesItem: true,
 					}
 				})
 			}
@@ -428,11 +422,8 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 
 	if (player.health > 0 || itemUsed.requiresSourceDead) {
 		preCombatActionPerformed(player, actionFromId, itemUsed)
-		if (actionFromId.performAction) {
-			let battleEvent = actionFromId.performAction();
-			if (battleEvent) {
-				processBattleEvent(battleEvent, player)
-			}
+		if(actionFromId.battleEvent){
+			processBattleEvent(actionFromId.battleEvent,player)
 		}
 	}
 
@@ -440,9 +431,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		handleRetaliations(player, true, actionFromId, itemUsed)
 	}
 	if (itemUsed.provoke != undefined) {
-		// const scenePlayers = activePlayersInScene(actionStartedInSceneId)
 		for (const enemy of enemiesInScene(actionStartedInSceneId)) {
-
 			for (const [hId, statusForPlayer] of enemy.statuses) {
 				if (hId == player.unitId) {
 					let pois = statusForPlayer.get('poison')
@@ -462,14 +451,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 					}
 
 				}
-				// else{
-				// 	if(!scenePlayers.some(p=>hId == p.unitId)){
-				// 		enemy.statuses.delete(hId)
-				// 	}
-				// }
 			}
-			// let statusForPlayer = enemy.statuses.get(player.unitId)
-			// if (!statusForPlayer) continue
 		}
 	}
 
@@ -765,19 +747,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	})
 }
 
-export function getServerActionsMetRequirementsFromVases(vases: VisualActionSource[], player: Player): GameAction[] {
-	let validActionsFromVases: GameAction[] = []
-	for (const vas of vases) {
-		let acts = getValidUnlockableServerActionsFromVas(vas, player)
-		for (const act of acts) {
-			validActionsFromVases.push(act)
-		}
-	}
-	return validActionsFromVases
-}
-
-
-export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, player: Player): GameAction[] {
+export function getValidGameActionsFromVas(vas: VisualActionSource, player: Player): GameAction[] {
 	let validUnlockableActions: GameAction[] = []
 	if (vas.actionsWithRequirements) {
 		for (const unlockableActData of vas.actionsWithRequirements) {
@@ -835,7 +805,8 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 				ga = {
 					buttonText: txt,
 					unlockableActData: unlockableActData,
-					target: targ
+					target: targ,
+					vasId: vas.unitId,
 				}
 
 				validUnlockableActions.push(ga)
@@ -849,18 +820,13 @@ export function getValidUnlockableServerActionsFromVas(vas: VisualActionSource, 
 export function convertServerActionToClientAction(sa: GameAction): GameActionSentToClient {
 	return {
 		buttonText: sa.buttonText,
-		// slot: sa.slot != 'wait' && sa.slot != 'succumb' ? sa.slot : undefined,
 		itemId: sa.itemId,
-		slot: sa.slot,
 		target: sa.target,
+		vasId: sa.vasId,
 	}
 }
 
 export function convertVasToClient(vas: VisualActionSource, player: Player): VisualActionSourceInClient {
-	let validUnlockableActions = getValidUnlockableServerActionsFromVas(vas, player)
-
-	let validUnlockableClientActions: GameActionSentToClient[] = []
-	validUnlockableClientActions = convertUnlockableActionsToClient(validUnlockableActions)
 
 	let startText = vas.startText
 	let startLocked = vas.startsLocked
@@ -886,7 +852,6 @@ export function convertVasToClient(vas: VisualActionSource, player: Player): Vis
 		sprite: vas.sprite,
 		portrait: vas.portrait,
 		startsLocked: startLocked,
-		actionsInClient: validUnlockableClientActions,
 		detectStep: detectStep,
 		scene: player.currentUniqueSceneId.dataId,
 	} satisfies VisualActionSourceInClient
@@ -920,7 +885,6 @@ export type VisualActionSourceInClient = {
 	id: VisualActionSourceId
 	sprite: AnySprite
 	portrait?: string
-	actionsInClient: GameActionSentToClient[]
 	startText: string,
 	responses: ConversationResponse[]
 	detectStep?: Flag
@@ -933,7 +897,6 @@ export type UnlockableActionData = {
 	pickupItem?: ItemId
 	travelTo?: SceneDataId
 	travelToCheckpoint?: boolean
-	// travelToSolo?: SceneDataId
 	setsFlag?: Flag
 	bText?: string
 	spawnsEnemies?: EnemyForSpawning[]

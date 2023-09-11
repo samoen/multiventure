@@ -66,30 +66,19 @@
 			return;
 		}
 		if ($currentAnimation.takesItem) {
-			const takenItem = $currentAnimation.takesItem
+			// const takenItem = $currentAnimation.takesItem
 			if(guestIsMe){
 				pickedup = true;
 			}
 			updateUnit($guestId, (vup) => {
 				if(vup.actual.kind == 'player'){
-					// let found = vup.actual.info.inventory.find(i=>i.slot == takenItem.slot)
-					// if(!found){
-					// 	vup.actual.info.inventory.push({
-					// 		itemId:takenItem.id,
-					// 		slot:takenItem.slot,
-					// 		cooldown:0,
-					// 		warmup:0,
-					// 	})
-					// }else{
-					// 	found.itemId = takenItem.id
-					// }
 					if($lastMsgFromServer){
-						if(vup.actual.info.heroName == $lastMsgFromServer.yourInfo.heroName){
+						if(vup.actual.info.unitId == $lastMsgFromServer.yourInfo.unitId){
 							vup.src = heroSpriteFromClass($lastMsgFromServer.yourInfo.class);
 							vup.actual.portrait = getHeroPortrait($lastMsgFromServer.yourInfo.class)
 						}else{
 							for (const p of $lastMsgFromServer.otherPlayers){
-								if(p.heroName == vup.actual.info.heroName){
+								if(p.unitId == vup.actual.info.unitId){
 									vup.src = heroSpriteFromClass(p.class);
 									vup.actual.portrait = getHeroPortrait(p.class)
 								}

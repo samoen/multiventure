@@ -1,9 +1,9 @@
-import type { AnimationBehavior, UnitId, BattleAnimation, EnemyName, StatusEffect, StatusId, EnemyId, BattleEvent, StatusModifierEvent, HeroId, HealthModifierEvent, StatusMod } from "$lib/utils";
+import type { AnimationBehavior, BattleAnimation, EnemyId, EnemyName, HeroId, StatusId, StatusMod } from "$lib/utils";
 import { v4 } from "uuid";
-import { deepEqual, type EnemyForSpawning, type EnemyStatusesObject } from "./logic";
+import { deepEqual, type EnemyForSpawning } from "./logic";
 import { pushHappening } from "./messaging";
-import {type UniqueSceneIdenfitier, scenesData, type SceneDataId } from "./scenes";
-import { playerEquipped, type HeroName, type Player, activePlayers, activePlayersInScene } from "./users";
+import { scenesData, type UniqueSceneIdenfitier } from "./scenes";
+import { activePlayersInScene, playerEquipped, type Player } from "./users";
 
 
 export const activeEnemies: ActiveEnemy[] = []

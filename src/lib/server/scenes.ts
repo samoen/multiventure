@@ -678,7 +678,6 @@ const house: Scene = {
 						responseId: 'cool',
 						responseText: `All in a day's work ma'am`,
 						retort: `I bequeath the armor to you so that my son's legacy may live on. Good luck out there.`,
-						unlockVas: ['vasLeatherGift']
 					}
 				]
 			}]

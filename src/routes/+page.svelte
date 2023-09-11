@@ -70,8 +70,8 @@
 		console.log('mounted with ssr data ' + JSON.stringify(data));
 
 		// In dev sometimes the page mounts but the page data is old and innaccurate
-		await invalidateAll();
-		console.log('invalidated, now have ssr data ' + JSON.stringify(data));
+		// await invalidateAll();
+		// console.log('invalidated, now have ssr data ' + JSON.stringify(data));
 		// In dev sometimes we mount with existing state and messes up our flow
 		if ($successcreds || $lastMsgFromServer || $source) {
 			console.log(' mounted with existing state. clearing state');

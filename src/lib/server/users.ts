@@ -3,7 +3,7 @@ import { items, type Item, type ItemState, type QuickbarSlot, type ItemId, equip
 import { pushHappening } from './messaging';
 import { deepEqual, type UnlockableActionData, type VisualActionSource } from './logic';
 import { type SceneDataId, scenesData, type UniqueSceneIdenfitier, startSceneDataId, dead, uniqueFromSceneDataId, getSceneDataSimple } from './scenes';
-import type { BattleAnimation, HeroId, StatusId, BattleEvent, UnitId } from '$lib/utils';
+import type { BattleAnimation, HeroId, StatusId, BattleEvent, UnitId, VisualActionSourceId } from '$lib/utils';
 
 export const users = new Map<UserId, Player>();
 export const globalFlags = new Set<GlobalFlag>();
@@ -63,6 +63,7 @@ export function addNewUser(heroName: string): { id: string, player: Player } | u
 		strength: 1,
 		sceneActions: [],
 		itemActions: [],
+		vasActions: [],
 		visualActionSources: [],
 		sceneTexts: [],
 		flags: startflags,
@@ -108,6 +109,7 @@ export type Player = {
 	lastCheckpoint: UniqueSceneIdenfitier;
 	itemActions: GameAction[];
 	sceneActions: GameAction[];
+	vasActions: GameAction[];
 	sceneTexts: string[];
 	flags: Set<Flag>;
 	animations: BattleAnimation[];
@@ -129,12 +131,12 @@ export type PlayerInClient = {
 };
 
 export type GameAction = {
-	// goTo?: SceneId;
 	devAction?:()=>void;
-	performAction?: () => BattleEvent | void;
+	battleEvent?:BattleEvent;
 	buttonText: string;
 	slot?: QuickbarSlot;
 	itemId?:ItemId;
+	vasId?:VisualActionSourceId;
 	target?: UnitId;
 	unlockableActData?:UnlockableActionData;
 };
