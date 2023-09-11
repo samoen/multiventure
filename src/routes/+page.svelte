@@ -71,13 +71,13 @@
 
 		// In dev sometimes the page mounts but the page data is old and innaccurate
 		await invalidateAll();
-		// console.log('invalidated, now have ssr data ' + JSON.stringify(data));
+		console.log('invalidated, now have ssr data ' + JSON.stringify(data));
 		// In dev sometimes we mount with existing state and messes up our flow
 		if ($successcreds || $lastMsgFromServer || $source) {
 			console.log(' mounted with existing state. clearing state');
 			leaveGame();
 			// wait for old source to close
-			await new Promise(r=>setTimeout(r,300))
+			await new Promise((r) => setTimeout(r, 300));
 			// invalidateAll()
 			// location.reload()
 			// return
@@ -143,34 +143,34 @@
 
 	function onSourceAck(this: EventSource, ev: MessageEvent<any>) {
 		if ($source == undefined) {
-				console.log('got ack from undefined source, weird..');
-			}
-			if ($source !== this) {
-				console.log('got ack from a different source');
-			}
-			$source = this;
-			$sourceErrored = false;
-			getWorld();
-			$clientState.loading = false;
+			console.log('got ack from undefined source, weird..');
+		}
+		if ($source !== this) {
+			console.log('got ack from a different source');
+		}
+		$source = this;
+		$sourceErrored = false;
+		getWorld();
+		$clientState.loading = false;
 	}
 
 	function onSourceMsg(this: EventSource, ev: MessageEvent<any>) {
-	// console.log('got msg from source and source is ' + $source);
-	if ($source == undefined) {
-				console.log(' got msg from undefined source, weird..');
-			}
-			if ($source !== this) {
-				console.log('got msg from a different source');
-			}
-			$source = this;
-			$sourceErrored = false;
-			let sMsg = JSON.parse(ev.data);
-			if (!isMsgFromServer(sMsg)) {
-				console.log('malformed event from server');
-				return;
-			}
-			worldReceived(sMsg);
-			$clientState.loading = false;
+		// console.log('got msg from source and source is ' + $source);
+		if ($source == undefined) {
+			console.log(' got msg from undefined source, weird..');
+		}
+		if ($source !== this) {
+			console.log('got msg from a different source');
+		}
+		$source = this;
+		$sourceErrored = false;
+		let sMsg = JSON.parse(ev.data);
+		if (!isMsgFromServer(sMsg)) {
+			console.log('malformed event from server');
+			return;
+		}
+		worldReceived(sMsg);
+		$clientState.loading = false;
 	}
 
 	function subscribeEventsIfNotAlready() {
@@ -196,7 +196,6 @@
 			return;
 		}
 		$source.addEventListener('error', onSourceError);
-
 
 		$source.addEventListener('firstack', onSourceAck);
 
@@ -252,12 +251,12 @@
 		$lastUnitClicked = undefined;
 		$clientState.status = 'left game';
 		$clientState.loading = false;
-		invalidateAll()
+		invalidateAll();
 	}
 
 	async function guestSignUp() {
-		let joincall : Response | undefined = undefined
-		try{
+		let joincall: Response | undefined = undefined;
+		try {
 			joincall = await fetch('/api/guestsignup', {
 				method: 'POST',
 				body: JSON.stringify({ hi: 'yes' }),
@@ -265,12 +264,12 @@
 					'Content-Type': 'application/json'
 				}
 			});
-		}catch(e){
-			console.log('failed to fetch guestsignup')
-			console.log(e)
+		} catch (e) {
+			console.log('failed to fetch guestsignup');
+			console.log(e);
 			$clientState.status = 'signup failed, need manual';
 			$clientState.loading = false;
-			return
+			return;
 		}
 		let res = await joincall.json();
 		if (!joincall.ok) {
@@ -295,8 +294,8 @@
 		$clientState.loading = true;
 		$clientState.status = 'signing up';
 		console.log('signing up');
-		let joincall : Response | undefined = undefined
-		try{
+		let joincall: Response | undefined = undefined;
+		try {
 			joincall = await fetch('/api/signup', {
 				method: 'POST',
 				body: JSON.stringify({ join: usrName }),
@@ -304,11 +303,11 @@
 					'Content-Type': 'application/json'
 				}
 			});
-		}catch(e){
-			console.log('failed to fetch signup')
+		} catch (e) {
+			console.log('failed to fetch signup');
 			$clientState.status = 'signup failed, need manual';
 			$clientState.loading = false;
-			return
+			return;
 		}
 		if (!joincall.ok) {
 			console.log('signup fail response');
@@ -411,8 +410,20 @@
 			<div class="landingResponses">
 				<button on:click={guestSignUpButtonClicked}>My name is Guest</button>
 				<div class="myNameIs">
-					<button disabled={!signupInput} on:click={signUpButtonClicked}>My name is</button>
-					<input type="text" bind:value={signupInput} />
+					<button disabled={!signupInput || $clientState.waitingForMyEvent || $clientState.loading} on:click={signUpButtonClicked}>My name is</button>
+					<input
+						type="text"
+						bind:value={signupInput}
+						on:keydown={(event) => {
+							if(!signupInput || $clientState.waitingForMyEvent || $clientState.loading){
+								return
+							}
+							if (event.key === 'Enter') {
+								signUpButtonClicked()
+								event.preventDefault();
+							}
+						}}
+					/>
 				</div>
 				{#if $triedSignupButTaken}
 					<p>That name is already taken. If it's you, provide the userID:</p>
@@ -662,7 +673,7 @@
 										$lastUnitClicked = $selectedDetail.entity.id;
 										$selectedDetail.entity;
 										choose(act);
-										
+
 										// $convoStateForEachVAS = $convoStateForEachVAS;
 										// $visualActionSources = $visualActionSources;
 									}}>{act.buttonText}</button
