@@ -203,7 +203,6 @@ export function damagePlayer(enemy: ActiveEnemy, player: Player, baseDmg:number)
 	let strikes = enemy.template.strikes ?? 1
 	for (const _ of Array.from({ length: strikes })) {
 		let dmg = baseDmg
-		// let equippedItems = playerEquipped(player)
 		for (const item of player.inventory) {
 			if (item.stats.damageReduction) {
 				dmg = dmg - item.stats.damageReduction

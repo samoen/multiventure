@@ -507,9 +507,11 @@
 						on:introend={() => {
 							if ($currentAnimation != undefined) {
 								let anim = $currentAnimation;
-								let someoneDied = false;
-								handleModifyHealth(anim);
-
+								let hRes = handleModifyHealth(anim);
+								let someoneDied = false
+								if(hRes.died.length){
+									someoneDied = true
+								}
 								handlePutsStatuses(anim);
 								if($lastMsgFromServer){
 									handleModAggros(anim,$lastMsgFromServer.yourInfo.unitId);
