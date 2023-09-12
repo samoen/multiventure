@@ -98,6 +98,9 @@ export type Player = {
 	animations: BattleAnimation[];
 	visualActionSources: VisualActionSource[];
 	currentUniqueSceneId:UniqueSceneIdenfitier;
+} & PlayerCommonStats;
+
+export type PlayerCommonStats = {
 	inventory:ItemState[];
 	unitId: HeroId;
 	heroName: HeroName;
@@ -106,20 +109,12 @@ export type Player = {
 	strength: number;
 	maxHealth: number;
 	statuses: Record<StatusId, number>
-};
+}
 
 export type PlayerInClient = {
-	inventory:ItemState[];
-	unitId: HeroId;
-	heroName: HeroName;
 	currentSceneDisplay: string;
-	health: number;
-	agility: number;
-	strength: number;
-	maxHealth: number;
-	statuses: Record<StatusId, number>
 	class:string
-};
+} & PlayerCommonStats;
 
 export type GameAction = {
 	devAction?:()=>void;

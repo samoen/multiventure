@@ -1,9 +1,9 @@
-import type { GameActionSentToClient, BattleAnimation, EnemyInClient, LandscapeImage, StatusId, HeroId, AggroInClient, EnemyStatusInClient } from '$lib/utils';
-import { activeEnemies, addAggro, damagePlayer, enemiesInScene, getAggroForPlayer, takePoisonDamage } from './enemies';
-import { comboFindClassFromInventory, items } from './items';
-import { type VisualActionSourceInClient, convertServerActionToClientAction, convertVasToClient } from './logic';
-import {  forest, getSceneData } from './scenes';
-import { activePlayers, globalFlags, users, type HeroName, type Player, type GameAction, type PlayerInClient, type Flag, type GlobalFlag, activePlayersInScene } from './users';
+import type { AggroInClient, BattleAnimation, EnemyInClient, EnemyStatusInClient, GameActionSentToClient, LandscapeImage } from '$lib/utils';
+import { enemiesInScene, getAggroForPlayer } from './enemies';
+import { comboFindClassFromInventory } from './items';
+import { convertServerActionToClientAction, convertVasToClient, type VisualActionSourceInClient } from './logic';
+import { getSceneData } from './scenes';
+import { activePlayers, activePlayersInScene, globalFlags, users, type Flag, type GlobalFlag, type HeroName, type Player, type PlayerInClient } from './users';
 
 export const FAKE_LATENCY = 50;
 
@@ -11,9 +11,9 @@ export const recentHappenings: string[] = [];
 
 export type MessageFromServer = {
 	triggeredBy: HeroName;
-	yourInfo:PlayerInClient;
+	yourInfo: PlayerInClient;
 	otherPlayers: PlayerInClient[];
-	userList:HeroName[];
+	userList: HeroName[];
 	sceneTexts: string[];
 	devActions: GameActionSentToClient[];
 	itemActions: GameActionSentToClient[];
@@ -24,7 +24,7 @@ export type MessageFromServer = {
 	playerFlags: Flag[];
 	globalFlags: GlobalFlag[];
 	visualActionSources: VisualActionSourceInClient[];
-	landscape:LandscapeImage;
+	landscape: LandscapeImage;
 };
 
 
@@ -36,21 +36,21 @@ export async function sendEveryoneWorld(triggeredBy: HeroName) {
 		if (user.heroName != triggeredBy && user.connectionState.stream && user.connectionState.con) {
 			const toSend = buildNextMessage(user, triggeredBy);
 			let fail = false
-			try{
+			try {
 				user.connectionState.con.enqueue(encode(`world`, toSend));
-			}catch(e){
+			} catch (e) {
 				console.log(user.heroName + ' failed to enqeue ' + e)
 				fail = true
 			}
-			if(fail){
-				try{
+			if (fail) {
+				try {
 					user.connectionState.con?.close()
-				}catch(e){
+				} catch (e) {
 					console.log('failed to enque and failed to close!')
 				}
-				try{
+				try {
 					// user.connectionState.stream?.cancel()
-				}catch(e){
+				} catch (e) {
 					console.log('failed to enque and failed to cancel stream!')
 				}
 				user.connectionState.con = undefined
@@ -71,78 +71,77 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 	const nextMsg: MessageFromServer = {
 		triggeredBy: triggeredBy,
 		landscape: scene.landscape ?? 'plains',
-		yourInfo:{
-			unitId:forPlayer.unitId,
+		yourInfo: {
+			unitId: forPlayer.unitId,
 			heroName: forPlayer.heroName,
 			health: forPlayer.health,
 			maxHealth: forPlayer.maxHealth,
 			agility: forPlayer.agility,
 			strength: forPlayer.strength,
-			inventory:forPlayer.inventory,
+			inventory: forPlayer.inventory,
 			currentSceneDisplay: scene.displayName,
-			statuses:forPlayer.statuses,
-			class:comboFindClassFromInventory(forPlayer.inventory)
+			statuses: forPlayer.statuses,
+			class: comboFindClassFromInventory(forPlayer.inventory)
 		},
 		otherPlayers: activePlayersInScene(forPlayer.currentUniqueSceneId)
 			.filter((u) => u.unitId != forPlayer.unitId)
 			.map((u) => {
 				return {
-					unitId:u.unitId,
+					unitId: u.unitId,
 					heroName: u.heroName,
 					health: u.health,
 					maxHealth: u.maxHealth,
-					agility:u.agility,
-					strength:u.strength,
-					inventory:u.inventory,
+					agility: u.agility,
+					strength: u.strength,
+					inventory: u.inventory,
 					currentSceneDisplay: 'somewhere',
-					statuses:u.statuses,
-					class:comboFindClassFromInventory(u.inventory)
+					statuses: u.statuses,
+					class: comboFindClassFromInventory(u.inventory)
 				} satisfies PlayerInClient;
 			}),
-			sceneTexts: forPlayer.sceneTexts,
-			devActions: forPlayer.devActions.map((gameAction) => {
+		sceneTexts: forPlayer.sceneTexts,
+		devActions: forPlayer.devActions.map((gameAction) => {
 			return {
 				buttonText: gameAction.buttonText,
 			};
 		}),
-		userList:activePlayers().map(u=>u.heroName),
+		userList: activePlayers().map(u => u.heroName),
 		itemActions: forPlayer.itemActions.map((gameAction) => convertServerActionToClientAction(gameAction)),
-		// visualActionSources:[],
-		vasActions:forPlayer.vasActions,
-		visualActionSources:forPlayer.visualActionSources.map(s=>{
-			return convertVasToClient(s,forPlayer)
+		vasActions: forPlayer.vasActions,
+		visualActionSources: forPlayer.visualActionSources.map(s => {
+			return convertVasToClient(s, forPlayer)
 		}),
 		happenings: recentHappenings,
 		animations: forPlayer.animations,
 		enemiesInScene: enemiesInScene(forPlayer.currentUniqueSceneId).map((e) => {
 			// console.log(`sending ${e.name} statuses ${JSON.stringify(e.statuses)}`)
-			let aggros : AggroInClient[] = []
-			for (let [k,v] of e.aggros){
+			let aggros: AggroInClient[] = []
+			for (let [k, v] of e.aggros) {
 				aggros.push({
-					agg:v,
-					hId:k,
+					agg: v,
+					hId: k,
 				})
 			}
 
-			let statusesInClient : EnemyStatusInClient[] = []
-			for (let [k,v] of e.statuses){
-				for(let [k2,v2] of v){
+			let statusesInClient: EnemyStatusInClient[] = []
+			for (let [k, v] of e.statuses) {
+				for (let [k2, v2] of v) {
 					statusesInClient.push({
-						hId:k,
-						count:v2,
-						statusId:k2,
+						hId: k,
+						count: v2,
+						statusId: k2,
 					})
 				}
 			}
 
 			return {
-				unitId:e.unitId,
+				unitId: e.unitId,
 				health: e.health,
 				maxHealth: e.maxHealth,
 				name: e.name,
 				templateId: e.templateId,
-				template:e.template,
-				myAggro: getAggroForPlayer(e,forPlayer),
+				template: e.template,
+				myAggro: getAggroForPlayer(e, forPlayer),
 				aggros: aggros,
 				statuses: statusesInClient,
 			} satisfies EnemyInClient
