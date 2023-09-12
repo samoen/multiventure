@@ -112,7 +112,13 @@ export type LandscapeImage = 'plains' | 'castle' | 'bridge' | 'grimForest'
 export type AnimationBehavior = 
 	| {kind:'missile', extraSprite:AnySprite} 
 	| {kind: 'melee'} 
-	| {kind: 'travel'} 
+	| {kind: 'travel'}
+	| {kind: 'center', extraSprite:AnySprite} 
+	| {kind: 'selfInflicted', extraSprite:AnySprite}
+
+export type EnemyBehavior = 
+	| {kind:'missile', extraSprite:AnySprite} 
+	| {kind: 'melee'} 
 	| {kind: 'center', extraSprite:AnySprite} 
 	| {kind: 'selfInflicted', extraSprite:AnySprite}
 

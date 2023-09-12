@@ -22,7 +22,7 @@
     </div>
     {#if itemState.stats}
     <div class="binaryItems">
-        {#if itemState.stats.affectStyle && itemState.stats.affectStyle.kind == 'AllEnemy'}
+        {#if itemState.stats.behavior?.kind == 'center'}
             <!-- <div class="noNumber"> -->
                 <img class="binary" src={saw} alt="Splash" />
             <!-- </div> -->
