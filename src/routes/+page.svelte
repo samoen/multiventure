@@ -13,6 +13,8 @@
 		currentAnimation,
 		currentAnimationIndex,
 		enemies,
+		handleModAggros,
+		handleModifyHealth,
 		handlePutsStatuses,
 		lastMsgFromServer,
 		lastUnitClicked,
@@ -506,33 +508,11 @@
 							if ($currentAnimation != undefined) {
 								let anim = $currentAnimation;
 								let someoneDied = false;
-								if ($currentAnimation.alsoDamages) {
-									for (const other of $currentAnimation.alsoDamages) {
-										updateUnit(other.target, (vup) => {
-											vup.displayHp -= other.amount;
-											if (vup.displayHp < 1) {
-												someoneDied = true;
-											}
-										});
-									}
-								}
+								handleModifyHealth(anim);
 
 								handlePutsStatuses(anim);
-								if ($currentAnimation.alsoModifiesAggro) {
-									for (const other of $currentAnimation.alsoModifiesAggro) {
-										if (
-											$lastMsgFromServer &&
-											other.forHeros.includes($lastMsgFromServer.yourInfo.unitId)
-										) {
-											updateUnit(other.target, (vup) => {
-												if (vup.actual.kind == 'enemy') {
-													vup.actual.enemy.myAggro += other.amount;
-													if (vup.actual.enemy.myAggro > 100) vup.actual.enemy.myAggro = 100;
-													if (vup.actual.enemy.myAggro < 0) vup.actual.enemy.myAggro = 0;
-												}
-											});
-										}
-									}
+								if($lastMsgFromServer){
+									handleModAggros(anim,$lastMsgFromServer.yourInfo.unitId);
 								}
 								nextAnimationIndex(false, someoneDied);
 							}

@@ -43,10 +43,10 @@
 			{vu.actual.info.class}
 		{/if}
 	</div>
-	<!-- <div class="statLine">
+	<div class="statLine">
         <img src={heart} alt='a heart'>
         <div>{vu.displayHp}</div>
-    </div> -->
+    </div>
 	{#if vu.actual.kind == 'player'}
 		<div class="statuses">
 			{#each playerStatuses as [key, value]}

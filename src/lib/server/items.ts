@@ -76,7 +76,7 @@ export const fireStaff: Item = {
 	baseDmg: 50,
 	behavior: { kind: 'missile', extraSprite: 'flame' },
 	modifiesAggroOnAffected:{kind:'justMe',amount:80},
-	affectStyle:{kind:'TargetOnly'},
+	affectStyle: {kind:'TargetOnly'},
 	targetStyle: { kind: 'anyEnemy' },
 }
 
@@ -89,6 +89,7 @@ const potion: Item = {
 	speed: 15,
 	provoke: 1,
 	targetStyle: { kind: 'anyFriendly', selfBehavior: { kind: 'selfInflicted', extraSprite: 'heal' } },
+	affectStyle: {kind:'TargetOnly'},
 	behavior: { kind: 'melee' },
 	baseHealToTarget: 50,
 }
@@ -103,7 +104,7 @@ const bomb: Item = {
 	affectStyle: {kind:'AllEnemy'},
 	behavior: { kind: 'center', extraSprite: 'bomb' },
 	baseDmg: 5,
-	modifiesAggroOnAffected: {kind:'allPlayers', amount:-20}
+	modifiesAggroOnAffected: {kind:'allPlayers', amount:-30}
 }
 
 export const poisonDart: Item = {

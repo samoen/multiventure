@@ -25,7 +25,13 @@
 		currentAnimationsWithData,
 		handlePutsStatuses,
 		animationsInWaiting,
-		visualOpacity
+		visualOpacity,
+
+		handleModifyHealth,
+
+		handleModAggros
+
+
 	} from '$lib/client/ui';
 	import { tick } from 'svelte';
 	import { derived, writable, type Writable } from 'svelte/store';
@@ -187,26 +193,34 @@
 				on:introend={async () => {
 					if ($currentAnimation == undefined || $guestId == undefined) return;
 					const anim = $currentAnimation;
-					let strks = anim.strikes ?? 1;
-					if(strks < 1)strks = 1;
-					let sDmg = (anim.damageToTarget ?? 0) / strks;
-					for (const _ of Array.from({ length: strks })) {
-						updateUnit($guestId, (vup) => {
-							vup.tilt = true;
-						});
-						let stop = false;
-						updateUnit(hostId, (vup) => {
-							vup.displayHp -= sDmg;
-							if (vup.displayHp < 1) stop = true;
-						});
-						await new Promise((r) => setTimeout(r, 100));
-						updateUnit($guestId, (vup) => {
-							vup.tilt = false;
-						});
-						if (stop) break;
-						await new Promise((r) => setTimeout(r, 200));
+					
+					let firstDmged = anim.alsoDamages?.at(0)
+					if(firstDmged && firstDmged.target == hostId){
+						let strks = firstDmged.strikes;
+						if(strks < 1)strks = 1;
+						for (const _ of Array.from({ length: strks })) {
+							updateUnit($guestId, (vup) => {
+								vup.tilt = true;
+							});
+							let stop = false;
+							let r = handleModifyHealth(anim,true)
+							if(r.died.find(d=>d == hostId)){
+								stop = true
+							}
+							
+							await new Promise((r) => setTimeout(r, 100));
+							updateUnit($guestId, (vup) => {
+								vup.tilt = false;
+							});
+							if (stop) break;
+							await new Promise((r) => setTimeout(r, 200));
+						}
 					}
+					
 					handlePutsStatuses(anim);
+					if($lastMsgFromServer){
+						handleModAggros(anim,$lastMsgFromServer.yourInfo.unitId)
+					}
 					if ($guestId == undefined) return;
 					updateUnit($guestId, (vup) => {
 						if (vup.actual.kind == 'enemy') {
@@ -254,12 +268,10 @@
 				on:outrostart={() => {
 					const anim = $currentAnimation;
 					if (!anim) return;
-					updateUnit(hostId, (vup) => {
-						if(anim.target == vup.id){
-							vup.displayHp -= anim.damageToTarget ?? 0;
-						}
-					});
+					handleModifyHealth(anim)
 					handlePutsStatuses(anim);
+					if(!$lastMsgFromServer)return
+					handleModAggros(anim,$lastMsgFromServer.yourInfo.unitId)
 				}}
 				on:outroend={() => {
 					nextAnimationIndex(false, false);
@@ -283,40 +295,13 @@
 					const anim = $currentAnimation;
 					if (!anim) return;
 					let delayNextStep = false;
-					updateUnit(hostId, (vup) => {
-						vup.displayHp -= anim.damageToTarget ?? 0;
-						if (vup.displayHp < 1) {
-							delayNextStep = true;
-						}
-					});
-
 					handlePutsStatuses(anim);
-
-					if (anim.alsoDamages) {
-						for (const other of anim.alsoDamages) {
-							updateUnit(other.target, (vup) => {
-								vup.displayHp -= other.amount;
-								if (vup.displayHp < 1) {
-									delayNextStep = true;
-								}
-							});
-						}
+					let hRes = handleModifyHealth(anim);
+					if(hRes.died.length){
+						delayNextStep = true;
 					}
-					if (anim.alsoModifiesAggro) {
-						for (const other of anim.alsoModifiesAggro) {
-							if (
-								$lastMsgFromServer &&
-								other.forHeros.includes($lastMsgFromServer.yourInfo.unitId)
-							) {
-								updateUnit(other.target, (vup) => {
-									if (vup.actual.kind == 'enemy') {
-											vup.actual.enemy.myAggro += other.amount;
-											if (vup.actual.enemy.myAggro > 100) vup.actual.enemy.myAggro = 100;
-											if (vup.actual.enemy.myAggro < 0) vup.actual.enemy.myAggro = 0;
-									}
-								});
-							}
-						}
+					if($lastMsgFromServer){
+						handleModAggros(anim,$lastMsgFromServer?.yourInfo.unitId)
 					}
 					nextAnimationIndex(false, delayNextStep);
 				}}

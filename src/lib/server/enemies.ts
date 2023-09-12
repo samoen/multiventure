@@ -1,4 +1,4 @@
-import type { AnimationBehavior, BattleAnimation, EnemyId, EnemyName, HeroId, StatusId, StatusMod } from "$lib/utils";
+import type { AnimationBehavior, BattleAnimation, BattleEventEntity, EnemyId, EnemyName, HeroId, StatusId, StatusMod } from "$lib/utils";
 import { v4 } from "uuid";
 import { deepEqual, type EnemyForSpawning } from "./logic";
 import { pushHappening } from "./messaging";
@@ -67,7 +67,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		baseDamage: 20,
 		aggroGain: 80,
 		startAggro: 20,
-		damageReduction: 3,
+		damageReduction: 2,
 		speed: 4,
 	},
 	darter: {
@@ -224,12 +224,16 @@ export function damagePlayer(enemy: ActiveEnemy, player: Player, baseDmg:number)
 	return { dmgDone: dmgDone }
 }
 
-export function damageEnemy(attackerName: string, enemy: ActiveEnemy, damage: number, bonusDmg:number, strikes: number = 1): { dmgDone: number } {
+export function damageEnemy(
+	source:BattleEventEntity,
+	enemy: ActiveEnemy,
+	damage: number,
+	strikes: number = 1): { dmgDone: number } {
 	if (enemy.health < 1) return { dmgDone: 0 }
 
 	let dmgDone = 0
 	for (const _ of Array.from({ length: strikes })) {
-		let dmg = damage + bonusDmg
+		let dmg = damage
 		if(enemy.template.damageReduction){
 			dmg = dmg - enemy.template.damageReduction
 			if(dmg < 1) dmg = 1
@@ -242,7 +246,7 @@ export function damageEnemy(attackerName: string, enemy: ActiveEnemy, damage: nu
 		enemy.health -= dmg
 		dmgDone += dmg
 	}
-
+	let attackerName = source.kind == 'player' ? source.entity.heroName : source.entity.name
 	pushHappening(`${attackerName} hit ${enemy.name} ${strikes > 1 ? strikes + ' times' : ''} for ${dmgDone} damage`)
 
 	let result = checkEnemyDeath(enemy)
@@ -279,7 +283,7 @@ export function takePoisonDamage(enemy: ActiveEnemy, player:Player): { dmgDone: 
 				triggeredBy:player.unitId,
 				source: enemy.unitId,
 				target:enemy.unitId,
-				damageToTarget: dmg,
+				alsoDamages:[{target:enemy.unitId,amount:dmg,strikes:1}],
 				behavior: {kind:'selfInflicted', extraSprite:'poison'},
 			}
 		}

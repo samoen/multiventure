@@ -1,5 +1,5 @@
 import { goto } from "$app/navigation"
-import type { AggroModifier, AggroModifierEvent, AnySprite, BattleAnimation, BattleEvent, BattleEventEntity, GameActionSentToClient, HealthModifier, HealthModifierEvent, StatusEffect, StatusId, StatusModifier, StatusModifierEvent, UnitId, VisualActionSourceId } from "$lib/utils"
+import type { AggroModifier, AggroModifierEvent, AnySprite, BattleAnimation, BattleEvent, BattleEventEntity, GameActionSentToClient, HealthModifier, HealthModifierEvent, HeroId, StatusEffect, StatusId, StatusModifier, StatusModifierEvent, UnitId, VisualActionSourceId } from "$lib/utils"
 import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, modifyAggroForPlayer, modifiedEnemyHealth, type EnemyTemplateId, spawnEnemy, type EnemyStatuses, type ActiveEnemy } from "./enemies"
 import { items, type Item, equipItem, checkHasItem, type ItemId, type AffectStyle } from "./items"
 import { pushHappening } from "./messaging"
@@ -38,6 +38,9 @@ export function updatePlayerActions(player: Player) {
 			targ?: BattleEventEntity
 		) => {
 			let affected: BattleEventEntity[] = []
+			if(targ){
+				affected.push(targ)
+			}
 			if (i.affectStyle) {
 				if ((i.affectStyle.kind == 'AllEnemy')) {
 					affected = sceneEnemies.map(se => {
@@ -74,10 +77,9 @@ export function updatePlayerActions(player: Player) {
 			}
 			let result: BattleEvent = {
 				source: { kind: 'player', entity: player },
+				target:targ,
 				behavior: i.behavior,
 				teleportsTo: i.teleportTo,
-				strikes: i.strikes,
-				baseHealingToTarget: i.baseHealToTarget,
 				alsoDamages: alsoDmgs,
 				alsoModifiesAggro: modagro,
 				putsStatuses: ptstatuses,
@@ -143,9 +145,6 @@ export function updatePlayerActions(player: Player) {
 						}
 						perTargbe.behavior = behav
 					}
-					perTargbe.target = t
-					perTargbe.baseDamageToTarget = i.baseDmg
-					perTargbe.baseHealingToTarget = i.baseHealToTarget
 					let ga: GameAction = {
 						buttonText: `use ${i.id} on ${t.entity.unitId}`,
 						battleEvent: perTargbe,
@@ -192,12 +191,13 @@ export function checkHasStatus(bee: BattleEventEntity, st: StatusId): boolean {
 }
 
 function HealthModifierEventFromItem(aff: BattleEventEntity, i: Item): HealthModifierEvent | undefined {
-	if (i.baseDmg) {
+	if (i.baseDmg || i.baseHealToTarget) {
 		return {
+			target:aff,
 			baseDamage: i.baseDmg,
-			targetEnemy: aff.kind == 'enemy' ? aff.entity : undefined,
-			targetPlayer: aff.kind == 'player' ? aff.entity : undefined,
-		}
+			baseHeal: i.baseHealToTarget,
+			strikes:i.strikes ?? 1,
+		} satisfies HealthModifierEvent
 	}
 	return undefined
 }
@@ -476,7 +476,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 						triggeredBy: player.unitId,
 						source: player.unitId,
 						target: player.unitId,
-						damageToTarget: dmg,
+						alsoDamages:[{target:player.unitId,amount:dmg, strikes:1}],
 						behavior: { kind: 'selfInflicted', extraSprite: 'poison', }
 
 					}
@@ -587,8 +587,7 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 						target: target,
 						behavior: enemyInScene.template.behavior ?? { kind: 'melee' },
 						putsStatuses: putsStatuses,
-						strikes: enemyInScene.template.strikes,
-						baseDamageToTarget: enemyInScene.damage,
+						alsoDamages:[{target:target,baseDamage:enemyInScene.damage,strikes:enemyInScene.template.strikes??1}]
 					}
 					processBattleEvent(be, player)
 
@@ -612,31 +611,6 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		return
 	}
 
-	// let dmgToSource = 0
-	let dmgToTarget = 0
-	// if (battleEvent.source.kind == 'player' && battleEvent.baseHealingToSource) {
-	// 	let r = healPlayer(battleEvent.source.entity, battleEvent.baseHealingToSource)
-	// 	dmgToSource = r.healed * -1
-	// }
-	if (battleEvent.target?.kind == 'player' && battleEvent.baseHealingToTarget) {
-		console.log('healing ' + battleEvent.target.entity.unitId)
-		let r = healPlayer(battleEvent.target.entity, battleEvent.baseHealingToTarget)
-		dmgToTarget = r.healed * -1
-	}
-	if (battleEvent.baseDamageToTarget) {
-		if (battleEvent.target?.kind == 'enemy' && battleEvent.source.kind == 'player') {
-			const r = damageEnemy(battleEvent.source.entity.heroName, battleEvent.target.entity, battleEvent.baseDamageToTarget, battleEvent.source.entity.strength, battleEvent.strikes)
-			dmgToTarget = r.dmgDone
-		}
-		if (battleEvent.target?.kind == 'player' && battleEvent.source.kind == 'enemy') {
-			const r = damagePlayer(battleEvent.source.entity, battleEvent.target.entity, battleEvent.baseDamageToTarget)
-			dmgToTarget = r.dmgDone
-		}
-		if (battleEvent.target?.kind == 'enemy' && battleEvent.source.kind == 'enemy') {
-			const r = damageEnemy(battleEvent.source.entity.name, battleEvent.target.entity, battleEvent.baseDamageToTarget, 0)
-			dmgToTarget = r.dmgDone
-		}
-	}
 
 	if (battleEvent.putsStatuses) {
 		for (const put of battleEvent.putsStatuses) {
@@ -674,24 +648,34 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	let alsoDmgedAnimation: HealthModifier[] = []
 	if (battleEvent.alsoDamages) {
 		for (const healthModifyEvent of battleEvent.alsoDamages) {
-			if (healthModifyEvent.targetEnemy) {
-				if (battleEvent.source.kind == 'player') {
+			if (healthModifyEvent.target.kind == 'enemy') {
 					if (healthModifyEvent.baseDamage) {
-						let r = damageEnemy(battleEvent.source.entity.heroName, healthModifyEvent.targetEnemy, healthModifyEvent.baseDamage, 0)
+						let r = damageEnemy(
+								battleEvent.source, 
+								healthModifyEvent.target.entity, 
+								healthModifyEvent.baseDamage, 						
+								healthModifyEvent.strikes)
 						alsoDmgedAnimation.push({
-							target: healthModifyEvent.targetEnemy.unitId,
+							target: healthModifyEvent.target.entity.unitId,
 							amount: r.dmgDone,
+							strikes:healthModifyEvent.strikes,
 						})
 					}
-				}
-				if (battleEvent.source.kind == 'enemy') {
-					if (healthModifyEvent.baseDamage) {
-						let r = damageEnemy(battleEvent.source.entity.name, healthModifyEvent.targetEnemy, healthModifyEvent.baseDamage, 0)
-						alsoDmgedAnimation.push({
-							target: healthModifyEvent.targetEnemy.unitId,
-							amount: r.dmgDone,
-						})
-					}
+			}else if(healthModifyEvent.target.kind == 'player'){
+				if(healthModifyEvent.baseHeal){
+					let r = healPlayer(healthModifyEvent.target.entity,healthModifyEvent.baseHeal)
+					alsoDmgedAnimation.push({
+						target:healthModifyEvent.target.entity.unitId,
+						amount:r.healed * -1,
+						strikes:healthModifyEvent.strikes,
+					})
+				}else if(healthModifyEvent.baseDamage && battleEvent.source.kind == 'enemy'){
+					let r = damagePlayer(battleEvent.source.entity,healthModifyEvent.target.entity,healthModifyEvent.baseDamage)
+					alsoDmgedAnimation.push({
+						target:healthModifyEvent.target.entity.unitId,
+						amount:r.dmgDone,
+						strikes:healthModifyEvent.strikes,
+					})
 				}
 			}
 		}
@@ -699,14 +683,18 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	let aggroModifiedAnimations: AggroModifier[] = []
 	if (battleEvent.alsoModifiesAggro) {
 		for (const modifyEvent of battleEvent.alsoModifiesAggro) {
+			let foHeros:{hId:HeroId,amount:number}[] = [] 
 			for (const hero of modifyEvent.forHeros) {
 				let r = modifyAggroForPlayer(hero, modifyEvent.targetEnemy, modifyEvent.baseAmount)
+				foHeros.push({
+					hId:hero.unitId,
+					amount:r.increasedBy,
+				})
 			}
 
 			aggroModifiedAnimations.push({
-				forHeros: modifyEvent.forHeros.map(h => h.unitId),
+				forHeros: foHeros,
 				target: modifyEvent.targetEnemy.unitId,
-				amount: modifyEvent.baseAmount,
 			})
 
 		}
@@ -725,8 +713,6 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		triggeredBy: player.unitId,
 		source: battleEvent.source.entity.unitId,
 		target: battleEvent.target?.entity.unitId,
-		damageToTarget: dmgToTarget,
-		strikes: battleEvent.strikes,
 		behavior: battleEvent.behavior,
 		alsoDamages: alsoDmgedAnimation,
 		alsoModifiesAggro: aggroModifiedAnimations,

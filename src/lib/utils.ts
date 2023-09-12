@@ -15,8 +15,6 @@ export type BattleAnimation = {
 	triggeredBy:HeroId,
 	source: UnitId,
 	target?: UnitId,
-	damageToTarget?: number,
-	strikes?:number,
 	putsStatuses?:StatusModifier[]
 	behavior: AnimationBehavior,
 	alsoDamages?:HealthModifier[],
@@ -54,11 +52,8 @@ export type BattleEventEntity = {kind:'player',entity:Player}|{kind:'enemy',enti
 export type BattleEvent = {
 	source: BattleEventEntity
 	target?:BattleEventEntity
-	baseHealingToTarget?: number,
-	baseDamageToTarget?:number,
-	strikes?:number,
-	putsStatuses?:StatusModifierEvent[]
 	behavior: AnimationBehavior,
+	putsStatuses?:StatusModifierEvent[]
 	alsoDamages?:HealthModifierEvent[],
 	alsoModifiesAggro?:AggroModifierEvent[],
 	teleportsTo?:SceneDataId,
@@ -68,12 +63,11 @@ export type StatusMod = {statusId:StatusId, remove?:boolean, count?:number}
 
 export type StatusModifier = {target:UnitId} & StatusMod
 export type StatusModifierEvent = {targetPlayer?:Player, targetEnemy?:ActiveEnemy,} & StatusMod
-export type HealthModifier = {target:UnitId,amount:number}
-export type HealthModifierEvent = {targetPlayer?:Player,targetEnemy?:ActiveEnemy,baseDamage?:number,baseHeal?:number}
+export type HealthModifier = {target:UnitId,amount:number, strikes:number}
+export type HealthModifierEvent = {target:BattleEventEntity,baseDamage?:number,baseHeal?:number,strikes:number}
 export type AggroModifier = {
 	target:EnemyId,
-	amount:number,
-	forHeros:HeroId[]
+	forHeros:{hId:HeroId,amount:number}[]
 }
 export type AggroModifierEvent = {
 	targetEnemy:ActiveEnemy,

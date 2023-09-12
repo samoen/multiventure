@@ -1,5 +1,5 @@
 import type { Flag, HeroName, PlayerInClient } from "$lib/server/users";
-import type { BattleAnimation, EnemyInClient, GameActionSentToClient, LandscapeImage, SignupResponse, StatusId, UnitId, VisualActionSourceId } from "$lib/utils";
+import type { BattleAnimation, EnemyInClient, GameActionSentToClient, HeroId, LandscapeImage, SignupResponse, StatusId, UnitId, VisualActionSourceId } from "$lib/utils";
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 
 import type { ItemId, ItemState } from '$lib/server/items';
@@ -500,7 +500,6 @@ export function changeVasLocked(vId: VisualActionSourceId, unlock: boolean) {
         if (!sceneEntry) return cs
 
         let cState = sceneEntry.get(vId)
-        // if (found) {
         // vas will already have a convo state
         if (!cState) return cs
         if (unlock) {
@@ -508,21 +507,45 @@ export function changeVasLocked(vId: VisualActionSourceId, unlock: boolean) {
         } else {
             cState.isLocked = true
         }
-        // } 
-        // else {
-        //     if (cState) {
-        //         cState.isLocked = false
-        //     } else {
-        //         cs.set(vId, {
-        //             kind: 'notSeen',
-        //             currentRetort: 'I have not been seen yet',
-        //             isLocked: !unlock,
-        //             lockedResponseHandles: new Map(),
-        //         })
-        //     }
-        // }
         return cs
     })
+}
+
+export function handleModifyHealth(anim:BattleAnimation, singleStrike:boolean=false):{died:UnitId[]}{
+    const result : {died:UnitId[]}= {died:[]}
+    if (anim.alsoDamages) {
+        for (const other of anim.alsoDamages) {
+            updateUnit(other.target, (vup) => {
+                let amt = other.amount
+                if(singleStrike)amt = amt / other.strikes
+                vup.displayHp -= amt;
+                if(vup.displayHp > vup.maxHp)vup.displayHp = vup.maxHp
+                if(vup.displayHp < 1)vup.displayHp = 0
+                if (vup.displayHp < 1) {
+                    result.died.push(vup.id);
+                }
+            });
+        }
+    }
+    return result
+}
+
+export function handleModAggros(anim:BattleAnimation, myId:HeroId){
+    if (anim.alsoModifiesAggro) {
+        for (const other of anim.alsoModifiesAggro) {
+            const findMyAggroMod = other.forHeros.find(fh =>fh.hId == myId)
+
+            if (findMyAggroMod) {
+                updateUnit(other.target, (vup) => {
+                    if (vup.actual.kind == 'enemy') {
+                        vup.actual.enemy.myAggro += findMyAggroMod.amount;
+                        if (vup.actual.enemy.myAggro > 100) vup.actual.enemy.myAggro = 100;
+                        if (vup.actual.enemy.myAggro < 0) vup.actual.enemy.myAggro = 0;
+                    }
+                });
+            }
+        }
+    }
 }
 
 export function handlePutsStatuses(anim: BattleAnimation) {
