@@ -37,7 +37,7 @@
 			if (
 				($currentAnimation.behavior.kind == 'melee' ||
 					$currentAnimation.behavior.kind == 'travel') &&
-				$currentAnimation.target == hostId &&
+				$currentAnimation.behavior.animateTo == hostId &&
 				$subAnimationStage == 'fire'
 			) {
 				return $currentAnimation.source;

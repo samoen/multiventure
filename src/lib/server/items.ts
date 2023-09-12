@@ -1,20 +1,20 @@
-import type { AnimationBehavior, AnySprite, StatusId, StatusMod } from '$lib/utils';
+import type { AnimationBehavior, AnySprite, ItemAnimationBehavior, StatusId, StatusMod } from '$lib/utils';
 import type { SceneDataId } from './scenes';
 import type { Player } from './users';
 
 export type ItemId = string
 export type QuickbarSlot = string
 
-export type CanTarget = 'anyEnemy' | 'anyFriendly'
-export type ItemBehavior = 
-	{
-		canTarget?:CanTarget
-		selfBehave?:{kind:'selfInflicted',extraSprite:AnySprite}
-		affects?:'allFriendly'|'allEnemy'
-	}
-
-export type Item = {
+export type CanTarget = 
+| {kind:'anyEnemy'} 
+| {kind:'anyFriendly',selfAfflictSprite:AnySprite}
+| {kind:'onlySelf'}
+	
+	export type Item = {
 	id: ItemId,
+	canTarget?:CanTarget // default anyEnemy
+	// selfBehave?:{kind:'selfInflicted',extraSprite:AnySprite} // only needed for
+	affects?:'allFriendly'|'allEnemy'
 	slot: QuickbarSlot
 	speed?: number,
 	damageLimit?: number,
@@ -35,8 +35,7 @@ export type Item = {
 	baseDmg?: number,
 	putsStatusOnAffected?: StatusMod,
 	modifiesAggroOnAffected?: {kind:'allPlayers' | 'justMe', amount:number},
-	behavior?: AnimationBehavior, // default melee
-	itemBehavior?:ItemBehavior // sane default
+	behavior?: ItemAnimationBehavior, // default melee
 	strikes?: number // default 1
 	teleportTo?: SceneDataId
 }
@@ -78,7 +77,7 @@ const potion: Item = {
 	requiresTargetDamaged: true,
 	speed: 15,
 	provoke: 1,
-	itemBehavior: {canTarget:'anyFriendly',selfBehave:{kind:'selfInflicted',extraSprite:'heal'}},
+	canTarget:{kind:'anyFriendly', selfAfflictSprite:'heal'},
 	baseHealToTarget: 50,
 }
 
@@ -89,7 +88,7 @@ const bomb: Item = {
 	speed: 12,
 	provoke: 5,
 	behavior: { kind: 'center', extraSprite: 'bomb' },
-	itemBehavior: { affects:'allEnemy' },
+	affects:'allEnemy',
 	baseDmg: 5,
 	modifiesAggroOnAffected: {kind:'allPlayers', amount:-30}
 }
@@ -139,7 +138,7 @@ export const leatherArmor: Item = {
 	provoke: 0,
 	grantsImmunity: true,
 	damageReduction: 5,
-	itemBehavior: { canTarget:'anyFriendly',selfBehave: {kind: 'selfInflicted', extraSprite:'heal'} },
+	canTarget:{kind:'anyFriendly',selfAfflictSprite:'heal'},
 	putsStatusOnAffected: { statusId: 'poison', remove: true }
 }
 

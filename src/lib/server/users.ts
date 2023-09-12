@@ -22,7 +22,7 @@ export function addNewUser(heroName: string): { id: string, player: Player } | u
 	let startSceneId: SceneDataId = startSceneDataId
 	// startSceneId = 'forestPassage'
 	// startSceneId = 'throne'
-	// startSceneId = 'armory'
+	startSceneId = 'armory'
 	
 	let startUnique = uniqueFromSceneDataId(pId,startSceneId)
 	
@@ -121,10 +121,13 @@ export type GameAction = {
 	battleEvent?:BattleEvent;
 	buttonText: string;
 	itemId?:ItemId;
-	vasId?:VisualActionSourceId;
-	target?: UnitId;
-	unlockableActData?:VasActionData;
+	associateWithUnit?: UnitId;
+	unlockableActData?:VasActionData & withVasId;
 };
+
+export type withVasId = {
+	vasId:VisualActionSourceId
+}
 
 
 export function healPlayer(player: Player, amount: number): { healed: number } {

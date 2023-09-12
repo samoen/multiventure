@@ -1,5 +1,5 @@
 import type { Flag, HeroName, PlayerInClient } from "$lib/server/users";
-import type { BattleAnimation, EnemyInClient, GameActionSentToClient, HeroId, LandscapeImage, SignupResponse, StatusId, UnitId, VisualActionSourceId } from "$lib/utils";
+import { AbAnimatesToUnit, animatesToUnit, type BattleAnimation, type EnemyInClient, type GameActionSentToClient, type HeroId, type LandscapeImage, type SignupResponse, type StatusId, type UnitId, type VisualActionSourceId } from "$lib/utils";
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 
 import type { ItemId, ItemState } from '$lib/server/items';
@@ -38,8 +38,6 @@ export type VisualUnitProps = {
     actual: UnitDetails;
     actionsThatCanTargetMe: GameActionSentToClient[]
 }
-
-
 
 export type ProjectileProps = {
     projectileImg: string
@@ -358,7 +356,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                 portrait: getHeroPortrait(lastMsg.yourInfo.class),
                 info: structuredClone(lastMsg.yourInfo),
             },
-            actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == lastMsg.yourInfo.unitId)
+            actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.associateWithUnit == lastMsg.yourInfo.unitId)
         } satisfies VisualUnitProps
         )
 
@@ -407,7 +405,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                         enemy: structuredClone(e),
                         heroSpecificStates: heroSpecifics,
                     },
-                    actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == e.unitId)
+                    actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.associateWithUnit == e.unitId)
                 } satisfies VisualUnitProps
             )
         }
@@ -425,7 +423,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                         portrait: getHeroPortrait(p.class),
                         info: p,
                     },
-                    actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.target == p.unitId)
+                    actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.associateWithUnit == p.unitId)
                 }
             )
 
@@ -434,11 +432,13 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
         // console.log(`${JSON.stringify(lastMsg.visualActionSources.map(v=>v.id))}`)
 
         for (const vas of lastMsg.visualActionSources) {
+            
             syncConvoStateToVas(vas)
         }
 
         let uiVases = lastMsg.visualActionSources.map(v => {
-            let actionsFromVas = lastMsg.vasActions.filter(va => va.vasId == v.id)
+            let actionsFromVas = lastMsg.vasActions.filter(va => va.associateWithUnit == v.id)
+            console.log(JSON.stringify(actionsFromVas))
             return {
                 ...v,
                 actionsInClient: actionsFromVas
@@ -667,12 +667,20 @@ export async function nextAnimationIndex(
 }
 
 function checkAnimationValid(ba: BattleAnimation): boolean {
+    
+    
     let enemiesToCheck = get(enemies)
     let alliesToCheck = get(allies)
     let vasesToCheck = get(vasesToShow)
 
     let foundSource = enemiesToCheck.some(e => e.id == ba.source) || alliesToCheck.some(a => a.id == ba.source)
-    let foundTarget = ba.target == undefined || enemiesToCheck.some(e => e.id == ba.target) || alliesToCheck.some(a => a.id == ba.target) || vasesToCheck.some(v => v.id == ba.target)
+    let foundTarget = false
+    const cb = ba.behavior
+    if(AbAnimatesToUnit(cb)){
+        foundTarget = enemiesToCheck.some(e => e.id == cb.animateTo) || alliesToCheck.some(a => a.id == cb.animateTo) || vasesToCheck.some(v => v.id == cb.animateTo)
+    }else{
+        foundTarget = true
+    }
 
     return foundSource && foundTarget
 }

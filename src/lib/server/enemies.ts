@@ -1,4 +1,4 @@
-import type { AnimationBehavior, BattleAnimation, BattleEventEntity, EnemyBehavior, EnemyId, EnemyName, HeroId, StatusId, StatusMod } from "$lib/utils";
+import type { AnimationBehavior, BattleAnimation, BattleEventEntity, EnemyId, EnemyName, HeroId, ItemAnimationBehavior, StatusId, StatusMod } from "$lib/utils";
 import { v4 } from "uuid";
 import { deepEqual, type EnemyForSpawning } from "./logic";
 import { pushHappening } from "./messaging";
@@ -30,14 +30,12 @@ export function getAggroForPlayer(enemy: ActiveEnemy, player: Player): number {
 	return existing
 }
 
-
-
 export type EnemyTemplate = {
 	portrait?:string
 	strikes?: number
 	baseHealth: number
 	baseDamage: number
-	behavior?: EnemyBehavior
+	behavior?: ItemAnimationBehavior
 	randomTarget?:boolean
 	putsStatusOnTarget?:StatusMod
 	aggroGain: number
@@ -283,7 +281,6 @@ export function takePoisonDamage(enemy: ActiveEnemy, player:Player): { dmgDone: 
 			battleAnimation: {
 				triggeredBy:player.unitId,
 				source: enemy.unitId,
-				target:enemy.unitId,
 				alsoDamages:[{target:enemy.unitId,amount:dmg,strikes:1}],
 				behavior: {kind:'selfInflicted', extraSprite:'poison'},
 			}
