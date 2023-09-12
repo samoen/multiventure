@@ -3,7 +3,7 @@ import { v4 } from "uuid";
 import { deepEqual, type EnemyForSpawning } from "./logic";
 import { pushHappening } from "./messaging";
 import { scenesData, type UniqueSceneIdenfitier } from "./scenes";
-import { activePlayersInScene, playerEquipped, type Player } from "./users";
+import { activePlayersInScene, type Player } from "./users";
 
 
 export const activeEnemies: ActiveEnemy[] = []
@@ -203,16 +203,16 @@ export function damagePlayer(enemy: ActiveEnemy, player: Player, baseDmg:number)
 	let strikes = enemy.template.strikes ?? 1
 	for (const _ of Array.from({ length: strikes })) {
 		let dmg = baseDmg
-		let equippedItems = playerEquipped(player)
-		for (const item of equippedItems) {
-			if (item.damageReduction) {
-				dmg = dmg - item.damageReduction
+		// let equippedItems = playerEquipped(player)
+		for (const item of player.inventory) {
+			if (item.stats.damageReduction) {
+				dmg = dmg - item.stats.damageReduction
 				if(dmg < 1)dmg = 1
 			}
 		}
-		for (const item of equippedItems) {
-			if(item.damageLimit){
-				if(dmg > item.damageLimit)dmg = item.damageLimit
+		for (const item of player.inventory) {
+			if(item.stats.damageLimit){
+				if(dmg > item.stats.damageLimit)dmg = item.stats.damageLimit
 			}
 		}
 

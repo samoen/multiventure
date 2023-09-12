@@ -1,6 +1,6 @@
 import type { BattleAnimation, BattleEvent, HeroId, StatusId, UnitId, VisualActionSourceId } from '$lib/utils';
 import { v4 } from 'uuid';
-import { equipItem, items, type Item, type ItemId, type ItemState } from './items';
+import { equipItem, items, type Item, type ItemId, type ItemState, } from './items';
 import { deepEqual, type VasActionData, type VisualActionSource } from './logic';
 import { pushHappening } from './messaging';
 import { startSceneDataId, uniqueFromSceneDataId, type SceneDataId, type UniqueSceneIdenfitier } from './scenes';
@@ -59,7 +59,7 @@ export function addNewUser(heroName: string): { id: string, player: Player } | u
 	items.filter(i=>i.default).forEach(i=>{
 		equipItem(player,i.id)
 	})
-	// equipItem(player, 'fireStaff')
+	// equipItem(player, 'potion')
 	// equipItem(player,'leatherArmor')
 	// equipItem(player, 'poisonDart')
 
@@ -131,16 +131,6 @@ export type GameAction = {
 	unlockableActData?:VasActionData;
 };
 
-export function playerEquipped(player: Player): Item[] {
-	let equippedItems : Item[] = []
-	for(const iId of player.inventory){
-		let found = items.find(i=>i.id == iId.itemId)
-		if(found){
-			equippedItems.push(found)
-		}
-	}
-	return equippedItems
-}
 
 export function healPlayer(player: Player, amount: number): { healed: number } {
 	let missing = player.maxHealth - player.health

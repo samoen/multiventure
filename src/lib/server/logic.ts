@@ -23,7 +23,7 @@ export function updatePlayerActions(player: Player) {
 	let scenePlayers = activePlayersInScene(player.currentUniqueSceneId)
 
 	for (const cd of player.inventory) {
-		const i = items.find(item => item.id == cd.itemId)
+		const i = items.find(item => item.id == cd.stats.id)
 		if (i == undefined) return
 		if (!i.useableOutOfBattle && !sceneEnemies.length) continue
 		if ((i.requiresSourceDead && player.health > 0)) continue
@@ -332,17 +332,14 @@ export function changeScene(player: Player, goTo: SceneDataId) {
 	// state warmups to the item warmup, stocks to start
 	for (const itemState of player.inventory) {
 		itemState.cooldown = 0
-		let item = items.find(i => i.id == itemState.itemId)
-		if (item != undefined) {
-			if (item.warmup) {
-				itemState.warmup = item.warmup
+			if (itemState.stats.warmup) {
+				itemState.warmup = itemState.stats.warmup
 			} else {
 				itemState.warmup = 0
 			}
-			if (item.startStock != undefined) {
-				itemState.stock = item.startStock
+			if (itemState.stats.startStock != undefined) {
+				itemState.stock = itemState.stats.startStock
 			}
-		}
 	}
 
 	// should status persist after battles?
@@ -528,13 +525,10 @@ function preCombatActionPerformed(player: Player, gameAction: GameAction, itemUs
 
 	// If we used an equipment item set it on cooldown and reduce stock
 	if (gameAction.itemId) {
-		let itemState = player.inventory.find(i => i.itemId == gameAction.itemId)
+		let itemState = player.inventory.find(i => i.stats.id == gameAction.itemId)
 		if (itemState) {
-			const isId = itemState.itemId
-			let item = items.find(i => i.id == isId)
-			if (!item) return
-			if (item.cooldown) {
-				itemState.cooldown = item.cooldown
+			if (itemState.stats.cooldown) {
+				itemState.cooldown = itemState.stats.cooldown
 			}
 			if (itemState.stock) {
 				itemState.stock--

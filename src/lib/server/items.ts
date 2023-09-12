@@ -232,22 +232,18 @@ export const items = [
 
 
 export type ItemState = {
-	itemId: ItemId;
-	slot: QuickbarSlot;
 	cooldown: number;
 	warmup: number;
 	stock?: number;
-	stats?: Item;
+	stats: Item;
 }
 
 export function equipItem(player: Player, itemId: ItemId) {
 	const item = items.find(i => i.id == itemId)
 	if(!item)return
-	let state = player.inventory.find(i => i.slot == item.slot)
+	let state = player.inventory.find(i => i.stats.slot == item.slot)
 	if (!state) {
 		let createState: ItemState = {
-			itemId: item.id,
-			slot: item.slot,
 			cooldown: 0,
 			warmup: item.warmup ?? 0,
 			stats:item,
@@ -260,7 +256,6 @@ export function equipItem(player: Player, itemId: ItemId) {
 		// 	return aIndex - bIndex
 		// })
 	} else {
-		state.itemId = item.id
 		state.warmup = item.warmup ?? 0
 		state.cooldown = 0
 		state.stock = item.startStock
@@ -271,7 +266,7 @@ export function equipItem(player: Player, itemId: ItemId) {
 
 export function checkHasItem(player: Player, id: ItemId): boolean {
 	if (
-		player.inventory.some(i => i.itemId == id)
+		player.inventory.some(i => i.stats.id == id)
 	) {
 		return true
 	}
@@ -297,7 +292,7 @@ export function comboFindClassFromInventory(inv:ItemState[]):string{
 	for(const itemCombination of itemCombinations){
 		let satisfies = true
 		for(const itemId of itemCombination.combos){
-			let found = inv.find(i=>i.itemId == itemId)
+			let found = inv.find(i=>i.stats.id == itemId)
 			if(!found){
 				satisfies = false
 				break

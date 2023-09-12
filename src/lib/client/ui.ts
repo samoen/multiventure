@@ -139,6 +139,16 @@ export function actionsForSlot(lm: MessageFromServer | undefined, iId: ItemId): 
     if (!lm) return []
     return lm.itemActions.filter(ia => ia.itemId == iId)
 }
+
+export type SlotButtonProps = {
+    itemState: ItemState,
+    disabled: boolean,
+    acts: GameActionSentToClient[],
+    overlayNumber: string | undefined,
+    dots: string,
+    img: string
+}
+
 export let typedInventory = derived([
     lastMsgFromServer,
     waitingForMyAnimation,
@@ -148,14 +158,27 @@ export let typedInventory = derived([
     $waitingForMyAnimation,
     $clientState,
 ]) => {
-    let inventory: { itemState: ItemState, disabled: boolean, acts: GameActionSentToClient[], overlayNumber: string | undefined, dots: string, img: string }[] = []
+    let inventory: SlotButtonProps[] = []
     if (!$lastMsgFromServer) {
         return inventory
     }
     for (const state of $lastMsgFromServer.yourInfo.inventory) {
-        let acts = actionsForSlot($lastMsgFromServer, state.itemId)
+        let acts = actionsForSlot($lastMsgFromServer, state.stats.id)
         let d = (!acts.length || $waitingForMyAnimation || $clientState.waitingForMyEvent)
-        inventory.push({ itemState: state, disabled: d, acts: acts, overlayNumber: numberShownOnSlot(state), dots: stockDotsOnSlotButton(state), img: getSlotImage(state.itemId) })
+        let num = numberShownOnSlot(state)
+        let cantUseBecauseCoolWarmStock = num != undefined && !acts.length
+        let cantUseBecauseDead =  $lastMsgFromServer.yourInfo.health < 1 && !acts.length && !state.stats.requiresSourceDead
+        let include = !cantUseBecauseDead && (acts.length || cantUseBecauseCoolWarmStock)
+        if(include){
+            inventory.push({
+                itemState: state,
+                disabled: d,
+                acts: acts,
+                overlayNumber: num,
+                dots: stockDotsOnSlotButton(state),
+                img: getSlotImage(state.stats.id)
+            })
+        }
     }
 
     return inventory
@@ -573,7 +596,7 @@ export async function nextAnimationIndex(
         cai++
     }
     currentAnimationIndex.set(cai)
-    
+
     if (cai > curAnimations.length - 1) {
         let animsInWaiting = get(animationsInWaiting)
         if (!animsInWaiting) {

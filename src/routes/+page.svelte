@@ -410,16 +410,19 @@
 			<div class="landingResponses">
 				<button on:click={guestSignUpButtonClicked}>My name is Guest</button>
 				<div class="myNameIs">
-					<button disabled={!signupInput || $clientState.waitingForMyEvent || $clientState.loading} on:click={signUpButtonClicked}>My name is</button>
+					<button
+						disabled={!signupInput || $clientState.waitingForMyEvent || $clientState.loading}
+						on:click={signUpButtonClicked}>My name is</button
+					>
 					<input
 						type="text"
 						bind:value={signupInput}
 						on:keydown={(event) => {
-							if(!signupInput || $clientState.waitingForMyEvent || $clientState.loading){
-								return
+							if (!signupInput || $clientState.waitingForMyEvent || $clientState.loading) {
+								return;
 							}
 							if (event.key === 'Enter') {
-								signUpButtonClicked()
+								signUpButtonClicked();
 								event.preventDefault();
 							}
 						}}
@@ -575,49 +578,47 @@
 					</div>
 					<div class="slotButtons">
 						{#each $typedInventory as value}
-							{#if value.overlayNumber != undefined || value.acts.length}
-								<button
-									class="slotButton"
-									class:activeSlotButton={$latestSlotButtonInput == value.itemState.itemId}
-									type="button"
-									disabled={value.disabled}
-									on:click={() => {
-										let slotActions = value.acts;
-										if (!slotActions || !slotActions.length) return;
-										const oneChoice = slotActions.length == 1;
-										const onlyAction = slotActions.at(0);
-										if (oneChoice && onlyAction) {
-											choose(onlyAction);
+							<button
+								class="slotButton"
+								class:activeSlotButton={$latestSlotButtonInput == value.itemState.stats.id}
+								type="button"
+								disabled={value.disabled}
+								on:click={() => {
+									let slotActions = value.acts;
+									if (!slotActions || !slotActions.length) return;
+									const oneChoice = slotActions.length == 1;
+									const onlyAction = slotActions.at(0);
+									if (oneChoice && onlyAction) {
+										choose(onlyAction);
+										$latestSlotButtonInput = undefined;
+										return;
+									}
+									if ($selectedDetail && $selectedDetail.kind == 'vup') {
+										let actForSelectedMatchingSlot =
+											$selectedDetail.entity.actionsThatCanTargetMe.find((a) => {
+												if (a.itemId && a.itemId == value.itemState.stats.id) {
+													return true;
+												}
+											});
+										if (actForSelectedMatchingSlot) {
+											choose(actForSelectedMatchingSlot);
 											$latestSlotButtonInput = undefined;
 											return;
 										}
-										if ($selectedDetail && $selectedDetail.kind == 'vup') {
-											let actForSelectedMatchingSlot =
-												$selectedDetail.entity.actionsThatCanTargetMe.find((a) => {
-													if (a.itemId && a.itemId == value.itemState.itemId) {
-														return true;
-													}
-												});
-											if (actForSelectedMatchingSlot) {
-												choose(actForSelectedMatchingSlot);
-												$latestSlotButtonInput = undefined;
-												return;
-											}
-										}
-										$latestSlotButtonInput = value.itemState.itemId;
-									}}
-								>
-									<img
-										class="slotImg"
-										class:halfOpacity={value.disabled}
-										src={value.img}
-										alt="a slot"
-									/>
-									<span class="slotCounter">{value.overlayNumber ?? ''}</span>
-									<span class="slotItemname">{value.itemState.itemId}</span>
-									<span class="slotStockDots">{value.dots}</span>
-								</button>
-							{/if}
+									}
+									$latestSlotButtonInput = value.itemState.stats.id;
+								}}
+							>
+								<img
+									class="slotImg"
+									class:halfOpacity={value.disabled}
+									src={value.img}
+									alt="a slot"
+								/>
+								<span class="slotCounter">{value.overlayNumber ?? ''}</span>
+								<span class="slotItemname">{value.itemState.stats.id}</span>
+								<span class="slotStockDots">{value.dots}</span>
+							</button>
 						{/each}
 					</div>
 				</div>

@@ -17,7 +17,7 @@
 
     <div class='title'>
         <p>
-            {itemState.itemId}
+            {itemState.stats.id}
         </p>
     </div>
     {#if itemState.stats}
