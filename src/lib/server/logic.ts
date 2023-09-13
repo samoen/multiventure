@@ -81,10 +81,10 @@ export function updatePlayerActions(player: Player) {
 						strikes: i.strikes ?? 1,
 					} satisfies HealthModifierEvent)
 				}
-				if (i.baseHealToTarget) {
+				if (i.baseHeal) {
 					alsoDmgs.push({
 						target: aff,
-						baseHeal: i.baseHealToTarget,
+						baseHeal: i.baseHeal,
 					} satisfies HealthModifierEvent)
 				}
 				let aModEvent = AggroModifierEventFromItem(aff, i, player, scenePlayers)

@@ -4,12 +4,15 @@
 	import lightShield from '$lib/assets/ui/light-shield.png';
 	import heavyShield from '$lib/assets/ui/heavy-shield.png';
 	import strong from '$lib/assets/ui/strong.png';
+	import sack from '$lib/assets/ui/sack.png';
+	import medpack from '$lib/assets/ui/medpack.png';
 	import loading from '$lib/assets/ui/loading.png';
 	import candle from '$lib/assets/ui/candle.png';
 	import foot from '$lib/assets/ui/foot.png';
 	import saw from '$lib/assets/ui/saw.png';
 	import teeth from '$lib/assets/ui/teeth.png';
 	import crown from '$lib/assets/ui/crown.png';
+	import { statusImages } from '$lib/client/assets';
 
 	export let itemState: ItemState;
 </script>
@@ -20,26 +23,37 @@
             {itemState.stats.id}
         </p>
     </div>
-    {#if itemState.stats}
-    <div class="binaryItems">
-        {#if itemState.stats.behavior?.kind == 'center'}
-            <!-- <div class="noNumber"> -->
+    <!-- {#if itemState.stats} -->
+    <!-- <div class="binaryItems"> -->
+        <!-- {#if itemState.stats.behavior?.kind == 'center'}
                 <img class="binary" src={saw} alt="Splash" />
-            <!-- </div> -->
-        {/if}
-        {#if itemState.stats.grantsImmunity}
-            <!-- <div class="noNumber"> -->
+        {/if} -->
+        <!-- {#if itemState.stats.grantsImmunity}
                 <img class="binary" src={crown} alt="No retaliation" />
-            <!-- </div> -->
-        {/if}
-    </div>
-    {/if}
+        {/if} -->
+        <!-- {#if itemState.stats.putsStatusOnAffected?.remove}
+                <img class="binary" src={statusImages[itemState.stats.putsStatusOnAffected.statusId]} alt="No retaliation" />
+        {/if} -->
+    <!-- </div> -->
+    <!-- {/if} -->
     <div class="stats">
         {#if itemState.stats}
             {#if itemState.stats.baseDmg}
                 <div class="statLine">
                     <img src={strong} alt="a heart" />
                     <div>{itemState.stats.baseDmg}</div>
+                </div>
+            {/if}
+            {#if itemState.stats.baseHeal}
+                <div class="statLine">
+                    <img src={medpack} alt="a heart" />
+                    <div>{itemState.stats.baseHeal}</div>
+                </div>
+            {/if}
+            {#if itemState.stats.startStock}
+                <div class="statLine">
+                    <img src={sack} alt="a sack" />
+                    <div>{itemState.stats.startStock}</div>
                 </div>
             {/if}
             {#if itemState.stats.strikes && itemState.stats.strikes > 1}
@@ -113,17 +127,15 @@
 		flex-direction: row;
 		/* border: 1px solid brown; */
 	}
-    .binaryItems{
-        /* background-color: aqua; */
+    /* .binaryItems{
         display: flex;
         flex-wrap: wrap;
     }
     .binary{
-        /* border: 1px solid brown; */
         height:20px;
         width:20px;
         display: inline-block;
-    }
+    } */
 	/* .statLine > img { */
 		/* border-right: 1px solid brown; */
 	/* } */

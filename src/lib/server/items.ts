@@ -29,7 +29,7 @@ export type Item = {
 	requiresSourceDead?: boolean
 	excludeFromDetail?: boolean
 	noAction?: boolean
-	baseHealToTarget?: number,
+	baseHeal?: number,
 	baseDmg?: number,
 	putsStatusOnAffected?: StatusMod,
 	modifiesAggroOnAffected?: { kind: 'allPlayers' | 'justMe', amount: number },
@@ -78,7 +78,7 @@ const potion: Item = {
 	speed: 15,
 	provoke: 1,
 	canTarget: { kind: 'anyFriendly', selfAfflictSprite: 'heal' },
-	baseHealToTarget: 50,
+	baseHeal: 50,
 }
 
 const bomb: Item = {
@@ -135,7 +135,7 @@ export const leatherArmor: Item = {
 	requiresStatus: 'poison',
 	speed: 5,
 	// provoke: 0,
-	grantsImmunity: true,
+	// grantsImmunity: true,
 	damageReduction: 5,
 	canTarget: { kind: 'anyFriendly', selfAfflictSprite: 'heal' },
 	putsStatusOnAffected: { statusId: 'poison', remove: true }
