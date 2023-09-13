@@ -1,9 +1,10 @@
 import { goto } from "$app/navigation"
-import { addAnimateToUnit, animatesToUnit, type AggroModifier, type AggroModifierEvent, type AnimationBehavior, type AnySprite, type BattleAnimation, type BattleEvent, type BattleEventEntity, type GameActionSentToClient, type HealthModifier, type HealthModifierEvent, type HeroId, type ItemAnimationBehavior, type StatusEffect, type StatusId, type StatusModifier, type StatusModifierEvent, type UnitId, type VisualActionSourceId } from "$lib/utils"
-import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, modifyAggroForPlayer, modifiedEnemyHealth, type EnemyTemplateId, spawnEnemy, type EnemyStatuses, type ActiveEnemy } from "./enemies"
+import { addAnimateToUnit, animatesToUnit, type AggroModifier, type AggroModifierEvent, type AnimationBehavior, type AnySprite, type BattleAnimation, type BattleEvent, type BattleEventEntity, type GameActionSentToClient, type HealthModifier, type HealthModifierEvent, type HeroId, type ItemAnimationBehavior, type StatusEffect, type StatusModifier, type StatusModifierEvent, type UnitId, type VisualActionSourceId, type StatusState } from "$lib/utils"
+import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, modifyAggroForPlayer, modifiedEnemyHealth, type EnemyTemplateId, spawnEnemy, type EnemyStatuses, type ActiveEnemy, checkEnemyDeath } from "./enemies"
 import { items, type Item, equipItem, checkHasItem, type ItemId, type CanTarget } from "./items"
 import { pushHappening } from "./messaging"
 import { alreadySpawnedCurrentBattle, spawnedNewBattle, hasPlayerAlreadySpawnedForBattle, spawnedOngoing, getSceneData, type UniqueSceneIdenfitier, type SceneDataId, getSceneDataSimple, dead, uniqueFromSceneDataId } from "./scenes"
+import { statusDatas, type StatusData, type StatusId } from "./statuses"
 import { users, type Player, type GameAction, healPlayer, type Flag, activePlayersInScene } from "./users"
 
 export function updateAllPlayerActions() {
@@ -34,13 +35,13 @@ export function updatePlayerActions(player: Player) {
 		if (cd.stock != undefined && cd.stock < 1) continue
 
 		let iAb: ItemAnimationBehavior = i.behavior ?? { kind: 'melee' }
-		let iCt : CanTarget
-		if(i.canTarget){
+		let iCt: CanTarget
+		if (i.canTarget) {
 			iCt = i.canTarget
-		}else if(iAb.kind == 'melee' || iAb.kind == 'missile'){
-			iCt = {kind:'anyEnemy'}
-		}else{
-			iCt = {kind:'onlySelf'}
+		} else if (iAb.kind == 'melee' || iAb.kind == 'missile') {
+			iCt = { kind: 'anyEnemy' }
+		} else {
+			iCt = { kind: 'onlySelf' }
 		}
 
 
@@ -57,7 +58,7 @@ export function updatePlayerActions(player: Player) {
 							entity: se,
 						}
 					})
-				}else if (i.affects == 'allFriendly') {
+				} else if (i.affects == 'allFriendly') {
 					affected = [{ kind: 'player', entity: player }]
 				}
 			} else {
@@ -68,20 +69,20 @@ export function updatePlayerActions(player: Player) {
 			let modagro: AggroModifierEvent[] = []
 			let ptstatuses: StatusModifierEvent[] = []
 			let bonus = 0
-			if(iAb.kind == 'melee'){
-				bonus = player.strength
+			if (iAb.kind == 'melee') {
+				bonus = player.strength + player.bonusStrength
 			}
 			for (const aff of affected) {
 				if (i.baseDmg) {
-					alsoDmgs.push( {
+					alsoDmgs.push({
 						target: aff,
 						baseDamage: i.baseDmg,
-						bonusDamage:bonus,
+						bonusDamage: bonus,
 						strikes: i.strikes ?? 1,
 					} satisfies HealthModifierEvent)
 				}
 				if (i.baseHealToTarget) {
-					alsoDmgs.push( {
+					alsoDmgs.push({
 						target: aff,
 						baseHeal: i.baseHealToTarget,
 					} satisfies HealthModifierEvent)
@@ -117,7 +118,7 @@ export function updatePlayerActions(player: Player) {
 				alsoDamages: alsoDmgs,
 				alsoModifiesAggro: modagro,
 				putsStatuses: ptstatuses,
-				stillHappenIfTargetDies:i.requiresSourceDead
+				stillHappenIfTargetDies: i.requiresSourceDead
 			} satisfies BattleEvent
 
 			return result
@@ -125,49 +126,47 @@ export function updatePlayerActions(player: Player) {
 
 
 		let targetable: BattleEventEntity[] = []
-			if (iCt.kind == 'anyEnemy') {
-				targetable = sceneEnemies.map(se => {
-					return {
-						kind: 'enemy',
-						entity: se
-					}
-				})
-			}else if (iCt.kind == 'anyFriendly') {
-				targetable = scenePlayers.map(sp => {
-					return {
-						kind: 'player',
-						entity: sp
-					}
-				})
-			} else {
-				targetable = [{ kind: 'player', entity: player }]
-			}
-		// if (!targetable.length) {
-		// 	let ga: GameAction = {
-		// 		buttonText: `use ${i.id} no target`,
-		// 		battleEvent: nBe(undefined),
-		// 		itemId: i.id,
-		// 	}
-		// 	player.itemActions.push(ga)
-		// 	continue
-		// }
+		if (iCt.kind == 'anyEnemy') {
+			targetable = sceneEnemies.map(se => {
+				return {
+					kind: 'enemy',
+					entity: se
+				}
+			})
+		} else if (iCt.kind == 'anyFriendly') {
+			targetable = scenePlayers.map(sp => {
+				return {
+					kind: 'player',
+					entity: sp
+				}
+			})
+		} else {
+			targetable = [{ kind: 'player', entity: player }]
+		}
 
 		for (const t of targetable) {
 			let perTargbe = nBe(t)
-			if ((!i.requiresTargetDamaged || t.entity.health < t.entity.maxHealth && t.entity.health > 0) &&
-				(!i.requiresStatus || checkHasStatus(t, i.requiresStatus))) {
-				let ga: GameAction = {
-					buttonText: `use ${i.id} on ${t.entity.unitId}`,
-					battleEvent: perTargbe,
-					itemId: i.id,
-					associateWithUnit: t.entity.unitId
-				}
-				player.itemActions.push(ga)
+			let statuses: Map<StatusId, number> | undefined = undefined
+			if (t.kind == 'player') {
+				statuses = t.entity.statuses
+			} else if (t.kind == 'enemy') {
+				statuses = t.entity.statuses.get(player.unitId)
 			}
 
+			if ((i.requiresTargetDamaged && !(t.entity.health < t.entity.maxHealth && t.entity.health > 0)) ||
+				(i.requiresStatus && !checkHasStatus(t, i.requiresStatus)) ||
+				(statuses && immuneDueToStatus(statuses))
+			) {
+				continue
+			}
+			let ga: GameAction = {
+				buttonText: `use ${i.id} on ${t.entity.unitId}`,
+				battleEvent: perTargbe,
+				itemId: i.id,
+				associateWithUnit: t.entity.unitId
+			}
+			player.itemActions.push(ga)
 		}
-		// }
-
 	}
 
 	if (scene.actions) {
@@ -186,7 +185,8 @@ export function updatePlayerActions(player: Player) {
 
 export function checkHasStatus(bee: BattleEventEntity, st: StatusId): boolean {
 	if (bee.kind == 'player') {
-		return bee.entity.statuses[st] > 0
+		let found = bee.entity.statuses.get(st)
+		return (found != undefined && found > 0)
 	}
 	if (bee.kind == 'enemy') {
 		if (Array.from(bee.entity.statuses.values()).some(s => {
@@ -198,7 +198,30 @@ export function checkHasStatus(bee: BattleEventEntity, st: StatusId): boolean {
 	}
 
 	return false
+}
 
+export function removeStatusesOnProvoke(player: Player): StatusData | undefined {
+	let result = undefined
+	for (let [k, v] of player.statuses) {
+		let statusData = statusDatas.find(s => s.id == k)
+		if (!statusData) continue
+		if (statusData.removeOnProvoke) {
+			result = statusData
+			player.statuses.delete(k)
+		}
+	}
+	return result
+}
+
+export function removeStatus(bee: BattleEventEntity, st: StatusId) {
+	if (bee.kind == 'player') {
+		bee.entity.statuses.delete(st)
+	}
+	if (bee.kind == 'enemy') {
+		for (const [key, value] of bee.entity.statuses) {
+			value.delete(st)
+		}
+	}
 }
 
 
@@ -342,11 +365,9 @@ export function changeScene(player: Player, goTo: SceneDataId) {
 	}
 
 	// should status persist after battles?
-	player.statuses = {
-		poison: 0,
-		rage: 0,
-		hidden: 0,
-	}
+	player.statuses = new Map()
+
+	player.bonusStrength = 0
 
 	enterSceneOrWakeup(player)
 }
@@ -411,17 +432,20 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 
 	pushHappening('----');
 
-	if (itemUsed.provoke && itemUsed.provoke > 0 && player.statuses.hidden > 0) {
-		player.statuses.hidden = 0
-		pushAnimation({
-			sceneId: player.currentUniqueSceneId,
-			battleAnimation: {
-				triggeredBy: player.unitId,
-				source: player.unitId,
-				behavior: { kind: 'selfInflicted', extraSprite: 'smoke', },
-				putsStatuses: [{ statusId: 'hidden', target: player.unitId, remove: true }]
-			}
-		})
+	if (itemUsed.provoke && itemUsed.provoke > 0) {
+		let r = removeStatusesOnProvoke(player)
+		if (r) {
+			pushAnimation({
+				sceneId: player.currentUniqueSceneId,
+				battleAnimation: {
+					triggeredBy: player.unitId,
+					source: player.unitId,
+					behavior: { kind: 'selfInflicted', extraSprite: r.selfInflictSprite, },
+					putsStatuses: [{ statusId: r.id, target: player.unitId, remove: true }]
+				}
+			})
+		}
+
 	}
 
 	handleRetaliations(player, false, actionFromId, itemUsed)
@@ -438,55 +462,82 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 	if (itemUsed.provoke != undefined) {
 		for (const enemy of enemiesInScene(actionStartedInSceneId)) {
+			let sprite: AnySprite | undefined = undefined
+			let ad: HealthModifier[] = []
+
 			for (const [hId, statusForPlayer] of enemy.statuses) {
 				if (hId == player.unitId) {
-					let pois = statusForPlayer.get('poison')
-					if (pois && pois > 0) {
-						takePoisonDamage(enemy, player)
-						statusForPlayer.set('poison', pois - 1)
-					}
-					let rg = statusForPlayer.get('rage')
-					if (rg && rg > 0) {
-						enemy.damage += 10
-						pushHappening(`${enemy.name}'s rage grows!`)
-						statusForPlayer.set('rage', rg - 1)
-					}
-					let hidn = statusForPlayer.get('hidden')
-					if (hidn && hidn > 0) {
-						statusForPlayer.set('hidden', hidn - 1)
-					}
+					for (let [k, v] of statusForPlayer) {
+						if (v < 1) continue
+						let statusData = statusDatas.find(s => s.id == k)
+						if (!statusData) continue
+						if (statusData.damagePercent) {
+							// takePoisonDamage(enemy, player)
+							let dmg = Math.floor(enemy.maxHealth * statusData.damagePercent)
+							enemy.health -= dmg
+							checkEnemyDeath(enemy)
+							ad.push({ target: enemy.unitId, amount: [dmg] })
+							sprite = statusData.selfInflictSprite
+							pushHappening(`${enemy.name} took ${dmg} damage from ${k}`)
+						}
+						if (statusData.incStr) {
+							enemy.damage += statusData.incStr
+							pushHappening(`${enemy.name} grows in strength!`)
+						}
 
+						statusForPlayer.set(k, v - 1)
+					}
 				}
+			}
+			if (ad.length && sprite) {
+				pushAnimation(
+					{
+						sceneId: player.currentUniqueSceneId,
+						battleAnimation: {
+							triggeredBy: player.unitId,
+							source: enemy.unitId,
+							alsoDamages: ad,
+							behavior: { kind: 'selfInflicted', extraSprite: sprite }
+						}
+					}
+				)
 			}
 		}
 	}
 
 	if (player.health > 0 && itemUsed.provoke != undefined) {
-		if (player.statuses.poison > 0) {
-			let dmg = Math.floor(player.maxHealth * 0.1)
-			player.health -= dmg
-			pushHappening(`${player.heroName} took ${dmg} damage from poison`)
+		let ad: HealthModifier[] = []
+		let sprite: AnySprite | undefined = undefined
+		for (let [k, v] of player.statuses) {
+			if (v < 1) continue
+			let statusData = statusDatas.find(s => s.id == k)
+			if (!statusData) continue
+			if (statusData.damagePercent) {
+				let dmg = Math.floor(player.maxHealth * statusData.damagePercent)
+				player.health -= dmg
+				ad.push({ target: player.unitId, amount: [dmg] })
+				sprite = statusData.selfInflictSprite
+				pushHappening(`${player.heroName} took ${dmg} damage from ${k}`)
+			}
+			if (statusData.incStr) {
+				player.bonusStrength += 10
+				pushHappening(`${player.heroName} grows in strength!`)
+			}
+
+			player.statuses.set(k, v - 1)
+		}
+		if (ad.length && sprite) {
 			pushAnimation(
 				{
 					sceneId: player.currentUniqueSceneId,
 					battleAnimation: {
 						triggeredBy: player.unitId,
 						source: player.unitId,
-						alsoDamages: [{ target: player.unitId, amount: [dmg]}],
-						behavior: { kind: 'selfInflicted', extraSprite: 'poison', }
-
+						alsoDamages: ad,
+						behavior: { kind: 'selfInflicted', extraSprite: sprite }
 					}
 				}
 			)
-			player.statuses.poison--
-		}
-		if (player.statuses.rage > 0) {
-			player.agility += 10
-			pushHappening(`${player.heroName}'s rage grows!`)
-			player.statuses.rage--
-		}
-		if (player.statuses.hidden > 0) {
-			player.statuses.hidden--
 		}
 	}
 
@@ -534,8 +585,21 @@ function preCombatActionPerformed(player: Player, gameAction: GameAction, itemUs
 
 }
 
+export function immuneDueToStatus(statusMap: Map<StatusId, number>): boolean {
+	let immunity = false
+	for (let [k, v] of statusMap) {
+		if (v < 1) continue
+		let foundData = statusDatas.find(d => d.id == k)
+		if (!foundData) continue
+		if (foundData.immunity) {
+			immunity = true
+		}
+	}
+	return immunity
+}
+
 export function handleRetaliations(player: Player, postAction: boolean, action: GameAction, itemUsed: Item) {
-	if (itemUsed.grantsImmunity || player.statuses.hidden > 0) return
+	if (itemUsed.grantsImmunity || immuneDueToStatus(player.statuses)) return
 	let playerHitSpeed = player.agility
 	if (itemUsed.speed) {
 		playerHitSpeed += itemUsed.speed
@@ -543,7 +607,7 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 	let sceneEnemies = enemiesInScene(player.currentUniqueSceneId)
 	for (const enemyInScene of sceneEnemies.sort((a, b) => b.template.speed - a.template.speed)) {
 		if (enemyInScene.health < 1) continue
-		if(player.health < 1)continue
+		if (player.health < 1) continue
 		if (
 			(postAction && (playerHitSpeed >= enemyInScene.template.speed))
 			|| (!postAction && (playerHitSpeed < enemyInScene.template.speed))
@@ -601,7 +665,7 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	if (battleEvent.putsStatuses) {
 		for (const put of battleEvent.putsStatuses) {
-			if(put.target.entity.health < 0 && !battleEvent.stillHappenIfTargetDies) continue
+			if (put.target.entity.health < 0 && !battleEvent.stillHappenIfTargetDies) continue
 			if (put.count) {
 				if (put.target.kind == 'enemy') {
 					let found = put.target.entity.statuses.get(player.unitId)
@@ -616,27 +680,25 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 					put.target.entity.statuses.set(player.unitId, found)
 				}
 				if (put.target.kind == 'player') {
-					if (put.target.entity.statuses[put.statusId] < put.count) {
-						put.target.entity.statuses[put.statusId] = put.count
+					let found = put.target.entity.statuses.get(put.statusId)
+					if (!found) {
+						put.target.entity.statuses.set(put.statusId, put.count)
+					} else {
+						if (found < put.count) {
+							put.target.entity.statuses.set(put.statusId, put.count)
+						}
 					}
 				}
 			}
 			if (put.remove) {
-				if (put.target.kind == 'player') {
-					put.target.entity.statuses[put.statusId] = 0
-				}
-				if (put.target.kind == 'enemy') {
-					for (const [key, value] of put.target.entity.statuses) {
-						value.delete(put.statusId)
-					}
-				}
+				removeStatus(put.target, put.statusId)
 			}
 		}
 	}
 	let alsoDmgedAnimation: HealthModifier[] = []
 	if (battleEvent.alsoDamages) {
 		for (const healthModifyEvent of battleEvent.alsoDamages) {
-			if(healthModifyEvent.target.entity.health < 0 && !battleEvent.stillHappenIfTargetDies) continue
+			if (healthModifyEvent.target.entity.health < 0 && !battleEvent.stillHappenIfTargetDies) continue
 			if (healthModifyEvent.target.kind == 'enemy') {
 				if (healthModifyEvent.baseDamage) {
 					let r = damageEnemy(
@@ -645,7 +707,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 						healthModifyEvent.baseDamage,
 						healthModifyEvent.strikes,
 						healthModifyEvent.bonusDamage,
-						)
+					)
 					alsoDmgedAnimation.push({
 						target: healthModifyEvent.target.entity.unitId,
 						amount: r.dmgDone,
@@ -671,7 +733,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	let aggroModifiedAnimations: AggroModifier[] = []
 	if (battleEvent.alsoModifiesAggro) {
 		for (const modifyEvent of battleEvent.alsoModifiesAggro) {
-			if(modifyEvent.targetEnemy.health < 0 && !battleEvent.stillHappenIfTargetDies) continue
+			if (modifyEvent.targetEnemy.health < 0 && !battleEvent.stillHappenIfTargetDies) continue
 			let foHeros: { hId: HeroId, amount: number }[] = []
 			for (const hero of modifyEvent.forHeros) {
 				let r = modifyAggroForPlayer(hero, modifyEvent.targetEnemy, modifyEvent.baseAmount)
@@ -871,12 +933,13 @@ export type VasActionData = {
 	spawnsEnemies?: EnemyForSpawning[]
 }
 
-export type EnemyForSpawning = { eName?: string, eTemp: EnemyTemplateId, statuses?: EnemyStatusesObject }
+export type EnemyForSpawning = {
+	eName?: string,
+	eTemp: EnemyTemplateId,
+	statuses?: StatusState[]
+}
 
 // export type EnemyStatusesObject = Record<StatusId,number>
-export type EnemyStatusesObject = {
-	[k in StatusId]?: number;
-}
 
 export type ConversationResponse = {
 	responseId: string,

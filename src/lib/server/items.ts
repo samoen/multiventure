@@ -1,20 +1,18 @@
-import type { AnimationBehavior, AnySprite, ItemAnimationBehavior, StatusId, StatusMod } from '$lib/utils';
+import type { AnimationBehavior, AnySprite, ItemAnimationBehavior, StatusMod } from '$lib/utils';
 import type { SceneDataId } from './scenes';
+import type { StatusId } from './statuses';
 import type { Player } from './users';
 
 export type ItemId = string
 export type QuickbarSlot = string
 
-export type CanTarget = 
-| {kind:'anyEnemy'} 
-| {kind:'anyFriendly',selfAfflictSprite:AnySprite}
-| {kind:'onlySelf'}
-	
-	export type Item = {
+export type CanTarget =
+	| { kind: 'anyEnemy' }
+	| { kind: 'anyFriendly', selfAfflictSprite: AnySprite }
+	| { kind: 'onlySelf' }
+
+export type Item = {
 	id: ItemId,
-	canTarget?:CanTarget // default anyEnemy
-	// selfBehave?:{kind:'selfInflicted',extraSprite:AnySprite} // only needed for
-	affects?:'allFriendly'|'allEnemy'
 	slot: QuickbarSlot
 	speed?: number,
 	damageLimit?: number,
@@ -29,13 +27,15 @@ export type CanTarget =
 	requiresTargetDamaged?: boolean
 	requiresStatus?: StatusId
 	requiresSourceDead?: boolean
-	excludeFromDetail?:boolean
-	noAction?:boolean
+	excludeFromDetail?: boolean
+	noAction?: boolean
 	baseHealToTarget?: number,
 	baseDmg?: number,
 	putsStatusOnAffected?: StatusMod,
-	modifiesAggroOnAffected?: {kind:'allPlayers' | 'justMe', amount:number},
+	modifiesAggroOnAffected?: { kind: 'allPlayers' | 'justMe', amount: number },
 	behavior?: ItemAnimationBehavior, // default melee
+	affects?: 'allFriendly' | 'allEnemy'
+	canTarget?: CanTarget
 	strikes?: number // default 1
 	teleportTo?: SceneDataId
 }
@@ -66,7 +66,7 @@ export const fireStaff: Item = {
 	speed: 2,
 	baseDmg: 50,
 	behavior: { kind: 'missile', extraSprite: 'flame' },
-	modifiesAggroOnAffected:{kind:'justMe',amount:80},
+	modifiesAggroOnAffected: { kind: 'justMe', amount: 80 },
 }
 
 const potion: Item = {
@@ -77,7 +77,7 @@ const potion: Item = {
 	requiresTargetDamaged: true,
 	speed: 15,
 	provoke: 1,
-	canTarget:{kind:'anyFriendly', selfAfflictSprite:'heal'},
+	canTarget: { kind: 'anyFriendly', selfAfflictSprite: 'heal' },
 	baseHealToTarget: 50,
 }
 
@@ -88,9 +88,9 @@ const bomb: Item = {
 	speed: 12,
 	provoke: 5,
 	behavior: { kind: 'center', extraSprite: 'bomb' },
-	affects:'allEnemy',
+	affects: 'allEnemy',
 	baseDmg: 5,
-	modifiesAggroOnAffected: {kind:'allPlayers', amount:-30}
+	modifiesAggroOnAffected: { kind: 'allPlayers', amount: -30 }
 }
 
 export const poisonDart: Item = {
@@ -99,7 +99,7 @@ export const poisonDart: Item = {
 	startStock: 2,
 	provoke: 40,
 	speed: 20,
-	behavior: {kind: 'missile', extraSprite: 'arrow'},
+	behavior: { kind: 'missile', extraSprite: 'arrow' },
 	putsStatusOnAffected: { statusId: 'poison', count: 3 },
 	baseDmg: 3,
 }
@@ -108,13 +108,13 @@ export const plateMail: Item = {
 	id: 'plateMail',
 	slot: 'body',
 	cooldown: 2,
-	provoke: 100,
-	speed: 0,
+	provoke: 0,
+	speed: 100,
 	damageLimit: 20,
-	grantsImmunity: true,
-	behavior: { kind: 'selfInflicted', extraSprite: 'flame'},
-	putsStatusOnAffected:{ statusId: 'rage', count: 2 },
-	// targetStyle: { kind: 'selfOnly'},
+	behavior: { kind: 'selfInflicted', extraSprite: 'flame' },
+	putsStatusOnAffected: { statusId: 'rage', count: 1 },
+	modifiesAggroOnAffected: { kind: 'justMe', amount: 100 },
+	affects: 'allEnemy'
 }
 
 const thiefCloak: Item = {
@@ -123,10 +123,9 @@ const thiefCloak: Item = {
 	cooldown: 3,
 	speed: 100,
 	provoke: 30,
-	grantsImmunity: true,
-	behavior: {kind: 'selfInflicted', extraSprite: 'smoke' },
-	putsStatusOnAffected:{ statusId: 'hidden', count: 2 },
-	// targetStyle: { kind: 'selfOnly' },
+	// grantsImmunity: true,
+	behavior: { kind: 'selfInflicted', extraSprite: 'smoke' },
+	putsStatusOnAffected: { statusId: 'hidden', count: 2 },
 }
 
 export const leatherArmor: Item = {
@@ -135,10 +134,10 @@ export const leatherArmor: Item = {
 	useableOutOfBattle: true,
 	requiresStatus: 'poison',
 	speed: 5,
-	provoke: 0,
+	// provoke: 0,
 	grantsImmunity: true,
 	damageReduction: 5,
-	canTarget:{kind:'anyFriendly',selfAfflictSprite:'heal'},
+	canTarget: { kind: 'anyFriendly', selfAfflictSprite: 'heal' },
 	putsStatusOnAffected: { statusId: 'poison', remove: true }
 }
 
@@ -154,22 +153,22 @@ const belt: Item = {
 	id: 'belt',
 	slot: 'utility',
 	default: true,
-	excludeFromDetail:true,
-	noAction:true,
+	excludeFromDetail: true,
+	noAction: true,
 }
 const rags: Item = {
 	id: 'rags',
 	slot: 'body',
 	default: true,
-	excludeFromDetail:true,
-	noAction:true,
+	excludeFromDetail: true,
+	noAction: true,
 }
 
 const wait: Item = {
 	id: 'wait',
 	slot: 'wait',
 	default: true,
-	excludeFromDetail:true,
+	excludeFromDetail: true,
 	speed: 999,
 	provoke: 0,
 	behavior: { kind: 'selfInflicted', extraSprite: 'shield' },
@@ -178,11 +177,11 @@ const wait: Item = {
 const succumb: Item = {
 	id: 'succumb',
 	slot: 'succumb',
-	excludeFromDetail:true,
+	excludeFromDetail: true,
 	teleportTo: 'dead',
 	default: true,
 	speed: -999,
-	grantsImmunity: true,
+	// grantsImmunity: true,
 	requiresSourceDead: true,
 	useableOutOfBattle: true,
 	behavior: { kind: 'selfInflicted', extraSprite: 'skull' },
@@ -216,14 +215,14 @@ export type ItemState = {
 
 export function equipItem(player: Player, itemId: ItemId) {
 	const item = items.find(i => i.id == itemId)
-	if(!item)return
+	if (!item) return
 	let state = player.inventory.find(i => i.stats.slot == item.slot)
 	if (!state) {
 		let createState: ItemState = {
 			cooldown: 0,
 			warmup: item.warmup ?? 0,
-			stats:item,
-			stock:item.startStock,
+			stats: item,
+			stock: item.startStock,
 		}
 		player.inventory.push(createState)
 		// player.inventory.sort((a, b) => {
@@ -249,32 +248,32 @@ export function checkHasItem(player: Player, id: ItemId): boolean {
 	return false
 }
 
-export type ItemCombination = {className : string, combos : string[]}
+export type ItemCombination = { className: string, combos: string[] }
 export const itemCombinations = [
-	{className:'peasant',combos:['fist']},
-	{className:'thief',combos:['dagger']},
-	{className:'rogue',combos:['dagger','leatherArmor']},
-	{className:'rogue',combos:['dagger','thiefCloak']},
-	{className:'rogue',combos:['dagger','plateMail']},
-	{className:'ruffian',combos:['club']},
-	{className:'thug',combos:['club','leatherArmor']},
-	{className:'heavy',combos:['club','plateMail']},
-	{className:'mage',combos:['fireStaff']},
-	{className:'cleric',combos:['fireStaff','potion']},
+	{ className: 'peasant', combos: ['fist'] },
+	{ className: 'thief', combos: ['dagger'] },
+	{ className: 'rogue', combos: ['dagger', 'leatherArmor'] },
+	{ className: 'rogue', combos: ['dagger', 'thiefCloak'] },
+	{ className: 'rogue', combos: ['dagger', 'plateMail'] },
+	{ className: 'ruffian', combos: ['club'] },
+	{ className: 'thug', combos: ['club', 'leatherArmor'] },
+	{ className: 'heavy', combos: ['club', 'plateMail'] },
+	{ className: 'mage', combos: ['fireStaff'] },
+	{ className: 'cleric', combos: ['fireStaff', 'potion'] },
 ]
 
-export function comboFindClassFromInventory(inv:ItemState[]):string{
+export function comboFindClassFromInventory(inv: ItemState[]): string {
 	let result = 'peasant'
-	for(const itemCombination of itemCombinations){
+	for (const itemCombination of itemCombinations) {
 		let satisfies = true
-		for(const itemId of itemCombination.combos){
-			let found = inv.find(i=>i.stats.id == itemId)
-			if(!found){
+		for (const itemId of itemCombination.combos) {
+			let found = inv.find(i => i.stats.id == itemId)
+			if (!found) {
 				satisfies = false
 				break
 			}
 		}
-		if(satisfies){
+		if (satisfies) {
 			result = itemCombination.className
 		}
 	}

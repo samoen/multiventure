@@ -1,9 +1,10 @@
-import type { BattleAnimation, BattleEvent, HeroId, StatusId, UnitId, VisualActionSourceId } from '$lib/utils';
+import type { BattleAnimation, BattleEvent, HeroId, StatusState, UnitId, VisualActionSourceId } from '$lib/utils';
 import { v4 } from 'uuid';
 import { equipItem, items, type Item, type ItemId, type ItemState, } from './items';
 import { deepEqual, type VasActionData, type VisualActionSource } from './logic';
 import { pushHappening } from './messaging';
 import { startSceneDataId, uniqueFromSceneDataId, type SceneDataId, type UniqueSceneIdenfitier } from './scenes';
+import type { StatusId } from './statuses';
 
 export const users = new Map<UserId, Player>();
 export const globalFlags = new Set<GlobalFlag>();
@@ -22,7 +23,7 @@ export function addNewUser(heroName: string): { id: string, player: Player } | u
 	let startSceneId: SceneDataId = startSceneDataId
 	// startSceneId = 'forestPassage'
 	// startSceneId = 'throne'
-	startSceneId = 'armory'
+	// startSceneId = 'armory'
 	
 	let startUnique = uniqueFromSceneDataId(pId,startSceneId)
 	
@@ -42,6 +43,7 @@ export function addNewUser(heroName: string): { id: string, player: Player } | u
 		maxHealth: 100,
 		agility: 1,
 		strength: 1,
+		bonusStrength:0,
 		devActions: [],
 		itemActions: [],
 		vasActions: [],
@@ -49,11 +51,7 @@ export function addNewUser(heroName: string): { id: string, player: Player } | u
 		sceneTexts: [],
 		flags: startflags,
 		animations: [],
-		statuses: {
-			poison: 0,
-			rage: 0,
-			hidden: 0,
-		},
+		statuses: new Map(),
 	}
 
 	items.filter(i=>i.default).forEach(i=>{
@@ -98,6 +96,7 @@ export type Player = {
 	animations: BattleAnimation[];
 	visualActionSources: VisualActionSource[];
 	currentUniqueSceneId:UniqueSceneIdenfitier;
+	statuses : Map<StatusId,number>
 } & PlayerCommonStats;
 
 export type PlayerCommonStats = {
@@ -107,13 +106,15 @@ export type PlayerCommonStats = {
 	health: number;
 	agility: number;
 	strength: number;
+	bonusStrength:number;
 	maxHealth: number;
-	statuses: Record<StatusId, number>
 }
 
 export type PlayerInClient = {
 	currentSceneDisplay: string;
 	class:string
+	statuses: StatusState[];
+	fadeSprite?:boolean;
 } & PlayerCommonStats;
 
 export type GameAction = {

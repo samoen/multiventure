@@ -3,6 +3,7 @@
 import type { ActiveEnemy, EnemyTemplate, EnemyTemplateId } from './server/enemies';
 import type { ItemId } from './server/items';
 import type { SceneDataId } from './server/scenes';
+import type { StatusId } from './server/statuses';
 import type { HeroName, Player } from './server/users';
 
 
@@ -164,7 +165,7 @@ export type ItemAnimationBehavior =
 	| CenterAnimation
 	| SelfInflictAnimation
 
-export type StatusId = 'poison' | 'rage' | 'hidden'
+
 
 export type StatusEffect = {
 	status: StatusId;
@@ -181,9 +182,11 @@ export type EnemyInClient = {
 	template: EnemyTemplate
 	aggros: AggroInClient[]
 	statuses: EnemyStatusInClient[]
+	fadeSprite?:boolean
 }
 
-export type EnemyStatusInClient = { hId: HeroId, statusId: StatusId, count: number }
+export type StatusState = { statusId: StatusId, count: number }
+export type EnemyStatusInClient = { hId: HeroId } & StatusState
 export type AggroInClient = { hId: HeroId, agg: number }
 
 export type GameActionSelected = {

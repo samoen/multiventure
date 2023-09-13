@@ -402,9 +402,12 @@ const trainingRoom2: Scene = {
 		{
 			eName: 'Borgus',
 			eTemp: 'orc',
-			statuses: {
-				rage: 5
-			}
+			statuses: [
+				{
+					statusId:'rage',
+					count:5,
+				}
+			]
 		},
 		{
 			eName: 'Morgal',
@@ -973,9 +976,10 @@ const goblinCamp: Scene = {
 		{
 			eName: 'Murk',
 			eTemp: 'goblin',
-			statuses: {
-				rage: 3
-			}
+			statuses: [{
+				statusId:'rage',
+				count:3
+			}]
 		},
 	],
 	spawnsEnemiesOnBattleJoin: [
@@ -1021,6 +1025,7 @@ const tunnelChamber: Scene = {
 					{
 						eName: 'Shootah',
 						eTemp: 'darter',
+						statuses:[{statusId:'hidden',count:2}]
 					},
 				]
 			}, {

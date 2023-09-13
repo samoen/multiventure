@@ -1,9 +1,10 @@
-import type { AnimationBehavior, BattleAnimation, BattleEventEntity, EnemyId, EnemyName, HeroId, ItemAnimationBehavior, StatusId, StatusMod } from "$lib/utils";
+import type { AnimationBehavior, BattleAnimation, BattleEventEntity, EnemyId, EnemyName, HeroId, ItemAnimationBehavior, StatusMod } from "$lib/utils";
 import { v4 } from "uuid";
 import { deepEqual, type EnemyForSpawning } from "./logic";
 import { pushHappening } from "./messaging";
 import { scenesData, type UniqueSceneIdenfitier } from "./scenes";
 import { activePlayersInScene, type Player } from "./users";
+import type { StatusId } from "./statuses";
 
 
 export const activeEnemies: ActiveEnemy[] = []
@@ -140,8 +141,8 @@ export function spawnEnemy(
 
 	if(eFs.statuses){
 		let mapForHeroStatuses: Map<StatusId, number> = new Map();
-		for (let [k,v] of Object.entries(eFs.statuses)){
-			mapForHeroStatuses.set((k as StatusId),v)
+		for (let k of eFs.statuses){
+			mapForHeroStatuses.set(k.statusId, k.count)
 		}
 		mapStatuses.set(triggeredBy,mapForHeroStatuses)
 	}
@@ -217,6 +218,7 @@ export function damagePlayer(enemy: ActiveEnemy, player: Player, baseDmg:number)
 
 		player.health -= dmg
 		dmgDone.push(dmg)
+		if(player.health < 1)break
 	}
 
 	pushHappening(`${enemy.name} hit ${player.heroName} ${strikes > 1 ? strikes + ' times' : ''} for ${dmgDone} damage`)
@@ -249,6 +251,7 @@ export function damageEnemy(
 		}
 		enemy.health -= dmg
 		dmgDone.push(dmg)
+		if(enemy.health < 1)break
 	}
 	let attackerName = source.kind == 'player' ? source.entity.heroName : source.entity.name
 	pushHappening(`${attackerName} hit ${enemy.name} ${strikes > 1 ? strikes + ' times' : ''} for ${dmgDone} damage`)

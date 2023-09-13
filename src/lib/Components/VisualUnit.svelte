@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { statusImages } from '$lib/client/assets';
 	import { allVisualUnitProps, lastMsgFromServer, selectedDetail, successcreds, type VisualUnitProps } from '$lib/client/ui';
+	import type { StatusId } from '$lib/server/statuses';
 
-	import type { StatusEffect, StatusId, UnitId } from '$lib/utils';
+	import type { StatusEffect, StatusState, UnitId } from '$lib/utils';
 	import { tick } from 'svelte';
 	import { derived } from 'svelte/store';
 
@@ -29,36 +30,25 @@
 	}
 	export let flip: boolean;
 	const statuses = derived(vu,($vu)=>{
-		let s : StatusId[] = [];
+		let s : StatusState[] = [];
 		if(!$vu)return s
 
 		if ($vu.actual.kind == 'enemy') {
 			// statuses = $vu.actual.enemy.statuses.map(s=>s.status)
 			if ($vu.actual.enemy.statuses) {
-				// console.log(JSON.stringify($vu.actual.enemy.statuses))
-				// let arrayOfStatuses = Array.from(Object.values($vu.actual.enemy.statuses));
-				// console.log(JSON.stringify(arrayOfStatuses))
-				if ($vu.actual.enemy.statuses.find((s) => s.statusId == 'poison' && s.count > 0)) {
-					s.push('poison');
-				}
-				if ($vu.actual.enemy.statuses.find((s) => s.statusId == 'rage' && s.count > 0)) {
-					s.push('rage');
-				}
-				if ($vu.actual.enemy.statuses.find((s) => s.statusId == 'hidden' && s.count > 0)) {
-					s.push('hidden');
+				for (const st of $vu.actual.enemy.statuses){
+					let alreadyIn = s.find(e=>e.statusId == st.statusId)
+					if(st.count > 0 && alreadyIn == undefined){
+						s.push(st)
+					}
 				}
 			}
 		}
 		if ($vu.actual.kind == 'player') {
-			if ($vu.actual.info.statuses.poison > 0) {
-				// console.log('pushing poison visual on player')
-				s.push('poison');
-			}
-			if ($vu.actual.info.statuses.rage > 0) {
-				s.push('rage');
-			}
-			if ($vu.actual.info.statuses.hidden > 0) {
-				s.push('hidden');
+			for (const st of $vu.actual.info.statuses){
+				if(st.count > 0){
+					s.push(st)
+				}
 			}
 		}
 		return s
@@ -81,7 +71,7 @@
 		<div class="outerHeroSprite">
 			<div class="statuses">
 				{#each $statuses as s}
-					<img class="status" alt="status" src={statusImages[s]} />
+					<img class="status" alt="status" src={statusImages[s.statusId]} />
 				{/each}
 			</div>
 			<img
@@ -89,7 +79,7 @@
 				class:flipped={flip && !$vu.tilt}
 				class:tiltedHero={$vu.tilt && $vu.side == 'hero'}
 				class:tiltedEnemy={$vu.tilt && $vu.side == 'enemy'}
-				class:faded={$statuses.includes('hidden')}
+				class:faded={$vu.fadeSprite }
 				alt="you"
 				src={$vu.src}
 			/>

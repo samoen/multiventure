@@ -1,8 +1,9 @@
-import type { AggroInClient, BattleAnimation, EnemyInClient, EnemyStatusInClient, GameActionSentToClient, LandscapeImage } from '$lib/utils';
+import type { AggroInClient, BattleAnimation, BattleEventEntity, EnemyInClient, EnemyStatusInClient, GameActionSentToClient, LandscapeImage, StatusState } from '$lib/utils';
 import { enemiesInScene, getAggroForPlayer } from './enemies';
 import { comboFindClassFromInventory } from './items';
-import { convertServerActionToClientAction, convertVasToClient, type VisualActionSourceInClient } from './logic';
+import { convertServerActionToClientAction, convertVasToClient, immuneDueToStatus, type VisualActionSourceInClient } from './logic';
 import { getSceneData } from './scenes';
+import type { StatusId } from './statuses';
 import { activePlayers, activePlayersInScene, globalFlags, users, type Flag, type GlobalFlag, type HeroName, type Player, type PlayerInClient } from './users';
 
 export const FAKE_LATENCY = 50;
@@ -61,6 +62,33 @@ export async function sendEveryoneWorld(triggeredBy: HeroName) {
 	}
 }
 
+export function statusMapToStatusInClients(s:Map<StatusId,number>):StatusState[]{
+	let result : StatusState[] = []
+	for(let [k,v] of s){
+		result.push({statusId:k,count:v})
+	}
+	return result
+}
+
+export function shouldFadeSprite(bee:BattleEventEntity, forPlayer:Player):true|undefined{
+	if(bee.entity.health < 1)return true
+	// if(bee.kind == 'player'){
+	// 	if(immuneDueToStatus(bee.entity.statuses)){
+	// 		return true
+	// 	}
+	// }
+	// if(bee.kind == 'enemy'){
+	// 	for(let [k,v] of bee.entity.statuses){
+	// 		if(immuneDueToStatus(v)){
+	// 			if(k == forPlayer.unitId){
+	// 				return true
+	// 			}
+	// 		}
+	// 	}
+	// }
+	return undefined
+}
+
 export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): MessageFromServer {
 	// console.log(`sending anims ${JSON.stringify(forPlayer.animations)}`)
 	// for (const p of activePlayers()){
@@ -78,10 +106,12 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 			maxHealth: forPlayer.maxHealth,
 			agility: forPlayer.agility,
 			strength: forPlayer.strength,
+			bonusStrength:forPlayer.bonusStrength,
 			inventory: forPlayer.inventory,
 			currentSceneDisplay: scene.displayName,
-			statuses: forPlayer.statuses,
-			class: comboFindClassFromInventory(forPlayer.inventory)
+			statuses: statusMapToStatusInClients(forPlayer.statuses),
+			class: comboFindClassFromInventory(forPlayer.inventory),
+			fadeSprite:shouldFadeSprite({kind:'player',entity:forPlayer},forPlayer)
 		},
 		otherPlayers: activePlayersInScene(forPlayer.currentUniqueSceneId)
 			.filter((u) => u.unitId != forPlayer.unitId)
@@ -93,10 +123,12 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 					maxHealth: u.maxHealth,
 					agility: u.agility,
 					strength: u.strength,
+					bonusStrength: u.bonusStrength,
 					inventory: u.inventory,
 					currentSceneDisplay: 'somewhere',
-					statuses: u.statuses,
-					class: comboFindClassFromInventory(u.inventory)
+					statuses: statusMapToStatusInClients(u.statuses),
+					class: comboFindClassFromInventory(u.inventory),
+					fadeSprite:shouldFadeSprite({kind:'player',entity:u},forPlayer),
 				} satisfies PlayerInClient;
 			}),
 		sceneTexts: forPlayer.sceneTexts,
@@ -125,12 +157,12 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 
 			let statusesInClient: EnemyStatusInClient[] = []
 			for (let [k, v] of e.statuses) {
-				for (let [k2, v2] of v) {
+				let sInCs = statusMapToStatusInClients(v)
+				for (const cs of sInCs){
 					statusesInClient.push({
-						hId: k,
-						count: v2,
-						statusId: k2,
-					})
+						hId:k,
+						...cs,
+					}satisfies EnemyStatusInClient)
 				}
 			}
 
@@ -144,6 +176,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				myAggro: getAggroForPlayer(e, forPlayer),
 				aggros: aggros,
 				statuses: statusesInClient,
+				fadeSprite:shouldFadeSprite({kind:'enemy',entity:e},forPlayer)
 			} satisfies EnemyInClient
 		}),
 		playerFlags: Array.from(forPlayer.flags),

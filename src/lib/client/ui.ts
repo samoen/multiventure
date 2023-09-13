@@ -1,5 +1,5 @@
 import type { Flag, HeroName, PlayerInClient } from "$lib/server/users";
-import { AbAnimatesToUnit, animatesToUnit, type BattleAnimation, type EnemyInClient, type GameActionSentToClient, type HeroId, type LandscapeImage, type SignupResponse, type StatusId, type UnitId, type VisualActionSourceId } from "$lib/utils";
+import { AbAnimatesToUnit, animatesToUnit, type BattleAnimation, type EnemyInClient, type GameActionSentToClient, type HeroId, type LandscapeImage, type SignupResponse, type StatusState, type UnitId, type VisualActionSourceId } from "$lib/utils";
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 
 import type { ItemId, ItemState } from '$lib/server/items';
@@ -10,9 +10,10 @@ import { tick } from "svelte";
 import { linear, quintInOut, quintOut } from "svelte/easing";
 import { crossfade } from "svelte/transition";
 import { anySprites, enemySprites, getHeroPortrait, getPortrait, getSlotImage, heroSpriteFromClass } from "./assets";
+import type { StatusId } from "$lib/server/statuses";
 
 
-type HeroSpecificEnemyState = { hName: HeroName, agg: number, sts: { sId: StatusId, count: number }[] }
+type HeroSpecificEnemyState = { hName: HeroName, agg: number, sts: StatusState[] }
 
 type UnitDetails = {
     portrait: string
@@ -36,6 +37,7 @@ export type VisualUnitProps = {
     maxHp: number;
     side: 'hero' | 'enemy'
     actual: UnitDetails;
+    fadeSprite?:boolean;
     actionsThatCanTargetMe: GameActionSentToClient[]
 }
 
@@ -356,6 +358,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                 portrait: getHeroPortrait(lastMsg.yourInfo.class),
                 info: structuredClone(lastMsg.yourInfo),
             },
+            fadeSprite:lastMsg.yourInfo.fadeSprite,
             actionsThatCanTargetMe: lastMsg.itemActions.filter(a => a.associateWithUnit == lastMsg.yourInfo.unitId)
         } satisfies VisualUnitProps
         )
@@ -365,11 +368,11 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
             let heroSpecifics: HeroSpecificEnemyState[] = []
             for (const ag of e.aggros) {
                 let find = e.statuses.filter(s => s.hId == ag.hId)
-                let stsForHero: { sId: StatusId, count: number }[] = []
+                let stsForHero: StatusState[] = []
                 if (find) {
                     for (const s of find) {
                         stsForHero.push({
-                            sId: s.statusId,
+                            statusId: s.statusId,
                             count: s.count,
                         })
                     }
@@ -399,6 +402,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                     displayHp: e.health,
                     maxHp: e.maxHealth,
                     side: 'enemy',
+                    fadeSprite:e.fadeSprite,
                     actual: {
                         kind: 'enemy',
                         portrait: e.template.portrait ? getPortrait(e.template.portrait) : enemySprites[e.templateId],
@@ -418,6 +422,7 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
                     displayHp: p.health,
                     maxHp: p.maxHealth,
                     side: 'hero',
+                    fadeSprite:p.fadeSprite,
                     actual: {
                         kind: 'player',
                         portrait: getHeroPortrait(p.class),
@@ -559,14 +564,16 @@ export function handlePutsStatuses(anim: BattleAnimation) {
                         // remove enemy status for all sources
                         vup.actual.enemy.statuses = vup.actual.enemy.statuses.filter(s => s.statusId != ps.statusId)
                     } else if (vup.actual.kind == 'player') {
-                        vup.actual.info.statuses[ps.statusId] = 0;
+                        vup.actual.info.statuses = vup.actual.info.statuses.filter(s=>s.statusId != ps.statusId);
                     }
                 } else {
                     if (ps.count) {
                         if (vup.actual.kind == 'enemy') {
                             let found = vup.actual.enemy.statuses.find(s => s.statusId == ps.statusId && s.hId == anim.triggeredBy)
                             if (found) {
-                                found.count += ps.count
+                                if(found.count < ps.count){
+                                    found.count = ps.count
+                                }
                             } else {
                                 vup.actual.enemy.statuses.push({
                                     count: ps.count,
@@ -575,7 +582,15 @@ export function handlePutsStatuses(anim: BattleAnimation) {
                                 })
                             }
                         } else if (vup.actual.kind == 'player') {
-                            vup.actual.info.statuses[ps.statusId] = ps.count;
+                            let found = vup.actual.info.statuses.find(s=>s.statusId == ps.statusId)
+                            if(found){
+                                if(found.count < ps.count){
+                                    found.count = ps.count;
+                                }
+                            }else{
+                                vup.actual.info.statuses.push({statusId:ps.statusId,count:ps.count})
+                            }
+                            
                         }
 
                     }
@@ -627,7 +642,7 @@ export async function nextAnimationIndex(
         if (!animsInWaiting) {
             // give some time for enemies slain on the last animation to fade out.
             if (someoneDied) {
-                await new Promise(r => setTimeout(r, 500))
+                await new Promise(r => setTimeout(r, 300))
             }
             waitingForMyAnimation.set(false)
             syncVisualsToMsg(latest)

@@ -216,15 +216,26 @@
 	async function getWorld() {
 		$clientState.loading = true;
 		$clientState.status = 'getting initial world';
-		let r = await fetch('/api/world', { method: 'POST' });
-		let sMsg = await r.json();
-		if (!isMsgFromServer(sMsg)) {
-			console.log('malformed event from server');
-			return;
+		try{
+			let r = await fetch('/api/world', { method: 'POST' });
+			let sMsg = await r.json();
+			if (!isMsgFromServer(sMsg)) {
+				console.log('malformed event from server');
+				$clientState.status = 'bad get world';
+				$clientState.loading = false;
+				return;
+			}
+			worldReceived(sMsg);
+			$clientState.loading = false;
+			$clientState.status = 'received initial world';
+			
+		}catch(e){
+			console.log('failed to get world');
+			$clientState.status = 'failed to get world';
+			console.log(e);
+			$clientState.loading = false;
+			return
 		}
-		worldReceived(sMsg);
-		$clientState.loading = false;
-		$clientState.status = 'received initial world';
 	}
 
 	async function deleteHero() {

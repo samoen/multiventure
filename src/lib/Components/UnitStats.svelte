@@ -9,7 +9,7 @@
 	import lightShield from '$lib/assets/ui/light-shield.png';
 	import heavyShield from '$lib/assets/ui/heavy-shield.png';
 	import { statusImages } from '$lib/client/assets';
-	import type { HeroId, StatusId } from '$lib/utils';
+	import type { HeroId } from '$lib/utils';
 	import type { HeroName } from '$lib/server/users';
 	import ItemStats from './ItemStats.svelte';
 
@@ -17,21 +17,17 @@
 	$: enemy = vu.actual.kind == 'enemy' ? vu.actual.enemy : undefined;
 	$: str =
 		vu.actual.kind == 'enemy' ? vu.actual.enemy.template.baseDamage : vu.actual.info.strength;
+    let bonusStr = ''
+    $: {
+        if(vu.actual.kind == 'player'){
+            if(vu.actual.info.bonusStrength > 0){
+                bonusStr = ` + ${vu.actual.info.bonusStrength}`
+            }
+        }
+    }
 	$: agi = vu.actual.kind == 'enemy' ? vu.actual.enemy.template.speed : vu.actual.info.agility;
 	$: aggGain = vu.actual.kind == 'enemy' ? vu.actual.enemy.template.aggroGain : 0;
 	$: strikes = vu.actual.kind == 'enemy' ? vu.actual.enemy.template.strikes ?? 1 : 0;
-	let playerStatuses: Map<StatusId, number> = new Map();
-	$: {
-		if (vu.actual.kind == 'player') {
-			playerStatuses = new Map();
-			for (let [key, value] of Object.entries(vu.actual.info.statuses)) {
-				if (value > 0) {
-					let tKey = key as StatusId;
-					playerStatuses.set(tKey, value);
-				}
-			}
-		}
-	}
 </script>
 
 <div class="top">
@@ -49,11 +45,11 @@
     </div>
 	{#if vu.actual.kind == 'player'}
 		<div class="statuses">
-			{#each playerStatuses as [key, value]}
-				{#if value > 0}
+			{#each vu.actual.info.statuses as s}
+				{#if s.count > 0}
 					<div class="statLine">
-						<img class="statusIm" src={statusImages[key]} alt="a status" />
-						<div>{value}</div>
+						<img class="statusIm" src={statusImages[s.statusId]} alt="a status" />
+						<div>{s.count}</div>
 					</div>
 				{/if}
 			{/each}
@@ -62,12 +58,12 @@
 
 	<div class="stats">
 		<div class="statLine">
-			<img src={shieldHealth} alt="a heart" />
+			<img src={shieldHealth} alt="an icon" />
 			<div>{vu.maxHp}</div>
 		</div>
 		<div class="statLine">
-			<img src={strong} alt="a heart" />
-			<div>{str}</div>
+			<img src={strong} alt="an icon" />
+			<div>{str}{bonusStr}</div>
 		</div>
 		{#if strikes > 1}
 			<div class="statLine">
@@ -110,7 +106,7 @@
 				<div>
 					{#if s.count > 0}
 						<div class="statLine">
-							<img class="statusIm" src={statusImages[s.sId]} alt="a status" />
+							<img class="statusIm" src={statusImages[s.statusId]} alt="a status" />
 							<div>{s.count}</div>
 						</div>
 					{/if}
