@@ -21,8 +21,10 @@
     $: {
         if(vu.actual.kind == 'player'){
             if(vu.actual.info.bonusStrength > 0){
-                bonusStr = ` + ${vu.actual.info.bonusStrength}`
+                bonusStr = ` +${vu.actual.info.bonusStrength}`
             }
+        }else{
+            bonusStr = ''
         }
     }
 	$: agi = vu.actual.kind == 'enemy' ? vu.actual.enemy.template.speed : vu.actual.info.agility;

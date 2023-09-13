@@ -66,7 +66,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 	goblin: {
 		baseHealth: 50,
 		baseDamage: 20,
-		aggroGain: 80,
+		aggroGain: 50,
 		startAggro: 20,
 		damageReduction: 2,
 		speed: 4,
@@ -83,9 +83,9 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 	orc: {
 		portrait:'grunt',
 		baseHealth: 50,
-		baseDamage: 10,
+		baseDamage: 20,
 		aggroGain: 30,
-		startAggro: 0,
+		startAggro: 10,
 		speed: 4,
 		damageLimit:10,
 	},
@@ -101,8 +101,8 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 	troll: {
 		baseHealth: 150,
 		baseDamage: 50,
-		aggroGain: 1,
-		startAggro: 0,
+		aggroGain: 3,
+		startAggro: 80,
 		speed: 1,
 	}
 };

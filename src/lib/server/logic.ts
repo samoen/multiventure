@@ -1,7 +1,7 @@
 import { goto } from "$app/navigation"
 import { addAnimateToUnit, animatesToUnit, type AggroModifier, type AggroModifierEvent, type AnimationBehavior, type AnySprite, type BattleAnimation, type BattleEvent, type BattleEventEntity, type GameActionSentToClient, type HealthModifier, type HealthModifierEvent, type HeroId, type ItemAnimationBehavior, type StatusEffect, type StatusModifier, type StatusModifierEvent, type UnitId, type VisualActionSourceId, type StatusState } from "$lib/utils"
 import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, modifyAggroForPlayer, modifiedEnemyHealth, type EnemyTemplateId, spawnEnemy, type EnemyStatuses, type ActiveEnemy, checkEnemyDeath } from "./enemies"
-import { items, type Item, equipItem, checkHasItem, type ItemId, type CanTarget } from "./items"
+import { items, type Item, equipItem, checkHasItem, type ItemId, type CanTarget, type CanEffect } from "./items"
 import { pushHappening } from "./messaging"
 import { alreadySpawnedCurrentBattle, spawnedNewBattle, hasPlayerAlreadySpawnedForBattle, spawnedOngoing, getSceneData, type UniqueSceneIdenfitier, type SceneDataId, getSceneDataSimple, dead, uniqueFromSceneDataId } from "./scenes"
 import { statusDatas, type StatusData, type StatusId } from "./statuses"
@@ -43,36 +43,35 @@ export function updatePlayerActions(player: Player) {
 		} else {
 			iCt = { kind: 'onlySelf' }
 		}
+		let dmgAf = i.dmgAffects ?? 'targetOnly'
 
-
+		let affectedsFromCanEffect = (ca:CanEffect, t :BattleEventEntity)=>{
+			let affecteds: BattleEventEntity[] = []
+			if ((ca == 'allEnemy')) {
+				affecteds = sceneEnemies.map(se => {
+					return {
+						kind: 'enemy',
+						entity: se,
+					}
+				})
+			} else if (ca == 'allFriendly') {
+				affecteds = [{ kind: 'player', entity: player }]
+			}else {
+				affecteds = [t]
+			}
+			return affecteds
+		}
 
 		let nBe = (
 			targetChosen: BattleEventEntity
 		) => {
-			let affected: BattleEventEntity[] = []
-			if (i.affects) {
-				if ((i.affects == 'allEnemy')) {
-					affected = sceneEnemies.map(se => {
-						return {
-							kind: 'enemy',
-							entity: se,
-						}
-					})
-				} else if (i.affects == 'allFriendly') {
-					affected = [{ kind: 'player', entity: player }]
-				}
-			} else {
-				affected = [targetChosen]
-			}
-
-			let alsoDmgs: HealthModifierEvent[] = []
-			let modagro: AggroModifierEvent[] = []
-			let ptstatuses: StatusModifierEvent[] = []
 			let bonus = 0
 			if (iAb.kind == 'melee') {
 				bonus = player.strength + player.bonusStrength
 			}
-			for (const aff of affected) {
+			let dmgAffected = affectedsFromCanEffect(dmgAf,targetChosen)
+			let alsoDmgs: HealthModifierEvent[] = []
+			for (const aff of dmgAffected) {
 				if (i.baseDmg) {
 					alsoDmgs.push({
 						target: aff,
@@ -87,13 +86,34 @@ export function updatePlayerActions(player: Player) {
 						baseHeal: i.baseHeal,
 					} satisfies HealthModifierEvent)
 				}
-				let aModEvent = AggroModifierEventFromItem(aff, i, player, scenePlayers)
-				if (aModEvent) {
-					modagro.push(aModEvent)
+			}
+			let modagro: AggroModifierEvent[] = []
+			if(i.modifiesAggroOnAffected){
+				let aggroAffected = affectedsFromCanEffect(i.modifiesAggroOnAffected.affects,targetChosen)
+				for (const aff of aggroAffected) {
+					if (aff.kind == 'enemy') {
+						let fHeroes = [player]
+						if (i.modifiesAggroOnAffected.aggroFor == 'allPlayers') {
+							fHeroes = scenePlayers
+						}
+						modagro.push({
+							targetEnemy: aff.entity,
+							forHeros: fHeroes,
+							baseAmount: i.modifiesAggroOnAffected.amount,
+						})
+					}
 				}
-				let sModEvent = StatusModifierEventFromItem(aff, i)
-				if (sModEvent) {
-					ptstatuses.push(sModEvent)
+			}
+			let ptstatuses: StatusModifierEvent[] = []
+			if (i.putsStatusOnAffected) {
+				let statusAffected = affectedsFromCanEffect(i.putsStatusOnAffected.affects,targetChosen)
+				for (const aff of statusAffected) {
+					ptstatuses.push({
+						target: aff,
+						statusId: i.putsStatusOnAffected.statusMod.statusId,
+						count: i.putsStatusOnAffected.statusMod.count,
+						remove: i.putsStatusOnAffected.statusMod.remove,
+					})
 				}
 			}
 
@@ -105,9 +125,9 @@ export function updatePlayerActions(player: Player) {
 				beBehav = iAb
 			}
 
-			if (i.canTarget?.kind == 'anyFriendly' && targetChosen) {
+			if (iCt.kind == 'anyFriendly' && targetChosen) {
 				if (targetChosen.entity.unitId == player.unitId) {
-					beBehav = { kind: 'selfInflicted', extraSprite: i.canTarget.selfAfflictSprite }
+					beBehav = { kind: 'selfInflicted', extraSprite: iCt.selfAfflictSprite }
 				}
 			}
 
@@ -222,36 +242,6 @@ export function removeStatus(bee: BattleEventEntity, st: StatusId) {
 			value.delete(st)
 		}
 	}
-}
-
-
-function AggroModifierEventFromItem(aff: BattleEventEntity, i: Item, player: Player, scenePlayers: Player[]): AggroModifierEvent | undefined {
-	if (i.modifiesAggroOnAffected) {
-		if (aff.kind == 'enemy') {
-			let fHeroes = [player]
-			if (i.modifiesAggroOnAffected.kind == 'allPlayers') {
-				fHeroes = scenePlayers
-			}
-			return {
-				targetEnemy: aff.entity,
-				forHeros: fHeroes,
-				baseAmount: i.modifiesAggroOnAffected.amount,
-			}
-		}
-	}
-	return undefined
-}
-
-function StatusModifierEventFromItem(aff: BattleEventEntity, i: Item): StatusModifierEvent | undefined {
-	if (i.putsStatusOnAffected) {
-		return {
-			target: aff,
-			statusId: i.putsStatusOnAffected.statusId,
-			count: i.putsStatusOnAffected.count,
-			remove: i.putsStatusOnAffected.remove,
-		}
-	}
-	return undefined
 }
 
 export function enterSceneOrWakeup(player: Player) {

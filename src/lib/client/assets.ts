@@ -101,14 +101,9 @@ export function getSlotImage(id: ItemId): string {
 }
 
 export function getHeroPortrait(className: string): string {
-    // if (pi.inventory.some(i=>i.itemId=='dagger'))return thiefPortrait
-    // if (pi.inventory.some(i=>i.itemId=='fireStaff'))return magePortrait
-    // if (pi.inventory.some(i=>i.itemId=='club'))return ruffianPortrait
-    // if (pi.inventory.weapon.itemId == 'dagger') {
-    //     return peasantPortrait
-    // }
     if(className == 'peasant')return peasantPortrait
     if(className == 'thief')return thiefPortrait
+    if(className == 'rogue')return thiefPortrait
     if(className == 'ruffian')return ruffianPortrait
     if(className == 'thug')return thugPortrait
     if(className == 'heavy')return heavyInfantryPortrait
