@@ -116,7 +116,6 @@ export const plateMail: Item = {
 	behavior: { kind: 'selfInflicted', extraSprite: 'flame' },
 	putsStatusOnAffected: { affects: 'targetOnly', statusMod: { statusId: 'rage', count: 1 } },
 	modifiesAggroOnAffected: { affects: 'allEnemy', aggroFor: 'justMe', amount: 100 },
-	dmgAffects: 'allEnemy'
 }
 
 const thiefCloak: Item = {
@@ -190,7 +189,7 @@ const succumb: Item = {
 }
 
 
-export const items = [
+export const items : Item[] = [
 	fist,
 	dagger,
 	club,
@@ -205,7 +204,7 @@ export const items = [
 	thiefCloak,
 	wait,
 	succumb,
-] as const satisfies Item[]
+]
 
 
 export type ItemState = {

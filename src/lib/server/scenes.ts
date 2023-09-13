@@ -43,9 +43,6 @@ export type Scene = {
 	spawnsEnemiesOnEnter?: EnemyForSpawning[],
 	spawnsEnemiesOnBattleJoin?: EnemyForSpawning[],
 	sceneTexts?: SceneTexts,
-	onEnterScene?: (player: Player) => void
-	onBattleJoin?: (player: Player) => void
-	onVictory?: (player: Player) => void
 	actions?: (player: Player) => void
 	vases?: VisualActionSource[]
 	solo?: boolean
@@ -329,8 +326,6 @@ const trainingRoom1: Scene = {
 	],
 	sceneTexts: {
 		fallback: '"You enter the training room. It is well worn by many training sessions. The walls are covered in blast marks, dents and splinters."'
-	},
-	onEnterScene(player) {
 	},
 	vases: [
 		{

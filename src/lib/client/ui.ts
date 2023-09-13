@@ -158,10 +158,11 @@ export let typedInventory = derived([
         let acts = actionsForSlot($lastMsgFromServer, state.stats.id)
         let d = (!acts.length || $waitingForMyAnimation || $clientState.waitingForMyEvent)
         let num = numberShownOnSlot(state)
-        
-        let cantUseBecauseCoolWarmStock = num != undefined && !acts.length
-        let cantUseBecauseDead =  $lastMsgFromServer.yourInfo.health < 1 && !acts.length && !state.stats.requiresSourceDead
-        let include = !cantUseBecauseDead && (acts.length || cantUseBecauseCoolWarmStock)
+        let include = true
+        if(state.stats.excludeFromDetail && !acts.length){
+            include = false
+        }
+
         if(include){
             inventory.push({
                 itemState: state,

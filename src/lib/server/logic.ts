@@ -23,16 +23,16 @@ export function updatePlayerActions(player: Player) {
 	let sceneEnemies = enemiesInScene(player.currentUniqueSceneId)
 	let scenePlayers = activePlayersInScene(player.currentUniqueSceneId)
 
-	for (const cd of player.inventory) {
-		const i = items.find(item => item.id == cd.stats.id)
+	for (const itemState of player.inventory) {
+		const i = items.find(item => item.id == itemState.stats.id)
 		if (i == undefined) continue
 		if (i.noAction) continue
 		if (!i.useableOutOfBattle && !sceneEnemies.length) continue
 		if ((i.requiresSourceDead && player.health > 0)) continue
 		if (!i.requiresSourceDead && player.health < 1) continue
-		if (cd.cooldown > 0) continue
-		if (cd.warmup > 0) continue
-		if (cd.stock != undefined && cd.stock < 1) continue
+		if (itemState.cooldown > 0) continue
+		if (itemState.warmup > 0) continue
+		if (itemState.stock != undefined && itemState.stock < 1) continue
 
 		let iAb: ItemAnimationBehavior = i.behavior ?? { kind: 'melee' }
 		let iCt: CanTarget

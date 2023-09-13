@@ -73,7 +73,8 @@ import daggerSlot from '$lib/assets/equipment/dagger-human.png';
 import type { EnemyTemplateId } from '$lib/server/enemies';
 import type { ItemId, ItemState } from '$lib/server/items';
 import type { PlayerInClient } from '$lib/server/users';
-import type { AnySprite, LandscapeImage, StatusId } from '$lib/utils';
+import type { AnySprite, LandscapeImage } from '$lib/utils';
+import type { StatusId } from '$lib/server/statuses';
 
 export const enemySprites: Record<EnemyTemplateId, string> = {
     goblin: spearman,
