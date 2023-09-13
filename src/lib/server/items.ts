@@ -37,7 +37,7 @@ export type Item = {
 	modifiesAggroOnAffected?: { affects: CanEffect, aggroFor: 'allPlayers' | 'justMe', amount: number },
 	behavior?: ItemAnimationBehavior, // default melee
 	dmgAffects?: CanEffect // default targetOnly
-	canTarget?: CanTarget
+	canTarget?: CanTarget // for melee or missle defaults anyEnemy, else onlyself
 	strikes?: number // default 1
 	teleportTo?: SceneDataId
 }

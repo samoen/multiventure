@@ -166,21 +166,22 @@ export function updatePlayerActions(player: Player) {
 
 		for (const t of targetable) {
 			let perTargbe = nBe(t)
-			let statuses: Map<StatusId, number> | undefined = undefined
-			if (t.kind == 'player') {
-				statuses = t.entity.statuses
-			} else if (t.kind == 'enemy') {
-				statuses = t.entity.statuses.get(player.unitId)
-			}
+			let enemyImmune = false			
+			 if (t.kind == 'enemy') {
+				let statuses = t.entity.statuses.get(player.unitId)
+				if(statuses && immuneDueToStatus(statuses)){
+					enemyImmune = true
+				}
+			 }
 
 			if ((i.requiresTargetDamaged && !(t.entity.health < t.entity.maxHealth && t.entity.health > 0)) ||
 				(i.requiresStatus && !checkHasStatus(t, i.requiresStatus)) ||
-				(statuses && immuneDueToStatus(statuses))
+				(enemyImmune)
 			) {
 				continue
 			}
 			let ga: GameAction = {
-				buttonText: `use ${i.id} on ${t.entity.unitId}`,
+				buttonText: `${player.unitId} use ${i.id} on ${t.entity.unitId}`,
 				battleEvent: perTargbe,
 				itemId: i.id,
 				associateWithUnit: t.entity.unitId

@@ -29,10 +29,8 @@
 		source,
 		subAnimationStage,
 		successcreds,
-		syncConvoStateToVas,
 		triedSignupButTaken,
 		typedInventory,
-		updateUnit,
 		vasesToShow,
 		visualActionSources,
 		visualLandscape,
@@ -45,15 +43,13 @@
 	import { onMount, tick } from 'svelte';
 	import { flip } from 'svelte/animate';
 
+	import { invalidateAll } from '$app/navigation';
 	import UnitStats from '$lib/Components/UnitStats.svelte';
 	import VisualActionSource from '$lib/Components/VisualActionSource.svelte';
 	import { anySprites, getLandscape, getPortrait } from '$lib/client/assets';
 	import { isSignupResponse, type DataFirstLoad } from '$lib/utils';
 	import { writable, type Writable } from 'svelte/store';
 	import { fade } from 'svelte/transition';
-	import ItemStats from '$lib/Components/ItemStats.svelte';
-	import { invalidate, invalidateAll } from '$app/navigation';
-	import { page } from '$app/stores';
 
 	export let data: DataFirstLoad;
 	let signupInput: string;
@@ -216,7 +212,7 @@
 	async function getWorld() {
 		$clientState.loading = true;
 		$clientState.status = 'getting initial world';
-		try{
+		try {
 			let r = await fetch('/api/world', { method: 'POST' });
 			let sMsg = await r.json();
 			if (!isMsgFromServer(sMsg)) {
@@ -228,13 +224,12 @@
 			worldReceived(sMsg);
 			$clientState.loading = false;
 			$clientState.status = 'received initial world';
-			
-		}catch(e){
+		} catch (e) {
 			console.log('failed to get world');
 			$clientState.status = 'failed to get world';
 			console.log(e);
 			$clientState.loading = false;
-			return
+			return;
 		}
 	}
 
@@ -509,14 +504,14 @@
 						on:introend={() => {
 							if ($currentAnimation != undefined) {
 								let anim = $currentAnimation;
-								let hRes = handleModifyHealth(anim,0);
-								let someoneDied = false
-								if(hRes.died.length){
-									someoneDied = true
+								let hRes = handleModifyHealth(anim, 0);
+								let someoneDied = false;
+								if (hRes.died.length) {
+									someoneDied = true;
 								}
 								handlePutsStatuses(anim);
-								if($lastMsgFromServer){
-									handleModAggros(anim,$lastMsgFromServer.yourInfo.unitId);
+								if ($lastMsgFromServer) {
+									handleModAggros(anim, $lastMsgFromServer.yourInfo.unitId);
 								}
 								nextAnimationIndex(false, someoneDied);
 							}

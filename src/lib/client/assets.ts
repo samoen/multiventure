@@ -5,7 +5,7 @@ import plainsLandscape from '$lib/assets/landscapes/landscape-plain.webp';
 import castleLandscape from '$lib/assets/landscapes/landscape-castle.webp';
 import grimForestLandscape from '$lib/assets/landscapes/grim-altar.jpg';
 import bridgeLandscape from '$lib/assets/landscapes/landscape-bridge.webp';
-import peasantPortrait from '$lib/assets/portraits/peasant.webp';
+import peasantPortrait from '$lib/assets/portraits/peasant-fists.webp';
 import generalPortrait from '$lib/assets/portraits/general.webp';
 import ladyPortrait from '$lib/assets/portraits/lady.webp';
 import thiefPortrait from '$lib/assets/portraits/thief.webp';

@@ -334,6 +334,8 @@ export function updateUnit(index: UnitId, run: (vup: VisualUnitProps) => void) {
 }
 
 export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
+    waitingForMyAnimation.set(false)
+    currentAnimationIndex.set(999)
     if (!lastMsg) {
         console.log('tried to sync with bad msg')
     }
@@ -644,13 +646,12 @@ export async function nextAnimationIndex(
             if (someoneDied) {
                 await new Promise(r => setTimeout(r, 300))
             }
-            waitingForMyAnimation.set(false)
             syncVisualsToMsg(latest)
+            console.log('finished animating')
             return
         }
         if (animsInWaiting) {
             // console.log('playing anims in waiting')
-
             animationsInWaiting.set(undefined)
             syncVisualsToMsg(animsInWaiting.prev)
             startAnimating(animsInWaiting.withAnims)
@@ -663,8 +664,6 @@ export async function nextAnimationIndex(
     let nextAnim = curAnimations.at(cai)
     if (!nextAnim || !checkAnimationValid(nextAnim)) {
         console.log('invalid next anim!')
-        currentAnimationIndex.set(999)
-        waitingForMyAnimation.set(false)
         syncVisualsToMsg(latest)
         return
     }
@@ -764,11 +763,6 @@ function handleAnimationsOnMessage(
         return;
     }
 
-    if (latest.animations.length && latest.triggeredBy == latest.yourInfo.heroName) {
-        console.log('start waiting my anim');
-        waitingForMyAnimation.set(true);
-    }
-
     // my message with no animations
     if (latest.triggeredBy == latest.yourInfo.heroName && !latest.animations.length && currentAnim != undefined) {
         console.log('my message with no animations, but we are animating. Ignore, it will be synced when current anims finish');
@@ -817,7 +811,12 @@ function handleAnimationsOnMessage(
 }
 
 function startAnimating(msgWithAnims: MessageFromServer) {
+
     currentAnimationsWithData.set(msgWithAnims.animations);
+    if (msgWithAnims.animations.length && msgWithAnims.triggeredBy == msgWithAnims.yourInfo.heroName) {
+        console.log('start waiting my anim');
+        waitingForMyAnimation.set(true);
+    }
     // console.log(`starting anims ${JSON.stringify(msgWithAnims.animations)}`);
     nextAnimationIndex(
         true,
