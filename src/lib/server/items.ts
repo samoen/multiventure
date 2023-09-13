@@ -31,12 +31,13 @@ export type Item = {
 	requiresSourceDead?: boolean
 	excludeFromDetail?: boolean
 	noAction?: boolean
-	baseHeal?: number,
 	baseDmg?: number,
+	dmgAffects?: CanEffect // default targetOnly
+	healsAffected?:{affects:CanEffect,baseHeal:number}
+	// baseHeal?: number,
 	putsStatusOnAffected?: { affects: CanEffect, statusMod: StatusMod },
 	modifiesAggroOnAffected?: { affects: CanEffect, aggroFor: 'allPlayers' | 'justMe', amount: number },
 	behavior?: ItemAnimationBehavior, // default melee
-	dmgAffects?: CanEffect // default targetOnly
 	canTarget?: CanTarget // for melee or missle defaults anyEnemy, else onlyself
 	strikes?: number // default 1
 	teleportTo?: SceneDataId
@@ -66,7 +67,8 @@ export const fireStaff: Item = {
 	cooldown: 1,
 	provoke: 10,
 	speed: 2,
-	baseDmg: 50,
+	strikes:3,
+	baseDmg: 10,
 	behavior: { kind: 'missile', extraSprite: 'flame' },
 	modifiesAggroOnAffected: { affects: 'targetOnly', aggroFor: 'justMe', amount: 80 },
 }
@@ -80,7 +82,7 @@ const potion: Item = {
 	speed: 15,
 	provoke: 1,
 	canTarget: { kind: 'anyFriendly', selfAfflictSprite: 'heal' },
-	baseHeal: 50,
+	healsAffected:{affects:'targetOnly',baseHeal:50},
 }
 
 const bomb: Item = {

@@ -29,7 +29,10 @@
 
 		handleModifyHealth,
 
-		handleModAggros
+		handleModAggros,
+
+		handleHealAnimations
+
 
 
 	} from '$lib/client/ui';
@@ -215,6 +218,9 @@
 							}
 						}
 					}
+					if(anim.alsoHeals){
+						handleHealAnimations(anim)
+					}
 					
 					handlePutsStatuses(anim);
 					if($lastMsgFromServer){
@@ -268,6 +274,7 @@
 					const anim = $currentAnimation;
 					if (!anim) return;
 					handleModifyHealth(anim,0,true)
+					handleHealAnimations(anim)
 					handlePutsStatuses(anim);
 					if(!$lastMsgFromServer)return
 					handleModAggros(anim,$lastMsgFromServer.yourInfo.unitId)
@@ -295,6 +302,7 @@
 					if (!anim) return;
 					let delayNextStep = false;
 					handlePutsStatuses(anim);
+					handleHealAnimations(anim);
 					let hRes = handleModifyHealth(anim,0,true);
 					if(hRes.died.length){
 						delayNextStep = true;

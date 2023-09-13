@@ -1,5 +1,5 @@
 import { goto } from "$app/navigation"
-import { addAnimateToUnit, animatesToUnit, type AggroModifier, type AggroModifierEvent, type AnimationBehavior, type AnySprite, type BattleAnimation, type BattleEvent, type BattleEventEntity, type GameActionSentToClient, type HealthModifier, type HealthModifierEvent, type HeroId, type ItemAnimationBehavior, type StatusEffect, type StatusModifier, type StatusModifierEvent, type UnitId, type VisualActionSourceId, type StatusState } from "$lib/utils"
+import { addAnimateToUnit, animatesToUnit, type AggroModifier, type AggroModifierEvent, type AnimationBehavior, type AnySprite, type BattleAnimation, type BattleEvent, type BattleEventEntity, type GameActionSentToClient, type DamageAnimation, type DamageEvent, type HeroId, type ItemAnimationBehavior, type StatusEffect, type StatusModifier, type StatusModifierEvent, type UnitId, type VisualActionSourceId, type StatusState, type HealEvent, type HealAnimation } from "$lib/utils"
 import { enemiesInScene, activeEnemies, addAggro, takePoisonDamage, damagePlayer, pushAnimation, getAggroForPlayer, damageEnemy, modifyAggroForPlayer, modifiedEnemyHealth, type EnemyTemplateId, spawnEnemy, type EnemyStatuses, type ActiveEnemy, checkEnemyDeath } from "./enemies"
 import { items, type Item, equipItem, checkHasItem, type ItemId, type CanTarget, type CanEffect } from "./items"
 import { pushHappening } from "./messaging"
@@ -45,7 +45,7 @@ export function updatePlayerActions(player: Player) {
 		}
 		let dmgAf = i.dmgAffects ?? 'targetOnly'
 
-		let affectedsFromCanEffect = (ca:CanEffect, t :BattleEventEntity)=>{
+		let affectedsFromCanEffect = (ca: CanEffect, t: BattleEventEntity) => {
 			let affecteds: BattleEventEntity[] = []
 			if ((ca == 'allEnemy')) {
 				affecteds = sceneEnemies.map(se => {
@@ -56,7 +56,7 @@ export function updatePlayerActions(player: Player) {
 				})
 			} else if (ca == 'allFriendly') {
 				affecteds = [{ kind: 'player', entity: player }]
-			}else {
+			} else {
 				affecteds = [t]
 			}
 			return affecteds
@@ -69,27 +69,33 @@ export function updatePlayerActions(player: Player) {
 			if (iAb.kind == 'melee') {
 				bonus = player.strength + player.bonusStrength
 			}
-			let dmgAffected = affectedsFromCanEffect(dmgAf,targetChosen)
-			let alsoDmgs: HealthModifierEvent[] = []
-			for (const aff of dmgAffected) {
-				if (i.baseDmg) {
+			let alsoDmgs: DamageEvent[] = []
+			if (i.baseDmg) {
+				let dmgAffected = affectedsFromCanEffect(dmgAf, targetChosen)
+				for (const aff of dmgAffected) {
 					alsoDmgs.push({
 						target: aff,
 						baseDamage: i.baseDmg,
 						bonusDamage: bonus,
 						strikes: i.strikes ?? 1,
-					} satisfies HealthModifierEvent)
+					} satisfies DamageEvent)
 				}
-				if (i.baseHeal) {
-					alsoDmgs.push({
-						target: aff,
-						baseHeal: i.baseHeal,
-					} satisfies HealthModifierEvent)
+			}
+			let alsoHeals: HealEvent[] = []
+			if (i.healsAffected) {
+				let healAffected = affectedsFromCanEffect(i.healsAffected.affects, targetChosen)
+				for (const aff of healAffected) {
+					if (i.healsAffected) {
+						alsoHeals.push({
+							target: aff,
+							baseHeal: i.healsAffected.baseHeal,
+						} satisfies HealEvent)
+					}
 				}
 			}
 			let modagro: AggroModifierEvent[] = []
-			if(i.modifiesAggroOnAffected){
-				let aggroAffected = affectedsFromCanEffect(i.modifiesAggroOnAffected.affects,targetChosen)
+			if (i.modifiesAggroOnAffected) {
+				let aggroAffected = affectedsFromCanEffect(i.modifiesAggroOnAffected.affects, targetChosen)
 				for (const aff of aggroAffected) {
 					if (aff.kind == 'enemy') {
 						let fHeroes = [player]
@@ -106,7 +112,7 @@ export function updatePlayerActions(player: Player) {
 			}
 			let ptstatuses: StatusModifierEvent[] = []
 			if (i.putsStatusOnAffected) {
-				let statusAffected = affectedsFromCanEffect(i.putsStatusOnAffected.affects,targetChosen)
+				let statusAffected = affectedsFromCanEffect(i.putsStatusOnAffected.affects, targetChosen)
 				for (const aff of statusAffected) {
 					ptstatuses.push({
 						target: aff,
@@ -136,6 +142,7 @@ export function updatePlayerActions(player: Player) {
 				behavior: beBehav,
 				teleportsTo: i.teleportTo,
 				alsoDamages: alsoDmgs,
+				alsoHeals: alsoHeals,
 				alsoModifiesAggro: modagro,
 				putsStatuses: ptstatuses,
 				stillHappenIfTargetDies: i.requiresSourceDead
@@ -166,13 +173,13 @@ export function updatePlayerActions(player: Player) {
 
 		for (const t of targetable) {
 			let perTargbe = nBe(t)
-			let enemyImmune = false			
-			 if (t.kind == 'enemy') {
+			let enemyImmune = false
+			if (t.kind == 'enemy') {
 				let statuses = t.entity.statuses.get(player.unitId)
-				if(statuses && immuneDueToStatus(statuses)){
+				if (statuses && immuneDueToStatus(statuses)) {
 					enemyImmune = true
 				}
-			 }
+			}
 
 			if ((i.requiresTargetDamaged && !(t.entity.health < t.entity.maxHealth && t.entity.health > 0)) ||
 				(i.requiresStatus && !checkHasStatus(t, i.requiresStatus)) ||
@@ -454,7 +461,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	if (itemUsed.provoke != undefined) {
 		for (const enemy of enemiesInScene(actionStartedInSceneId)) {
 			let sprite: AnySprite | undefined = undefined
-			let ad: HealthModifier[] = []
+			let ad: DamageAnimation[] = []
 
 			for (const [hId, statusForPlayer] of enemy.statuses) {
 				if (hId == player.unitId) {
@@ -497,7 +504,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 
 	if (player.health > 0 && itemUsed.provoke != undefined) {
-		let ad: HealthModifier[] = []
+		let ad: DamageAnimation[] = []
 		let sprite: AnySprite | undefined = undefined
 		for (let [k, v] of player.statuses) {
 			if (v < 1) continue
@@ -606,7 +613,6 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 			let aggroForActor = getAggroForPlayer(enemyInScene, player)
 			if (aggroForActor) {
 				if ((Math.random() < (aggroForActor / 100))) {
-
 					let target: BattleEventEntity = { kind: 'player', entity: player }
 					if (enemyInScene.template.randomTarget) {
 						const selfIndex = sceneEnemies.indexOf(enemyInScene)
@@ -686,7 +692,9 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 			}
 		}
 	}
-	let alsoDmgedAnimation: HealthModifier[] = []
+	let damageAnimations: DamageAnimation[] = []
+	let damageAnimationForMissleTarget: DamageAnimation|undefined = undefined
+	const behav = battleEvent.behavior
 	if (battleEvent.alsoDamages) {
 		for (const healthModifyEvent of battleEvent.alsoDamages) {
 			if (healthModifyEvent.target.entity.health < 0 && !battleEvent.stillHappenIfTargetDies) continue
@@ -699,25 +707,49 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 						healthModifyEvent.strikes,
 						healthModifyEvent.bonusDamage,
 					)
-					alsoDmgedAnimation.push({
-						target: healthModifyEvent.target.entity.unitId,
-						amount: r.dmgDone,
-					})
+					if (behav.kind == 'missile' && healthModifyEvent.target.entity.unitId == behav.animateTo && damageAnimationForMissleTarget == undefined) {
+						damageAnimationForMissleTarget ={
+							target: healthModifyEvent.target.entity.unitId,
+							amount: r.dmgDone,
+						}
+					} else {
+						damageAnimations.push({
+							target: healthModifyEvent.target.entity.unitId,
+							amount: r.dmgDone,
+						})
+					}
 				}
 			} else if (healthModifyEvent.target.kind == 'player') {
-				if (healthModifyEvent.baseHeal) {
-					let r = healPlayer(healthModifyEvent.target.entity, healthModifyEvent.baseHeal)
-					alsoDmgedAnimation.push({
-						target: healthModifyEvent.target.entity.unitId,
-						amount: [r.healed * -1],
-					})
-				} else if (healthModifyEvent.baseDamage && battleEvent.source.kind == 'enemy') {
+				if (healthModifyEvent.baseDamage && battleEvent.source.kind == 'enemy') {
 					let r = damagePlayer(battleEvent.source.entity, healthModifyEvent.target.entity, healthModifyEvent.baseDamage)
-					alsoDmgedAnimation.push({
-						target: healthModifyEvent.target.entity.unitId,
-						amount: r.dmgDone,
-					})
+					if (behav.kind == 'missile' && healthModifyEvent.target.entity.unitId == behav.animateTo && damageAnimationForMissleTarget == undefined) {
+						damageAnimationForMissleTarget ={
+							target: healthModifyEvent.target.entity.unitId,
+							amount: r.dmgDone,
+						}
+					} else {
+						damageAnimations.push({
+							target: healthModifyEvent.target.entity.unitId,
+							amount: r.dmgDone,
+						})
+					}
 				}
+			}
+		}
+	}
+	let healAnimations: HealAnimation[] = []
+	if (battleEvent.alsoHeals) {
+		for (const healthModifyEvent of battleEvent.alsoHeals) {
+			if (healthModifyEvent.target.entity.health < 0 && !battleEvent.stillHappenIfTargetDies) continue
+			if (healthModifyEvent.target.kind == 'enemy') {
+				// heal enemy
+
+			} else if (healthModifyEvent.target.kind == 'player') {
+				let r = healPlayer(healthModifyEvent.target.entity, healthModifyEvent.baseHeal)
+				healAnimations.push({
+					target: healthModifyEvent.target.entity.unitId,
+					amount: r.healed,
+				})
 			}
 		}
 	}
@@ -738,7 +770,6 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				forHeros: foHeros,
 				target: modifyEvent.targetEnemy.unitId,
 			})
-
 		}
 	}
 
@@ -751,11 +782,21 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		changeScene(player, battleEvent.teleportsTo)
 	}
 
-	let battleAnimation: BattleAnimation = {
+
+	if(damageAnimationForMissleTarget){
+		let firstStrike = damageAnimationForMissleTarget.amount.at(0)
+		if(firstStrike){
+			damageAnimations.push({target:damageAnimationForMissleTarget.target,amount:[firstStrike]})
+			damageAnimationForMissleTarget.amount.splice(0,1)
+		}
+	}
+
+	const battleAnimation: BattleAnimation = {
 		triggeredBy: player.unitId,
 		source: battleEvent.source.entity.unitId,
 		behavior: battleEvent.behavior,
-		alsoDamages: alsoDmgedAnimation,
+		alsoDamages: damageAnimations,
+		alsoHeals: healAnimations,
 		alsoModifiesAggro: aggroModifiedAnimations,
 		putsStatuses: battleEvent.putsStatuses?.map(m => {
 			return {
@@ -766,13 +807,31 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 			} satisfies StatusModifier
 		}),
 		teleporting: battleEvent.teleportsTo ? true : undefined
-
 	}
+
 	pushAnimation({
 		sceneId: sceneToPlayAnim,
 		battleAnimation: battleAnimation,
 		leavingScene: leavingScene,
 	})
+	if(damageAnimationForMissleTarget){
+		// for (let i = 0; i < damageAnimationForMissleTarget?.amount.length; i++) {
+		for (let i of damageAnimationForMissleTarget.amount) {
+			const xba: BattleAnimation = {
+				triggeredBy: player.unitId,
+				source: battleEvent.source.entity.unitId,
+				behavior: battleEvent.behavior,
+				alsoDamages: [{target:damageAnimationForMissleTarget.target,amount:[i]}],
+			}
+			pushAnimation({
+				sceneId: sceneToPlayAnim,
+				battleAnimation: xba,
+				leavingScene: leavingScene,
+			})
+		}
+
+	}
+
 }
 
 export function getValidGameActionsFromVas(vas: VisualActionSource, player: Player): GameAction[] {

@@ -13,6 +13,7 @@
 		currentAnimation,
 		currentAnimationIndex,
 		enemies,
+		handleHealAnimations,
 		handleModAggros,
 		handleModifyHealth,
 		handlePutsStatuses,
@@ -505,7 +506,8 @@
 						on:introend={() => {
 							if ($currentAnimation != undefined) {
 								let anim = $currentAnimation;
-								let hRes = handleModifyHealth(anim, 0);
+								handleHealAnimations(anim)
+								let hRes = handleModifyHealth(anim, 0, true);
 								let someoneDied = false;
 								if (hRes.died.length) {
 									someoneDied = true;

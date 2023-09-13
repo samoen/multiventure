@@ -44,10 +44,10 @@
                     <div>{itemState.stats.baseDmg}</div>
                 </div>
             {/if}
-            {#if itemState.stats.baseHeal}
+            {#if itemState.stats.healsAffected}
                 <div class="statLine">
                     <img src={medpack} alt="a heart" />
-                    <div>{itemState.stats.baseHeal}</div>
+                    <div>{itemState.stats.healsAffected.baseHeal}</div>
                 </div>
             {/if}
             {#if itemState.stats.startStock}

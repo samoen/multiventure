@@ -507,7 +507,6 @@ export function handleModifyHealth(anim:BattleAnimation, strikeNumber:number, on
                 }
                 // if(singleStrike && other.strikes && other.strikes > 0)amt = amt / other.strikes
                 vup.actual.entity.health -= amt;
-                if(vup.actual.entity.health > vup.actual.entity.maxHealth)vup.actual.entity.health = vup.actual.entity.maxHealth
                 if(vup.actual.entity.health < 1)vup.actual.entity.health = 0
                 if (vup.actual.entity.health < 1) {
                     result.died.push(vup.actual.entity.unitId);
@@ -516,6 +515,18 @@ export function handleModifyHealth(anim:BattleAnimation, strikeNumber:number, on
         }
     }
     return result
+}
+
+export function handleHealAnimations(anim:BattleAnimation){
+    if (anim.alsoHeals) {
+        for (const other of anim.alsoHeals) {
+            updateUnit(other.target, (vup) => {
+                let amt = other.amount
+                vup.actual.entity.health += amt;
+                if(vup.actual.entity.health < 1)vup.actual.entity.health = 0
+            });
+        }
+    }
 }
 
 export function handleModAggros(anim:BattleAnimation, myId:HeroId){
