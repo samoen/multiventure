@@ -17,7 +17,7 @@ export const POST: RequestHandler = async (r) => {
 	if(!player){
 		return json('no hero found for uid', { status: 401 });
 	}
-	if(player.heroName != hero){
+	if(player.displayName != hero){
 		return json('cookie hero name doesnt match uid hero name', { status: 401 });
 	}
 

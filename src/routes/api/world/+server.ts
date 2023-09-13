@@ -17,10 +17,10 @@ export const POST: RequestHandler = async (r) => {
 		return json(`player not found for uid ${uid}`, { status: 401 });
 	}
 	
-	if(player.heroName != cookieHero){
+	if(player.displayName != cookieHero){
 		return json(`cookie hero not matching hero from uid ${uid}`, { status: 401 });
 	}
-    let msg = buildNextMessage(player,player.heroName)
+    let msg = buildNextMessage(player, player.unitId)
 	// console.log(`success first world for ${player.heroName}`);
     return json(msg);
 };

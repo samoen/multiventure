@@ -14,40 +14,40 @@
 	import ItemStats from './ItemStats.svelte';
 
 	export let vu: VisualUnitProps;
-	$: enemy = vu.actual.kind == 'enemy' ? vu.actual.enemy : undefined;
+	$: enemy = vu.actual.kind == 'enemy' ? vu.actual.entity : undefined;
 	$: str =
-		vu.actual.kind == 'enemy' ? vu.actual.enemy.template.baseDamage : vu.actual.info.strength;
+		vu.actual.kind == 'enemy' ? vu.actual.entity.template.baseDamage : vu.actual.entity.strength;
     let bonusStr = ''
     $: {
         if(vu.actual.kind == 'player'){
-            if(vu.actual.info.bonusStrength > 0){
-                bonusStr = ` +${vu.actual.info.bonusStrength}`
+            if(vu.actual.entity.bonusStrength > 0){
+                bonusStr = ` +${vu.actual.entity.bonusStrength}`
             }
         }else{
             bonusStr = ''
         }
     }
-	$: agi = vu.actual.kind == 'enemy' ? vu.actual.enemy.template.speed : vu.actual.info.agility;
-	$: aggGain = vu.actual.kind == 'enemy' ? vu.actual.enemy.template.aggroGain : 0;
-	$: strikes = vu.actual.kind == 'enemy' ? vu.actual.enemy.template.strikes ?? 1 : 0;
+	$: agi = vu.actual.kind == 'enemy' ? vu.actual.entity.template.speed : vu.actual.entity.agility;
+	$: aggGain = vu.actual.kind == 'enemy' ? vu.actual.entity.template.aggroGain : 0;
+	$: strikes = vu.actual.kind == 'enemy' ? vu.actual.entity.template.strikes ?? 1 : 0;
 </script>
 
 <div class="top">
 	<div class="classTitle">
 		{#if vu.actual.kind == 'enemy'}
-			{vu.actual.enemy.templateId}
+			{vu.actual.entity.templateId}
 		{/if}
 		{#if vu.actual.kind == 'player'}
-			{vu.actual.info.class}
+			{vu.actual.entity.class}
 		{/if}
 	</div>
 	<div class="statLine">
         <img src={heart} alt='a heart'>
-        <div>{vu.displayHp}</div>
+        <div>{vu.actual.entity.health}</div>
     </div>
 	{#if vu.actual.kind == 'player'}
 		<div class="statuses">
-			{#each vu.actual.info.statuses as s}
+			{#each vu.actual.entity.statuses as s}
 				{#if s.count > 0}
 					<div class="statLine">
 						<img class="statusIm" src={statusImages[s.statusId]} alt="a status" />
@@ -61,7 +61,7 @@
 	<div class="stats">
 		<div class="statLine">
 			<img src={shieldHealth} alt="an icon" />
-			<div>{vu.maxHp}</div>
+			<div>{vu.actual.entity.maxHealth}</div>
 		</div>
 		<div class="statLine">
 			<img src={strong} alt="an icon" />
@@ -118,7 +118,7 @@
 	{/if}
 	{#if vu.actual.kind == 'player'}
 		<div class="itemStats">
-			{#each vu.actual.info.inventory as itemState}
+			{#each vu.actual.entity.inventory as itemState}
 				{#if itemState.stats && !itemState.stats.excludeFromDetail}
 					<ItemStats {itemState} />
 				{/if}

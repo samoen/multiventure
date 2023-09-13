@@ -53,7 +53,7 @@
 		if ($currentAnimation.behavior.kind == 'travel') {
 
 			// remove the traveller from visuals
-			$allVisualUnitProps = $allVisualUnitProps.filter((v) => v.id != $guestId);
+			$allVisualUnitProps = $allVisualUnitProps.filter((v) => v.actual.entity.unitId != $guestId);
 
 			await tick();
 			nextAnimationIndex(false, false);
@@ -72,14 +72,14 @@
 			updateUnit($guestId, (vup) => {
 				if(vup.actual.kind == 'player'){
 					if($lastMsgFromServer){
-						if(vup.actual.info.unitId == $lastMsgFromServer.yourInfo.unitId){
-							vup.src = heroSpriteFromClass($lastMsgFromServer.yourInfo.class);
-							vup.actual.portrait = getHeroPortrait($lastMsgFromServer.yourInfo.class)
+						if(vup.actual.entity.unitId == $lastMsgFromServer.yourInfo.unitId){
+							vup.sprite = heroSpriteFromClass($lastMsgFromServer.yourInfo.class);
+							vup.portrait = getHeroPortrait($lastMsgFromServer.yourInfo.class)
 						}else{
 							for (const p of $lastMsgFromServer.otherPlayers){
-								if(p.unitId == vup.actual.info.unitId){
-									vup.src = heroSpriteFromClass(p.class);
-									vup.actual.portrait = getHeroPortrait(p.class)
+								if(p.unitId == vup.actual.entity.unitId){
+									vup.sprite = heroSpriteFromClass(p.class);
+									vup.portrait = getHeroPortrait(p.class)
 								}
 							}
 						}

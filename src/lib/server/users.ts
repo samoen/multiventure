@@ -23,7 +23,7 @@ export function addNewUser(heroName: string): { id: string, player: Player } | u
 	let startSceneId: SceneDataId = startSceneDataId
 	// startSceneId = 'forestPassage'
 	// startSceneId = 'throne'
-	startSceneId = 'armory'
+	// startSceneId = 'armory'
 	
 	let startUnique = uniqueFromSceneDataId(pId,startSceneId)
 	
@@ -34,7 +34,7 @@ export function addNewUser(heroName: string): { id: string, player: Player } | u
 			con:undefined,
 			stream:undefined,
 		},
-		heroName: heroName,
+		displayName: heroName,
 		previousScene: startUnique,
 		lastCheckpoint: startUnique,
 		currentUniqueSceneId:startUnique,
@@ -102,7 +102,7 @@ export type Player = {
 export type PlayerCommonStats = {
 	inventory:ItemState[];
 	unitId: HeroId;
-	heroName: HeroName;
+	displayName: HeroName;
 	health: number;
 	agility: number;
 	strength: number;
@@ -114,7 +114,6 @@ export type PlayerInClient = {
 	currentSceneDisplay: string;
 	class:string
 	statuses: StatusState[];
-	fadeSprite?:boolean;
 } & PlayerCommonStats;
 
 export type GameAction = {
@@ -130,7 +129,6 @@ export type withVasId = {
 	vasId:VisualActionSourceId
 }
 
-
 export function healPlayer(player: Player, amount: number): { healed: number } {
 	let missing = player.maxHealth - player.health
 	let toHeal = amount
@@ -139,7 +137,7 @@ export function healPlayer(player: Player, amount: number): { healed: number } {
 	}
 
 	player.health += toHeal
-	pushHappening(`${player.heroName} was healed for ${toHeal}hp`);
+	pushHappening(`${player.displayName} was healed for ${toHeal}hp`);
 	return { healed: toHeal }
 }
 

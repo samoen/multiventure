@@ -10,16 +10,16 @@
 	export let hostId: UnitId;
 	let shouldDie = false;
 	const vu = derived(allVisualUnitProps,($allVisualUnitProps)=>{
-		const res = $allVisualUnitProps.find((v) => v.id == hostId);
+		const res = $allVisualUnitProps.find((v) => v.actual.entity.unitId == hostId);
 		return res 
 	}) 
 
 	const hpBar = derived(vu,($vu)=>{
-		return $vu ? ($vu.displayHp > 0 ? 100 * ($vu.displayHp / $vu.maxHp) : 0) : 0;
+		return $vu ? ($vu.actual.entity.health > 0 ? 100 * ($vu.actual.entity.health / $vu.actual.entity.maxHealth) : 0) : 0;
 	})
 	
 	vu.subscribe(r=>{
-			if (r && (r.side == 'enemy' && r.displayHp < 1)) {
+			if (r && (r.actual.kind == 'enemy' && r.actual.entity.health < 1)) {
 				die();
 			}
 	})
@@ -35,8 +35,8 @@
 
 		if ($vu.actual.kind == 'enemy') {
 			// statuses = $vu.actual.enemy.statuses.map(s=>s.status)
-			if ($vu.actual.enemy.statuses) {
-				for (const st of $vu.actual.enemy.statuses){
+			if ($vu.actual.entity.statuses) {
+				for (const st of $vu.actual.entity.statuses){
 					let alreadyIn = s.find(e=>e.statusId == st.statusId)
 					if(st.count > 0 && alreadyIn == undefined){
 						s.push(st)
@@ -45,7 +45,7 @@
 			}
 		}
 		if ($vu.actual.kind == 'player') {
-			for (const st of $vu.actual.info.statuses){
+			for (const st of $vu.actual.entity.statuses){
 				if(st.count > 0){
 					s.push(st)
 				}
@@ -60,13 +60,13 @@
 {#if $vu && $successcreds}
 	<div class="top" 
 	class:noOpacity={shouldDie}
-	class:selected={!shouldDie && $selectedDetail && $selectedDetail.kind == 'vup' && $selectedDetail?.entity.id == hostId}
+	class:selected={!shouldDie && $selectedDetail && $selectedDetail.kind == 'vup' && $selectedDetail?.entity.actual.entity.unitId == hostId}
 	>
 		<div class="nameHolder">
 			<span class="selfIndicator"
 			>
-				{$vu.name == $successcreds.yourHeroName ? '+' : ''}</span>
-			<span class="nametag">{$vu.name}</span>
+				{$vu.actual.entity.displayName == $successcreds.yourHeroName ? '+' : ''}</span>
+			<span class="nametag">{$vu.actual.entity.displayName}</span>
 		</div>
 		<div class="outerHeroSprite">
 			<div class="statuses">
@@ -77,11 +77,11 @@
 			<img
 			class="heroSprite"
 				class:flipped={flip && !$vu.tilt}
-				class:tiltedHero={$vu.tilt && $vu.side == 'hero'}
-				class:tiltedEnemy={$vu.tilt && $vu.side == 'enemy'}
-				class:faded={$vu.fadeSprite }
+				class:tiltedHero={$vu.tilt && $vu.actual.kind == 'player'}
+				class:tiltedEnemy={$vu.tilt && $vu.actual.kind == 'enemy'}
+				class:faded={$vu.actual.entity.health < 1 }
 				alt="you"
-				src={$vu.src}
+				src={$vu.sprite}
 			/>
 		</div>
 		<div class="bars">
@@ -90,7 +90,7 @@
 			</div>
 			{#if $vu.actual.kind == 'enemy'}
 				<div class="aggrobar">
-					<div class="aggro" style:width="{$vu.actual.enemy.myAggro}%" />
+					<div class="aggro" style:width="{$vu.actual.entity.myAggro}%" />
 				</div>
 			{/if}
 		</div>

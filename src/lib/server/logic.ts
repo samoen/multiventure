@@ -250,7 +250,7 @@ export function enterSceneOrWakeup(player: Player) {
 	const enteringScene = getSceneData(player);
 	const scenePlayers = activePlayersInScene(player.currentUniqueSceneId)
 
-	const onlyMeInScene = !scenePlayers.filter(p => p.heroName != player.heroName).length
+	const onlyMeInScene = !scenePlayers.filter(p => p.unitId != player.unitId).length
 
 	if (onlyMeInScene) {
 		// No players except me in here remove enemies
@@ -508,11 +508,11 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				player.health -= dmg
 				ad.push({ target: player.unitId, amount: [dmg] })
 				sprite = statusData.selfInflictSprite
-				pushHappening(`${player.heroName} took ${dmg} damage from ${k}`)
+				pushHappening(`${player.displayName} took ${dmg} damage from ${k}`)
 			}
 			if (statusData.incStr) {
 				player.bonusStrength += 10
-				pushHappening(`${player.heroName} grows in strength!`)
+				pushHappening(`${player.displayName} grows in strength!`)
 			}
 
 			player.statuses.set(k, v - 1)

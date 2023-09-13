@@ -249,6 +249,7 @@
 		$source = undefined;
 		$successcreds = undefined;
 		$triedSignupButTaken = undefined;
+		$waitingForMyAnimation = false;
 		$lastMsgFromServer = undefined;
 		$currentAnimationIndex = 999;
 		$subAnimationStage = 'start';
@@ -490,9 +491,9 @@
 				</div>
 			</div>
 			<div class="units">
-				{#each $allies as p (p.id)}
+				{#each $allies as p (p.actual.entity.unitId)}
 					<div class="unitHolder" animate:flip>
-						<Unit hostId={p.id} />
+						<Unit hostId={p.actual.entity.unitId} />
 					</div>
 				{/each}
 			</div>
@@ -522,9 +523,9 @@
 				{/if}
 			</div>
 			<div class="units">
-				{#each $enemies as e (e.id)}
+				{#each $enemies as e (e.actual.entity.unitId)}
 					<div class="unitHolder" animate:flip>
-						<Unit hostId={e.id} />
+						<Unit hostId={e.actual.entity.unitId} />
 					</div>
 				{/each}
 				{#each $vasesToShow as s (s.id)}
@@ -541,13 +542,13 @@
 			{#if $selectedDetail.kind == 'vup'}
 				<div class="selectedPortrait" style="background-image:url({minimap})">
 					<div class="portrait">
-						<img src={$selectedDetail.entity.actual.portrait} alt="portrait" />
+						<img src={$selectedDetail.entity.portrait} alt="portrait" />
 					</div>
 					<div class="underPortrait">
 						<strong>
 							{$selectedDetail.entity.actual.kind == 'player'
-								? $selectedDetail.entity.actual.info.heroName
-								: $selectedDetail.entity.actual.enemy.name}
+								? $selectedDetail.entity.actual.entity.displayName
+								: $selectedDetail.entity.actual.entity.displayName}
 						</strong>
 					</div>
 				</div>

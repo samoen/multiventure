@@ -28,7 +28,7 @@ export const POST: RequestHandler = async (r) => {
 	// console.log(`signup checking name ${msg.join} is already in ${JSON.stringify(Array.from(users.values()).map(p=>p.heroName))}`)
 	let guestName = `Guest1`
 	for(let num = 1; num < 100; num++){
-		let nameTaken = Array.from(users.values()).some(p => p.heroName == `Guest${num}`)
+		let nameTaken = Array.from(users.values()).some(p => p.displayName == `Guest${num}`)
 		if(!nameTaken){
 			guestName = `Guest${num}`
 			break

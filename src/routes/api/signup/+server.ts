@@ -19,8 +19,8 @@ export const POST: RequestHandler = async (r) => {
 		yourId:''
 	}
 		
-	console.log(`signup checking name ${msg.join} is already in ${JSON.stringify(Array.from(users.values()).map(p=>p.heroName))}`)
-	let nameTaken = Array.from(users.values()).some(p => p.heroName == msg.join)
+	console.log(`signup checking name ${msg.join} is already in ${JSON.stringify(Array.from(users.values()).map(p=>p.displayName))}`)
+	let nameTaken = Array.from(users.values()).some(p => p.displayName == msg.join)
 	if (nameTaken) {
 		console.log('name already taken')
 		resp.needsAuth = msg.join

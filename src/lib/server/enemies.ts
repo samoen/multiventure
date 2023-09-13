@@ -221,7 +221,7 @@ export function damagePlayer(enemy: ActiveEnemy, player: Player, baseDmg:number)
 		if(player.health < 1)break
 	}
 
-	pushHappening(`${enemy.name} hit ${player.heroName} ${strikes > 1 ? strikes + ' times' : ''} for ${dmgDone} damage`)
+	pushHappening(`${enemy.name} hit ${player.displayName} ${strikes > 1 ? strikes + ' times' : ''} for ${dmgDone} damage`)
 	return { dmgDone: dmgDone }
 }
 
@@ -253,7 +253,7 @@ export function damageEnemy(
 		dmgDone.push(dmg)
 		if(enemy.health < 1)break
 	}
-	let attackerName = source.kind == 'player' ? source.entity.heroName : source.entity.name
+	let attackerName = source.kind == 'player' ? source.entity.displayName : source.entity.name
 	pushHappening(`${attackerName} hit ${enemy.name} ${strikes > 1 ? strikes + ' times' : ''} for ${dmgDone} damage`)
 
 	let result = checkEnemyDeath(enemy)
@@ -278,7 +278,7 @@ export function takePoisonDamage(enemy: ActiveEnemy, player:Player): { dmgDone: 
 	if (enemy.health < 1) return { dmgDone: 0 }
 	let dmg = Math.floor(enemy.maxHealth * 0.25)
 	enemy.health -= dmg
-	pushHappening(`${enemy.name} took ${dmg} damage from ${player.heroName}'s poison`)
+	pushHappening(`${enemy.name} took ${dmg} damage from ${player.displayName}'s poison`)
 	let result = checkEnemyDeath(enemy)
 	if (result.killed) {
 		pushHappening(`${enemy.name} died from poison`)

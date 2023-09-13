@@ -1,4 +1,4 @@
-import type { AggroInClient, BattleAnimation, BattleEventEntity, EnemyInClient, EnemyStatusInClient, GameActionSentToClient, LandscapeImage, StatusState } from '$lib/utils';
+import type { AggroInClient, BattleAnimation, BattleEventEntity, EnemyInClient, EnemyStatusInClient, GameActionSentToClient, HeroId, LandscapeImage, StatusState } from '$lib/utils';
 import { enemiesInScene, getAggroForPlayer } from './enemies';
 import { comboFindClassFromInventory } from './items';
 import { convertServerActionToClientAction, convertVasToClient, immuneDueToStatus, type VisualActionSourceInClient } from './logic';
@@ -11,7 +11,7 @@ export const FAKE_LATENCY = 50;
 export const recentHappenings: string[] = [];
 
 export type MessageFromServer = {
-	triggeredBy: HeroName;
+	triggeredBy: HeroId;
 	yourInfo: PlayerInClient;
 	otherPlayers: PlayerInClient[];
 	userList: HeroName[];
@@ -29,18 +29,18 @@ export type MessageFromServer = {
 };
 
 
-export async function sendEveryoneWorld(triggeredBy: HeroName) {
+export async function sendEveryoneWorld(triggeredBy: HeroId) {
 	await new Promise((r) => {
 		setTimeout(r, FAKE_LATENCY);
 	});
 	for (const user of users.values()) {
-		if (user.heroName != triggeredBy && user.connectionState.stream && user.connectionState.con) {
+		if (user.unitId != triggeredBy && user.connectionState.stream && user.connectionState.con) {
 			const toSend = buildNextMessage(user, triggeredBy);
 			let fail = false
 			try {
 				user.connectionState.con.enqueue(encode(`world`, toSend));
 			} catch (e) {
-				console.log(user.heroName + ' failed to enqeue ' + e)
+				console.log(user.displayName + ' failed to enqeue ' + e)
 				fail = true
 			}
 			if (fail) {
@@ -70,26 +70,8 @@ export function statusMapToStatusInClients(s:Map<StatusId,number>):StatusState[]
 	return result
 }
 
-export function shouldFadeSprite(bee:BattleEventEntity, forPlayer:Player):true|undefined{
-	if(bee.entity.health < 1)return true
-	// if(bee.kind == 'player'){
-	// 	if(immuneDueToStatus(bee.entity.statuses)){
-	// 		return true
-	// 	}
-	// }
-	// if(bee.kind == 'enemy'){
-	// 	for(let [k,v] of bee.entity.statuses){
-	// 		if(immuneDueToStatus(v)){
-	// 			if(k == forPlayer.unitId){
-	// 				return true
-	// 			}
-	// 		}
-	// 	}
-	// }
-	return undefined
-}
 
-export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): MessageFromServer {
+export function buildNextMessage(forPlayer: Player, triggeredBy: HeroId): MessageFromServer {
 	// console.log(`sending anims ${JSON.stringify(forPlayer.animations)}`)
 	// for (const p of activePlayers()){
 	// 	console.log(`${p.heroName} is at ${JSON.stringify(p.currentUniqueSceneId)}`)
@@ -101,7 +83,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 		landscape: scene.landscape ?? 'plains',
 		yourInfo: {
 			unitId: forPlayer.unitId,
-			heroName: forPlayer.heroName,
+			displayName: forPlayer.displayName,
 			health: forPlayer.health,
 			maxHealth: forPlayer.maxHealth,
 			agility: forPlayer.agility,
@@ -111,14 +93,13 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 			currentSceneDisplay: scene.displayName,
 			statuses: statusMapToStatusInClients(forPlayer.statuses),
 			class: comboFindClassFromInventory(forPlayer.inventory),
-			fadeSprite:shouldFadeSprite({kind:'player',entity:forPlayer},forPlayer)
 		},
 		otherPlayers: activePlayersInScene(forPlayer.currentUniqueSceneId)
 			.filter((u) => u.unitId != forPlayer.unitId)
 			.map((u) => {
 				return {
 					unitId: u.unitId,
-					heroName: u.heroName,
+					displayName: u.displayName,
 					health: u.health,
 					maxHealth: u.maxHealth,
 					agility: u.agility,
@@ -128,7 +109,6 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 					currentSceneDisplay: 'somewhere',
 					statuses: statusMapToStatusInClients(u.statuses),
 					class: comboFindClassFromInventory(u.inventory),
-					fadeSprite:shouldFadeSprite({kind:'player',entity:u},forPlayer),
 				} satisfies PlayerInClient;
 			}),
 		sceneTexts: forPlayer.sceneTexts,
@@ -137,7 +117,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				buttonText: gameAction.buttonText,
 			};
 		}),
-		userList: activePlayers().map(u => u.heroName),
+		userList: activePlayers().map(u => u.displayName),
 		itemActions: forPlayer.itemActions.map((gameAction) => convertServerActionToClientAction(gameAction)),
 		vasActions: forPlayer.vasActions,
 		visualActionSources: forPlayer.visualActionSources.map(s => {
@@ -170,13 +150,12 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroName): Mess
 				unitId: e.unitId,
 				health: e.health,
 				maxHealth: e.maxHealth,
-				name: e.name,
+				displayName: e.name,
 				templateId: e.templateId,
 				template: e.template,
 				myAggro: getAggroForPlayer(e, forPlayer),
 				aggros: aggros,
 				statuses: statusesInClient,
-				fadeSprite:shouldFadeSprite({kind:'enemy',entity:e},forPlayer)
 			} satisfies EnemyInClient
 		}),
 		playerFlags: Array.from(forPlayer.flags),

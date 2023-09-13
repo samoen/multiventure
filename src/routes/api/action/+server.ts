@@ -18,7 +18,7 @@ export const POST = (async (r) => {
 		return json(`player not found for uid ${uid}`, { status: 401 });
 	}
 	
-	if(player.heroName != cookieHero){
+	if(player.displayName != cookieHero){
 		return json(`cookie hero not matching hero from uid ${uid}`, { status: 401 });
 	}
 
@@ -39,17 +39,17 @@ export const POST = (async (r) => {
 	
 	if(player.health < 1){
 		player.sceneTexts.push('You were struck down')
-		pushHappening(`${player.heroName} is mortally wounded`)
+		pushHappening(`${player.displayName} is mortally wounded`)
 	}
 
 	updateAllPlayerActions()
 
 	// tiny timeout so endpoint returns before the event messages get sent
 	// setTimeout(() => {
-		sendEveryoneWorld(player.heroName);
+		sendEveryoneWorld(player.unitId);
 	// }, 1);
 
-	let nm = buildNextMessage(player,player.heroName)
+	let nm = buildNextMessage(player,player.unitId)
 	player.animations = []
 	return json(nm);
 }) satisfies RequestHandler;

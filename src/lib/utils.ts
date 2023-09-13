@@ -174,7 +174,7 @@ export type StatusEffect = {
 
 export type EnemyInClient = {
 	unitId: UnitId
-	name: EnemyName
+	displayName: EnemyName
 	templateId: EnemyTemplateId
 	health: number
 	maxHealth: number
@@ -182,7 +182,6 @@ export type EnemyInClient = {
 	template: EnemyTemplate
 	aggros: AggroInClient[]
 	statuses: EnemyStatusInClient[]
-	fadeSprite?:boolean
 }
 
 export type StatusState = { statusId: StatusId, count: number }

@@ -26,7 +26,7 @@ export const GET: RequestHandler = async (event) => {
 		if (!player) {
 			return json({ error: 'hero not found' }, { status: 401 });
 		}
-		if (player.heroName != from) {
+		if (player.displayName != from) {
 			return json({ error: 'cookie hero not matching hero from cookie id' }, { status: 401 });
 		}
 		if (player.connectionState.con != undefined
@@ -34,7 +34,7 @@ export const GET: RequestHandler = async (event) => {
 			) {
 			// return json({ error: 'user already connected' }, { status: 401 });
 			// if (player.connectionState.con != null) {
-				console.log(`${player.heroName} subscribing but already subscribed, con is ${player.connectionState.con}`);
+				console.log(`${player.displayName} subscribing but already subscribed, con is ${player.connectionState.con}`);
 				
 				// closing here causes infinite subscribe loops?
 				try {
@@ -67,15 +67,15 @@ export const GET: RequestHandler = async (event) => {
 					console.log('tried to start stream but undefined player or con')
 					return
 				} 
-				console.log(`stream started for hero ${player.heroName}`);
+				console.log(`stream started for hero ${player.displayName}`);
 				// player.connectionState.ip = ip;
 				player.connectionState.con = c;
-				pushHappening(`${player.heroName} joined the game`)
+				pushHappening(`${player.displayName} joined the game`)
 				setTimeout(() => {
 					// modifyEnemies()
 					enterSceneOrWakeup(player)
 					updateAllPlayerActions()
-					sendEveryoneWorld(player.heroName);
+					sendEveryoneWorld(player.unitId);
 					if (player.connectionState && player.connectionState.con) {
 						console.log('sending ack')
 						try {
@@ -88,7 +88,7 @@ export const GET: RequestHandler = async (event) => {
 				}, 1);
 			},
 			cancel(reason){
-				console.log(`stream cancel handle for hero ${player.heroName}`);
+				console.log(`stream cancel handle for hero ${player.displayName}`);
 				if (reason) console.log(`reason: ${reason}`)
 				// try {
 				// 	if(player.connectionState.con != undefined){
@@ -104,8 +104,8 @@ export const GET: RequestHandler = async (event) => {
 				
 				// setTimeout(() => {
 					// modifyEnemies()
-					pushHappening(`${player.heroName} left the game`)
-					sendEveryoneWorld(player.heroName);
+					pushHappening(`${player.displayName} left the game`)
+					sendEveryoneWorld(player.unitId);
 				// }, 1);
 			},
 			
@@ -113,7 +113,7 @@ export const GET: RequestHandler = async (event) => {
 		});
 		player.connectionState.stream = rs;
 
-		console.log(`returning readableString for ${player.heroName}, current connections ${JSON.stringify(activePlayers().map(p => p.heroName))}`)
+		console.log(`returning readableString for ${player.displayName}, current connections ${JSON.stringify(activePlayers().map(p => p.displayName))}`)
 		return new Response(rs, {
 			headers: {
 				// connection: 'keep-alive',

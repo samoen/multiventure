@@ -23,7 +23,7 @@ export const load = (async (r) => {
 		dtl.noPlayer = true
 		return dtl
 	}
-	if(player.heroName != hero){
+	if(player.displayName != hero){
 		dtl.noMatch = true
 		return dtl
 	}

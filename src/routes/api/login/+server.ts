@@ -26,7 +26,7 @@ export const POST: RequestHandler = async (r) => {
 		return json({ error: 'no hero for that userID' }, { status: 400 });
 	}
 
-	if (player.heroName != msg.heroName) {
+	if (player.displayName != msg.heroName) {
 		return json({ error: 'bad hero name' }, { status: 400 });
 	}
 

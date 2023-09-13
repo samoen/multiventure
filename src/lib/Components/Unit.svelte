@@ -44,13 +44,13 @@
 	export let hostId: UnitId;
 
 	const host = derived([allVisualUnitProps], ([$allVisualUnitProps]) => {
-		let nex = $allVisualUnitProps.find((p) => p.id == hostId);
+		let nex = $allVisualUnitProps.find((p) => p.actual.entity.unitId == hostId);
 		return nex;
 	});
 
 	const hostIsNotHero = derived(host, ($host) => {
 		if (!$host) return undefined;
-		return $host.side != 'hero';
+		return $host.actual.kind != 'player';
 	});
 
 	const highlightedForAct = derived(
@@ -223,7 +223,7 @@
 					if ($guestId == undefined) return;
 					updateUnit($guestId, (vup) => {
 						if (vup.actual.kind == 'enemy') {
-							vup.actual.enemy.myAggro = 0;
+							vup.actual.entity.myAggro = 0;
 						}
 					});
 					$subAnimationStage = 'sentHome';
@@ -245,7 +245,7 @@
 					if (!anim) return;
 					updateUnit(anim.source, (vup) => {
 						if (vup.actual.kind == 'enemy') {
-							vup.actual.enemy.myAggro = 0;
+							vup.actual.entity.myAggro = 0;
 						}
 					});
 				}}
