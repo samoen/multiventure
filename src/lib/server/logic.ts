@@ -67,10 +67,24 @@ export function updatePlayerActions(player: Player) {
 			let alsoDmgs: HealthModifierEvent[] = []
 			let modagro: AggroModifierEvent[] = []
 			let ptstatuses: StatusModifierEvent[] = []
+			let bonus = 0
+			if(iAb.kind == 'melee'){
+				bonus = player.strength
+			}
 			for (const aff of affected) {
-				let hModEvent = HealthModifierEventFromItem(aff, i)
-				if (hModEvent) {
-					alsoDmgs.push(hModEvent)
+				if (i.baseDmg) {
+					alsoDmgs.push( {
+						target: aff,
+						baseDamage: i.baseDmg,
+						bonusDamage:bonus,
+						strikes: i.strikes ?? 1,
+					} satisfies HealthModifierEvent)
+				}
+				if (i.baseHealToTarget) {
+					alsoDmgs.push( {
+						target: aff,
+						baseHeal: i.baseHealToTarget,
+					} satisfies HealthModifierEvent)
 				}
 				let aModEvent = AggroModifierEventFromItem(aff, i, player, scenePlayers)
 				if (aModEvent) {
@@ -103,6 +117,7 @@ export function updatePlayerActions(player: Player) {
 				alsoDamages: alsoDmgs,
 				alsoModifiesAggro: modagro,
 				putsStatuses: ptstatuses,
+				stillHappenIfTargetDies:i.requiresSourceDead
 			} satisfies BattleEvent
 
 			return result
@@ -186,17 +201,6 @@ export function checkHasStatus(bee: BattleEventEntity, st: StatusId): boolean {
 
 }
 
-function HealthModifierEventFromItem(aff: BattleEventEntity, i: Item): HealthModifierEvent | undefined {
-	if (i.baseDmg || i.baseHealToTarget) {
-		return {
-			target: aff,
-			baseDamage: i.baseDmg,
-			baseHeal: i.baseHealToTarget,
-			strikes: i.strikes ?? 1,
-		} satisfies HealthModifierEvent
-	}
-	return undefined
-}
 
 function AggroModifierEventFromItem(aff: BattleEventEntity, i: Item, player: Player, scenePlayers: Player[]): AggroModifierEvent | undefined {
 	if (i.modifiesAggroOnAffected) {
@@ -218,8 +222,7 @@ function AggroModifierEventFromItem(aff: BattleEventEntity, i: Item, player: Pla
 function StatusModifierEventFromItem(aff: BattleEventEntity, i: Item): StatusModifierEvent | undefined {
 	if (i.putsStatusOnAffected) {
 		return {
-			targetEnemy: aff.kind == 'enemy' ? aff.entity : undefined,
-			targetPlayer: aff.kind == 'player' ? aff.entity : undefined,
+			target: aff,
 			statusId: i.putsStatusOnAffected.statusId,
 			count: i.putsStatusOnAffected.count,
 			remove: i.putsStatusOnAffected.remove,
@@ -469,7 +472,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 					battleAnimation: {
 						triggeredBy: player.unitId,
 						source: player.unitId,
-						alsoDamages: [{ target: player.unitId, amount: dmg, strikes: 1 }],
+						alsoDamages: [{ target: player.unitId, amount: [dmg]}],
 						behavior: { kind: 'selfInflicted', extraSprite: 'poison', }
 
 					}
@@ -549,14 +552,6 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 			if (aggroForActor) {
 				if ((Math.random() < (aggroForActor / 100))) {
 
-					let putsStatuses: StatusModifierEvent[] = []
-					if (enemyInScene.template.putsStatusOnTarget) {
-						putsStatuses.push({
-							statusId: enemyInScene.template.putsStatusOnTarget.statusId,
-							count: enemyInScene.template.putsStatusOnTarget.count,
-							targetPlayer: player,
-						})
-					}
 					let target: BattleEventEntity = { kind: 'player', entity: player }
 					if (enemyInScene.template.randomTarget) {
 						const selfIndex = sceneEnemies.indexOf(enemyInScene)
@@ -573,6 +568,14 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 							}
 							target = { kind: 'enemy', entity: randomEnemy }
 						}
+					}
+					let putsStatuses: StatusModifierEvent[] = []
+					if (enemyInScene.template.putsStatusOnTarget) {
+						putsStatuses.push({
+							statusId: enemyInScene.template.putsStatusOnTarget.statusId,
+							count: enemyInScene.template.putsStatusOnTarget.count,
+							target: target,
+						})
 					}
 					let iBehav: ItemAnimationBehavior = enemyInScene.template.behavior ?? { kind: 'melee' }
 					let behav: AnimationBehavior = addAnimateToUnit(iBehav, target.entity.unitId)
@@ -596,21 +599,12 @@ export function handleRetaliations(player: Player, postAction: boolean, action: 
 }
 
 function processBattleEvent(battleEvent: BattleEvent, player: Player) {
-
-	// if (
-	// 	(battleEvent.target && battleEvent.target.kind == 'enemy' && battleEvent.target.entity.health < 1) ||
-	// 	(battleEvent.target && battleEvent.target.kind == 'player' && battleEvent.target.entity.health < 1)
-	// ) {
-	// 	return
-	// }
-
-
 	if (battleEvent.putsStatuses) {
 		for (const put of battleEvent.putsStatuses) {
-			// if(put.targetEnemy?.health < 0) continue
+			if(put.target.entity.health < 0 && !battleEvent.stillHappenIfTargetDies) continue
 			if (put.count) {
-				if (put.targetEnemy) {
-					let found = put.targetEnemy.statuses.get(player.unitId)
+				if (put.target.kind == 'enemy') {
+					let found = put.target.entity.statuses.get(player.unitId)
 					if (!found) {
 						found = new Map()
 					}
@@ -619,20 +613,20 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 					if (!exist || exist < put.count) {
 						found.set(put.statusId, put.count)
 					}
-					put.targetEnemy.statuses.set(player.unitId, found)
+					put.target.entity.statuses.set(player.unitId, found)
 				}
-				if (put.targetPlayer) {
-					if (put.targetPlayer.statuses[put.statusId] < put.count) {
-						put.targetPlayer.statuses[put.statusId] = put.count
+				if (put.target.kind == 'player') {
+					if (put.target.entity.statuses[put.statusId] < put.count) {
+						put.target.entity.statuses[put.statusId] = put.count
 					}
 				}
 			}
 			if (put.remove) {
-				if (put.targetPlayer) {
-					put.targetPlayer.statuses[put.statusId] = 0
+				if (put.target.kind == 'player') {
+					put.target.entity.statuses[put.statusId] = 0
 				}
-				if (put.targetEnemy) {
-					for (const [key, value] of put.targetEnemy.statuses) {
+				if (put.target.kind == 'enemy') {
+					for (const [key, value] of put.target.entity.statuses) {
 						value.delete(put.statusId)
 					}
 				}
@@ -642,17 +636,19 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	let alsoDmgedAnimation: HealthModifier[] = []
 	if (battleEvent.alsoDamages) {
 		for (const healthModifyEvent of battleEvent.alsoDamages) {
+			if(healthModifyEvent.target.entity.health < 0 && !battleEvent.stillHappenIfTargetDies) continue
 			if (healthModifyEvent.target.kind == 'enemy') {
 				if (healthModifyEvent.baseDamage) {
 					let r = damageEnemy(
 						battleEvent.source,
 						healthModifyEvent.target.entity,
 						healthModifyEvent.baseDamage,
-						healthModifyEvent.strikes)
+						healthModifyEvent.strikes,
+						healthModifyEvent.bonusDamage,
+						)
 					alsoDmgedAnimation.push({
 						target: healthModifyEvent.target.entity.unitId,
 						amount: r.dmgDone,
-						strikes: healthModifyEvent.strikes,
 					})
 				}
 			} else if (healthModifyEvent.target.kind == 'player') {
@@ -660,15 +656,13 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 					let r = healPlayer(healthModifyEvent.target.entity, healthModifyEvent.baseHeal)
 					alsoDmgedAnimation.push({
 						target: healthModifyEvent.target.entity.unitId,
-						amount: r.healed * -1,
-						strikes: healthModifyEvent.strikes,
+						amount: [r.healed * -1],
 					})
 				} else if (healthModifyEvent.baseDamage && battleEvent.source.kind == 'enemy') {
 					let r = damagePlayer(battleEvent.source.entity, healthModifyEvent.target.entity, healthModifyEvent.baseDamage)
 					alsoDmgedAnimation.push({
 						target: healthModifyEvent.target.entity.unitId,
 						amount: r.dmgDone,
-						strikes: healthModifyEvent.strikes,
 					})
 				}
 			}
@@ -677,6 +671,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	let aggroModifiedAnimations: AggroModifier[] = []
 	if (battleEvent.alsoModifiesAggro) {
 		for (const modifyEvent of battleEvent.alsoModifiesAggro) {
+			if(modifyEvent.targetEnemy.health < 0 && !battleEvent.stillHappenIfTargetDies) continue
 			let foHeros: { hId: HeroId, amount: number }[] = []
 			for (const hero of modifyEvent.forHeros) {
 				let r = modifyAggroForPlayer(hero, modifyEvent.targetEnemy, modifyEvent.baseAmount)
@@ -710,16 +705,9 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		alsoDamages: alsoDmgedAnimation,
 		alsoModifiesAggro: aggroModifiedAnimations,
 		putsStatuses: battleEvent.putsStatuses?.map(m => {
-			let id: UnitId = 'herohi'
-			if (m.targetEnemy) {
-				id = m.targetEnemy.unitId
-			}
-			if (m.targetPlayer) {
-				id = m.targetPlayer.unitId
-			}
 			return {
 				statusId: m.statusId,
-				target: id,
+				target: m.target.entity.unitId,
 				count: m.count,
 				remove: m.remove
 			} satisfies StatusModifier

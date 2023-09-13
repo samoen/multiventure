@@ -197,9 +197,9 @@ export function enemiesInScene(sceneKey: UniqueSceneIdenfitier): ActiveEnemy[] {
 	return activeEnemies.filter(e =>  deepEqual(e.currentUniqueSceneId, sceneKey))
 }
 
-export function damagePlayer(enemy: ActiveEnemy, player: Player, baseDmg:number): { dmgDone: number } {
-	if (player.health < 1) return { dmgDone: 0 }
-	let dmgDone = 0
+export function damagePlayer(enemy: ActiveEnemy, player: Player, baseDmg:number): { dmgDone: number[] } {
+	if (player.health < 1) return { dmgDone: [] }
+	let dmgDone : number[] = []
 	let strikes = enemy.template.strikes ?? 1
 	for (const _ of Array.from({ length: strikes })) {
 		let dmg = baseDmg
@@ -216,7 +216,7 @@ export function damagePlayer(enemy: ActiveEnemy, player: Player, baseDmg:number)
 		}
 
 		player.health -= dmg
-		dmgDone += dmg
+		dmgDone.push(dmg)
 	}
 
 	pushHappening(`${enemy.name} hit ${player.heroName} ${strikes > 1 ? strikes + ' times' : ''} for ${dmgDone} damage`)
@@ -227,11 +227,13 @@ export function damageEnemy(
 	source:BattleEventEntity,
 	enemy: ActiveEnemy,
 	damage: number,
-	strikes: number = 1): { dmgDone: number } {
-	if (enemy.health < 1) return { dmgDone: 0 }
+	strikes: number = 1,
+	bonusDamage:number = 0
+	): { dmgDone: number[] } {
+	if (enemy.health < 1) return { dmgDone: [] }
 
-	let dmgDone = 0
-	for (const _ of Array.from({ length: strikes })) {
+	let dmgDone : number[] = []
+	for (let i = 0; i < strikes; i++) {
 		let dmg = damage
 		if(enemy.template.damageReduction){
 			dmg = dmg - enemy.template.damageReduction
@@ -242,8 +244,11 @@ export function damageEnemy(
 				dmg = enemy.template.damageLimit
 			} 
 		}
+		if(i == strikes - 1){
+			dmg += bonusDamage
+		}
 		enemy.health -= dmg
-		dmgDone += dmg
+		dmgDone.push(dmg)
 	}
 	let attackerName = source.kind == 'player' ? source.entity.heroName : source.entity.name
 	pushHappening(`${attackerName} hit ${enemy.name} ${strikes > 1 ? strikes + ' times' : ''} for ${dmgDone} damage`)
@@ -281,7 +286,7 @@ export function takePoisonDamage(enemy: ActiveEnemy, player:Player): { dmgDone: 
 			battleAnimation: {
 				triggeredBy:player.unitId,
 				source: enemy.unitId,
-				alsoDamages:[{target:enemy.unitId,amount:dmg,strikes:1}],
+				alsoDamages:[{target:enemy.unitId,amount:[dmg]}],
 				behavior: {kind:'selfInflicted', extraSprite:'poison'},
 			}
 		}

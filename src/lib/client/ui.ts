@@ -438,7 +438,6 @@ export function syncVisualsToMsg(lastMsg: MessageFromServer | undefined) {
 
         let uiVases = lastMsg.visualActionSources.map(v => {
             let actionsFromVas = lastMsg.vasActions.filter(va => va.associateWithUnit == v.id)
-            console.log(JSON.stringify(actionsFromVas))
             return {
                 ...v,
                 actionsInClient: actionsFromVas
@@ -511,13 +510,16 @@ export function changeVasLocked(vId: VisualActionSourceId, unlock: boolean) {
     })
 }
 
-export function handleModifyHealth(anim:BattleAnimation, singleStrike:boolean=false):{died:UnitId[]}{
+export function handleModifyHealth(anim:BattleAnimation, strikeNumber:number, oneShot:boolean = false):{died:UnitId[]}{
     const result : {died:UnitId[]}= {died:[]}
     if (anim.alsoDamages) {
         for (const other of anim.alsoDamages) {
             updateUnit(other.target, (vup) => {
-                let amt = other.amount
-                if(singleStrike)amt = amt / other.strikes
+                let amt = other.amount.at(strikeNumber) ?? 0
+                if(oneShot){
+                    amt = other.amount.reduce((a,b)=>a+b,0)
+                }
+                // if(singleStrike && other.strikes && other.strikes > 0)amt = amt / other.strikes
                 vup.displayHp -= amt;
                 if(vup.displayHp > vup.maxHp)vup.displayHp = vup.maxHp
                 if(vup.displayHp < 1)vup.displayHp = 0

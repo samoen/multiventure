@@ -193,27 +193,26 @@
 				on:introend={async () => {
 					if ($currentAnimation == undefined || $guestId == undefined) return;
 					const anim = $currentAnimation;
-					
-					let firstDmged = anim.alsoDamages?.at(0)
-					if(firstDmged && firstDmged.target == hostId){
-						let strks = firstDmged.strikes;
-						if(strks < 1)strks = 1;
-						for (const _ of Array.from({ length: strks })) {
-							updateUnit($guestId, (vup) => {
-								vup.tilt = true;
-							});
-							let stop = false;
-							let r = handleModifyHealth(anim,true)
-							if(r.died.find(d=>d == hostId)){
-								stop = true
+					if(anim.alsoDamages){
+						let animatedTo = anim.alsoDamages.find(a=>a.target == hostId)
+						if(animatedTo){
+							for (let i = 0; i < animatedTo.amount.length; i++) {
+								updateUnit($guestId, (vup) => {
+									vup.tilt = true;
+								});
+								let stop = false;
+								let r = handleModifyHealth(anim,i)
+								if(r.died.find(d=>d == hostId)){
+									stop = true
+								}
+								
+								await new Promise((r) => setTimeout(r, 100));
+								updateUnit($guestId, (vup) => {
+									vup.tilt = false;
+								});
+								if (stop) break;
+								await new Promise((r) => setTimeout(r, 200));
 							}
-							
-							await new Promise((r) => setTimeout(r, 100));
-							updateUnit($guestId, (vup) => {
-								vup.tilt = false;
-							});
-							if (stop) break;
-							await new Promise((r) => setTimeout(r, 200));
 						}
 					}
 					
@@ -268,7 +267,7 @@
 				on:outrostart={() => {
 					const anim = $currentAnimation;
 					if (!anim) return;
-					handleModifyHealth(anim)
+					handleModifyHealth(anim,0,true)
 					handlePutsStatuses(anim);
 					if(!$lastMsgFromServer)return
 					handleModAggros(anim,$lastMsgFromServer.yourInfo.unitId)
@@ -296,7 +295,7 @@
 					if (!anim) return;
 					let delayNextStep = false;
 					handlePutsStatuses(anim);
-					let hRes = handleModifyHealth(anim);
+					let hRes = handleModifyHealth(anim,0,true);
 					if(hRes.died.length){
 						delayNextStep = true;
 					}

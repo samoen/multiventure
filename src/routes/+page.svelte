@@ -461,15 +461,6 @@
 {/if}
 
 {#if $lastMsgFromServer}
-	<!-- {#if $lastMsgFromServer.itemActions.length}
-		<div class="actionButtons">
-			{#each $lastMsgFromServer.itemActions as op, i}
-				<button on:click={() => choose(op)} disabled={$clientState.waitingForMyEvent}>
-					{op.buttonText}
-				</button>
-			{/each}
-		</div>
-	{/if} -->
 	<!-- <button on:click={() => {}}>debug something</button> -->
 	<div class="wrapGameField">
 		<span class="yourSceneLabel">{$visualSceneLabel}</span>
@@ -507,7 +498,7 @@
 						on:introend={() => {
 							if ($currentAnimation != undefined) {
 								let anim = $currentAnimation;
-								let hRes = handleModifyHealth(anim);
+								let hRes = handleModifyHealth(anim,0);
 								let someoneDied = false
 								if(hRes.died.length){
 									someoneDied = true

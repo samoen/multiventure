@@ -55,14 +55,21 @@ export type BattleEvent = {
 	alsoDamages?: HealthModifierEvent[],
 	alsoModifiesAggro?: AggroModifierEvent[],
 	teleportsTo?: SceneDataId,
+	stillHappenIfTargetDies?:boolean,
 }
 
 export type StatusMod = { statusId: StatusId, remove?: boolean, count?: number }
 
 export type StatusModifier = { target: UnitId } & StatusMod
-export type StatusModifierEvent = { targetPlayer?: Player, targetEnemy?: ActiveEnemy, } & StatusMod
-export type HealthModifier = { target: UnitId, amount: number, strikes: number }
-export type HealthModifierEvent = { target: BattleEventEntity, baseDamage?: number, baseHeal?: number, strikes: number }
+export type StatusModifierEvent = { target: BattleEventEntity } & StatusMod
+export type HealthModifier = { target: UnitId, amount: number[] }
+export type HealthModifierEvent = { 
+	target: BattleEventEntity,
+	baseDamage?: number,
+	bonusDamage?:number,
+	baseHeal?: number, 
+	strikes?: number 
+}
 export type AggroModifier = {
 	target: EnemyId,
 	forHeros: { hId: HeroId, amount: number }[]
