@@ -1,92 +1,99 @@
 import type { HeroId, LandscapeImage } from '$lib/utils';
-import { enemiesInScene, enemyTemplates, spawnEnemy, type EnemyStatuses, type EnemyTemplateId } from './enemies';
+import {
+	enemiesInScene,
+	enemyTemplates,
+	spawnEnemy,
+	type EnemyStatuses,
+	type EnemyTemplateId
+} from './enemies';
 import { equipItem, items, type ItemId } from './items';
 import type { EnemyForSpawning, VisualActionSource } from './logic';
 import type { HeroName, Flag, Player } from './users';
 
+export const scenesData: Scene[] = [];
 
-export const scenesData: Scene[] = []
+export type SceneDataId = string;
+export type UniqueSceneIdenfitier =
+	| { kind: 'solo'; dataId: SceneDataId; p: HeroId }
+	| { kind: 'multi'; dataId: string };
 
-export type SceneDataId = string
-export type UniqueSceneIdenfitier = {kind:'solo', dataId:SceneDataId, p:HeroId}  | {kind:'multi',dataId:string}
-
-export function getSceneData(player:Player):Scene{
-	let s = getSceneDataSimple(player.currentUniqueSceneId.dataId)
-	return s
+export function getSceneData(player: Player): Scene {
+	const s = getSceneDataSimple(player.currentUniqueSceneId.dataId);
+	return s;
 }
-export function getSceneDataSimple(id:SceneDataId):Scene{
-	let s = scenesData.find(sd => sd.sceneDataId == id)
-	if(!s)return dead
-	return s
+export function getSceneDataSimple(id: SceneDataId): Scene {
+	const s = scenesData.find((sd) => sd.sceneDataId == id);
+	if (!s) return dead;
+	return s;
 }
 
-export function uniqueFromSceneDataId(hId:HeroId, sId:SceneDataId):UniqueSceneIdenfitier{
-	let startSceneData = getSceneDataSimple(sId)
-	let startUnique :UniqueSceneIdenfitier | undefined = undefined
-	if(startSceneData.solo){
-		startUnique = {kind:'solo',dataId:startSceneData.sceneDataId,p:hId}
-	}else{
-		startUnique = {kind:'multi',dataId:startSceneData.sceneDataId}
+export function uniqueFromSceneDataId(hId: HeroId, sId: SceneDataId): UniqueSceneIdenfitier {
+	const startSceneData = getSceneDataSimple(sId);
+	let startUnique: UniqueSceneIdenfitier | undefined = undefined;
+	if (startSceneData.solo) {
+		startUnique = { kind: 'solo', dataId: startSceneData.sceneDataId, p: hId };
+	} else {
+		startUnique = { kind: 'multi', dataId: startSceneData.sceneDataId };
 	}
-	return startUnique
+	return startUnique;
 }
-		
 
 export type Scene = {
-	sceneDataId:SceneDataId,
-	displayName: string,
-	healsOnEnter?: boolean,
-	healsOnVictory?: boolean,
-	setsFlagOnVictory?: Flag,
-	setsFlagOnEnter?: Flag,
-	setCheckpointOnEnter?: boolean,
-	spawnsEnemiesOnEnter?: EnemyForSpawning[],
-	spawnsEnemiesOnBattleJoin?: EnemyForSpawning[],
-	sceneTexts?: SceneTexts,
-	actions?: (player: Player) => void
-	vases?: VisualActionSource[]
-	solo?: boolean
-	landscape?: LandscapeImage
+	sceneDataId: SceneDataId;
+	displayName: string;
+	healsOnEnter?: boolean;
+	healsOnVictory?: boolean;
+	setsFlagOnVictory?: Flag;
+	setsFlagOnEnter?: Flag;
+	setCheckpointOnEnter?: boolean;
+	spawnsEnemiesOnEnter?: EnemyForSpawning[];
+	spawnsEnemiesOnBattleJoin?: EnemyForSpawning[];
+	sceneTexts?: SceneTexts;
+	actions?: (player: Player) => void;
+	vases?: VisualActionSource[];
+	solo?: boolean;
+	landscape?: LandscapeImage;
 };
 
-export const alreadySpawnedCurrentBattle : Map<SceneDataId, Set<HeroId> > = new Map()
-export function hasPlayerAlreadySpawnedForBattle(player:Player):boolean{
-	let scene = getSceneData(player)
-	let forScene = alreadySpawnedCurrentBattle.get(scene.sceneDataId)
-	if(!forScene)return false
-	if(forScene.has(player.unitId))return true
-	return false
+export const alreadySpawnedCurrentBattle: Map<SceneDataId, Set<HeroId>> = new Map();
+export function hasPlayerAlreadySpawnedForBattle(player: Player): boolean {
+	const scene = getSceneData(player);
+	const forScene = alreadySpawnedCurrentBattle.get(scene.sceneDataId);
+	if (!forScene) return false;
+	if (forScene.has(player.unitId)) return true;
+	return false;
 }
-export function spawnedOngoing(player:Player){
-	let scene = getSceneData(player)
-	let forScene = alreadySpawnedCurrentBattle.get(scene.sceneDataId)
-	if(!forScene){
-		spawnedNewBattle(player)
-		return
+export function spawnedOngoing(player: Player) {
+	const scene = getSceneData(player);
+	const forScene = alreadySpawnedCurrentBattle.get(scene.sceneDataId);
+	if (!forScene) {
+		spawnedNewBattle(player);
+		return;
 	}
-	forScene.add(player.unitId)
+	forScene.add(player.unitId);
 }
-export function spawnedNewBattle(player:Player){
-	let scene = getSceneData(player)
-	let set : Set<HeroId> = new Set()
-	set.add(player.unitId)
-	alreadySpawnedCurrentBattle.set(scene.sceneDataId,set)
+export function spawnedNewBattle(player: Player) {
+	const scene = getSceneData(player);
+	const set: Set<HeroId> = new Set();
+	set.add(player.unitId);
+	alreadySpawnedCurrentBattle.set(scene.sceneDataId, set);
 }
 
 export type SceneTexts = {
-	[k :SceneDataId]: string
+	[k: SceneDataId]: string;
 } & {
-	fallback: string
-}
+	fallback: string;
+};
 
-export const startSceneDataId = 'tutorial'
+export const startSceneDataId = 'tutorial';
 
 export const dead: Scene = {
-	sceneDataId:'dead',
+	sceneDataId: 'dead',
 	displayName: 'Halls Of the Dead',
 	healsOnEnter: true,
 	sceneTexts: {
-		fallback: "You see a bright light and follow it. After a short eternity you decide wandering the halls of the dead is not for you."
+		fallback:
+			'You see a bright light and follow it. After a short eternity you decide wandering the halls of the dead is not for you.'
 	},
 	vases: [
 		{
@@ -104,8 +111,8 @@ export const dead: Scene = {
 					responseId: 'dev',
 					responseText: `I'm testing the game.`,
 					retort: `Here's a special room for that.`,
-					unlockVas: [`vasDev`],
-				},
+					unlockVas: [`vasDev`]
+				}
 			],
 			actionsWithRequirements: []
 		},
@@ -114,30 +121,24 @@ export const dead: Scene = {
 			displayName: 'Portal',
 			sprite: 'portal',
 			startText: `A portal that takes you to your last checkpoint`,
-			actionsWithRequirements: [
-				{ travelToCheckpoint: true },
-			]
+			actionsWithRequirements: [{ travelToCheckpoint: true }]
 		},
 		{
 			unitId: 'vasDev',
-			startsLocked:true,
+			startsLocked: true,
 			displayName: 'Dev Room',
 			sprite: 'portal',
 			startText: `A room for testing battles`,
-			actionsWithRequirements: [
-				{ travelTo: 'armory' },
-			]
-		},
-	],
-}
-
-
+			actionsWithRequirements: [{ travelTo: 'armory' }]
+		}
+	]
+};
 
 const tutorial: Scene = {
-	sceneDataId:`tutorial`,
+	sceneDataId: `tutorial`,
 	displayName: 'Tutorial',
 	setCheckpointOnEnter: true,
-	solo:true,
+	solo: true,
 	sceneTexts: {
 		fallback: `You are standing at a castle barracks. Soliders mill around swinging swords and grunting in cool morning air. You see Arthur, the captain of the castle guard marching towards you.`
 	},
@@ -150,8 +151,8 @@ const tutorial: Scene = {
 			startsLocked: true,
 			actionsWithRequirements: [
 				{
-					travelTo: 'forest',
-				},
+					travelTo: 'forest'
+				}
 			]
 		},
 		{
@@ -166,22 +167,22 @@ const tutorial: Scene = {
 					unlock: ['saidWrong'],
 					lock: ['cheeky', 'brave', 'open'],
 					lockVas: ['vasGoTrainTutorial'],
-					unlockVas: ['vasSkipTutorial'],
+					unlockVas: ['vasSkipTutorial']
 				},
 				{
 					responseId: 'open',
 					responseText: `Aye sir, Reporting for duty!`,
 					retort: `Welcome to basic training. Many great heroes started their journey on the very ground you stand. Follow orders and you might just join their ranks.`,
-					unlock: ['brave','cautious', 'saidWrong'],
+					unlock: ['brave', 'cautious', 'saidWrong'],
 					lock: ['scared', 'cheeky'],
-					lockVas: ['vasSkipTutorial'],
+					lockVas: ['vasSkipTutorial']
 				},
 				{
 					responseId: 'cheeky',
 					responseText: `Yeah yeah, get on with it.`,
 					retort: `Watch your tone, recruit. Many great heroes started their journey on the very ground you stand, and they all knew the importance of a good tutorial.`,
-					unlock: ['saidWrong', 'brave','cautious'],
-					lock: ['scared','open']
+					unlock: ['saidWrong', 'brave', 'cautious'],
+					lock: ['scared', 'open']
 				},
 				{
 					startsLocked: true,
@@ -190,7 +191,7 @@ const tutorial: Scene = {
 					retort: `Great to hear. You can select a unit by tapping or clicking it. When a unit is selected you will see available actions. Select the training room and enter.`,
 					unlockVas: ['vasGoTrainTutorial'],
 					lockVas: ['vasSkipTutorial'],
-					lock: ['wantsToSkip', 'scared', 'cheeky', 'saidWrong','brave'],
+					lock: ['wantsToSkip', 'scared', 'cheeky', 'saidWrong', 'brave']
 				},
 				{
 					startsLocked: true,
@@ -199,17 +200,17 @@ const tutorial: Scene = {
 					retort: `We will see. You can select a unit by tapping or clicking it. When a unit is selected you will see available actions. Select the training room and enter.`,
 					unlockVas: ['vasGoTrainTutorial'],
 					lockVas: ['vasSkipTutorial'],
-					lock: ['wantsToSkip', 'scared', 'cheeky', 'saidWrong','cautious'],
+					lock: ['wantsToSkip', 'scared', 'cheeky', 'saidWrong', 'cautious']
 				},
 				{
 					startsLocked: true,
 					responseId: 'saidWrong',
 					responseText: `Oops, can I reset our conversation?`,
 					retort: `Yep, click my portrait to the left of this text to reset the conversation.`
-				},
+				}
 			],
 			sprite: 'general',
-			portrait: 'general',
+			portrait: 'general'
 		},
 		{
 			unitId: 'vasGoTrainTutorial',
@@ -220,14 +221,14 @@ const tutorial: Scene = {
 			actionsWithRequirements: [
 				{
 					travelTo: `soloTrain0`
-				},
-			],
+				}
+			]
 		}
-	],
-}
+	]
+};
 
 const trainingRoom0: Scene = {
-	sceneDataId:`soloTrain0`,
+	sceneDataId: `soloTrain0`,
 	displayName: 'Training Room',
 	landscape: 'bridge',
 	solo: true,
@@ -235,20 +236,22 @@ const trainingRoom0: Scene = {
 	spawnsEnemiesOnEnter: [
 		{
 			eName: 'Skitters',
-			eTemp: 'rat',
+			eTemp: 'rat'
 		}
 	],
 	sceneTexts: {
-		fallback: "You enter the training room. It is well worn by many training sessions. The walls are covered in blast marks, dents and splinters."
+		fallback:
+			'You enter the training room. It is well worn by many training sessions. The walls are covered in blast marks, dents and splinters.'
 	},
 	vases: [
 		{
 			unitId: 'vasEquipClub',
 			displayName: 'Club',
 			sprite: 'club',
-			startText: 'A club deals a hefty chunk of damage in a single strike. That makes it effective against lightly armored foes.',
+			startText:
+				'A club deals a hefty chunk of damage in a single strike. That makes it effective against lightly armored foes.',
 			startsLocked: true,
-			actionsWithRequirements: [{ pickupItem: 'club', }],
+			actionsWithRequirements: [{ pickupItem: 'club' }]
 		},
 		{
 			unitId: 'vasEquipBomb',
@@ -256,7 +259,7 @@ const trainingRoom0: Scene = {
 			sprite: 'bombPadded',
 			startText: 'A powderbomb deals splash damage and reduces aggression of all nearby enemies.',
 			startsLocked: true,
-			actionsWithRequirements: [{ pickupItem: 'bomb' }],
+			actionsWithRequirements: [{ pickupItem: 'bomb' }]
 		},
 		{
 			unitId: 'vasTutor0',
@@ -268,20 +271,20 @@ const trainingRoom0: Scene = {
 				{
 					responseId: 'explainAggro',
 					responseText: `What's that purple bar beneath the enemies health bar?`,
-					retort: `That is the enemy's aggression towards you. It indicates the likelihood of it attacking you on your next action. Some enemies gain aggression faster than others, and some actions provoke more.`,
+					retort: `That is the enemy's aggression towards you. It indicates the likelihood of it attacking you on your next action. Some enemies gain aggression faster than others, and some actions provoke more.`
 				},
 				{
 					responseId: 'gimmie',
 					responseText: `Can I get some equipment?`,
 					retort: `Sure, here's some gear. Select the items and and equip them.`,
-					unlockVas: ['vasEquipClub', `vasEquipBomb`],
+					unlockVas: ['vasEquipClub', `vasEquipBomb`]
 				},
 				{
 					responseId: 'explainNext',
 					responseText: `What's my next challenge?`,
 					retort: `Next you will fight a goblin. Goblins wear light armor, which reduces the damage of each incoming strike. Also there's a bit of a rat problem in there right now..`,
 					unlockVas: ['vasGoTrain1']
-				},
+				}
 			]
 		},
 		{
@@ -297,11 +300,10 @@ const trainingRoom0: Scene = {
 				}
 			]
 		}
-
-	],
-}
+	]
+};
 const trainingRoom1: Scene = {
-	sceneDataId:`soloTrain1`,
+	sceneDataId: `soloTrain1`,
 	displayName: 'Training Room',
 	landscape: 'bridge',
 	solo: true,
@@ -309,23 +311,24 @@ const trainingRoom1: Scene = {
 	spawnsEnemiesOnEnter: [
 		{
 			eName: 'Glornak',
-			eTemp: 'goblin',
+			eTemp: 'goblin'
 		},
 		{
 			eName: 'Squeaky',
-			eTemp: 'rat',
+			eTemp: 'rat'
 		},
 		{
 			eName: 'Scratchy',
-			eTemp: 'rat',
+			eTemp: 'rat'
 		},
 		{
 			eName: 'Nibbles',
-			eTemp: 'rat',
-		},
+			eTemp: 'rat'
+		}
 	],
 	sceneTexts: {
-		fallback: '"You enter the training room. It is well worn by many training sessions. The walls are covered in blast marks, dents and splinters."'
+		fallback:
+			'"You enter the training room. It is well worn by many training sessions. The walls are covered in blast marks, dents and splinters."'
 	},
 	vases: [
 		{
@@ -352,16 +355,17 @@ const trainingRoom1: Scene = {
 					responseText: `What's my next battle?`,
 					retort: `Your next battle is against Orcs. Orcs wear heavy armor, which limits the amount of damage taken from each strike. There's a fire gremlin in there too, but he's as much a danger to his allies as he is to you.`,
 					unlockVas: ['vasGoTrain2']
-				},
+				}
 			]
 		},
 		{
 			unitId: 'vasEquipDagger',
 			displayName: 'Dagger',
 			sprite: 'dagger',
-			startText: 'A dagger is fast and strikes multiple times per attack. It is effective against heavy armor.',
+			startText:
+				'A dagger is fast and strikes multiple times per attack. It is effective against heavy armor.',
 			startsLocked: true,
-			actionsWithRequirements: [{ pickupItem: 'dagger' },]
+			actionsWithRequirements: [{ pickupItem: 'dagger' }]
 		},
 		{
 			unitId: 'vasEquipBandage',
@@ -383,12 +387,12 @@ const trainingRoom1: Scene = {
 					travelTo: `soloTrain2`
 				}
 			]
-		},
-	],
-}
+		}
+	]
+};
 
 const trainingRoom2: Scene = {
-	sceneDataId:`soloTrain2`,
+	sceneDataId: `soloTrain2`,
 	displayName: 'Training Room',
 	solo: true,
 	setCheckpointOnEnter: true,
@@ -399,18 +403,18 @@ const trainingRoom2: Scene = {
 			eTemp: 'orc',
 			statuses: [
 				{
-					statusId:'rage',
-					count:5,
+					statusId: 'rage',
+					count: 5
 				}
 			]
 		},
 		{
 			eName: 'Morgal',
-			eTemp: 'orc',
+			eTemp: 'orc'
 		},
 		{
 			eName: 'Scortchy',
-			eTemp: 'fireGremlin',
+			eTemp: 'fireGremlin'
 		}
 	],
 	vases: [
@@ -430,8 +434,8 @@ const trainingRoom2: Scene = {
 				{
 					responseId: 'whatifdie',
 					responseText: `What if the troll wins the battle?`,
-					retort: `It's not a problem. Just succumb to your wounds, respawn at your checkpoint and try again.`,
-				},
+					retort: `It's not a problem. Just succumb to your wounds, respawn at your checkpoint and try again.`
+				}
 			]
 		},
 		{
@@ -440,7 +444,7 @@ const trainingRoom2: Scene = {
 			sprite: 'staff',
 			startText: `A magic staff will take a while to warmup before use. You must take other actions first.`,
 			startsLocked: true,
-			actionsWithRequirements: [{ pickupItem: 'fireStaff' },]
+			actionsWithRequirements: [{ pickupItem: 'fireStaff' }]
 		},
 		{
 			unitId: 'vasEquipDart',
@@ -470,11 +474,11 @@ const trainingRoom2: Scene = {
 				}
 			]
 		}
-	],
-}
+	]
+};
 
 const trainingRoom3: Scene = {
-	sceneDataId:`soloTrain3`,
+	sceneDataId: `soloTrain3`,
 	displayName: 'Training Room',
 	solo: true,
 	setCheckpointOnEnter: true,
@@ -482,11 +486,12 @@ const trainingRoom3: Scene = {
 	spawnsEnemiesOnEnter: [
 		{
 			eName: 'Ragor',
-			eTemp: 'troll',
+			eTemp: 'troll'
 		}
 	],
 	sceneTexts: {
-		fallback: "You enter a dark, stinking place. Iron bars slam shut behind you. A giant figure emerges from the darkness."
+		fallback:
+			'You enter a dark, stinking place. Iron bars slam shut behind you. A giant figure emerges from the darkness.'
 	},
 	vases: [
 		{
@@ -495,12 +500,14 @@ const trainingRoom3: Scene = {
 			sprite: 'general',
 			portrait: 'general',
 			startText: `Well done recruit! You may be the chosen one after all..`,
-			responses: [{
-				responseId: 'go',
-				responseText: 'Thanks Arthur',
-				retort: `Now we can't have you starting the game with all that loot. Please drop your weapon in the box, put your farmer stuff back on, and head through the portal.`,
-				unlockVas: ['vasLeaveTutorial'],
-			}]
+			responses: [
+				{
+					responseId: 'go',
+					responseText: 'Thanks Arthur',
+					retort: `Now we can't have you starting the game with all that loot. Please drop your weapon in the box, put your farmer stuff back on, and head through the portal.`,
+					unlockVas: ['vasLeaveTutorial']
+				}
+			]
 		},
 		{
 			unitId: 'vasLeaveTutorial',
@@ -508,10 +515,12 @@ const trainingRoom3: Scene = {
 			sprite: 'portal',
 			startText: 'Take this portal to enter the world. Have fun :)',
 			startsLocked: true,
-			actionsWithRequirements: [{
-				requiresGear: ['fist', 'belt', 'rags'],
-				travelTo: 'forest'
-			}]
+			actionsWithRequirements: [
+				{
+					requiresGear: ['fist', 'belt', 'rags'],
+					travelTo: 'forest'
+				}
+			]
 		},
 		{
 			unitId: 'vasBox',
@@ -521,7 +530,7 @@ const trainingRoom3: Scene = {
 			actionsWithRequirements: [
 				{
 					pickupItem: 'fist'
-				},
+				}
 			]
 		},
 		{
@@ -532,7 +541,7 @@ const trainingRoom3: Scene = {
 			actionsWithRequirements: [
 				{
 					pickupItem: 'belt'
-				},
+				}
 			]
 		},
 		{
@@ -543,14 +552,14 @@ const trainingRoom3: Scene = {
 			actionsWithRequirements: [
 				{
 					pickupItem: 'rags'
-				},
+				}
 			]
 		}
-	],
-}
+	]
+};
 
 export const forest: Scene = {
-	sceneDataId:`forest`,
+	sceneDataId: `forest`,
 	displayName: 'Bramblefoot Woods',
 	landscape: 'grimForest',
 	setCheckpointOnEnter: true,
@@ -567,11 +576,11 @@ export const forest: Scene = {
 			sprite: 'castle',
 			startText: `You are surrounded by dense undergrowth. In the distance you see a castle`,
 			actionsWithRequirements: [{ travelTo: 'castle' }],
-			responses:[
+			responses: [
 				{
-					responseId:'searchForest',
-					responseText:'Search around the undergrowth',
-					unlockVas:['vasBow'],
+					responseId: 'searchForest',
+					responseText: 'Search around the undergrowth',
+					unlockVas: ['vasBow']
 				}
 			]
 		},
@@ -579,28 +588,30 @@ export const forest: Scene = {
 			unitId: 'vasBow',
 			displayName: 'Bow',
 			sprite: 'bow',
-			startsLocked:true,
+			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'bow' }],
-			startText: `An old wooden bow`,
+			startText: `An old wooden bow`
 		},
 		{
 			unitId: 'vasForestPassageFromForest',
 			displayName: 'Hidden Passage',
 			sprite: 'stoneDoor',
 			startsLocked: true,
-			actionsWithRequirements: [{ requiresFlags: ['heardAboutHiddenPassage'], travelTo: 'forestPassage' }],
+			actionsWithRequirements: [
+				{ requiresFlags: ['heardAboutHiddenPassage'], travelTo: 'forestPassage' }
+			],
 			startText: `Delve into the secret passage`,
 			detect: [
 				{
 					flag: 'heardAboutHiddenPassage'
-				},
-			],
-		},
-	],
-}
+				}
+			]
+		}
+	]
+};
 
 const castle: Scene = {
-	sceneDataId:`castle`,
+	sceneDataId: `castle`,
 	displayName: 'Castle Bramblemore',
 	landscape: 'castle',
 	sceneTexts: {
@@ -614,20 +625,22 @@ const castle: Scene = {
 			unitId: 'vasKeep',
 			displayName: 'Keep',
 			sprite: 'castle',
-			responses: [{
-				responseId: 'rummage',
-				responseText: 'Search around the old barracks',
-				unlockVas: ['vasCastleBandage'],
-			}],
+			responses: [
+				{
+					responseId: 'rummage',
+					responseText: 'Search around the old barracks',
+					unlockVas: ['vasCastleBandage']
+				}
+			],
 			actionsWithRequirements: [{ travelTo: 'throne' }],
-			startText: `In the center of the castle lies the Bramblemore throne room. Along the path is a long abandoned barracks with broken gear strewn around.`,
+			startText: `In the center of the castle lies the Bramblemore throne room. Along the path is a long abandoned barracks with broken gear strewn around.`
 		},
 		{
 			unitId: 'vasHouse',
 			displayName: 'House',
 			sprite: 'stoneDoor',
 			actionsWithRequirements: [{ travelTo: 'house' }],
-			startText: `You see a beautiful little thatched roof cottage. It looks inviting.`,
+			startText: `You see a beautiful little thatched roof cottage. It looks inviting.`
 		},
 		{
 			unitId: 'vasCastleBandage',
@@ -642,13 +655,13 @@ const castle: Scene = {
 			displayName: 'Forest',
 			sprite: 'forest',
 			actionsWithRequirements: [{ travelTo: 'forest' }],
-			startText: `Outside the castle grounds is a forest`,
-		},
-	],
+			startText: `Outside the castle grounds is a forest`
+		}
+	]
 };
 
 const house: Scene = {
-	sceneDataId:`house`,
+	sceneDataId: `house`,
 	displayName: `House`,
 	landscape: 'bridge',
 	setsFlagOnEnter: 'heardAboutHiddenPassage',
@@ -674,26 +687,28 @@ const house: Scene = {
 					responseId: `rejected`,
 					responseText: `I won't`,
 					retort: `Not much of a hero are you?`,
-					lock: ['accepted'],
+					lock: ['accepted']
 				},
 				{
 					responseId: `reward`,
 					responseText: `What's in it for me?`,
 					retort: `My son had this set of leather armour. If only he had been wearing it when he went on his adventure.`,
 					unlockVas: ['vasLeatherGift']
-				},
+				}
 			],
-			detect: [{
-				flag: 'killedGoblins',
-				startText: `Dear Sir! You return with the stench of goblin blood about yourself. Thank you for obtaining vengence on my behalf.`,
-				responses: [
-					{
-						responseId: 'cool',
-						responseText: `All in a day's work ma'am`,
-						retort: `I bequeath the armor to you so that my son's legacy may live on. Good luck out there.`,
-					}
-				]
-			}]
+			detect: [
+				{
+					flag: 'killedGoblins',
+					startText: `Dear Sir! You return with the stench of goblin blood about yourself. Thank you for obtaining vengence on my behalf.`,
+					responses: [
+						{
+							responseId: 'cool',
+							responseText: `All in a day's work ma'am`,
+							retort: `I bequeath the armor to you so that my son's legacy may live on. Good luck out there.`
+						}
+					]
+				}
+			]
 		},
 		{
 			unitId: 'vasLeatherGift',
@@ -704,15 +719,16 @@ const house: Scene = {
 			actionsWithRequirements: [
 				{
 					requiresFlags: ['killedGoblins'],
-					pickupItem: 'leatherArmor',
+					pickupItem: 'leatherArmor'
 				}
 			],
-			detect: [{
-				flag: 'killedGoblins',
-				locked: false,
-				startText: `Leather armor reduces the damage of each incoming strike`,
-			}]
-
+			detect: [
+				{
+					flag: 'killedGoblins',
+					locked: false,
+					startText: `Leather armor reduces the damage of each incoming strike`
+				}
+			]
 		},
 		{
 			unitId: 'vasGoCastle',
@@ -720,13 +736,12 @@ const house: Scene = {
 			sprite: 'signpost',
 			startText: 'Leave the house',
 			actionsWithRequirements: [{ travelTo: 'castle' }, { travelTo: 'forest' }]
-		},
-	],
-}
-
+		}
+	]
+};
 
 const throne: Scene = {
-	sceneDataId:`throne`,
+	sceneDataId: `throne`,
 	displayName: 'Bramblemore Throne Room',
 	sceneTexts: {
 		fallback: `Before you is a great throne. Sitting aside it are two giant sculptures carved from marble. The one of the left depicts an angel, its wings spread to a might span. It wields a sword from which a great fire burns. To the left of the throne is a garoyle, its lips pulled back in a monstrous snarl revealing rows of serrated teeth. One of its arms are raised and it appears to hold a ball of pure electricity which crackles in the dim light. Atop the throne sits an emaciated figure.`,
@@ -742,31 +757,32 @@ const throne: Scene = {
 				{
 					responseId: 'ok',
 					responseText: 'Fine',
-					retort: 'Go do a quest or something',
+					retort: 'Go do a quest or something'
 				}
 			],
 			detect: [
 				{
 					flag: 'killedGoblins',
 					startText: `Word of your deeds has reached the king and he has decided to give you and audience.`,
-					responses: [{
-						responseId: 'thanks',
-						responseText: `Great`,
-						retort: `You don't see this retort`,
-						unlockVas: ['vasKing'],
-						lockVas: ['vasThroneGuard']
-					}]
+					responses: [
+						{
+							responseId: 'thanks',
+							responseText: `Great`,
+							retort: `You don't see this retort`,
+							unlockVas: ['vasKing'],
+							lockVas: ['vasThroneGuard']
+						}
+					]
 				},
 				{
-					flag:'smashedMedallion',
-					locked:true,
+					flag: 'smashedMedallion',
+					locked: true
 				},
 				{
-					flag:'placedMedallion',
-					locked:true,
+					flag: 'placedMedallion',
+					locked: true
 				}
-			
-			],
+			]
 		},
 		{
 			unitId: 'vasKing',
@@ -780,7 +796,7 @@ const throne: Scene = {
 					responseText: 'Yep will do',
 					retort: 'Yes good, gooooood...',
 					unlockVas: ['vasChamberFromThrone'],
-					lock: ['nope'],
+					lock: ['nope']
 				},
 				{
 					responseId: 'nope',
@@ -795,22 +811,27 @@ const throne: Scene = {
 				{
 					flag: 'smashedMedallion',
 					startText: `You have betrayed me stranger. And after I put my faith in you. You will suffer. Prepare yourself, I am sending you to a place from which there is no return.`,
-					responses: [{
-						responseId: 'ohno',
-						responseText: `Oh noooo`,
-						retort: 'hehehehe',
-					}],
+					responses: [
+						{
+							responseId: 'ohno',
+							responseText: `Oh noooo`,
+							retort: 'hehehehe'
+						}
+					]
 				},
 				{
 					flag: 'placedMedallion',
 					startText: `'Stranger. You have done my bidding, I thank you.`,
-					responses: [{
-						responseId: 'yep',
-						responseText: `Happy to help.`,
-						retort: 'I have more tasks for you. I have opened a portal to a place where great treasures are. Go gather some treasure.',
-					}],
-				},
-			],
+					responses: [
+						{
+							responseId: 'yep',
+							responseText: `Happy to help.`,
+							retort:
+								'I have more tasks for you. I have opened a portal to a place where great treasures are. Go gather some treasure.'
+						}
+					]
+				}
+			]
 		},
 		{
 			unitId: 'vasRealmFromThrone',
@@ -821,14 +842,14 @@ const throne: Scene = {
 			actionsWithRequirements: [{ travelTo: 'realmOfMadness' }],
 			detect: [
 				{
-					locked:false,
+					locked: false,
 					flag: 'smashedMedallion'
 				},
 				{
-					locked:false,
+					locked: false,
 					flag: 'placedMedallion'
-				},
-			],
+				}
+			]
 		},
 		{
 			unitId: 'vasChamberFromThrone',
@@ -836,7 +857,9 @@ const throne: Scene = {
 			displayName: 'Dungeon',
 			sprite: 'temple',
 			startText: 'A musty staircase down into the depths of the castle',
-			actionsWithRequirements: [{ requiresNotFlags: ['smashedMedallion'], travelTo: 'tunnelChamber' }],
+			actionsWithRequirements: [
+				{ requiresNotFlags: ['smashedMedallion'], travelTo: 'tunnelChamber' }
+			],
 			detect: [
 				{
 					flag: 'smashedMedallion',
@@ -845,63 +868,64 @@ const throne: Scene = {
 				{
 					flag: 'placedMedallion',
 					locked: false
-				},
-			],
+				}
+			]
 		},
 		{
 			unitId: 'vasCastleFromThrone',
 			displayName: 'Castle Grounds',
 			sprite: 'castle',
 			startText: 'Go back to the castle grounds',
-			actionsWithRequirements: [{
-				requiresNotFlags: ['smashedMedallion'],
-				travelTo: 'castle'
-			}],
+			actionsWithRequirements: [
+				{
+					requiresNotFlags: ['smashedMedallion'],
+					travelTo: 'castle'
+				}
+			],
 			detect: [
 				{
 					flag: 'smashedMedallion',
 					locked: true
 				}
-			],
-		},
-	],
-}
+			]
+		}
+	]
+};
 
 const realmOfMadness: Scene = {
-	sceneDataId:`realmOfMadness`,
+	sceneDataId: `realmOfMadness`,
 	displayName: 'The Realm of Madness',
 	sceneTexts: {
 		fallback: `Such madness`
 	},
-	spawnsEnemiesOnEnter:[
+	spawnsEnemiesOnEnter: [
 		{
-			eName:'Mad Troll',
-			eTemp:'troll',
+			eName: 'Mad Troll',
+			eTemp: 'troll'
 		}
 	],
-	vases:[
+	vases: [
 		{
-			displayName:'Portal',
-			sprite:'portal',
-			startText:`A portal back to the throne room`,
-			unitId:'vasPortalMad',
-			actionsWithRequirements:[
+			displayName: 'Portal',
+			sprite: 'portal',
+			startText: `A portal back to the throne room`,
+			unitId: 'vasPortalMad',
+			actionsWithRequirements: [
 				{
-					travelTo:'throne',
-				},
-			],
-		},
-	],
-}
-
+					travelTo: 'throne'
+				}
+			]
+		}
+	]
+};
 
 const forestPassage: Scene = {
-	sceneDataId:`forestPassage`,
+	sceneDataId: `forestPassage`,
 	landscape: 'grimForest',
 	displayName: 'Hidden Passage',
 	sceneTexts: {
 		fallback: `After what feels like hours scrambling in the fetid soil and dodging the bites of the foul crawling creatures that call the forest home, you stumble upon an entrace.\n\nIt's so dark that you can hardly make out an exit. Feeling around, your hand brush against the walls. They feel warm. As if they were alive.`,
-		goblinCamp: `You leave the camp and squeeze back into the dank passage`,
+		goblinCamp: `You leave the camp and squeeze back into the dank passage`
 	},
 	vases: [
 		{
@@ -915,7 +939,7 @@ const forestPassage: Scene = {
 					retort: `Not the best against goblins but hey, stab em up! You remember how to reset NPC conversations right?`,
 					unlockVas: ['vasFreeDagger'],
 					lock: ['freeClub'],
-					unlock: ['tips'],
+					unlock: ['tips']
 				},
 				{
 					responseId: 'freeClub',
@@ -923,16 +947,16 @@ const forestPassage: Scene = {
 					retort: `A fine choice! Bludgeon those enemies!`,
 					unlockVas: ['vasFreeClub'],
 					lock: ['freeDagger'],
-					unlock: ['tips'],
+					unlock: ['tips']
 				},
 				{
 					responseId: 'tips',
 					startsLocked: true,
 					responseText: `Any tips for the battle?`,
-					retort: `Remember goblins wear light armor. Target enraged enemies first. Make sure you've found the potion hidden at the castle.`,
-				},
+					retort: `Remember goblins wear light armor. Target enraged enemies first. Make sure you've found the potion hidden at the castle.`
+				}
 			],
-			sprite: 'druid',
+			sprite: 'druid'
 		},
 		{
 			unitId: 'vasFreeClub',
@@ -940,9 +964,11 @@ const forestPassage: Scene = {
 			sprite: 'club',
 			startText: `A well worn club. It's slow but hits hard. Good against light armor.`,
 			startsLocked: true,
-			actionsWithRequirements: [{
-				pickupItem: 'club',
-			}],
+			actionsWithRequirements: [
+				{
+					pickupItem: 'club'
+				}
+			]
 		},
 		{
 			unitId: 'vasFreeDagger',
@@ -954,7 +980,7 @@ const forestPassage: Scene = {
 				{
 					pickupItem: 'dagger'
 				}
-			],
+			]
 		},
 		{
 			unitId: 'vasPassageTravel',
@@ -963,38 +989,40 @@ const forestPassage: Scene = {
 			startText: `You are in a passage. At one end you see Bramblefoot Woods. At the other, a campsite`,
 			actionsWithRequirements: [
 				{
-					travelTo: 'goblinCamp',
+					travelTo: 'goblinCamp'
 				},
 				{
-					travelTo: 'forest',
-				},
-			],
-		},
-	],
-}
+					travelTo: 'forest'
+				}
+			]
+		}
+	]
+};
 
 const goblinCamp: Scene = {
-	sceneDataId:`goblinCamp`,
+	sceneDataId: `goblinCamp`,
 	displayName: 'Goblin Campsite',
 	setsFlagOnVictory: 'killedGoblins',
 	spawnsEnemiesOnEnter: [
 		{
 			eName: 'Gorlak',
-			eTemp: 'goblin',
+			eTemp: 'goblin'
 		},
 		{
 			eName: 'Murk',
 			eTemp: 'goblin',
-			statuses: [{
-				statusId:'rage',
-				count:3
-			}]
-		},
+			statuses: [
+				{
+					statusId: 'rage',
+					count: 3
+				}
+			]
+		}
 	],
 	spawnsEnemiesOnBattleJoin: [
 		{
 			eTemp: 'goblin'
-		},
+		}
 	],
 	sceneTexts: {
 		fallback: `Urged on by by your own fear and by some unknown inspiration, you fumble your way through the darkness towards the light. You are blinded as you step through and are greeted with the sight of a ramshackle encampment`
@@ -1005,13 +1033,13 @@ const goblinCamp: Scene = {
 			displayName: 'Travel',
 			sprite: 'signpost',
 			startText: 'With the goblins slain you are free to travel about the lands',
-			actionsWithRequirements: [{ travelTo: 'forestPassage' }, { travelTo: 'castle' }],
-		},
-	],
-}
+			actionsWithRequirements: [{ travelTo: 'forestPassage' }, { travelTo: 'castle' }]
+		}
+	]
+};
 
 const tunnelChamber: Scene = {
-	sceneDataId:`tunnelChamber`,
+	sceneDataId: `tunnelChamber`,
 	displayName: 'Bramblemore Dungeon',
 	sceneTexts: {
 		fallback: `You wend your way down a neverending series of corridors and pathways that seem to go on for an enternity. It becomes narrower and narrower, and the heat becomes almost unbearable. The path suddenly opens into a great chamber.`
@@ -1022,26 +1050,28 @@ const tunnelChamber: Scene = {
 			displayName: 'Altar',
 			sprite: 'altar',
 			startText: `It's the altar the king told me about`,
-			actionsWithRequirements: [{
-				requiresNotFlags: ['placedMedallion', 'smashedMedallion'],
-				setsFlag: 'placedMedallion',
-				bText: "Place the medallion upon the altar",
-				spawnsEnemies: [
-					{
-						eName: 'Hooded Figure',
-						eTemp: 'orc',
-					},
-					{
-						eName: 'Shootah',
-						eTemp: 'darter',
-						statuses:[{statusId:'hidden',count:2}]
-					},
-				]
-			}, {
-				requiresNotFlags: ['placedMedallion', 'smashedMedallion'],
-				setsFlag: 'smashedMedallion',
-				bText: 'Smash the medallion',
-			}
+			actionsWithRequirements: [
+				{
+					requiresNotFlags: ['placedMedallion', 'smashedMedallion'],
+					setsFlag: 'placedMedallion',
+					bText: 'Place the medallion upon the altar',
+					spawnsEnemies: [
+						{
+							eName: 'Hooded Figure',
+							eTemp: 'orc'
+						},
+						{
+							eName: 'Shootah',
+							eTemp: 'darter',
+							statuses: [{ statusId: 'hidden', count: 2 }]
+						}
+					]
+				},
+				{
+					requiresNotFlags: ['placedMedallion', 'smashedMedallion'],
+					setsFlag: 'smashedMedallion',
+					bText: 'Smash the medallion'
+				}
 			],
 			detect: [
 				{
@@ -1050,8 +1080,8 @@ const tunnelChamber: Scene = {
 				},
 				{
 					flag: 'placedMedallion',
-					startText: `The medallion was placed on the altar, it opens a secret door, revealing an item`,
-				},
+					startText: `The medallion was placed on the altar, it opens a secret door, revealing an item`
+				}
 			]
 		},
 		{
@@ -1060,34 +1090,32 @@ const tunnelChamber: Scene = {
 			sprite: 'armorStand',
 			startsLocked: true,
 			startText: 'Plate mail limits the amount of damage you take from each strike.',
-			actionsWithRequirements: [
-				{ requiresFlags: ['placedMedallion'], pickupItem: 'plateMail' }
-			],
+			actionsWithRequirements: [{ requiresFlags: ['placedMedallion'], pickupItem: 'plateMail' }],
 			detect: [
 				{
 					flag: 'placedMedallion',
-					locked: false,
-				},
-			],
+					locked: false
+				}
+			]
 		},
 		{
-			unitId:'vasAltarReward2',
-			displayName:'Staff',
-			sprite:'staff',
-			startText:`An awesome staff`,
-			startsLocked:true,
-			actionsWithRequirements:[
+			unitId: 'vasAltarReward2',
+			displayName: 'Staff',
+			sprite: 'staff',
+			startText: `An awesome staff`,
+			startsLocked: true,
+			actionsWithRequirements: [
 				{
-					requiresFlags:['smashedMedallion'],
-					pickupItem:'fireStaff',
-				},
+					requiresFlags: ['smashedMedallion'],
+					pickupItem: 'fireStaff'
+				}
 			],
 			detect: [
 				{
 					flag: 'smashedMedallion',
-					locked: false,
-				},
-			],
+					locked: false
+				}
+			]
 		},
 		{
 			unitId: 'vasThroneFromDungeon',
@@ -1096,11 +1124,11 @@ const tunnelChamber: Scene = {
 			startText: 'Head back up to the throne room',
 			actionsWithRequirements: [{ travelTo: 'throne' }]
 		}
-	],
-}
+	]
+};
 
 const armory: Scene = {
-	sceneDataId:`armory`,
+	sceneDataId: `armory`,
 	displayName: 'Dev Room',
 	sceneTexts: {
 		fallback: `Grab some gear!`
@@ -1110,47 +1138,44 @@ const armory: Scene = {
 			player.devActions.push({
 				buttonText: `Equip ${item.id}`,
 				devAction() {
-					equipItem(player, item.id)
-				},
-			})
+					equipItem(player, item.id);
+				}
+			});
 		}
 		for (const id in enemyTemplates) {
 			player.devActions.push({
 				buttonText: `Spawn ${id}`,
 				devAction() {
-					let e : EnemyForSpawning = {eTemp:id as EnemyTemplateId}
-					spawnEnemy(e, player.currentUniqueSceneId, player.unitId)
-				},
-			})
+					const e: EnemyForSpawning = { eTemp: id as EnemyTemplateId };
+					spawnEnemy(e, player.currentUniqueSceneId, player.unitId);
+				}
+			});
 		}
 	},
-	vases:[
+	vases: [
 		{
 			unitId: 'vasLeaveDev',
 			displayName: 'Portal',
 			sprite: 'portal',
 			startText: `A portal that takes you to your last checkpoint`,
-			actionsWithRequirements: [
-				{ travelToCheckpoint: true },
-			]
-		},
+			actionsWithRequirements: [{ travelToCheckpoint: true }]
+		}
 	]
-}
+};
 
+scenesData.push(dead);
+scenesData.push(forest);
+scenesData.push(castle);
+scenesData.push(throne);
+scenesData.push(house);
+scenesData.push(forestPassage);
+scenesData.push(goblinCamp);
+scenesData.push(tunnelChamber);
+scenesData.push(realmOfMadness);
+scenesData.push(armory);
 
-scenesData.push(dead)
-scenesData.push(forest)
-scenesData.push(castle)
-scenesData.push(throne)
-scenesData.push(house)
-scenesData.push(forestPassage)
-scenesData.push(goblinCamp)
-scenesData.push(tunnelChamber)
-scenesData.push(realmOfMadness)
-scenesData.push(armory)
-
-scenesData.push(tutorial)
-scenesData.push(trainingRoom0)
-scenesData.push(trainingRoom1)
-scenesData.push(trainingRoom2)
-scenesData.push(trainingRoom3)
+scenesData.push(tutorial);
+scenesData.push(trainingRoom0);
+scenesData.push(trainingRoom1);
+scenesData.push(trainingRoom2);
+scenesData.push(trainingRoom3);

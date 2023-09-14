@@ -47,11 +47,16 @@
 	);
 
 	async function guestArrived() {
-		if ($currentAnimation == undefined || $host == undefined || $guestId == undefined || $lastMsgFromServer == undefined) return;
+		if (
+			$currentAnimation == undefined ||
+			$host == undefined ||
+			$guestId == undefined ||
+			$lastMsgFromServer == undefined
+		)
+			return;
 
 		let guestIsMe = $guestId == $lastMsgFromServer.yourInfo.unitId;
 		if ($currentAnimation.behavior.kind == 'travel') {
-
 			// remove the traveller from visuals
 			$allVisualUnitProps = $allVisualUnitProps.filter((v) => v.actual.entity.unitId != $guestId);
 
@@ -66,26 +71,24 @@
 		}
 		if ($currentAnimation.takesItem) {
 			// const takenItem = $currentAnimation.takesItem
-			if(guestIsMe){
+			if (guestIsMe) {
 				pickedup = true;
 			}
 			updateUnit($guestId, (vup) => {
-				if(vup.actual.kind == 'player'){
-					if($lastMsgFromServer){
-						if(vup.actual.entity.unitId == $lastMsgFromServer.yourInfo.unitId){
+				if (vup.actual.kind == 'player') {
+					if ($lastMsgFromServer) {
+						if (vup.actual.entity.unitId == $lastMsgFromServer.yourInfo.unitId) {
 							vup.sprite = heroSpriteFromClass($lastMsgFromServer.yourInfo.class);
-							vup.portrait = getHeroPortrait($lastMsgFromServer.yourInfo.class)
-						}else{
-							for (const p of $lastMsgFromServer.otherPlayers){
-								if(p.unitId == vup.actual.entity.unitId){
+							vup.portrait = getHeroPortrait($lastMsgFromServer.yourInfo.class);
+						} else {
+							for (const p of $lastMsgFromServer.otherPlayers) {
+								if (p.unitId == vup.actual.entity.unitId) {
 									vup.sprite = heroSpriteFromClass(p.class);
-									vup.portrait = getHeroPortrait(p.class)
+									vup.portrait = getHeroPortrait(p.class);
 								}
 							}
 						}
-						
 					}
-
 				}
 			});
 			await tick();
@@ -98,9 +101,8 @@
 			return;
 		}
 		if (pickedup && $lastMsgFromServer) {
-			
-			let csForEach = $convoStateForEachVAS.get($host.scene)
-			if(csForEach){
+			let csForEach = $convoStateForEachVAS.get($host.scene);
+			if (csForEach) {
 				let cs = csForEach.get($host.id);
 				if (cs) {
 					cs.isLocked = true;
@@ -115,7 +117,8 @@
 	<div class="unitAndArea">
 		<div
 			class="home placeHolder"
-			class:selected={!pickedup && $selectedDetail &&
+			class:selected={!pickedup &&
+				$selectedDetail &&
 				$selectedDetail.kind == 'vas' &&
 				$selectedDetail?.entity.id == hostId}
 			on:click|preventDefault|stopPropagation={() => {

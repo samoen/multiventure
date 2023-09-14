@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { statusImages } from '$lib/client/assets';
-	import { allVisualUnitProps, lastMsgFromServer, selectedDetail, successcreds, type VisualUnitProps } from '$lib/client/ui';
+	import {
+		allVisualUnitProps,
+		lastMsgFromServer,
+		selectedDetail,
+		successcreds,
+		type VisualUnitProps
+	} from '$lib/client/ui';
 	import type { StatusId } from '$lib/server/statuses';
 
 	import type { StatusEffect, StatusState, UnitId } from '$lib/utils';
@@ -9,63 +15,69 @@
 
 	export let hostId: UnitId;
 	let shouldDie = false;
-	const vu = derived(allVisualUnitProps,($allVisualUnitProps)=>{
+	const vu = derived(allVisualUnitProps, ($allVisualUnitProps) => {
 		const res = $allVisualUnitProps.find((v) => v.actual.entity.unitId == hostId);
-		return res 
-	}) 
+		return res;
+	});
 
-	const hpBar = derived(vu,($vu)=>{
-		return $vu ? ($vu.actual.entity.health > 0 ? 100 * ($vu.actual.entity.health / $vu.actual.entity.maxHealth) : 0) : 0;
-	})
-	
-	vu.subscribe(r=>{
-			if (r && (r.actual.kind == 'enemy' && r.actual.entity.health < 1)) {
-				die();
-			}
-	})
+	const hpBar = derived(vu, ($vu) => {
+		return $vu
+			? $vu.actual.entity.health > 0
+				? 100 * ($vu.actual.entity.health / $vu.actual.entity.maxHealth)
+				: 0
+			: 0;
+	});
+
+	vu.subscribe((r) => {
+		if (r && r.actual.kind == 'enemy' && r.actual.entity.health < 1) {
+			die();
+		}
+	});
 
 	async function die() {
 		await tick();
 		shouldDie = true;
 	}
 	export let flip: boolean;
-	const statuses = derived(vu,($vu)=>{
-		let s : StatusState[] = [];
-		if(!$vu)return s
+	const statuses = derived(vu, ($vu) => {
+		let s: StatusState[] = [];
+		if (!$vu) return s;
 
 		if ($vu.actual.kind == 'enemy') {
 			// statuses = $vu.actual.enemy.statuses.map(s=>s.status)
 			if ($vu.actual.entity.statuses) {
-				for (const st of $vu.actual.entity.statuses){
-					let alreadyIn = s.find(e=>e.statusId == st.statusId)
-					if(st.count > 0 && alreadyIn == undefined){
-						s.push(st)
+				for (const st of $vu.actual.entity.statuses) {
+					let alreadyIn = s.find((e) => e.statusId == st.statusId);
+					if (st.count > 0 && alreadyIn == undefined) {
+						s.push(st);
 					}
 				}
 			}
 		}
 		if ($vu.actual.kind == 'player') {
-			for (const st of $vu.actual.entity.statuses){
-				if(st.count > 0){
-					s.push(st)
+			for (const st of $vu.actual.entity.statuses) {
+				if (st.count > 0) {
+					s.push(st);
 				}
 			}
 		}
-		return s
-	})
-
-	
+		return s;
+	});
 </script>
 
 {#if $vu && $successcreds}
-	<div class="top" 
-	class:noOpacity={shouldDie}
-	class:selected={!shouldDie && $selectedDetail && $selectedDetail.kind == 'vup' && $selectedDetail?.entity.actual.entity.unitId == hostId}
+	<div
+		class="top"
+		class:noOpacity={shouldDie}
+		class:selected={!shouldDie &&
+			$selectedDetail &&
+			$selectedDetail.kind == 'vup' &&
+			$selectedDetail?.entity.actual.entity.unitId == hostId}
 	>
 		<div class="nameHolder">
-			<span class="selfIndicator"
+			<span class="selfIndicator">
+				{$vu.actual.entity.displayName == $successcreds.yourHeroName ? '+' : ''}</span
 			>
-				{$vu.actual.entity.displayName == $successcreds.yourHeroName ? '+' : ''}</span>
 			<span class="nametag">{$vu.actual.entity.displayName}</span>
 		</div>
 		<div class="outerHeroSprite">
@@ -75,11 +87,11 @@
 				{/each}
 			</div>
 			<img
-			class="heroSprite"
+				class="heroSprite"
 				class:flipped={flip && !$vu.tilt}
 				class:tiltedHero={$vu.tilt && $vu.actual.kind == 'player'}
 				class:tiltedEnemy={$vu.tilt && $vu.actual.kind == 'enemy'}
-				class:faded={$vu.actual.entity.health < 1 }
+				class:faded={$vu.actual.entity.health < 1}
 				alt="you"
 				src={$vu.sprite}
 			/>
@@ -125,11 +137,11 @@
 	.faded {
 		opacity: 0.5;
 	}
-	.tiltedHero{
-		transform: rotate(10deg) translateX(20px) translateY(-5px)
+	.tiltedHero {
+		transform: rotate(10deg) translateX(20px) translateY(-5px);
 	}
-	.tiltedEnemy{
-		transform: scaleX(-1) rotate(10deg) translateX(20px) translateY(-5px)
+	.tiltedEnemy {
+		transform: scaleX(-1) rotate(10deg) translateX(20px) translateY(-5px);
 	}
 	/* .bold {
 		font-weight: bold;

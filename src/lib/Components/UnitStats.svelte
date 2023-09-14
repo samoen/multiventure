@@ -17,16 +17,16 @@
 	$: enemy = vu.actual.kind == 'enemy' ? vu.actual.entity : undefined;
 	$: str =
 		vu.actual.kind == 'enemy' ? vu.actual.entity.template.baseDamage : vu.actual.entity.strength;
-    let bonusStr = ''
-    $: {
-        if(vu.actual.kind == 'player'){
-            if(vu.actual.entity.bonusStrength > 0){
-                bonusStr = ` +${vu.actual.entity.bonusStrength}`
-            }
-        }else{
-            bonusStr = ''
-        }
-    }
+	let bonusStr = '';
+	$: {
+		if (vu.actual.kind == 'player') {
+			if (vu.actual.entity.bonusStrength > 0) {
+				bonusStr = ` +${vu.actual.entity.bonusStrength}`;
+			}
+		} else {
+			bonusStr = '';
+		}
+	}
 	$: agi = vu.actual.kind == 'enemy' ? vu.actual.entity.template.speed : vu.actual.entity.agility;
 	$: aggGain = vu.actual.kind == 'enemy' ? vu.actual.entity.template.aggroGain : 0;
 	$: strikes = vu.actual.kind == 'enemy' ? vu.actual.entity.template.strikes ?? 1 : 0;
@@ -42,9 +42,9 @@
 		{/if}
 	</div>
 	<div class="statLine">
-        <img src={heart} alt='a heart'>
-        <div>{vu.actual.entity.health}</div>
-    </div>
+		<img src={heart} alt="a heart" />
+		<div>{vu.actual.entity.health}</div>
+	</div>
 	{#if vu.actual.kind == 'player'}
 		<div class="statuses">
 			{#each vu.actual.entity.statuses as s}
@@ -131,10 +131,10 @@
 	.top {
 		display: inline-block;
 	}
-    .classTitle{
-        font-weight: bold;
-        margin-left: 3px;
-    }
+	.classTitle {
+		font-weight: bold;
+		margin-left: 3px;
+	}
 	.itemStats {
 		/* margin-top: 10px; */
 		display: flex;
@@ -162,6 +162,6 @@
 		/* border: 1px solid brown; */
 	}
 	/* .statLine > img { */
-		/* border-right: 1px solid brown; */
+	/* border-right: 1px solid brown; */
 	/* } */
 </style>

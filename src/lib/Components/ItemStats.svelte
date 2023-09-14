@@ -16,103 +16,103 @@
 
 	export let itemState: ItemState;
 </script>
-<div class="top">
 
-    <div class='title'>
-        <p>
-            {itemState.stats.id}
-        </p>
-    </div>
-    <!-- {#if itemState.stats} -->
-    <!-- <div class="binaryItems"> -->
-        <!-- {#if itemState.stats.behavior?.kind == 'center'}
+<div class="top">
+	<div class="title">
+		<p>
+			{itemState.stats.id}
+		</p>
+	</div>
+	<!-- {#if itemState.stats} -->
+	<!-- <div class="binaryItems"> -->
+	<!-- {#if itemState.stats.behavior?.kind == 'center'}
                 <img class="binary" src={saw} alt="Splash" />
         {/if} -->
-        <!-- {#if itemState.stats.grantsImmunity}
+	<!-- {#if itemState.stats.grantsImmunity}
                 <img class="binary" src={crown} alt="No retaliation" />
         {/if} -->
-        <!-- {#if itemState.stats.putsStatusOnAffected?.remove}
+	<!-- {#if itemState.stats.putsStatusOnAffected?.remove}
                 <img class="binary" src={statusImages[itemState.stats.putsStatusOnAffected.statusId]} alt="No retaliation" />
         {/if} -->
-    <!-- </div> -->
-    <!-- {/if} -->
-    <div class="stats">
-        {#if itemState.stats}
-            {#if itemState.stats.damages}
-                <div class="statLine">
-                    <img src={strong} alt="a heart" />
-                    <div>{itemState.stats.damages.baseDmg}</div>
-                </div>
-            {/if}
-            {#if itemState.stats.damages && itemState.stats.damages.strikes > 1}
-                <div class="statLine">
-                    <img src={crossedSwords} alt="a heart" />
-                    <div>{itemState.stats.damages.strikes}</div>
-                </div>
-            {/if}
-            {#if itemState.stats.heals}
-                <div class="statLine">
-                    <img src={medpack} alt="a heart" />
-                    <div>{itemState.stats.heals.baseHeal}</div>
-                </div>
-            {/if}
-            {#if itemState.stats.startStock}
-                <div class="statLine">
-                    <img src={sack} alt="a sack" />
-                    <div>{itemState.stats.startStock}</div>
-                </div>
-            {/if}
-            {#if itemState.stats.speed && itemState.stats.speed > 0}
-                <div class="statLine">
-                    <img src={foot} alt="a heart" />
-                    <div>{itemState.stats.speed}</div>
-                </div>
-            {/if}
-            {#if itemState.stats.provoke && itemState.stats.provoke > 0}
-                <div class="statLine">
-                    <img src={teeth} alt="a heart" />
-                    <div>{itemState.stats.provoke}</div>
-                </div>
-            {/if}
-            {#if itemState.stats.damageReduction}
-            <div class="statLine">
-                <img src={lightShield} alt="a heart" />
-                <div>{itemState.stats.damageReduction}</div>
-            </div>
-            {/if}
-            {#if itemState.stats.damageLimit}
-            <div class="statLine">
-                <img src={heavyShield} alt="a heart" />
-                <div>{itemState.stats.damageLimit}</div>
-            </div>
-            {/if}
-            {#if itemState.stats.cooldown}
-            <div class="statLine">
-                <img src={loading} alt="a heart" />
-                <div>{itemState.stats.cooldown}</div>
-            </div>
-            {/if}
-            {#if itemState.stats.warmup}
-            <div class="statLine">
-                <img src={candle} alt="a heart" />
-                <div>{itemState.stats.warmup}</div>
-            </div>
-            {/if}
-        {/if}
-    </div>
+	<!-- </div> -->
+	<!-- {/if} -->
+	<div class="stats">
+		{#if itemState.stats}
+			{#if itemState.stats.damages}
+				<div class="statLine">
+					<img src={strong} alt="a heart" />
+					<div>{itemState.stats.damages.baseDmg}</div>
+				</div>
+			{/if}
+			{#if itemState.stats.damages && itemState.stats.damages.strikes > 1}
+				<div class="statLine">
+					<img src={crossedSwords} alt="a heart" />
+					<div>{itemState.stats.damages.strikes}</div>
+				</div>
+			{/if}
+			{#if itemState.stats.heals}
+				<div class="statLine">
+					<img src={medpack} alt="a heart" />
+					<div>{itemState.stats.heals.baseHeal}</div>
+				</div>
+			{/if}
+			{#if itemState.stats.startStock}
+				<div class="statLine">
+					<img src={sack} alt="a sack" />
+					<div>{itemState.stats.startStock}</div>
+				</div>
+			{/if}
+			{#if itemState.stats.speed && itemState.stats.speed > 0}
+				<div class="statLine">
+					<img src={foot} alt="a heart" />
+					<div>{itemState.stats.speed}</div>
+				</div>
+			{/if}
+			{#if itemState.stats.provoke && itemState.stats.provoke > 0}
+				<div class="statLine">
+					<img src={teeth} alt="a heart" />
+					<div>{itemState.stats.provoke}</div>
+				</div>
+			{/if}
+			{#if itemState.stats.damageReduction}
+				<div class="statLine">
+					<img src={lightShield} alt="a heart" />
+					<div>{itemState.stats.damageReduction}</div>
+				</div>
+			{/if}
+			{#if itemState.stats.damageLimit}
+				<div class="statLine">
+					<img src={heavyShield} alt="a heart" />
+					<div>{itemState.stats.damageLimit}</div>
+				</div>
+			{/if}
+			{#if itemState.stats.cooldown}
+				<div class="statLine">
+					<img src={loading} alt="a heart" />
+					<div>{itemState.stats.cooldown}</div>
+				</div>
+			{/if}
+			{#if itemState.stats.warmup}
+				<div class="statLine">
+					<img src={candle} alt="a heart" />
+					<div>{itemState.stats.warmup}</div>
+				</div>
+			{/if}
+		{/if}
+	</div>
 </div>
 
 <style>
-    .title{
-        display: block;
-        font-weight: bold;
-        margin-left: 3px;
-        /* border: 2px solid blue; */
-    }
-    .stats{
-        display: inline-flex;
-        flex-direction: column;
-    }
+	.title {
+		display: block;
+		font-weight: bold;
+		margin-left: 3px;
+		/* border: 2px solid blue; */
+	}
+	.stats {
+		display: inline-flex;
+		flex-direction: column;
+	}
 	.top {
 		display: block;
 		/* min-width: 20px;
@@ -126,7 +126,7 @@
 		flex-direction: row;
 		/* border: 1px solid brown; */
 	}
-    /* .binaryItems{
+	/* .binaryItems{
         display: flex;
         flex-wrap: wrap;
     }
@@ -136,6 +136,6 @@
         display: inline-block;
     } */
 	/* .statLine > img { */
-		/* border-right: 1px solid brown; */
+	/* border-right: 1px solid brown; */
 	/* } */
 </style>

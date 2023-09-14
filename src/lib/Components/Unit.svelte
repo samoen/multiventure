@@ -26,15 +26,9 @@
 		handlePutsStatuses,
 		animationsInWaiting,
 		visualOpacity,
-
 		handleModifyHealth,
-
 		handleModAggros,
-
 		handleHealAnimations
-
-
-
 	} from '$lib/client/ui';
 	import { tick } from 'svelte';
 	import { derived, writable, type Writable } from 'svelte/store';
@@ -65,7 +59,7 @@
 		}
 	);
 
-	let boundHostHeight:number
+	let boundHostHeight: number;
 	let placeHoldHeight = 'auto';
 	const hostHome = derived(
 		[currentAnimation, subAnimationStage],
@@ -79,7 +73,7 @@
 				$subAnimationStage == 'fire'
 			) {
 				// console.log('host leave');
-				placeHoldHeight = `${boundHostHeight}px`
+				placeHoldHeight = `${boundHostHeight}px`;
 				return false;
 			}
 			return true;
@@ -196,19 +190,19 @@
 				on:introend={async () => {
 					if ($currentAnimation == undefined || $guestId == undefined) return;
 					const anim = $currentAnimation;
-					if(anim.alsoDamages){
-						let animatedTo = anim.alsoDamages.find(a=>a.target == hostId)
-						if(animatedTo){
+					if (anim.alsoDamages) {
+						let animatedTo = anim.alsoDamages.find((a) => a.target == hostId);
+						if (animatedTo) {
 							for (let i = 0; i < animatedTo.amount.length; i++) {
 								updateUnit($guestId, (vup) => {
 									vup.tilt = true;
 								});
 								let stop = false;
-								let r = handleModifyHealth(anim,i)
-								if(r.died.find(d=>d == hostId)){
-									stop = true
+								let r = handleModifyHealth(anim, i);
+								if (r.died.find((d) => d == hostId)) {
+									stop = true;
 								}
-								
+
 								await new Promise((r) => setTimeout(r, 100));
 								updateUnit($guestId, (vup) => {
 									vup.tilt = false;
@@ -218,13 +212,13 @@
 							}
 						}
 					}
-					if(anim.alsoHeals){
-						handleHealAnimations(anim)
+					if (anim.alsoHeals) {
+						handleHealAnimations(anim);
 					}
-					
+
 					handlePutsStatuses(anim);
-					if($lastMsgFromServer){
-						handleModAggros(anim,$lastMsgFromServer.yourInfo.unitId)
+					if ($lastMsgFromServer) {
+						handleModAggros(anim, $lastMsgFromServer.yourInfo.unitId);
 					}
 					if ($guestId == undefined) return;
 					updateUnit($guestId, (vup) => {
@@ -273,11 +267,11 @@
 				on:outrostart={() => {
 					const anim = $currentAnimation;
 					if (!anim) return;
-					handleModifyHealth(anim,0,true)
-					handleHealAnimations(anim)
+					handleModifyHealth(anim, 0, true);
+					handleHealAnimations(anim);
 					handlePutsStatuses(anim);
-					if(!$lastMsgFromServer)return
-					handleModAggros(anim,$lastMsgFromServer.yourInfo.unitId)
+					if (!$lastMsgFromServer) return;
+					handleModAggros(anim, $lastMsgFromServer.yourInfo.unitId);
 				}}
 				on:outroend={() => {
 					nextAnimationIndex(false, false);
@@ -303,12 +297,12 @@
 					let delayNextStep = false;
 					handlePutsStatuses(anim);
 					handleHealAnimations(anim);
-					let hRes = handleModifyHealth(anim,0,true);
-					if(hRes.died.length){
+					let hRes = handleModifyHealth(anim, 0, true);
+					if (hRes.died.length) {
 						delayNextStep = true;
 					}
-					if($lastMsgFromServer){
-						handleModAggros(anim,$lastMsgFromServer?.yourInfo.unitId)
+					if ($lastMsgFromServer) {
+						handleModAggros(anim, $lastMsgFromServer?.yourInfo.unitId);
 					}
 					nextAnimationIndex(false, delayNextStep);
 				}}

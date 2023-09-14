@@ -60,8 +60,8 @@
 	let sceneTexts: HTMLElement;
 
 	// set these true in dev
-	let autoSignup: boolean = true;
-	let autoContinue: boolean = true;
+	let autoSignup = true;
+	let autoContinue = true;
 
 	let sourceErrored: Writable<boolean> = writable(false);
 
@@ -125,14 +125,14 @@
 		if (sceneTexts) sceneTexts.scroll({ top: sceneTexts.scrollHeight, behavior: 'smooth' });
 	}
 
-	function onSourceError(this: EventSource, ev: MessageEvent<any>) {
+	function onSourceError(this:EventSource, ev: MessageEvent<any>){
 		if ($source == undefined) {
-			console.log(' got error from undefined source, weird..');
+			console.log(' got error while source undefined, weird..');
 		}
 		if ($source !== this) {
 			console.log('got error from a different source ');
 		}
-		$source = this;
+		// $source = es;
 		console.log(`event source error ${JSON.stringify(ev)}`, ev);
 		$clientState.status = 'Event source errored';
 		$sourceErrored = true;
@@ -142,12 +142,12 @@
 
 	function onSourceAck(this: EventSource, ev: MessageEvent<any>) {
 		if ($source == undefined) {
-			console.log('got ack from undefined source, weird..');
+			console.log('got ack while source undefined, weird..');
 		}
 		if ($source !== this) {
 			console.log('got ack from a different source');
 		}
-		$source = this;
+		// $source = this;
 		$sourceErrored = false;
 		getWorld();
 		$clientState.loading = false;
@@ -156,14 +156,14 @@
 	function onSourceMsg(this: EventSource, ev: MessageEvent<any>) {
 		// console.log('got msg from source and source is ' + $source);
 		if ($source == undefined) {
-			console.log(' got msg from undefined source, weird..');
+			console.log(' got msg while source undefined, weird..');
 		}
 		if ($source !== this) {
 			console.log('got msg from a different source');
 		}
-		$source = this;
+		// $source = this;
 		$sourceErrored = false;
-		let sMsg = JSON.parse(ev.data);
+		let sMsg : any = JSON.parse(ev.data);
 		if (!isMsgFromServer(sMsg)) {
 			console.log('malformed event from server');
 			return;
@@ -506,7 +506,7 @@
 						on:introend={() => {
 							if ($currentAnimation != undefined) {
 								let anim = $currentAnimation;
-								handleHealAnimations(anim)
+								handleHealAnimations(anim);
 								let hRes = handleModifyHealth(anim, 0, true);
 								let someoneDied = false;
 								if (hRes.died.length) {

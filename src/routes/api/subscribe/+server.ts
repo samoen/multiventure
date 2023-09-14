@@ -29,27 +29,30 @@ export const GET: RequestHandler = async (event) => {
 		if (player.displayName != from) {
 			return json({ error: 'cookie hero not matching hero from cookie id' }, { status: 401 });
 		}
-		if (player.connectionState.con != undefined
+		if (
+			player.connectionState.con != undefined
 			// || player.connectionState.stream != undefined
-			) {
+		) {
 			// return json({ error: 'user already connected' }, { status: 401 });
 			// if (player.connectionState.con != null) {
-				console.log(`${player.displayName} subscribing but already subscribed, con is ${player.connectionState.con}`);
-				
-				// closing here causes infinite subscribe loops?
-				try {
-					player.connectionState.con?.close()
-					await new Promise((resolve) => setTimeout(resolve, 100));
-				} catch (e) {
-					console.log('failed to close already subber')
-				}
+			console.log(
+				`${player.displayName} subscribing but already subscribed, con is ${player.connectionState.con}`
+			);
+
+			// closing here causes infinite subscribe loops?
+			try {
+				player.connectionState.con?.close();
+				await new Promise((resolve) => setTimeout(resolve, 100));
+			} catch (e) {
+				console.log('failed to close already subber');
+			}
 
 			// player.connectionState.con.enqueue(encode('closing', {}));
 
 			// // wait for old subscriber to cancel. Improve this
 			// await new Promise((r) => {
 			// 	setTimeout(r, 1000);
-			// }); 
+			// });
 			// }
 
 			// player.connectionState = null;
@@ -60,36 +63,35 @@ export const GET: RequestHandler = async (event) => {
 			stream: undefined
 		};
 
-		let rs = new ReadableStream({
+		const rs = new ReadableStream({
 			start(c) {
-
-				if (!player || !player.connectionState){
-					console.log('tried to start stream but undefined player or con')
-					return
-				} 
+				if (!player || !player.connectionState) {
+					console.log('tried to start stream but undefined player or con');
+					return;
+				}
 				console.log(`stream started for hero ${player.displayName}`);
 				// player.connectionState.ip = ip;
 				player.connectionState.con = c;
-				pushHappening(`${player.displayName} joined the game`)
+				pushHappening(`${player.displayName} joined the game`);
 				setTimeout(() => {
 					// modifyEnemies()
-					enterSceneOrWakeup(player)
-					updateAllPlayerActions()
+					enterSceneOrWakeup(player);
+					updateAllPlayerActions();
 					sendEveryoneWorld(player.unitId);
 					if (player.connectionState && player.connectionState.con) {
-						console.log('sending ack')
+						console.log('sending ack');
 						try {
 							player.connectionState.con.enqueue(encode(`firstack`, { yes: 'okk' }));
 						} catch (e) {
-							console.log('failed to send ack')
+							console.log('failed to send ack');
 						}
 						// player.animations = []
 					}
 				}, 1);
 			},
-			cancel(reason){
+			cancel(reason) {
 				console.log(`stream cancel handle for hero ${player.displayName}`);
-				if (reason) console.log(`reason: ${reason}`)
+				if (reason) console.log(`reason: ${reason}`);
 				// try {
 				// 	if(player.connectionState.con != undefined){
 				// 		player.connectionState.con?.close();
@@ -101,19 +103,21 @@ export const GET: RequestHandler = async (event) => {
 				// console.log(`setting ${player.heroName} connection con to undefined`)
 				player.connectionState.con = undefined;
 				player.connectionState.stream = undefined;
-				
-				// setTimeout(() => {
-					// modifyEnemies()
-					pushHappening(`${player.displayName} left the game`)
-					sendEveryoneWorld(player.unitId);
-				// }, 1);
-			},
-			
 
+				// setTimeout(() => {
+				// modifyEnemies()
+				pushHappening(`${player.displayName} left the game`);
+				sendEveryoneWorld(player.unitId);
+				// }, 1);
+			}
 		});
 		player.connectionState.stream = rs;
 
-		console.log(`returning readableString for ${player.displayName}, current connections ${JSON.stringify(activePlayers().map(p => p.displayName))}`)
+		console.log(
+			`returning readableString for ${player.displayName}, current connections ${JSON.stringify(
+				activePlayers().map((p) => p.displayName)
+			)}`
+		);
 		return new Response(rs, {
 			headers: {
 				// connection: 'keep-alive',
@@ -122,11 +126,8 @@ export const GET: RequestHandler = async (event) => {
 			}
 		});
 	} catch (e) {
-		console.log('caught error during subscribe')
-		console.error(e)
-		return json({ oops: true }, { status: 500 })
+		console.log('caught error during subscribe');
+		console.error(e);
+		return json({ oops: true }, { status: 500 });
 	}
 };
-
-
-

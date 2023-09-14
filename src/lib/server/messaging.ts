@@ -1,10 +1,35 @@
-import type { AggroInClient, BattleAnimation, BattleEventEntity, EnemyInClient, EnemyStatusInClient, GameActionSentToClient, HeroId, LandscapeImage, StatusState } from '$lib/utils';
+import type {
+	AggroInClient,
+	BattleAnimation,
+	BattleEventEntity,
+	EnemyInClient,
+	EnemyStatusInClient,
+	GameActionSentToClient,
+	HeroId,
+	LandscapeImage,
+	StatusState
+} from '$lib/utils';
 import { enemiesInScene, getAggroForPlayer } from './enemies';
 import { comboFindClassFromInventory } from './items';
-import { convertServerActionToClientAction, convertVasToClient, immuneDueToStatus, type VisualActionSourceInClient } from './logic';
+import {
+	convertServerActionToClientAction,
+	convertVasToClient,
+	immuneDueToStatus,
+	type VisualActionSourceInClient
+} from './logic';
 import { getSceneData } from './scenes';
 import type { StatusId } from './statuses';
-import { activePlayers, activePlayersInScene, globalFlags, users, type Flag, type GlobalFlag, type HeroName, type Player, type PlayerInClient } from './users';
+import {
+	activePlayers,
+	activePlayersInScene,
+	globalFlags,
+	users,
+	type Flag,
+	type GlobalFlag,
+	type HeroName,
+	type Player,
+	type PlayerInClient
+} from './users';
 
 export const FAKE_LATENCY = 50;
 
@@ -28,7 +53,6 @@ export type MessageFromServer = {
 	landscape: LandscapeImage;
 };
 
-
 export async function sendEveryoneWorld(triggeredBy: HeroId) {
 	await new Promise((r) => {
 		setTimeout(r, FAKE_LATENCY);
@@ -36,40 +60,39 @@ export async function sendEveryoneWorld(triggeredBy: HeroId) {
 	for (const user of users.values()) {
 		if (user.unitId != triggeredBy && user.connectionState.stream && user.connectionState.con) {
 			const toSend = buildNextMessage(user, triggeredBy);
-			let fail = false
+			let fail = false;
 			try {
 				user.connectionState.con.enqueue(encode(`world`, toSend));
 			} catch (e) {
-				console.log(user.displayName + ' failed to enqeue ' + e)
-				fail = true
+				console.log(user.displayName + ' failed to enqeue ' + e);
+				fail = true;
 			}
 			if (fail) {
 				try {
-					user.connectionState.con?.close()
+					user.connectionState.con?.close();
 				} catch (e) {
-					console.log('failed to enque and failed to close!')
+					console.log('failed to enque and failed to close!');
 				}
 				try {
 					// user.connectionState.stream?.cancel()
 				} catch (e) {
-					console.log('failed to enque and failed to cancel stream!')
+					console.log('failed to enque and failed to cancel stream!');
 				}
-				user.connectionState.con = undefined
-				user.connectionState.stream = undefined
+				user.connectionState.con = undefined;
+				user.connectionState.stream = undefined;
 			}
-			user.animations = []
+			user.animations = [];
 		}
 	}
 }
 
-export function statusMapToStatusInClients(s:Map<StatusId,number>):StatusState[]{
-	let result : StatusState[] = []
-	for(let [k,v] of s){
-		result.push({statusId:k,count:v})
+export function statusMapToStatusInClients(s: Map<StatusId, number>): StatusState[] {
+	const result: StatusState[] = [];
+	for (const [k, v] of s) {
+		result.push({ statusId: k, count: v });
 	}
-	return result
+	return result;
 }
-
 
 export function buildNextMessage(forPlayer: Player, triggeredBy: HeroId): MessageFromServer {
 	// console.log(`sending anims ${JSON.stringify(forPlayer.animations)}`)
@@ -77,7 +100,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroId): Messag
 	// 	console.log(`${p.heroName} is at ${JSON.stringify(p.currentUniqueSceneId)}`)
 	// }
 	// console.log(activePlayersInScene2(forPlayer.currentUniqueSceneId).length)
-	let scene = getSceneData(forPlayer)
+	const scene = getSceneData(forPlayer);
 	const nextMsg: MessageFromServer = {
 		triggeredBy: triggeredBy,
 		landscape: scene.landscape ?? 'plains',
@@ -88,11 +111,11 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroId): Messag
 			maxHealth: forPlayer.maxHealth,
 			agility: forPlayer.agility,
 			strength: forPlayer.strength,
-			bonusStrength:forPlayer.bonusStrength,
+			bonusStrength: forPlayer.bonusStrength,
 			inventory: forPlayer.inventory,
 			currentSceneDisplay: scene.displayName,
 			statuses: statusMapToStatusInClients(forPlayer.statuses),
-			class: comboFindClassFromInventory(forPlayer.inventory),
+			class: comboFindClassFromInventory(forPlayer.inventory)
 		},
 		otherPlayers: activePlayersInScene(forPlayer.currentUniqueSceneId)
 			.filter((u) => u.unitId != forPlayer.unitId)
@@ -108,41 +131,43 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroId): Messag
 					inventory: u.inventory,
 					currentSceneDisplay: 'somewhere',
 					statuses: statusMapToStatusInClients(u.statuses),
-					class: comboFindClassFromInventory(u.inventory),
+					class: comboFindClassFromInventory(u.inventory)
 				} satisfies PlayerInClient;
 			}),
 		sceneTexts: forPlayer.sceneTexts,
 		devActions: forPlayer.devActions.map((gameAction) => {
 			return {
-				buttonText: gameAction.buttonText,
+				buttonText: gameAction.buttonText
 			};
 		}),
-		userList: activePlayers().map(u => u.displayName),
-		itemActions: forPlayer.itemActions.map((gameAction) => convertServerActionToClientAction(gameAction)),
+		userList: activePlayers().map((u) => u.displayName),
+		itemActions: forPlayer.itemActions.map((gameAction) =>
+			convertServerActionToClientAction(gameAction)
+		),
 		vasActions: forPlayer.vasActions,
-		visualActionSources: forPlayer.visualActionSources.map(s => {
-			return convertVasToClient(s, forPlayer)
+		visualActionSources: forPlayer.visualActionSources.map((s) => {
+			return convertVasToClient(s, forPlayer);
 		}),
 		happenings: recentHappenings,
 		animations: forPlayer.animations,
 		enemiesInScene: enemiesInScene(forPlayer.currentUniqueSceneId).map((e) => {
 			// console.log(`sending ${e.name} statuses ${JSON.stringify(e.statuses)}`)
-			let aggros: AggroInClient[] = []
-			for (let [k, v] of e.aggros) {
+			const aggros: AggroInClient[] = [];
+			for (const [k, v] of e.aggros) {
 				aggros.push({
 					agg: v,
-					hId: k,
-				})
+					hId: k
+				});
 			}
 
-			let statusesInClient: EnemyStatusInClient[] = []
-			for (let [k, v] of e.statuses) {
-				let sInCs = statusMapToStatusInClients(v)
-				for (const cs of sInCs){
+			const statusesInClient: EnemyStatusInClient[] = [];
+			for (const [k, v] of e.statuses) {
+				const sInCs = statusMapToStatusInClients(v);
+				for (const cs of sInCs) {
 					statusesInClient.push({
-						hId:k,
-						...cs,
-					}satisfies EnemyStatusInClient)
+						hId: k,
+						...cs
+					} satisfies EnemyStatusInClient);
 				}
 			}
 
@@ -155,19 +180,18 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroId): Messag
 				template: e.template,
 				myAggro: getAggroForPlayer(e, forPlayer),
 				aggros: aggros,
-				statuses: statusesInClient,
-			} satisfies EnemyInClient
+				statuses: statusesInClient
+			} satisfies EnemyInClient;
 		}),
 		playerFlags: Array.from(forPlayer.flags),
-		globalFlags: Array.from(globalFlags),
+		globalFlags: Array.from(globalFlags)
 	};
 	// console.log('sending vases '+JSON.stringify(nextMsg.visualActionSources.at(0)))
 	return nextMsg;
 }
 
-
 const textEncoder = new TextEncoder();
-export function encode(event: string, data: object, noretry: boolean = false) {
+export function encode(event: string, data: object, noretry = false) {
 	let toEncode = `event:${event}\ndata: ${JSON.stringify(data)}\n`;
 	if (noretry) {
 		toEncode = toEncode + `retry: -1\n`;
@@ -176,7 +200,7 @@ export function encode(event: string, data: object, noretry: boolean = false) {
 	return textEncoder.encode(toEncode);
 }
 
-export function pushHappening(toPush: string, endSection: boolean = false) {
+export function pushHappening(toPush: string, endSection = false) {
 	recentHappenings.push(toPush);
 	if (recentHappenings.length > 30) {
 		recentHappenings.shift();
