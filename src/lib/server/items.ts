@@ -65,7 +65,8 @@ export const bow: Item = {
 	speed: 3,
 	damages: { affects: 'targetOnly', baseDmg: 20, strikes: 1 },
 	animation: { kind: 'missile', extraSprite: 'arrow' },
-	modifiesAggro: { affects: 'targetOnly', aggroFor: 'justMe', amount: 20 }
+	modifiesAggro: { affects: 'targetOnly', aggroFor: 'justMe', amount: 20 },
+	modifiesStatus: {affects:'targetOnly',statusMod:{statusId:'rage',count:2}}
 };
 
 export const fireStaff: Item = {

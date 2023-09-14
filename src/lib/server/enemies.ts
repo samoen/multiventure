@@ -24,7 +24,7 @@ export type ActiveEnemy = {
 	currentUniqueSceneId: UniqueSceneIdenfitier;
 	health: number;
 	maxHealth: number;
-	damage: number;
+	bonusStrength:number;
 	aggros: Map<HeroId, number>;
 	template: EnemyTemplate;
 	statuses: EnemyStatuses;
@@ -158,7 +158,7 @@ export function spawnEnemy(
 		currentUniqueSceneId: where2,
 		health: modifiedBaseHealth,
 		maxHealth: modifiedBaseHealth,
-		damage: template.baseDamage,
+		bonusStrength : 0,
 		aggros: aggros,
 		template: template,
 		statuses: mapStatuses
@@ -295,27 +295,6 @@ export function pushAnimation({
 	if (leavingScene) {
 		leavingScene.animations.push(battleAnimation);
 	}
-}
-
-export function takePoisonDamage(enemy: ActiveEnemy, player: Player): { dmgDone: number } {
-	if (enemy.health < 1) return { dmgDone: 0 };
-	const dmg = Math.floor(enemy.maxHealth * 0.25);
-	enemy.health -= dmg;
-	pushHappening(`${enemy.name} took ${dmg} damage from ${player.displayName}'s poison`);
-	const result = checkEnemyDeath(enemy);
-	if (result.killed) {
-		pushHappening(`${enemy.name} died from poison`);
-	}
-	pushAnimation({
-		sceneId: enemy.currentUniqueSceneId,
-		battleAnimation: {
-			triggeredBy: player.unitId,
-			source: enemy.unitId,
-			alsoDamages: [{ target: enemy.unitId, amount: [dmg] }],
-			behavior: { kind: 'selfInflicted', extraSprite: 'poison' }
-		}
-	});
-	return { dmgDone: dmg };
 }
 
 export function checkEnemyDeath(target: ActiveEnemy): { killed: boolean } {

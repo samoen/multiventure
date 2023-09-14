@@ -14,7 +14,7 @@ export type VisualActionSourceId = `vas${string}`;
 export type BattleAnimation = {
 	triggeredBy: HeroId;
 	source: UnitId;
-	putsStatuses?: StatusModifier[];
+	putsStatuses?: StatusModifyAnimation[];
 	behavior: AnimationBehavior;
 	alsoDamages?: DamageAnimation[];
 	alsoHeals?: HealAnimation[];
@@ -64,7 +64,7 @@ export type BattleEvent = {
 
 export type StatusMod = { statusId: StatusId; remove?: boolean; count?: number };
 
-export type StatusModifier = { target: UnitId } & StatusMod;
+export type StatusModifyAnimation = { target: UnitId } & StatusMod;
 export type StatusModifierEvent = { target: BattleEventEntity } & StatusMod;
 export type DamageAnimation = { target: UnitId; amount: number[] };
 export type HealAnimation = { target: UnitId; amount: number };

@@ -15,7 +15,7 @@ import {
 	type HeroId,
 	type ItemAnimationBehavior,
 	type StatusEffect,
-	type StatusModifier,
+	type StatusModifyAnimation,
 	type StatusModifierEvent,
 	type UnitId,
 	type VisualActionSourceId,
@@ -27,7 +27,6 @@ import {
 	enemiesInScene,
 	activeEnemies,
 	addAggro,
-	takePoisonDamage,
 	damagePlayer,
 	pushAnimation,
 	getAggroForPlayer,
@@ -526,79 +525,16 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 	if (itemUsed.provoke != undefined) {
 		for (const enemy of enemiesInScene(actionStartedInSceneId)) {
-			let sprite: AnySprite | undefined = undefined;
-			const ad: DamageAnimation[] = [];
-
-			for (const [hId, statusForPlayer] of enemy.statuses) {
-				if (hId == player.unitId) {
-					for (const [k, v] of statusForPlayer) {
-						if (v < 1) continue;
-						const statusData = statusDatas.find((s) => s.id == k);
-						if (!statusData) continue;
-						if (statusData.damagePercent) {
-							// takePoisonDamage(enemy, player)
-							const dmg = Math.floor(enemy.maxHealth * statusData.damagePercent);
-							enemy.health -= dmg;
-							checkEnemyDeath(enemy);
-							ad.push({ target: enemy.unitId, amount: [dmg] });
-							sprite = statusData.selfInflictSprite;
-							pushHappening(`${enemy.name} took ${dmg} damage from ${k}`);
-						}
-						if (statusData.incStr) {
-							enemy.damage += statusData.incStr;
-							pushHappening(`${enemy.name} grows in strength!`);
-						}
-
-						statusForPlayer.set(k, v - 1);
-					}
-				}
-			}
-			if (ad.length && sprite) {
-				pushAnimation({
-					sceneId: player.currentUniqueSceneId,
-					battleAnimation: {
-						triggeredBy: player.unitId,
-						source: enemy.unitId,
-						alsoDamages: ad,
-						behavior: { kind: 'selfInflicted', extraSprite: sprite }
-					}
-				});
+			let statusesForPlayer = enemy.statuses.get(player.unitId)
+			if(statusesForPlayer){
+				handleStatusEffects(player,{kind:'enemy',entity:enemy},statusesForPlayer)
+				checkEnemyDeath(enemy)
 			}
 		}
 	}
 
 	if (player.health > 0 && itemUsed.provoke != undefined) {
-		const ad: DamageAnimation[] = [];
-		let sprite: AnySprite | undefined = undefined;
-		for (const [k, v] of player.statuses) {
-			if (v < 1) continue;
-			const statusData = statusDatas.find((s) => s.id == k);
-			if (!statusData) continue;
-			if (statusData.damagePercent) {
-				const dmg = Math.floor(player.maxHealth * statusData.damagePercent);
-				player.health -= dmg;
-				ad.push({ target: player.unitId, amount: [dmg] });
-				sprite = statusData.selfInflictSprite;
-				pushHappening(`${player.displayName} took ${dmg} damage from ${k}`);
-			}
-			if (statusData.incStr) {
-				player.bonusStrength += 10;
-				pushHappening(`${player.displayName} grows in strength!`);
-			}
-
-			player.statuses.set(k, v - 1);
-		}
-		if (ad.length && sprite) {
-			pushAnimation({
-				sceneId: player.currentUniqueSceneId,
-				battleAnimation: {
-					triggeredBy: player.unitId,
-					source: player.unitId,
-					alsoDamages: ad,
-					behavior: { kind: 'selfInflicted', extraSprite: sprite }
-				}
-			});
-		}
+		handleStatusEffects(player,{kind:'player',entity:player},player.statuses)
 	}
 
 	if (itemUsed.provoke != undefined && player.health > 0) {
@@ -616,6 +552,42 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				playerInScene.flags.add(playerScene.setsFlagOnVictory);
 			}
 		}
+	}
+}
+
+function handleStatusEffects(playerTriggered:Player, on:BattleEventEntity, statusMap:Map<StatusId,number>){
+	const ad: DamageAnimation[] = [];
+	let sprite: AnySprite | undefined = undefined;
+	for (const [k, v] of statusMap) {
+		if(on.entity.health < 0)break
+		if (v < 1) continue;
+		const statusData = statusDatas.find((s) => s.id == k);
+		if (!statusData) continue;
+		if (statusData.damagePercent) {
+			const dmg = Math.ceil(on.entity.health * statusData.damagePercent);
+			on.entity.health -= dmg;
+			ad.push({ target: on.entity.unitId, amount: [dmg] });
+			sprite = statusData.selfInflictSprite;
+			pushHappening(`${on.entity.unitId} took ${dmg} damage from ${k}`);
+		}
+		if (statusData.incStr) {
+			on.entity.bonusStrength += 10;
+			sprite = statusData.selfInflictSprite
+			pushHappening(`${on.entity.unitId} grows in strength!`);
+		}
+
+		statusMap.set(k, v - 1);
+	}
+	if (sprite) {
+		pushAnimation({
+			sceneId: playerTriggered.currentUniqueSceneId,
+			battleAnimation: {
+				triggeredBy: playerTriggered.unitId,
+				source: on.entity.unitId,
+				alsoDamages: ad,
+				behavior: { kind: 'selfInflicted', extraSprite: sprite }
+			}
+		});
 	}
 }
 
@@ -711,7 +683,8 @@ export function handleRetaliations(
 						alsoDamages: [
 							{
 								target: target,
-								baseDamage: enemyInScene.damage,
+								baseDamage: enemyInScene.template.baseDamage,
+								bonusDamage: enemyInScene.bonusStrength,
 								strikes: enemyInScene.template.strikes ?? 1
 							}
 						]
@@ -887,7 +860,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				target: m.target.entity.unitId,
 				count: m.count,
 				remove: m.remove
-			} satisfies StatusModifier;
+			} satisfies StatusModifyAnimation;
 		}),
 		teleporting: battleEvent.teleportsTo ? true : undefined
 	};

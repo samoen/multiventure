@@ -29,10 +29,10 @@ export function addNewUser(heroName: string): { id: string; player: Player } | u
 	// startflags.add('gotFreeStarterWeapon')
 	// startflags.add('killedGoblins')
 
-	const startSceneId: SceneDataId = startSceneDataId;
+	let startSceneId: SceneDataId = startSceneDataId;
 	// startSceneId = 'forestPassage'
 	// startSceneId = 'throne'
-	// startSceneId = 'armory'
+	startSceneId = 'armory'
 
 	const startUnique = uniqueFromSceneDataId(pId, startSceneId);
 
