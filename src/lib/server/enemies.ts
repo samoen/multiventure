@@ -211,6 +211,7 @@ export function damagePlayer(
 	if (player.health < 1) return { dmgDone: [] };
 	const dmgDone: number[] = [];
 	const strikes = enemy.template.strikes ?? 1;
+	let dmgSum = 0
 	for (const _ of Array.from({ length: strikes })) {
 		let dmg = baseDmg;
 		for (const item of player.inventory) {
@@ -227,13 +228,12 @@ export function damagePlayer(
 
 		player.health -= dmg;
 		dmgDone.push(dmg);
+		dmgSum += dmg
 		if (player.health < 1) break;
 	}
 
 	pushHappening(
-		`${enemy.name} hit ${player.displayName} ${
-			strikes > 1 ? strikes + ' times' : ''
-		} for ${dmgDone} damage`
+		`${enemy.name} hit ${player.displayName} for ${dmgSum} damage`
 	);
 	return { dmgDone: dmgDone };
 }
@@ -248,6 +248,7 @@ export function damageEnemy(
 	if (enemy.health < 1) return { dmgDone: [] };
 
 	const dmgDone: number[] = [];
+	let dmgSum = 0
 	for (let i = 0; i < strikes; i++) {
 		let dmg = damage;
 		if (enemy.template.damageReduction) {
@@ -264,13 +265,12 @@ export function damageEnemy(
 		}
 		enemy.health -= dmg;
 		dmgDone.push(dmg);
+		dmgSum += dmg
 		if (enemy.health < 1) break;
 	}
 	const attackerName = source.kind == 'player' ? source.entity.displayName : source.entity.name;
 	pushHappening(
-		`${attackerName} hit ${enemy.name} ${
-			strikes > 1 ? strikes + ' times' : ''
-		} for ${dmgDone} damage`
+		`${attackerName} hit ${enemy.name} for ${dmgSum} damage`
 	);
 
 	const result = checkEnemyDeath(enemy);

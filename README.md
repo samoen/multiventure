@@ -31,38 +31,23 @@ Or start the server, open the app in a new browser tab and host it on your local
 npm run dev -- --open --host
 ```
 
-player stats:
-health
-speed - retaliation order
-modify weapon stats
+deploy to google cloud
 
-weapon traits:
-damage
-speed
-provoke
-warmup
-cooldown
+sudo apt-get update
+sudo apt-get install git
+wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+source ~/.bashrc
+nvm install --lts
+<!-- sudo apt-get install nodejs -->
+<!-- sudo apt-get install npm -->
+git clone https://github.com/samoen/multiventure
+cd multiventure
+npm install
+npm run build
 
-weapon slot:
-club: burst
-dagger: multihit
-fire staff: warmup
-bow: lowp rovoke
-xbow: cooldown
+ORIGIN=http://{external ip of instance}:3000 node build
 
-utility slot:
-bomb sack - stock dmg
-medkit - stock heal
-poison dart = stock harm
 
-body slot:
-light armor - reduce dmg
-heavy armor - cap dmg
-
-enemy stats:
-hp
-damage
-warmup / cooldown
 
 anti swarm:
 splash/pierce
@@ -88,11 +73,13 @@ cheese:
 stock atk (per battle uses)
 cooldown
 speed + pacifier (reset aggro, give cooldowns)
+
 greed:
 warmup
 summons
 snowball buffs
-sandbag:
+
+defensive:
 loot (steal stock item)
 stock heal
 cooldown protect
@@ -109,9 +96,7 @@ warmup
 
 enemies ideas:
 goblin warcaller - don't prioritize. hard to kill (other goblins make harder), warmup, buffs other goblins aggro gain/ignore flat armor/splash immune
-fire gremlin - don't prioritize, splashes it's own team
 dark summoner - prioritize, summons, snowball buff greedy
-hydra - multihit
 
 team composition:
 tanky provoker/healer + glass cannon

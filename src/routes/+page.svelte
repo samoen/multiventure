@@ -110,8 +110,11 @@
 		$clientState.loading = false;
 	});
 
-	function isMsgFromServer(msg: object): msg is MessageFromServer {
-		return 'triggeredBy' in msg;
+	function isMsgFromServer(msg: any): msg is MessageFromServer {
+		if(typeof msg == 'object'){
+			return 'triggeredBy' in msg;
+		}
+		return false
 	}
 
 	lastMsgFromServer.subscribe((m) => {
