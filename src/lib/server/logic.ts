@@ -34,16 +34,15 @@ export function updatePlayerActions(player: Player) {
 		if (itemState.warmup > 0) continue
 		if (itemState.stock != undefined && itemState.stock < 1) continue
 
-		let iAb: ItemAnimationBehavior = i.behavior ?? { kind: 'melee' }
+		let iAb: ItemAnimationBehavior = i.animation ?? { kind: 'melee' }
 		let iCt: CanTarget
-		if (i.canTarget) {
-			iCt = i.canTarget
+		if (i.targets) {
+			iCt = i.targets
 		} else if (iAb.kind == 'melee' || iAb.kind == 'missile') {
 			iCt = { kind: 'anyEnemy' }
 		} else {
 			iCt = { kind: 'onlySelf' }
 		}
-		let dmgAf = i.dmgAffects ?? 'targetOnly'
 
 		let affectedsFromCanEffect = (ca: CanEffect, t: BattleEventEntity) => {
 			let affecteds: BattleEventEntity[] = []
@@ -55,8 +54,16 @@ export function updatePlayerActions(player: Player) {
 					}
 				})
 			} else if (ca == 'allFriendly') {
+				affecteds = scenePlayers.map(sp => {
+					return {
+						kind: 'player',
+						entity: sp,
+					}
+				})
+			} else if (ca == 'selfOnly') {
 				affecteds = [{ kind: 'player', entity: player }]
-			} else {
+			}
+			else if (ca == 'targetOnly') {
 				affecteds = [t]
 			}
 			return affecteds
@@ -70,55 +77,55 @@ export function updatePlayerActions(player: Player) {
 				bonus = player.strength + player.bonusStrength
 			}
 			let alsoDmgs: DamageEvent[] = []
-			if (i.baseDmg) {
-				let dmgAffected = affectedsFromCanEffect(dmgAf, targetChosen)
+			if (i.damages) {
+				let dmgAffected = affectedsFromCanEffect(i.damages.affects, targetChosen)
 				for (const aff of dmgAffected) {
 					alsoDmgs.push({
 						target: aff,
-						baseDamage: i.baseDmg,
+						baseDamage: i.damages.baseDmg,
 						bonusDamage: bonus,
-						strikes: i.strikes ?? 1,
+						strikes: i.damages.strikes,
 					} satisfies DamageEvent)
 				}
 			}
 			let alsoHeals: HealEvent[] = []
-			if (i.healsAffected) {
-				let healAffected = affectedsFromCanEffect(i.healsAffected.affects, targetChosen)
+			if (i.heals) {
+				let healAffected = affectedsFromCanEffect(i.heals.affects, targetChosen)
 				for (const aff of healAffected) {
-					if (i.healsAffected) {
+					if (i.heals) {
 						alsoHeals.push({
 							target: aff,
-							baseHeal: i.healsAffected.baseHeal,
+							baseHeal: i.heals.baseHeal,
 						} satisfies HealEvent)
 					}
 				}
 			}
 			let modagro: AggroModifierEvent[] = []
-			if (i.modifiesAggroOnAffected) {
-				let aggroAffected = affectedsFromCanEffect(i.modifiesAggroOnAffected.affects, targetChosen)
+			if (i.modifiesAggro) {
+				let aggroAffected = affectedsFromCanEffect(i.modifiesAggro.affects, targetChosen)
 				for (const aff of aggroAffected) {
 					if (aff.kind == 'enemy') {
 						let fHeroes = [player]
-						if (i.modifiesAggroOnAffected.aggroFor == 'allPlayers') {
+						if (i.modifiesAggro.aggroFor == 'allPlayers') {
 							fHeroes = scenePlayers
 						}
 						modagro.push({
 							targetEnemy: aff.entity,
 							forHeros: fHeroes,
-							baseAmount: i.modifiesAggroOnAffected.amount,
+							baseAmount: i.modifiesAggro.amount,
 						})
 					}
 				}
 			}
 			let ptstatuses: StatusModifierEvent[] = []
-			if (i.putsStatusOnAffected) {
-				let statusAffected = affectedsFromCanEffect(i.putsStatusOnAffected.affects, targetChosen)
+			if (i.modifiesStatus) {
+				let statusAffected = affectedsFromCanEffect(i.modifiesStatus.affects, targetChosen)
 				for (const aff of statusAffected) {
 					ptstatuses.push({
 						target: aff,
-						statusId: i.putsStatusOnAffected.statusMod.statusId,
-						count: i.putsStatusOnAffected.statusMod.count,
-						remove: i.putsStatusOnAffected.statusMod.remove,
+						statusId: i.modifiesStatus.statusMod.statusId,
+						count: i.modifiesStatus.statusMod.count,
+						remove: i.modifiesStatus.statusMod.remove,
 					})
 				}
 			}
@@ -693,7 +700,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		}
 	}
 	let damageAnimations: DamageAnimation[] = []
-	let damageAnimationForMissleTarget: DamageAnimation|undefined = undefined
+	let damageAnimationForMissleTarget: DamageAnimation | undefined = undefined
 	const behav = battleEvent.behavior
 	if (battleEvent.alsoDamages) {
 		for (const healthModifyEvent of battleEvent.alsoDamages) {
@@ -708,7 +715,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 						healthModifyEvent.bonusDamage,
 					)
 					if (behav.kind == 'missile' && healthModifyEvent.target.entity.unitId == behav.animateTo && damageAnimationForMissleTarget == undefined) {
-						damageAnimationForMissleTarget ={
+						damageAnimationForMissleTarget = {
 							target: healthModifyEvent.target.entity.unitId,
 							amount: r.dmgDone,
 						}
@@ -723,7 +730,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				if (healthModifyEvent.baseDamage && battleEvent.source.kind == 'enemy') {
 					let r = damagePlayer(battleEvent.source.entity, healthModifyEvent.target.entity, healthModifyEvent.baseDamage)
 					if (behav.kind == 'missile' && healthModifyEvent.target.entity.unitId == behav.animateTo && damageAnimationForMissleTarget == undefined) {
-						damageAnimationForMissleTarget ={
+						damageAnimationForMissleTarget = {
 							target: healthModifyEvent.target.entity.unitId,
 							amount: r.dmgDone,
 						}
@@ -783,11 +790,11 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	}
 
 
-	if(damageAnimationForMissleTarget){
+	if (damageAnimationForMissleTarget) {
 		let firstStrike = damageAnimationForMissleTarget.amount.at(0)
-		if(firstStrike){
-			damageAnimations.push({target:damageAnimationForMissleTarget.target,amount:[firstStrike]})
-			damageAnimationForMissleTarget.amount.splice(0,1)
+		if (firstStrike) {
+			damageAnimations.push({ target: damageAnimationForMissleTarget.target, amount: [firstStrike] })
+			damageAnimationForMissleTarget.amount.splice(0, 1)
 		}
 	}
 
@@ -814,14 +821,14 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		battleAnimation: battleAnimation,
 		leavingScene: leavingScene,
 	})
-	if(damageAnimationForMissleTarget){
+	if (damageAnimationForMissleTarget) {
 		// for (let i = 0; i < damageAnimationForMissleTarget?.amount.length; i++) {
 		for (let i of damageAnimationForMissleTarget.amount) {
 			const xba: BattleAnimation = {
 				triggeredBy: player.unitId,
 				source: battleEvent.source.entity.unitId,
 				behavior: battleEvent.behavior,
-				alsoDamages: [{target:damageAnimationForMissleTarget.target,amount:[i]}],
+				alsoDamages: [{ target: damageAnimationForMissleTarget.target, amount: [i] }],
 			}
 			pushAnimation({
 				sceneId: sceneToPlayAnim,

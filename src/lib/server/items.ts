@@ -11,7 +11,7 @@ export type CanTarget =
 	| { kind: 'anyFriendly', selfAfflictSprite: AnySprite }
 	| { kind: 'onlySelf' }
 
-export type CanEffect = 'allFriendly' | 'allEnemy' | 'targetOnly'
+export type CanEffect = 'allFriendly' | 'allEnemy' | 'targetOnly' | 'selfOnly'
 
 export type Item = {
 	id: ItemId,
@@ -31,15 +31,12 @@ export type Item = {
 	requiresSourceDead?: boolean
 	excludeFromDetail?: boolean
 	noAction?: boolean
-	baseDmg?: number,
-	dmgAffects?: CanEffect // default targetOnly
-	healsAffected?:{affects:CanEffect,baseHeal:number}
-	// baseHeal?: number,
-	putsStatusOnAffected?: { affects: CanEffect, statusMod: StatusMod },
-	modifiesAggroOnAffected?: { affects: CanEffect, aggroFor: 'allPlayers' | 'justMe', amount: number },
-	behavior?: ItemAnimationBehavior, // default melee
-	canTarget?: CanTarget // for melee or missle defaults anyEnemy, else onlyself
-	strikes?: number // default 1
+	damages?:{affects:CanEffect,baseDmg:number,strikes:number}
+	heals?:{affects:CanEffect,baseHeal:number}
+	modifiesStatus?: { affects: CanEffect, statusMod: StatusMod },
+	modifiesAggro?: { affects: CanEffect, aggroFor: 'allPlayers' | 'justMe', amount: number },
+	animation?: ItemAnimationBehavior, // default melee
+	targets?: CanTarget // for melee or missle defaults anyEnemy, else onlyself
 	teleportTo?: SceneDataId
 }
 
@@ -48,8 +45,7 @@ const dagger: Item = {
 	slot: 'weapon',
 	provoke: 7,
 	speed: 4,
-	baseDmg: 7,
-	strikes: 3,
+	damages:{affects:'targetOnly',baseDmg:7,strikes:3},
 }
 
 const club: Item = {
@@ -57,7 +53,7 @@ const club: Item = {
 	slot: 'weapon',
 	provoke: 40,
 	speed: 1,
-	baseDmg: 28,
+	damages:{affects:'targetOnly',baseDmg:28,strikes:1},
 }
 
 export const fireStaff: Item = {
@@ -67,10 +63,9 @@ export const fireStaff: Item = {
 	cooldown: 1,
 	provoke: 10,
 	speed: 2,
-	strikes:3,
-	baseDmg: 10,
-	behavior: { kind: 'missile', extraSprite: 'flame' },
-	modifiesAggroOnAffected: { affects: 'targetOnly', aggroFor: 'justMe', amount: 80 },
+	damages:{affects:'targetOnly',baseDmg:30,strikes:2},
+	animation: { kind: 'missile', extraSprite: 'flame' },
+	modifiesAggro: { affects: 'targetOnly', aggroFor: 'justMe', amount: 80 },
 }
 
 const potion: Item = {
@@ -81,8 +76,8 @@ const potion: Item = {
 	requiresTargetDamaged: true,
 	speed: 15,
 	provoke: 1,
-	canTarget: { kind: 'anyFriendly', selfAfflictSprite: 'heal' },
-	healsAffected:{affects:'targetOnly',baseHeal:50},
+	targets: { kind: 'anyFriendly', selfAfflictSprite: 'heal' },
+	heals:{affects:'targetOnly',baseHeal:50},
 }
 
 const bomb: Item = {
@@ -91,10 +86,9 @@ const bomb: Item = {
 	startStock: 1,
 	speed: 12,
 	provoke: 5,
-	behavior: { kind: 'center', extraSprite: 'bomb' },
-	dmgAffects: 'allEnemy',
-	baseDmg: 5,
-	modifiesAggroOnAffected: { affects: 'allEnemy', aggroFor: 'allPlayers', amount: -30 }
+	animation: { kind: 'center', extraSprite: 'bomb' },
+	damages:{affects:'allEnemy',baseDmg:5,strikes:1},
+	modifiesAggro: { affects: 'allEnemy', aggroFor: 'allPlayers', amount: -30 }
 }
 
 export const poisonDart: Item = {
@@ -103,9 +97,9 @@ export const poisonDart: Item = {
 	startStock: 2,
 	provoke: 40,
 	speed: 20,
-	behavior: { kind: 'missile', extraSprite: 'arrow' },
-	putsStatusOnAffected: { affects: 'targetOnly', statusMod: { statusId: 'poison', count: 3 } },
-	baseDmg: 3,
+	damages:{affects:'targetOnly',baseDmg:3,strikes:1},
+	animation: { kind: 'missile', extraSprite: 'arrow' },
+	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'poison', count: 3 } },
 }
 
 export const plateMail: Item = {
@@ -115,9 +109,9 @@ export const plateMail: Item = {
 	provoke: 0,
 	speed: 100,
 	damageLimit: 20,
-	behavior: { kind: 'selfInflicted', extraSprite: 'flame' },
-	putsStatusOnAffected: { affects: 'targetOnly', statusMod: { statusId: 'rage', count: 1 } },
-	modifiesAggroOnAffected: { affects: 'allEnemy', aggroFor: 'justMe', amount: 100 },
+	animation: { kind: 'selfInflicted', extraSprite: 'flame' },
+	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'rage', count: 1 } },
+	modifiesAggro: { affects: 'allEnemy', aggroFor: 'justMe', amount: 100 },
 }
 
 const thiefCloak: Item = {
@@ -127,8 +121,8 @@ const thiefCloak: Item = {
 	speed: 100,
 	provoke: 30,
 	// grantsImmunity: true,
-	behavior: { kind: 'selfInflicted', extraSprite: 'smoke' },
-	putsStatusOnAffected: { affects: 'targetOnly', statusMod: { statusId: 'hidden', count: 2 } },
+	animation: { kind: 'selfInflicted', extraSprite: 'smoke' },
+	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'hidden', count: 2 } },
 }
 
 export const leatherArmor: Item = {
@@ -137,11 +131,9 @@ export const leatherArmor: Item = {
 	useableOutOfBattle: true,
 	requiresStatus: 'poison',
 	speed: 5,
-	// provoke: 0,
-	// grantsImmunity: true,
 	damageReduction: 5,
-	canTarget: { kind: 'anyFriendly', selfAfflictSprite: 'heal' },
-	putsStatusOnAffected: { affects: 'targetOnly', statusMod: { statusId: 'poison', remove: true } }
+	targets: { kind: 'anyFriendly', selfAfflictSprite: 'heal' },
+	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'poison', remove: true } }
 }
 
 const fist: Item = {
@@ -150,7 +142,7 @@ const fist: Item = {
 	default: true,
 	provoke: 1,
 	speed: 10,
-	baseDmg: 10,
+	damages:{affects:'targetOnly',baseDmg:10,strikes:2}
 }
 const belt: Item = {
 	id: 'belt',
@@ -174,7 +166,7 @@ const wait: Item = {
 	excludeFromDetail: true,
 	speed: 999,
 	provoke: 0,
-	behavior: { kind: 'selfInflicted', extraSprite: 'shield' },
+	animation: { kind: 'selfInflicted', extraSprite: 'shield' },
 }
 
 const succumb: Item = {
@@ -187,7 +179,7 @@ const succumb: Item = {
 	// grantsImmunity: true,
 	requiresSourceDead: true,
 	useableOutOfBattle: true,
-	behavior: { kind: 'selfInflicted', extraSprite: 'skull' },
+	animation: { kind: 'selfInflicted', extraSprite: 'skull' },
 }
 
 

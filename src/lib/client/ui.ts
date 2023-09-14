@@ -101,25 +101,25 @@ export function resetSceneConvos(sceneId: SceneDataId) {
 }
 
 export function numberShownOnSlot(itemState: ItemState): string | undefined {
-    // if(itemState.stock != undefined && itemState.stock < 1){
-    //     return '-'
-    // }
+    if(itemState.stock != undefined && itemState.stock < 1){
+        return '0'
+    }
     const higherOfCooldownOrWarmup = Math.max(itemState.cooldown, itemState.warmup)
     if (higherOfCooldownOrWarmup > 0) return `${higherOfCooldownOrWarmup}`
     return undefined
 }
 
 export function stockDotsOnSlotButton(itemState: ItemState): string {
+
     let dots = ''
     if (itemState.stock != undefined) {
+        // if(itemState.stock < 1)return '-'
         for (const _ of Array.from({ length: itemState.stock })) {
             dots = dots + '.'
         }
     }
     return dots
 }
-
-
 
 export let currentAnimation = derived([currentAnimationIndex, currentAnimationsWithData], ([$currentAnimationIndex, $currentAnimationsWithData]) => {
     return $currentAnimationsWithData?.at($currentAnimationIndex)

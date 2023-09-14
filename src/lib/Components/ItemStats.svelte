@@ -38,16 +38,22 @@
     <!-- {/if} -->
     <div class="stats">
         {#if itemState.stats}
-            {#if itemState.stats.baseDmg}
+            {#if itemState.stats.damages}
                 <div class="statLine">
                     <img src={strong} alt="a heart" />
-                    <div>{itemState.stats.baseDmg}</div>
+                    <div>{itemState.stats.damages.baseDmg}</div>
                 </div>
             {/if}
-            {#if itemState.stats.healsAffected}
+            {#if itemState.stats.damages && itemState.stats.damages.strikes > 1}
+                <div class="statLine">
+                    <img src={crossedSwords} alt="a heart" />
+                    <div>{itemState.stats.damages.strikes}</div>
+                </div>
+            {/if}
+            {#if itemState.stats.heals}
                 <div class="statLine">
                     <img src={medpack} alt="a heart" />
-                    <div>{itemState.stats.healsAffected.baseHeal}</div>
+                    <div>{itemState.stats.heals.baseHeal}</div>
                 </div>
             {/if}
             {#if itemState.stats.startStock}
@@ -55,13 +61,6 @@
                     <img src={sack} alt="a sack" />
                     <div>{itemState.stats.startStock}</div>
                 </div>
-            {/if}
-            {#if itemState.stats.strikes && itemState.stats.strikes > 1}
-                <div class="statLine">
-                    <img src={crossedSwords} alt="a heart" />
-                    <div>{itemState.stats?.strikes}</div>
-                </div>
-                
             {/if}
             {#if itemState.stats.speed && itemState.stats.speed > 0}
                 <div class="statLine">
