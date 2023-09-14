@@ -558,15 +558,30 @@ export const forest: Scene = {
 		dead: `You awake in a cold sweat with no memory of anything. \n\nThe world around you seems dark and permeated by an unholy madness. \n\nThere's a strange sickly smell that seems familiar. The smell of corruption. The smell of death.`,
 		castle: `Despite your rising panic at the mere thought of entering that hellish maze of rotting plant matter and creatures beyond imagination, you push your way back into the depths.`,
 		forestPassage: `You get out the passage, and stumble into the surrounding overgrowth`,
-		fallback: `You are surrounded by dense undergrowth. With every slight movement you feel sharp foliage digging into your flesh. The forest is green and verdent. It teems with life. The sound of insects buzzing fills the air like the distant screams of the innocent. Unseen creatures shuffle just out of sight, their eyes fixed firmly upon you: the unwanted visitor. There is something distinctly unwell about this place.`
+		fallback: `With every slight movement you feel sharp foliage digging into your flesh. The forest is green and verdent. It teems with life. The sound of insects buzzing fills the air like the distant screams of the innocent. Unseen creatures shuffle just out of sight, their eyes fixed firmly upon you: the unwanted visitor. There is something distinctly unwell about this place.`
 	},
 	vases: [
 		{
 			unitId: 'vascastle',
 			displayName: 'Castle',
 			sprite: 'castle',
+			startText: `You are surrounded by dense undergrowth. In the distance you see a castle`,
 			actionsWithRequirements: [{ travelTo: 'castle' }],
-			startText: `In the distance you see a castle`,
+			responses:[
+				{
+					responseId:'searchForest',
+					responseText:'Search around the undergrowth',
+					unlockVas:['vasBow'],
+				}
+			]
+		},
+		{
+			unitId: 'vasBow',
+			displayName: 'Bow',
+			sprite: 'bow',
+			startsLocked:true,
+			actionsWithRequirements: [{ pickupItem: 'bow' }],
+			startText: `An old wooden bow`,
 		},
 		{
 			unitId: 'vasForestPassageFromForest',
@@ -892,7 +907,7 @@ const forestPassage: Scene = {
 		{
 			unitId: 'vasDweller',
 			displayName: 'Forest Dweller',
-			startText: `I mean you no harm. You will want a weapon if you continue through this passage. Would you like a dagger, or are you more the clubbing sort?`,
+			startText: `I mean you no harm. I can give you melee weapon - would you like a dagger, or are you more the clubbing sort?`,
 			responses: [
 				{
 					responseId: 'freeDagger',
@@ -955,7 +970,6 @@ const forestPassage: Scene = {
 				},
 			],
 		},
-
 	],
 }
 

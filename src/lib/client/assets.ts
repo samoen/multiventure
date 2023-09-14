@@ -6,6 +6,8 @@ import castleLandscape from '$lib/assets/landscapes/landscape-castle.webp';
 import grimForestLandscape from '$lib/assets/landscapes/grim-altar.jpg';
 import bridgeLandscape from '$lib/assets/landscapes/landscape-bridge.webp';
 import peasantPortrait from '$lib/assets/portraits/peasant-fists.webp';
+import woodsmanPortrait from '$lib/assets/portraits/woodsman.webp';
+import bowmanPortrait from '$lib/assets/portraits/bowman.webp';
 import generalPortrait from '$lib/assets/portraits/general.webp';
 import ladyPortrait from '$lib/assets/portraits/lady.webp';
 import thiefPortrait from '$lib/assets/portraits/thief.webp';
@@ -19,6 +21,8 @@ import rogue from '$lib/assets/units/rogue.png';
 import thug from '$lib/assets/units/thug.png';
 import heavyInfantry from '$lib/assets/units/heavyinfantry.png';
 import whiteMage from '$lib/assets/units/white-mage.png';
+import woodsman from '$lib/assets/units/woodsman.png';
+import bowman from '$lib/assets/units/bowman.png';
 import general from '$lib/assets/units/general.png';
 import druid from '$lib/assets/units/druid.png';
 import lady from '$lib/assets/units/lady.png';
@@ -55,6 +59,7 @@ import whiteRing from '$lib/assets/scenery/ring-white.png';
 import bag from '$lib/assets/scenery/leather-pack.png';
 import scarecrow from '$lib/assets/scenery/scarecrow.png';
 import dagger from '$lib/assets/scenery/dagger.png';
+import bow from '$lib/assets/scenery/bow.png';
 import potion from '$lib/assets/scenery/potion-red.png';
 import club from '$lib/assets/extras/club.png';
 import potionSlot from '$lib/assets/equipment/potion-slot.png';
@@ -70,6 +75,7 @@ import blankSlot from '$lib/assets/equipment/blank-attack.png';
 import poisonDartSlot from '$lib/assets/equipment/dagger-thrown-poison-human.png';
 import fireballSlot from '$lib/assets/equipment/fireball.png';
 import daggerSlot from '$lib/assets/equipment/dagger-human.png';
+import bowSlot from '$lib/assets/equipment/bow-short.png';
 import type { EnemyTemplateId } from '$lib/server/enemies';
 import type { ItemId, ItemState } from '$lib/server/items';
 import type { PlayerInClient } from '$lib/server/users';
@@ -91,6 +97,7 @@ export function getSlotImage(id: ItemId): string {
     if (id == 'dagger') return daggerSlot;
     if (id == 'fireStaff') return fireballSlot;
     if (id == 'bomb') return bombSlot;
+    if (id == 'bow') return bowSlot;
     if (id == 'poisonDart') return poisonDartSlot;
     if (id == 'potion') return potionSlot;
     if (id == 'leatherArmor') return tunicSlot;
@@ -105,6 +112,8 @@ export function getHeroPortrait(className: string): string {
     if(className == 'peasant')return peasantPortrait
     if(className == 'thief')return thiefPortrait
     if(className == 'rogue')return thiefPortrait
+    if(className == 'woodsman')return woodsmanPortrait
+    if(className == 'bowman')return bowmanPortrait
     if(className == 'ruffian')return ruffianPortrait
     if(className == 'thug')return thugPortrait
     if(className == 'heavy')return heavyInfantryPortrait
@@ -121,7 +130,6 @@ export function getPortrait(key:string):string{
     return gruntPortrait
 }
 
-
 export const statusImages: Record<StatusId, string> = {
     poison: greenDrip,
     rage: rage,
@@ -134,6 +142,8 @@ export function heroSpriteFromClass(className: string) :string {
     if(className == 'rogue')return rogue
     if(className == 'ruffian')return ruffian
     if(className == 'thug')return thug
+    if(className == 'woodsman')return woodsman
+    if(className == 'bowman')return bowman
     if(className == 'mage')return mage
     if(className == 'heavy')return heavyInfantry
     if(className == 'cleric')return whiteMage
@@ -161,6 +171,7 @@ export const anySprites: Record<AnySprite, string> = {
     whiteRing: whiteRing,
     scarecrow: scarecrow,
     dagger: dagger,
+    bow: bow,
     staff: staff,
     potion: potion,
     altar: altar,

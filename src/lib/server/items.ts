@@ -56,11 +56,23 @@ const club: Item = {
 	damages:{affects:'targetOnly',baseDmg:28,strikes:1},
 }
 
+export const bow: Item = {
+	id: 'bow',
+	slot: 'weapon',
+	warmup: 1,
+	cooldown: 1,
+	provoke: 10,
+	speed: 3,
+	damages:{affects:'targetOnly',baseDmg:20,strikes:1},
+	animation: { kind: 'missile', extraSprite: 'arrow' },
+	modifiesAggro: { affects: 'targetOnly', aggroFor: 'justMe', amount: 20 },
+}
+
 export const fireStaff: Item = {
 	id: 'fireStaff',
 	slot: 'weapon',
 	warmup: 2,
-	cooldown: 1,
+	cooldown: 2,
 	provoke: 10,
 	speed: 2,
 	damages:{affects:'targetOnly',baseDmg:30,strikes:2},
@@ -187,6 +199,7 @@ export const items : Item[] = [
 	fist,
 	dagger,
 	club,
+	bow,
 	fireStaff,
 	belt,
 	potion,
@@ -247,14 +260,17 @@ export type ItemCombination = { className: string, combos: string[] }
 export const itemCombinations = [
 	{ className: 'peasant', combos: ['fist'] },
 	{ className: 'thief', combos: ['dagger'] },
+	{ className: 'ruffian', combos: ['club'] },
+	{ className: 'woodsman', combos: ['bow'] },
+	{ className: 'mage', combos: ['fireStaff'] },
+	{ className: 'thug', combos: ['club', 'leatherArmor'] },
+	{ className: 'bowman', combos: ['bow', 'leatherArmor'] },
+	{ className: 'bowman', combos: ['bow', 'plateMail'] },
+	{ className: 'heavy', combos: ['club', 'plateMail'] },
+	{ className: 'cleric', combos: ['fireStaff', 'potion'] },
 	{ className: 'rogue', combos: ['dagger', 'leatherArmor'] },
 	{ className: 'rogue', combos: ['dagger', 'thiefCloak'] },
 	{ className: 'rogue', combos: ['dagger', 'plateMail'] },
-	{ className: 'ruffian', combos: ['club'] },
-	{ className: 'thug', combos: ['club', 'leatherArmor'] },
-	{ className: 'heavy', combos: ['club', 'plateMail'] },
-	{ className: 'mage', combos: ['fireStaff'] },
-	{ className: 'cleric', combos: ['fireStaff', 'potion'] },
 ]
 
 export function comboFindClassFromInventory(inv: ItemState[]): string {
