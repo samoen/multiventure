@@ -27,10 +27,9 @@ import {
 	enemiesInScene,
 	activeEnemies,
 	addAggro,
-	damagePlayer,
 	pushAnimation,
 	getAggroForPlayer,
-	damageEnemy,
+	damageEntity,
 	modifyAggroForPlayer,
 	modifiedEnemyHealth,
 	type EnemyTemplateId,
@@ -526,15 +525,15 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	if (itemUsed.provoke != undefined) {
 		for (const enemy of enemiesInScene(actionStartedInSceneId)) {
 			let statusesForPlayer = enemy.statuses.get(player.unitId)
-			if(statusesForPlayer){
-				handleStatusEffects(player,{kind:'enemy',entity:enemy},statusesForPlayer)
+			if (statusesForPlayer) {
+				handleStatusEffects(player, { kind: 'enemy', entity: enemy }, statusesForPlayer)
 				checkEnemyDeath(enemy)
 			}
 		}
 	}
 
 	if (player.health > 0 && itemUsed.provoke != undefined) {
-		handleStatusEffects(player,{kind:'player',entity:player},player.statuses)
+		handleStatusEffects(player, { kind: 'player', entity: player }, player.statuses)
 	}
 
 	if (itemUsed.provoke != undefined && player.health > 0) {
@@ -555,11 +554,11 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 }
 
-function handleStatusEffects(playerTriggered:Player, on:BattleEventEntity, statusMap:Map<StatusId,number>){
+function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity, statusMap: Map<StatusId, number>) {
 	const ad: DamageAnimation[] = [];
 	let sprite: AnySprite | undefined = undefined;
 	for (const [k, v] of statusMap) {
-		if(on.entity.health < 0)break
+		if (on.entity.health < 0) break
 		if (v < 1) continue;
 		const statusData = statusDatas.find((s) => s.id == k);
 		if (!statusData) continue;
@@ -739,55 +738,33 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	const behav = battleEvent.behavior;
 	if (battleEvent.alsoDamages) {
 		for (const healthModifyEvent of battleEvent.alsoDamages) {
-			if (healthModifyEvent.target.entity.health < 0 && !battleEvent.stillHappenIfTargetDies)
+			if (healthModifyEvent.target.entity.health < 0 && !battleEvent.stillHappenIfTargetDies) {
 				continue;
-			if (healthModifyEvent.target.kind == 'enemy') {
-				if (healthModifyEvent.baseDamage) {
-					const r = damageEnemy(
-						battleEvent.source,
-						healthModifyEvent.target.entity,
-						healthModifyEvent.baseDamage,
-						healthModifyEvent.strikes,
-						healthModifyEvent.bonusDamage
-					);
-					if (
-						behav.kind == 'missile' &&
-						healthModifyEvent.target.entity.unitId == behav.animateTo &&
-						damageAnimationForMissleTarget == undefined
-					) {
-						damageAnimationForMissleTarget = {
-							target: healthModifyEvent.target.entity.unitId,
-							amount: r.dmgDone
-						};
-					} else {
-						damageAnimations.push({
-							target: healthModifyEvent.target.entity.unitId,
-							amount: r.dmgDone
-						});
-					}
-				}
-			} else if (healthModifyEvent.target.kind == 'player') {
-				if (healthModifyEvent.baseDamage && battleEvent.source.kind == 'enemy') {
-					const r = damagePlayer(
-						battleEvent.source.entity,
-						healthModifyEvent.target.entity,
-						healthModifyEvent.baseDamage
-					);
-					if (
-						behav.kind == 'missile' &&
-						healthModifyEvent.target.entity.unitId == behav.animateTo &&
-						damageAnimationForMissleTarget == undefined
-					) {
-						damageAnimationForMissleTarget = {
-							target: healthModifyEvent.target.entity.unitId,
-							amount: r.dmgDone
-						};
-					} else {
-						damageAnimations.push({
-							target: healthModifyEvent.target.entity.unitId,
-							amount: r.dmgDone
-						});
-					}
+			}
+			if (healthModifyEvent.baseDamage) {
+				const r = damageEntity(
+					battleEvent.source,
+					healthModifyEvent.target,
+					healthModifyEvent.baseDamage,
+					healthModifyEvent.strikes,
+					healthModifyEvent.bonusDamage,
+					getDamageReduction(healthModifyEvent.target),
+					getDamageLimit(healthModifyEvent.target),
+				);
+				if (
+					behav.kind == 'missile' &&
+					healthModifyEvent.target.entity.unitId == behav.animateTo &&
+					damageAnimationForMissleTarget == undefined
+				) {
+					damageAnimationForMissleTarget = {
+						target: healthModifyEvent.target.entity.unitId,
+						amount: r.dmgDone
+					};
+				} else {
+					damageAnimations.push({
+						target: healthModifyEvent.target.entity.unitId,
+						amount: r.dmgDone
+					});
 				}
 			}
 		}
@@ -871,7 +848,6 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		leavingScene: leavingScene
 	});
 	if (damageAnimationForMissleTarget) {
-		// for (let i = 0; i < damageAnimationForMissleTarget?.amount.length; i++) {
 		for (const i of damageAnimationForMissleTarget.amount) {
 			const xba: BattleAnimation = {
 				triggeredBy: player.unitId,
@@ -886,6 +862,39 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 			});
 		}
 	}
+}
+
+export function getDamageReduction(from: BattleEventEntity): number {
+	if (from.kind == 'enemy') {
+		return from.entity.template.damageReduction ?? 0
+	}
+	if (from.kind == 'player') {
+		let dmgReduc: number = 0
+		for (const item of from.entity.inventory) {
+			if (item.stats.damageReduction) {
+				dmgReduc += item.stats.damageReduction
+			}
+		}
+		return dmgReduc
+	}
+	return 0
+}
+export function getDamageLimit(from: BattleEventEntity): number | undefined {
+	if (from.kind == 'enemy') {
+		return from.entity.template.damageLimit
+	}
+	if (from.kind == 'player') {
+		let dmgLim: number | undefined = undefined
+		for (const item of from.entity.inventory) {
+			if (item.stats.damageLimit) {
+				if (dmgLim == undefined || dmgLim > item.stats.damageLimit) {
+					dmgLim = item.stats.damageLimit
+				}
+			}
+		}
+		return dmgLim
+	}
+	return undefined
 }
 
 export function getValidGameActionsFromVas(vas: VisualActionSource, player: Player): GameAction[] {

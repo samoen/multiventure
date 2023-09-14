@@ -72,7 +72,7 @@ export type HealAnimation = { target: UnitId; amount: number };
 export type DamageEvent = {
 	target: BattleEventEntity;
 	baseDamage: number;
-	bonusDamage?: number;
+	bonusDamage: number;
 	strikes: number;
 };
 export type HealEvent = {

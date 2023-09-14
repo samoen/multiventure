@@ -203,79 +203,47 @@ export function enemiesInScene(sceneKey: UniqueSceneIdenfitier): ActiveEnemy[] {
 	return activeEnemies.filter((e) => deepEqual(e.currentUniqueSceneId, sceneKey));
 }
 
-export function damagePlayer(
-	enemy: ActiveEnemy,
-	player: Player,
-	baseDmg: number
-): { dmgDone: number[] } {
-	if (player.health < 1) return { dmgDone: [] };
-	const dmgDone: number[] = [];
-	const strikes = enemy.template.strikes ?? 1;
-	let dmgSum = 0
-	for (const _ of Array.from({ length: strikes })) {
-		let dmg = baseDmg;
-		for (const item of player.inventory) {
-			if (item.stats.damageReduction) {
-				dmg = dmg - item.stats.damageReduction;
-				if (dmg < 1) dmg = 1;
-			}
-		}
-		for (const item of player.inventory) {
-			if (item.stats.damageLimit) {
-				if (dmg > item.stats.damageLimit) dmg = item.stats.damageLimit;
-			}
-		}
-
-		player.health -= dmg;
-		dmgDone.push(dmg);
-		dmgSum += dmg
-		if (player.health < 1) break;
-	}
-
-	pushHappening(
-		`${enemy.name} hit ${player.displayName} for ${dmgSum} damage`
-	);
-	return { dmgDone: dmgDone };
-}
-
-export function damageEnemy(
+export function damageEntity(
 	source: BattleEventEntity,
-	enemy: ActiveEnemy,
+	toDamage: BattleEventEntity,
 	damage: number,
-	strikes = 1,
-	bonusDamage = 0
+	strikes :number,
+	bonusDamage :number,
+	damageReduction:number | undefined,
+	damageLimit:number | undefined,
 ): { dmgDone: number[] } {
-	if (enemy.health < 1) return { dmgDone: [] };
+	if (toDamage.entity.health < 1) return { dmgDone: [] };
 
 	const dmgDone: number[] = [];
 	let dmgSum = 0
 	for (let i = 0; i < strikes; i++) {
 		let dmg = damage;
-		if (enemy.template.damageReduction) {
-			dmg = dmg - enemy.template.damageReduction;
+		if (damageReduction != undefined) {
+			dmg = dmg - damageReduction;
 			if (dmg < 1) dmg = 1;
 		}
-		if (enemy.template.damageLimit) {
-			if (dmg > enemy.template.damageLimit) {
-				dmg = enemy.template.damageLimit;
+		if (damageLimit != undefined) {
+			if (dmg > damageLimit) {
+				dmg = damageLimit;
 			}
 		}
 		if (i == strikes - 1) {
 			dmg += bonusDamage;
 		}
-		enemy.health -= dmg;
+		toDamage.entity.health -= dmg;
 		dmgDone.push(dmg);
 		dmgSum += dmg
-		if (enemy.health < 1) break;
+		if (toDamage.entity.health < 1) break;
 	}
 	const attackerName = source.kind == 'player' ? source.entity.displayName : source.entity.name;
 	pushHappening(
-		`${attackerName} hit ${enemy.name} for ${dmgSum} damage`
+		`${attackerName} hit ${toDamage.entity.unitId} for ${dmgSum} damage`
 	);
-
-	const result = checkEnemyDeath(enemy);
-	if (result.killed) {
-		pushHappening(`${attackerName} killed ${enemy.name}`);
+	if(toDamage.kind == 'enemy'){
+		const result = checkEnemyDeath(toDamage.entity);
+		if (result.killed) {
+			pushHappening(`${attackerName} killed ${toDamage.entity.unitId}`);
+		}
 	}
 	return { dmgDone: dmgDone };
 }
