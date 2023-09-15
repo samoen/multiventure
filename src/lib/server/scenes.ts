@@ -922,7 +922,7 @@ const realmOfMadness: Scene = {
 const forestPassage: Scene = {
 	sceneDataId: `forestPassage`,
 	landscape: 'grimForest',
-	displayName: 'Hidden Passage',
+	displayName: 'Passage',
 	sceneTexts: {
 		fallback: `After what feels like hours scrambling in the fetid soil and dodging the bites of the foul crawling creatures that call the forest home, you stumble upon an entrace.\n\nIt's so dark that you can hardly make out an exit. Feeling around, your hand brush against the walls. They feel warm. As if they were alive.`,
 		goblinCamp: `You leave the camp and squeeze back into the dank passage`
@@ -1139,7 +1139,8 @@ const armory: Scene = {
 				buttonText: `Equip ${item.id}`,
 				devAction() {
 					equipItem(player, item.id);
-				}
+				},
+				associateWithUnit:player.unitId,
 			});
 		}
 		for (const id in enemyTemplates) {
@@ -1148,7 +1149,8 @@ const armory: Scene = {
 				devAction() {
 					const e: EnemyForSpawning = { eTemp: id as EnemyTemplateId };
 					spawnEnemy(e, player.currentUniqueSceneId, player.unitId);
-				}
+				},
+				associateWithUnit:player.unitId
 			});
 		}
 	},

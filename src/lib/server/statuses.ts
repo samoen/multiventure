@@ -1,4 +1,5 @@
 import type { AnySprite } from '$lib/utils';
+import type { BonusStat } from './users';
 
 // export type StatusId = 'poison' | 'rage' | 'hidden'
 export type StatusId = string;
@@ -6,7 +7,7 @@ export type StatusId = string;
 export type StatusData = {
 	id: StatusId;
 	damagePercent?: number;
-	incStr?: number;
+	giveBonus?:{stat:BonusStat, amount:number}
 	immunity?: boolean;
 	removeOnProvoke?: boolean;
 	selfInflictSprite: AnySprite;
@@ -20,7 +21,7 @@ export const statusDatas: StatusData[] = [
 	},
 	{
 		id: 'rage',
-		incStr: 10,
+		giveBonus:{stat:'strength',amount:10},
 		selfInflictSprite: 'flame'
 	},
 	{

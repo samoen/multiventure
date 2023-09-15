@@ -725,6 +725,13 @@
 				</div>
 			{/if}
 			{#if $selectedDetail.kind == 'bg'}
+				<div class="bgButtons">
+					<button>Reset Scene</button>
+					<button>Give up</button>
+					<button>Log out</button>
+					<button>Delete Hero</button>
+					<button>Event log</button>
+				</div>
 				<div class="sceneTexts" bind:this={sceneTexts}>
 					{#each $lastMsgFromServer.sceneTexts as t}
 						<p class="sceneText">{t}</p>
@@ -799,6 +806,14 @@
 	.wrapGameField :global(.projectileSized) {
 		height: clamp(25px, 5vw + 1px, 50px);
 		width: clamp(25px, 5vw + 1px, 50px);
+	}
+
+	.bgButtons{
+		display: flex;
+		flex-direction: column;
+		gap:5px;
+		padding:5px;
+		overflow-y: auto;
 	}
 
 	.textSelectable {
@@ -1142,6 +1157,7 @@
 		text-align: center;
 		/* vertical-align: middle; */
 		/* border: 1px solid yellow; */
+		white-space: nowrap;
 		display: flex;
 		justify-content: center;
 		align-items: center;

@@ -51,7 +51,10 @@ export function addNewUser(heroName: string): { id: string; player: Player } | u
 		maxHealth: 100,
 		agility: 1,
 		strength: 1,
-		bonusStrength: 0,
+		bonusStats:{
+			strength:0,
+			agility:0,
+		},
 		devActions: [],
 		itemActions: [],
 		vasActions: [],
@@ -113,11 +116,15 @@ export type PlayerCommonStats = {
 	unitId: HeroId;
 	displayName: HeroName;
 	health: number;
+	maxHealth: number;
 	agility: number;
 	strength: number;
-	bonusStrength: number;
-	maxHealth: number;
+	bonusStats:BonusStatsState;
+
 };
+
+export type BonusStat = 'strength' | 'agility'
+export type BonusStatsState = Record<BonusStat,number>
 
 export type PlayerInClient = {
 	currentSceneDisplay: string;
@@ -130,13 +137,17 @@ export type GameAction = {
 	battleEvent?: BattleEvent;
 	buttonText: string;
 	itemId?: ItemId;
-	associateWithUnit?: UnitId;
-	unlockableActData?: VasActionData & withVasId;
+
+	// What npc is offering the action? Or selecting which unit chooses that action
+	associateWithUnit: UnitId;
+
+
+	unlockableActData?: VasActionData;
 };
 
-export type withVasId = {
-	vasId: VisualActionSourceId;
-};
+// export type withVasId = {
+// 	vasId: VisualActionSourceId;
+// };
 
 export function healPlayer(player: Player, amount: number): { healed: number } {
 	const missing = player.maxHealth - player.health;

@@ -134,7 +134,7 @@ export function updatePlayerActions(player: Player) {
 		const nBe = (targetChosen: BattleEventEntity) => {
 			let bonus = 0;
 			if (iAb.kind == 'melee') {
-				bonus = player.strength + player.bonusStrength;
+				bonus = player.strength + player.bonusStats.strength;
 			}
 			const alsoDmgs: DamageEvent[] = [];
 			if (i.damages) {
@@ -268,6 +268,13 @@ export function updatePlayerActions(player: Player) {
 	if (scene.actions) {
 		scene.actions(player);
 	}
+	player.devActions.push({
+		buttonText:'Give up',
+		associateWithUnit:player.unitId,
+		devAction() {
+			player.health = 0
+		},
+	})
 	if (!sceneEnemies.length) {
 		if (scene.vases) {
 			for (const vas of scene.vases) {
@@ -277,6 +284,10 @@ export function updatePlayerActions(player: Player) {
 			}
 		}
 	}
+}
+
+export function getItemActions(bee:BattleEventEntity){
+
 }
 
 export function checkHasStatus(bee: BattleEventEntity, st: StatusId): boolean {
@@ -409,14 +420,9 @@ export function scaleEnemyHealth(enemy: ActiveEnemy, playerCount: number) {
 	enemy.health = Math.floor(percentHealthBefore * enemy.maxHealth);
 }
 
-export function changeScene(player: Player, goTo: SceneDataId) {
-	const uniqueTo = uniqueFromSceneDataId(player.unitId, goTo);
-
-	player.previousScene = player.currentUniqueSceneId;
-	player.currentUniqueSceneId = uniqueTo;
-
-	// When entering a new scene, state cooldowns to 0,
-	// state warmups to the item warmup, stocks to start
+export function resetCooldowns(player:Player){
+	player.bonusStats.agility = 0
+	player.bonusStats.strength = 0
 	for (const itemState of player.inventory) {
 		itemState.cooldown = 0;
 		if (itemState.stats.warmup) {
@@ -428,11 +434,18 @@ export function changeScene(player: Player, goTo: SceneDataId) {
 			itemState.stock = itemState.stats.startStock;
 		}
 	}
+}
+
+export function changeScene(player: Player, goTo: SceneDataId) {
+	const uniqueTo = uniqueFromSceneDataId(player.unitId, goTo);
+
+	player.previousScene = player.currentUniqueSceneId;
+	player.currentUniqueSceneId = uniqueTo;
+
+	resetCooldowns(player)
 
 	// should status persist after battles?
 	player.statuses = new Map();
-
-	player.bonusStrength = 0;
 
 	enterSceneOrWakeup(player);
 }
@@ -458,7 +471,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				battleAnimation: {
 					triggeredBy: player.unitId,
 					source: player.unitId,
-					behavior: { kind: 'melee', animateTo: actionFromId.unlockableActData.vasId },
+					behavior: { kind: 'melee', animateTo: actionFromId.associateWithUnit },
 					takesItem: true
 				}
 			});
@@ -482,7 +495,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				battleAnimation: {
 					triggeredBy: player.unitId,
 					source: player.unitId,
-					behavior: { kind: 'travel', animateTo: actionFromId.unlockableActData.vasId }
+					behavior: { kind: 'travel', animateTo: actionFromId.associateWithUnit }
 				}
 			});
 		}
@@ -544,6 +557,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	const postReactionEnemies = enemiesInScene(actionStartedInSceneId);
 	if (!postReactionEnemies.length) {
 		for (const playerInScene of activePlayersInScene(player.currentUniqueSceneId)) {
+			resetCooldowns(player)
 			if (playerScene.healsOnVictory) {
 				playerInScene.health = playerInScene.maxHealth;
 			}
@@ -569,10 +583,10 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity, sta
 			sprite = statusData.selfInflictSprite;
 			pushHappening(`${on.entity.unitId} took ${dmg} damage from ${k}`);
 		}
-		if (statusData.incStr) {
-			on.entity.bonusStrength += 10;
+		if (statusData.giveBonus) {
+			on.entity.bonusStats[statusData.giveBonus.stat] += statusData.giveBonus.amount
 			sprite = statusData.selfInflictSprite
-			pushHappening(`${on.entity.unitId} grows in strength!`);
+			pushHappening(`${on.entity.displayName} grows in strength!`);
 		}
 
 		statusMap.set(k, v - 1);
@@ -682,7 +696,7 @@ export function handleRetaliations(
 							{
 								target: target,
 								baseDamage: enemyInScene.template.baseDamage,
-								bonusDamage: enemyInScene.bonusStrength,
+								bonusDamage: enemyInScene.bonusStats.strength,
 								strikes: enemyInScene.template.strikes ?? 1
 							}
 						]
@@ -949,7 +963,7 @@ export function getValidGameActionsFromVas(vas: VisualActionSource, player: Play
 
 				ga = {
 					buttonText: txt,
-					unlockableActData: { ...unlockableActData, vasId: vas.unitId },
+					unlockableActData: unlockableActData,
 					associateWithUnit: vas.unitId
 				};
 

@@ -12,7 +12,7 @@ import { v4 } from 'uuid';
 import { deepEqual, type EnemyForSpawning } from './logic';
 import { pushHappening } from './messaging';
 import { scenesData, type UniqueSceneIdenfitier } from './scenes';
-import { activePlayersInScene, type Player } from './users';
+import { activePlayersInScene, type BonusStatsState, type Player } from './users';
 import type { StatusId } from './statuses';
 
 export const activeEnemies: ActiveEnemy[] = [];
@@ -24,7 +24,7 @@ export type ActiveEnemy = {
 	currentUniqueSceneId: UniqueSceneIdenfitier;
 	health: number;
 	maxHealth: number;
-	bonusStrength:number;
+	bonusStats:BonusStatsState;
 	aggros: Map<HeroId, number>;
 	template: EnemyTemplate;
 	statuses: EnemyStatuses;
@@ -158,7 +158,10 @@ export function spawnEnemy(
 		currentUniqueSceneId: where2,
 		health: modifiedBaseHealth,
 		maxHealth: modifiedBaseHealth,
-		bonusStrength : 0,
+		bonusStats:{
+			strength:0,
+			agility:0,
+		},
 		aggros: aggros,
 		template: template,
 		statuses: mapStatuses
@@ -213,6 +216,8 @@ export function damageEntity(
 	damageLimit:number | undefined,
 ): { dmgDone: number[] } {
 	if (toDamage.entity.health < 1) return { dmgDone: [] };
+
+	
 
 	const dmgDone: number[] = [];
 	let dmgSum = 0

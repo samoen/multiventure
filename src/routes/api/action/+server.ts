@@ -45,7 +45,6 @@ export const POST = (async (r) => {
 	handleAction(player, actionFromId);
 
 	if (player.health < 1) {
-		player.sceneTexts.push('You were struck down');
 		pushHappening(`${player.displayName} is mortally wounded`);
 	}
 

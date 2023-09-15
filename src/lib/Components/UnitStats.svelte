@@ -20,8 +20,8 @@
 	let bonusStr = '';
 	$: {
 		if (vu.actual.kind == 'player') {
-			if (vu.actual.entity.bonusStrength > 0) {
-				bonusStr = ` +${vu.actual.entity.bonusStrength}`;
+			if (vu.actual.entity.bonusStats.strength > 0) {
+				bonusStr = ` +${vu.actual.entity.bonusStats.strength}`;
 			}
 		} else {
 			bonusStr = '';
