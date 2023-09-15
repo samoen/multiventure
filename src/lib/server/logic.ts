@@ -54,35 +54,35 @@ export function updateAllPlayerActions() {
 }
 
 export function createPossibleBattleEventsFromEntity(
-	bee:BattleEventEntity,
-	uSceneId:UniqueSceneIdenfitier,
-	triggeredBy:Player
-):BattleEvent[]{
+	bee: BattleEventEntity,
+	uSceneId: UniqueSceneIdenfitier,
+	triggeredBy: Player
+): BattleEvent[] {
 	let scenePlayers = activePlayersInScene(uSceneId)
-	let scenePlayersEntities:BattleEventEntity[] = scenePlayers.map((sp) => {
+	let scenePlayersEntities: BattleEventEntity[] = scenePlayers.map((sp) => {
 		return {
 			kind: 'player',
 			entity: sp
 		};
 	})
-	let sceneEnemiesEntities:BattleEventEntity[] = enemiesInScene(uSceneId).map(se=>{
-		return{
-			kind:'enemy',
-			entity:se
+	let sceneEnemiesEntities: BattleEventEntity[] = enemiesInScene(uSceneId).map(se => {
+		return {
+			kind: 'enemy',
+			entity: se
 		}
 	})
-	let alliesOfBee:BattleEventEntity[] = []
-	let opponentsOfBee:BattleEventEntity[] = []
-	if(bee.kind == 'player'){
+	let alliesOfBee: BattleEventEntity[] = []
+	let opponentsOfBee: BattleEventEntity[] = []
+	if (bee.kind == 'player') {
 		alliesOfBee = scenePlayersEntities
 		opponentsOfBee = sceneEnemiesEntities
 	}
-	if(bee.kind == 'enemy'){
-		alliesOfBee=sceneEnemiesEntities
-		opponentsOfBee=scenePlayersEntities
+	if (bee.kind == 'enemy') {
+		alliesOfBee = sceneEnemiesEntities
+		opponentsOfBee = scenePlayersEntities
 	}
 
-	let result :BattleEvent[] = []
+	let result: BattleEvent[] = []
 	for (const itemState of bee.entity.inventory) {
 		const i = items.find((item) => item.id == itemState.stats.id);
 		if (i == undefined) continue;
@@ -125,7 +125,7 @@ export function createPossibleBattleEventsFromEntity(
 				for (const aff of dmgAffected) {
 					alsoDmgs.push({
 						target: aff,
-						itemDamageData:i.damages,
+						itemDamageData: i.damages,
 					} satisfies DamageEvent);
 				}
 			}
@@ -173,7 +173,7 @@ export function createPossibleBattleEventsFromEntity(
 
 			let beBehav: AnimationBehavior = iAb;
 
-			let animateTo : BattleEventEntity | undefined = undefined
+			let animateTo: BattleEventEntity | undefined = undefined
 			if (iAb.kind == 'missile' || iAb.kind == 'melee') {
 				animateTo = targetChosen
 			}
@@ -186,7 +186,7 @@ export function createPossibleBattleEventsFromEntity(
 
 			const result: BattleEvent = {
 				source: bee,
-				animateTo:animateTo,
+				animateTo: animateTo,
 				behavior: beBehav,
 				teleportsTo: i.teleportTo,
 				alsoDamages: alsoDmgs,
@@ -194,7 +194,7 @@ export function createPossibleBattleEventsFromEntity(
 				alsoModifiesAggro: modagro,
 				putsStatuses: ptstatuses,
 				stillHappenIfTargetDies: i.requiresSourceDead,
-				itemUsed:i,
+				itemUsed: i,
 			} satisfies BattleEvent;
 
 			return result;
@@ -202,9 +202,9 @@ export function createPossibleBattleEventsFromEntity(
 
 		let targetable: BattleEventEntity[] = [];
 		if (iCt.kind == 'anyEnemy') {
-			targetable = opponentsOfBee.filter(o=>{
-				if(bee.kind != 'enemy')return true
-				if(o.entity.unitId != triggeredBy.unitId){
+			targetable = opponentsOfBee.filter(o => {
+				if (bee.kind != 'enemy') return true
+				if (o.entity.unitId != triggeredBy.unitId) {
 					return false
 				}
 				return true
@@ -218,7 +218,7 @@ export function createPossibleBattleEventsFromEntity(
 		for (const t of targetable) {
 			const perTargbe = nBe(t);
 			let targetImmune = false;
-			if(iCt.kind == 'anyEnemy'){
+			if (iCt.kind == 'anyEnemy') {
 				if (immuneDueToStatus(t)) {
 					targetImmune = true;
 				}
@@ -241,9 +241,9 @@ export function createPossibleBattleEventsFromEntity(
 }
 
 export function updatePlayerActions(player: Player) {
-	const possibleBattleEvents = createPossibleBattleEventsFromEntity({kind:'player',entity:player},player.currentUniqueSceneId,player)
+	const possibleBattleEvents = createPossibleBattleEventsFromEntity({ kind: 'player', entity: player }, player.currentUniqueSceneId, player)
 	player.itemActions = [];
-	for(let possibleBe of possibleBattleEvents){
+	for (let possibleBe of possibleBattleEvents) {
 		let associate = possibleBe.animateTo?.entity.unitId ?? player.unitId
 		const ga: GameAction = {
 			buttonText: `${possibleBe.source.entity.unitId} use ${possibleBe.itemUsed.id} on ${associate}`,
@@ -253,21 +253,21 @@ export function updatePlayerActions(player: Player) {
 		};
 		player.itemActions.push(ga);
 	}
-	
+
 	const scene = getSceneDataSimple(player.currentUniqueSceneId.dataId);
-	
+
 	player.devActions = [];
 	if (scene.actions) {
 		scene.actions(player);
 	}
 	player.devActions.push({
-		buttonText:'Give up',
-		associateWithUnit:player.unitId,
+		buttonText: 'Give up',
+		associateWithUnit: player.unitId,
 		devAction() {
 			player.health = 0
 		},
 	})
-	
+
 	player.vasActions = [];
 	player.visualActionSources = [];
 	const sceneEnemies = enemiesInScene(player.currentUniqueSceneId);
@@ -303,7 +303,7 @@ export function checkHasStatus(bee: BattleEventEntity, st: StatusId): boolean {
 
 export function removeStatusesOnProvoke(bee: BattleEventEntity): StatusData | undefined {
 	let result = undefined;
-	let rem = (s:Map<StatusId,number>)=>{
+	let rem = (s: Map<StatusId, number>) => {
 		for (const [k, v] of s) {
 			const statusData = statusDatas.find((s) => s.id == k);
 			if (!statusData) continue;
@@ -315,11 +315,11 @@ export function removeStatusesOnProvoke(bee: BattleEventEntity): StatusData | un
 
 	}
 
-	if(bee.kind == 'player'){
+	if (bee.kind == 'player') {
 		rem(bee.entity.statuses)
 	}
-	if(bee.kind == 'enemy'){
-		for(const [sForp, statuses] of bee.entity.statuses){
+	if (bee.kind == 'enemy') {
+		for (const [sForp, statuses] of bee.entity.statuses) {
 			rem(statuses)
 		}
 	}
@@ -424,7 +424,7 @@ export function scaleEnemyHealth(enemy: ActiveEnemy, playerCount: number) {
 	enemy.health = Math.floor(percentHealthBefore * enemy.maxHealth);
 }
 
-export function resetCooldowns(player:Player){
+export function resetCooldowns(player: Player) {
 	player.bonusStats.agility = 0
 	player.bonusStats.strength = 0
 	for (const itemState of player.inventory) {
@@ -476,7 +476,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 					triggeredBy: player.unitId,
 					source: player.unitId,
 					behavior: { kind: 'melee' },
-					animateTo:actionFromId.associateWithUnit,
+					animateTo: actionFromId.associateWithUnit,
 					takesItem: true
 				}
 			});
@@ -501,7 +501,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 					triggeredBy: player.unitId,
 					source: player.unitId,
 					behavior: { kind: 'travel' },
-					animateTo:actionFromId.associateWithUnit,
+					animateTo: actionFromId.associateWithUnit,
 				}
 			});
 		}
@@ -515,40 +515,41 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 
 	pushHappening('----');
 
-	let chosenBattleEvents : BattleEvent[] = []
+	let chosenBattleEvents: BattleEvent[] = []
 	for (const enemy of enemiesInScene(actionStartedInSceneId)) {
-			const aggroForActor = getAggroForPlayer(enemy, player);
-			if (aggroForActor) {
-				if (Math.random() < aggroForActor / 100) {
-					let bEventsForEnemy = createPossibleBattleEventsFromEntity(
-						{kind:'enemy',entity:enemy},
-						actionStartedInSceneId,
-						player,
-					)
-					let selected = bEventsForEnemy.at(0)
-					if(selected){
-						chosenBattleEvents.push(selected)
-					}
+		const aggroForActor = getAggroForPlayer(enemy, player);
+		if (aggroForActor) {
+			if (Math.random() < aggroForActor / 100) {
+				let bEventsForEnemy = createPossibleBattleEventsFromEntity(
+					{ kind: 'enemy', entity: enemy },
+					actionStartedInSceneId,
+					player,
+				)
+				const randomIndex = Math.floor(Math.random() * bEventsForEnemy.length);
+				let selected = bEventsForEnemy.at(randomIndex)
+				if (selected) {
+					chosenBattleEvents.push(selected)
 				}
 			}
+		}
 	}
 	chosenBattleEvents.push(actionFromId.battleEvent)
-	chosenBattleEvents.sort((a,b)=>{
-		return getActionSpeed(b.source,b.itemUsed) - getActionSpeed(a.source,a.itemUsed)
+	chosenBattleEvents.sort((a, b) => {
+		return getActionSpeed(b.source, b.itemUsed) - getActionSpeed(a.source, a.itemUsed)
 	})
 
-	for(let chosenBe of chosenBattleEvents){
+	for (let chosenBe of chosenBattleEvents) {
 		if (chosenBe.source.entity.health < 1 && !chosenBe.itemUsed.requiresSourceDead) continue
-		if(chosenBe.animateTo && (immuneDueToStatus(chosenBe.animateTo) || chosenBe.animateTo.entity.health < 1))continue
+		if (chosenBe.animateTo && (immuneDueToStatus(chosenBe.animateTo) || chosenBe.animateTo.entity.health < 1)) continue
 		processBattleEvent(chosenBe, player);
 		afterItemUsed(chosenBe.source, chosenBe.itemUsed);
 	}
-	
-	decrementCooldowns({kind:'player',entity:player});
-	
+
+	decrementCooldowns({ kind: 'player', entity: player });
+
 	if (itemUsed.provoke != undefined) {
 		for (const enemy of enemiesInScene(actionStartedInSceneId)) {
-			decrementCooldowns({kind:'enemy',entity:enemy});
+			decrementCooldowns({ kind: 'enemy', entity: enemy });
 			let statusesForPlayer = enemy.statuses.get(player.unitId)
 			if (statusesForPlayer) {
 				handleStatusEffects(player, { kind: 'enemy', entity: enemy })
@@ -580,12 +581,12 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 }
 
-function getActionSpeed(bee:BattleEventEntity,itemUsed:Item):number{
+function getActionSpeed(bee: BattleEventEntity, itemUsed: Item): number {
 	let agi = 0
-	if(bee.kind== 'player'){
+	if (bee.kind == 'player') {
 		agi = bee.entity.agility
 	}
-	if(bee.kind == 'enemy'){
+	if (bee.kind == 'enemy') {
 		agi = bee.entity.template.agility
 	}
 	agi += (itemUsed.speed ?? 0)
@@ -595,14 +596,14 @@ function getActionSpeed(bee:BattleEventEntity,itemUsed:Item):number{
 function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 	const ad: DamageAnimation[] = [];
 	let sprite: AnySprite | undefined = undefined;
-	let check = (statusMap: Map<StatusId, number>,full:boolean)=>{
+	let check = (statusMap: Map<StatusId, number>, full: boolean) => {
 		for (const [k, v] of statusMap) {
 			if (on.entity.health < 0) break
 			if (v < 1) continue;
 			const statusData = statusDatas.find((s) => s.id == k);
 			if (!statusData) continue;
-			if(!full){
-				if(statusData.decayAnyPlayer){
+			if (!full) {
+				if (statusData.decayAnyPlayer) {
 					statusMap.set(k, v - 1);
 					continue
 				}
@@ -622,12 +623,12 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 			statusMap.set(k, v - 1);
 		}
 	}
-	if(on.kind == 'player'){
-		check(on.entity.statuses,true)
+	if (on.kind == 'player') {
+		check(on.entity.statuses, true)
 	}
-	if(on.kind == 'enemy'){
-		for(let [p,statuses] of on.entity.statuses){
-			check(statuses,p == playerTriggered.unitId)
+	if (on.kind == 'enemy') {
+		for (let [p, statuses] of on.entity.statuses) {
+			check(statuses, p == playerTriggered.unitId)
 		}
 	}
 	if (sprite) {
@@ -656,7 +657,7 @@ function afterItemUsed(bee: BattleEventEntity, itemUsed: Item) {
 			}
 		}
 	}
-	if(bee.kind == 'enemy'){
+	if (bee.kind == 'enemy') {
 		// enemy aggro to all players goes to zero when it uses an item
 		for (const key of bee.entity.aggros.keys()) {
 			bee.entity.aggros.set(key, 0);
@@ -666,16 +667,16 @@ function afterItemUsed(bee: BattleEventEntity, itemUsed: Item) {
 function decrementCooldowns(bee: BattleEventEntity) {
 	// Each turn decrement cooldowns, only if time passed ie provoke
 	// if (itemUsed.provoke != undefined) {
-		for (const cd of bee.entity.inventory) {
-			if (cd.cooldown > 0) cd.cooldown--;
-			if (cd.warmup > 0) cd.warmup--;
-		}
+	for (const cd of bee.entity.inventory) {
+		if (cd.cooldown > 0) cd.cooldown--;
+		if (cd.warmup > 0) cd.warmup--;
+	}
 	// }
 }
 
-export function immuneDueToStatus(bee : BattleEventEntity): boolean {
+export function immuneDueToStatus(bee: BattleEventEntity): boolean {
 	// let statusMap: Map<StatusId, number> | undefined = undefined
-	const check = (statusMap: Map<StatusId, number>)=>{
+	const check = (statusMap: Map<StatusId, number>) => {
 		let immunity = false;
 		for (const [k, v] of statusMap) {
 			if (v < 1) continue;
@@ -687,13 +688,13 @@ export function immuneDueToStatus(bee : BattleEventEntity): boolean {
 		}
 		return immunity;
 	}
-	if(bee.kind == 'player'){
+	if (bee.kind == 'player') {
 		return check(bee.entity.statuses)
 	}
-	if(bee.kind=='enemy'){
-		for(const [p,statuses] of bee.entity.statuses){
+	if (bee.kind == 'enemy') {
+		for (const [p, statuses] of bee.entity.statuses) {
 			let checked = check(statuses)
-			if(checked){
+			if (checked) {
 				return true
 			}
 		}
@@ -786,11 +787,11 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		for (const healthModifyEvent of battleEvent.alsoHeals) {
 			if (healthModifyEvent.target.entity.health < 0 && !battleEvent.stillHappenIfTargetDies)
 				continue;
-				const r = healEntity(healthModifyEvent.target, healthModifyEvent.baseHeal);
-				healAnimations.push({
-					target: healthModifyEvent.target.entity.unitId,
-					amount: r.healed
-				});
+			const r = healEntity(healthModifyEvent.target, healthModifyEvent.baseHeal);
+			healAnimations.push({
+				target: healthModifyEvent.target.entity.unitId,
+				amount: r.healed
+			});
 		}
 	}
 	const aggroModifiedAnimations: AggroModifier[] = [];
@@ -836,7 +837,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		triggeredBy: player.unitId,
 		source: battleEvent.source.entity.unitId,
 		behavior: battleEvent.behavior,
-		animateTo:battleEvent.animateTo?.entity.unitId,
+		animateTo: battleEvent.animateTo?.entity.unitId,
 		alsoDamages: damageAnimations,
 		alsoHeals: healAnimations,
 		alsoModifiesAggro: aggroModifiedAnimations,
@@ -863,7 +864,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				triggeredBy: player.unitId,
 				source: battleEvent.source.entity.unitId,
 				behavior: battleEvent.behavior,
-				animateTo:battleEvent.animateTo?.entity.unitId,
+				animateTo: battleEvent.animateTo?.entity.unitId,
 				alsoDamages: [{ target: damageAnimationForMissleTarget.target, amount: [i] }]
 			};
 			pushAnimation({
@@ -875,36 +876,24 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 }
 
 export function getDamageReduction(from: BattleEventEntity): number {
-	if (from.kind == 'enemy') {
-		return from.entity.template.damageReduction ?? 0
-	}
-	if (from.kind == 'player') {
-		let dmgReduc: number = 0
-		for (const item of from.entity.inventory) {
-			if (item.stats.damageReduction) {
-				dmgReduc += item.stats.damageReduction
-			}
+	let dmgReduc: number = 0
+	for (const item of from.entity.inventory) {
+		if (item.stats.damageReduction) {
+			dmgReduc += item.stats.damageReduction
 		}
-		return dmgReduc
 	}
-	return 0
+	return dmgReduc
 }
 export function getDamageLimit(from: BattleEventEntity): number | undefined {
-	if (from.kind == 'enemy') {
-		return from.entity.template.damageLimit
-	}
-	if (from.kind == 'player') {
-		let dmgLim: number | undefined = undefined
-		for (const item of from.entity.inventory) {
-			if (item.stats.damageLimit) {
-				if (dmgLim == undefined || dmgLim > item.stats.damageLimit) {
-					dmgLim = item.stats.damageLimit
-				}
+	let dmgLim: number | undefined = undefined
+	for (const item of from.entity.inventory) {
+		if (item.stats.damageLimit) {
+			if (dmgLim == undefined || dmgLim > item.stats.damageLimit) {
+				dmgLim = item.stats.damageLimit
 			}
 		}
-		return dmgLim
 	}
-	return undefined
+	return dmgLim
 }
 
 export function getValidGameActionsFromVas(vas: VisualActionSource, player: Player): GameAction[] {

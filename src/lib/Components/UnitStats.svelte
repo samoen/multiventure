@@ -78,18 +78,6 @@
 				<img src={teeth} alt="a heart" />
 				<div>{aggGain}</div>
 			</div>
-			{#if enemy?.template.damageReduction}
-				<div class="statLine">
-					<img src={lightShield} alt="a heart" />
-					<div>{enemy.template.damageReduction}</div>
-				</div>
-			{/if}
-			{#if enemy?.template.damageLimit}
-				<div class="statLine">
-					<img src={heavyShield} alt="a heart" />
-					<div>{enemy.template.damageLimit}</div>
-				</div>
-			{/if}
 		{/if}
 	</div>
 
