@@ -19,7 +19,7 @@ export const activeEnemies: ActiveEnemy[] = [];
 
 export type ActiveEnemy = {
 	unitId: EnemyId;
-	name: EnemyName;
+	displayName: EnemyName;
 	templateId: EnemyTemplateId;
 	currentUniqueSceneId: UniqueSceneIdenfitier;
 	health: number;
@@ -153,7 +153,7 @@ export function spawnEnemy(
 
 	activeEnemies.push({
 		unitId: `enemy${uid}`,
-		name: eFs.eName ?? eFs.eTemp,
+		displayName: eFs.eName ?? eFs.eTemp,
 		templateId: eFs.eTemp,
 		currentUniqueSceneId: where2,
 		health: modifiedBaseHealth,
@@ -235,14 +235,13 @@ export function damageEntity(
 		dmgSum += dmg
 		if (toDamage.entity.health < 1) break;
 	}
-	const attackerName = source.kind == 'player' ? source.entity.displayName : source.entity.name;
 	pushHappening(
-		`${attackerName} hit ${toDamage.entity.unitId} for ${dmgSum} damage`
+		`${source.entity.displayName} hit ${toDamage.entity.displayName} for ${dmgSum} damage`
 	);
 	if(toDamage.kind == 'enemy'){
 		const result = checkEnemyDeath(toDamage.entity);
 		if (result.killed) {
-			pushHappening(`${attackerName} killed ${toDamage.entity.unitId}`);
+			pushHappening(`${source.entity.displayName} killed ${toDamage.entity.displayName}`);
 		}
 	}
 	return { dmgDone: dmgDone };

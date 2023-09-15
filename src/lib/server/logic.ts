@@ -510,7 +510,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		}
 	}
 
-	handleRetaliations(player, false, actionFromId, itemUsed);
+	handleRetaliations(player, false, itemUsed);
 
 	if (player.health > 0 || itemUsed.requiresSourceDead) {
 		preCombatActionPerformed(player, actionFromId, itemUsed);
@@ -520,7 +520,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 
 	if (player.health > 0) {
-		handleRetaliations(player, true, actionFromId, itemUsed);
+		handleRetaliations(player, true, itemUsed);
 	}
 	if (itemUsed.provoke != undefined) {
 		for (const enemy of enemiesInScene(actionStartedInSceneId)) {
@@ -629,7 +629,6 @@ export function immuneDueToStatus(statusMap: Map<StatusId, number>): boolean {
 export function handleRetaliations(
 	player: Player,
 	postAction: boolean,
-	action: GameAction,
 	itemUsed: Item
 ) {
 	if (itemUsed.grantsImmunity || immuneDueToStatus(player.statuses)) return;

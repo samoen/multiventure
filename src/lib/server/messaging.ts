@@ -151,7 +151,6 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroId): Messag
 		happenings: recentHappenings,
 		animations: forPlayer.animations,
 		enemiesInScene: enemiesInScene(forPlayer.currentUniqueSceneId).map((e) => {
-			// console.log(`sending ${e.name} statuses ${JSON.stringify(e.statuses)}`)
 			const aggros: AggroInClient[] = [];
 			for (const [k, v] of e.aggros) {
 				aggros.push({
@@ -175,7 +174,7 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroId): Messag
 				unitId: e.unitId,
 				health: e.health,
 				maxHealth: e.maxHealth,
-				displayName: e.name,
+				displayName: e.displayName,
 				templateId: e.templateId,
 				template: e.template,
 				myAggro: getAggroForPlayer(e, forPlayer),
