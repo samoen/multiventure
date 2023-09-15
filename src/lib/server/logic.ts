@@ -76,23 +76,43 @@ export function updateAllPlayerActions() {
 	}
 }
 
-export function updatePlayerActions(player: Player) {
-	player.devActions = [];
-	player.itemActions = [];
-	player.visualActionSources = [];
-	player.vasActions = [];
+export function createPossibleBattleEventsFromEntity(
+	bee:BattleEventEntity,
+	uSceneId:UniqueSceneIdenfitier,
+	triggeredBy:Player
+):BattleEvent[]{
+	let scenePlayers = activePlayersInScene(uSceneId)
+	let scenePlayersEntities:BattleEventEntity[] = scenePlayers.map((sp) => {
+		return {
+			kind: 'player',
+			entity: sp
+		};
+	})
+	let sceneEnemiesEntities:BattleEventEntity[] = enemiesInScene(uSceneId).map(se=>{
+		return{
+			kind:'enemy',
+			entity:se
+		}
+	})
+	let alliesOfBee:BattleEventEntity[] = []
+	let opponentsOfBee:BattleEventEntity[] = []
+	if(bee.kind == 'player'){
+		alliesOfBee = scenePlayersEntities
+		opponentsOfBee = sceneEnemiesEntities
+	}
+	if(bee.kind == 'enemy'){
+		alliesOfBee=sceneEnemiesEntities
+		opponentsOfBee=scenePlayersEntities
+	}
 
-	const scene = getSceneData(player);
-	const sceneEnemies = enemiesInScene(player.currentUniqueSceneId);
-	const scenePlayers = activePlayersInScene(player.currentUniqueSceneId);
-
-	for (const itemState of player.inventory) {
+	let result :BattleEvent[] = []
+	for (const itemState of bee.entity.inventory) {
 		const i = items.find((item) => item.id == itemState.stats.id);
 		if (i == undefined) continue;
 		if (i.noAction) continue;
-		if (!i.useableOutOfBattle && !sceneEnemies.length) continue;
-		if (i.requiresSourceDead && player.health > 0) continue;
-		if (!i.requiresSourceDead && player.health < 1) continue;
+		if (!i.useableOutOfBattle && !opponentsOfBee.length) continue;
+		if (i.requiresSourceDead && bee.entity.health > 0) continue;
+		if (!i.requiresSourceDead && bee.entity.health < 1) continue;
 		if (itemState.cooldown > 0) continue;
 		if (itemState.warmup > 0) continue;
 		if (itemState.stock != undefined && itemState.stock < 1) continue;
@@ -110,21 +130,11 @@ export function updatePlayerActions(player: Player) {
 		const affectedsFromCanEffect = (ca: CanEffect, t: BattleEventEntity) => {
 			let affecteds: BattleEventEntity[] = [];
 			if (ca == 'allEnemy') {
-				affecteds = sceneEnemies.map((se) => {
-					return {
-						kind: 'enemy',
-						entity: se
-					};
-				});
+				affecteds = opponentsOfBee;
 			} else if (ca == 'allFriendly') {
-				affecteds = scenePlayers.map((sp) => {
-					return {
-						kind: 'player',
-						entity: sp
-					};
-				});
+				affecteds = alliesOfBee;
 			} else if (ca == 'selfOnly') {
-				affecteds = [{ kind: 'player', entity: player }];
+				affecteds = [bee];
 			} else if (ca == 'targetOnly') {
 				affecteds = [t];
 			}
@@ -159,7 +169,7 @@ export function updatePlayerActions(player: Player) {
 				const aggroAffected = affectedsFromCanEffect(i.modifiesAggro.affects, targetChosen);
 				for (const aff of aggroAffected) {
 					if (aff.kind == 'enemy') {
-						let fHeroes = [player];
+						let fHeroes = [triggeredBy];
 						if (i.modifiesAggro.aggroFor == 'allPlayers') {
 							fHeroes = scenePlayers;
 						}
@@ -193,20 +203,22 @@ export function updatePlayerActions(player: Player) {
 			}
 
 			if (iCt.kind == 'anyFriendly' && targetChosen) {
-				if (targetChosen.entity.unitId == player.unitId) {
+				if (targetChosen.entity.unitId == bee.entity.unitId) {
 					beBehav = { kind: 'selfInflicted', extraSprite: iCt.selfAfflictSprite };
 				}
 			}
 
 			const result: BattleEvent = {
-				source: { kind: 'player', entity: player },
+				source: bee,
 				behavior: beBehav,
 				teleportsTo: i.teleportTo,
 				alsoDamages: alsoDmgs,
 				alsoHeals: alsoHeals,
 				alsoModifiesAggro: modagro,
 				putsStatuses: ptstatuses,
-				stillHappenIfTargetDies: i.requiresSourceDead
+				stillHappenIfTargetDies: i.requiresSourceDead,
+				itemUsed:i.id,
+				target:targetChosen.entity.unitId,
 			} satisfies BattleEvent;
 
 			return result;
@@ -214,28 +226,24 @@ export function updatePlayerActions(player: Player) {
 
 		let targetable: BattleEventEntity[] = [];
 		if (iCt.kind == 'anyEnemy') {
-			targetable = sceneEnemies.map((se) => {
-				return {
-					kind: 'enemy',
-					entity: se
-				};
-			});
+			targetable = opponentsOfBee;
 		} else if (iCt.kind == 'anyFriendly') {
-			targetable = scenePlayers.map((sp) => {
-				return {
-					kind: 'player',
-					entity: sp
-				};
-			});
+			targetable = alliesOfBee;
 		} else {
-			targetable = [{ kind: 'player', entity: player }];
+			targetable = [bee];
 		}
 
 		for (const t of targetable) {
 			const perTargbe = nBe(t);
 			let enemyImmune = false;
-			if (t.kind == 'enemy') {
-				const statuses = t.entity.statuses.get(player.unitId);
+			if(iCt.kind == 'anyEnemy'){
+				let statuses : Map<StatusId, number> | undefined = undefined
+				if (t.kind == 'enemy') {
+					statuses = t.entity.statuses.get(triggeredBy.unitId);
+				}
+				if(t.kind == 'player'){
+					statuses = t.entity.statuses
+				}
 				if (statuses && immuneDueToStatus(statuses)) {
 					enemyImmune = true;
 				}
@@ -249,16 +257,30 @@ export function updatePlayerActions(player: Player) {
 			) {
 				continue;
 			}
-			const ga: GameAction = {
-				buttonText: `${player.unitId} use ${i.id} on ${t.entity.unitId}`,
-				battleEvent: perTargbe,
-				itemId: i.id,
-				associateWithUnit: t.entity.unitId
-			};
-			player.itemActions.push(ga);
+			result.push(perTargbe)
 		}
 	}
 
+
+	return result
+}
+
+export function updatePlayerActions(player: Player) {
+	const possibleBattleEvents = createPossibleBattleEventsFromEntity({kind:'player',entity:player},player.currentUniqueSceneId,player)
+	player.itemActions = [];
+	for(let possibleBe of possibleBattleEvents){
+		const ga: GameAction = {
+			buttonText: `${possibleBe.source.entity.unitId} use ${possibleBe.itemUsed} on ${possibleBe.target}`,
+			battleEvent: possibleBe,
+			itemId: possibleBe.itemUsed,
+			associateWithUnit: possibleBe.target,
+		};
+		player.itemActions.push(ga);
+	}
+	
+	const scene = getSceneDataSimple(player.currentUniqueSceneId.dataId);
+	
+	player.devActions = [];
 	if (scene.actions) {
 		scene.actions(player);
 	}
@@ -269,6 +291,10 @@ export function updatePlayerActions(player: Player) {
 			player.health = 0
 		},
 	})
+	
+	player.vasActions = [];
+	player.visualActionSources = [];
+	const sceneEnemies = enemiesInScene(player.currentUniqueSceneId);
 	if (!sceneEnemies.length) {
 		if (scene.vases) {
 			for (const vas of scene.vases) {
@@ -278,10 +304,6 @@ export function updatePlayerActions(player: Player) {
 			}
 		}
 	}
-}
-
-export function getItemActions(bee:BattleEventEntity){
-
 }
 
 export function checkHasStatus(bee: BattleEventEntity, st: StatusId): boolean {
@@ -698,6 +720,8 @@ export function handleRetaliations(
 						behavior: behav,
 						putsStatuses: putsStatuses,
 						alsoDamages: alsoDmgs,
+						itemUsed:itemUsed.id,
+						target:target.entity.unitId,
 					};
 					processBattleEvent(be, player);
 

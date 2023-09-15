@@ -60,6 +60,8 @@ export type BattleEvent = {
 	alsoModifiesAggro?: AggroModifierEvent[];
 	teleportsTo?: SceneDataId;
 	stillHappenIfTargetDies?: boolean;
+	itemUsed:ItemId;
+	target:UnitId;
 };
 
 export const OffenseKinds = {
