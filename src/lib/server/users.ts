@@ -1,6 +1,7 @@
 import type {
 	BattleAnimation,
 	BattleEvent,
+	BattleEventEntity,
 	HeroId,
 	StatusState,
 	UnitId,
@@ -49,8 +50,8 @@ export function addNewUser(heroName: string): { id: string; player: Player } | u
 		inventory: [],
 		health: 100,
 		maxHealth: 100,
-		agility: 1,
-		strength: 1,
+		agility: 5,
+		strength: 5,
 		bonusStats:{
 			strength:0,
 			agility:0,
@@ -149,15 +150,15 @@ export type GameAction = {
 // 	vasId: VisualActionSourceId;
 // };
 
-export function healPlayer(player: Player, amount: number): { healed: number } {
-	const missing = player.maxHealth - player.health;
+export function healEntity(bee: BattleEventEntity, amount: number): { healed: number } {
+	const missing = bee.entity.maxHealth - bee.entity.health;
 	let toHeal = amount;
 	if (missing < amount) {
 		toHeal = missing;
 	}
 
-	player.health += toHeal;
-	pushHappening(`${player.displayName} was healed for ${toHeal}hp`);
+	bee.entity.health += toHeal;
+	pushHappening(`${bee.entity.displayName} was healed for ${toHeal}hp`);
 	return { healed: toHeal };
 }
 

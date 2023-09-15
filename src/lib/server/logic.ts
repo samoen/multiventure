@@ -1,28 +1,5 @@
 import { goto } from '$app/navigation';
-import {
-	addAnimateToUnit,
-	animatesToUnit,
-	type AggroModifier,
-	type AggroModifierEvent,
-	type AnimationBehavior,
-	type AnySprite,
-	type BattleAnimation,
-	type BattleEvent,
-	type BattleEventEntity,
-	type GameActionSentToClient,
-	type DamageAnimation,
-	type DamageEvent,
-	type HeroId,
-	type ItemAnimationBehavior,
-	type StatusEffect,
-	type StatusModifyAnimation,
-	type StatusModifierEvent,
-	type UnitId,
-	type VisualActionSourceId,
-	type StatusState,
-	type HealEvent,
-	type HealAnimation
-} from '$lib/utils';
+import type { BattleEventEntity, BattleEvent, ItemAnimationBehavior, DamageEvent, HealEvent, AggroModifierEvent, StatusModifierEvent, AnimationBehavior, DamageAnimation, AnySprite, HealAnimation, AggroModifier, HeroId, BattleAnimation, StatusModifyAnimation, GameActionSentToClient, VisualActionSourceId, StatusState } from '$lib/utils';
 import {
 	enemiesInScene,
 	activeEnemies,
@@ -65,7 +42,7 @@ import {
 	users,
 	type Player,
 	type GameAction,
-	healPlayer,
+	healEntity,
 	type Flag,
 	activePlayersInScene
 } from './users';
@@ -194,12 +171,11 @@ export function createPossibleBattleEventsFromEntity(
 				}
 			}
 
-			let beBehav: AnimationBehavior;
+			let beBehav: AnimationBehavior = iAb;
 
-			if (animatesToUnit(iAb)) {
-				beBehav = addAnimateToUnit(iAb, targetChosen.entity.unitId);
-			} else {
-				beBehav = iAb;
+			let animateTo : BattleEventEntity | undefined = undefined
+			if (iAb.kind == 'missile' || iAb.kind == 'melee') {
+				animateTo = targetChosen
 			}
 
 			if (iCt.kind == 'anyFriendly' && targetChosen) {
@@ -210,6 +186,7 @@ export function createPossibleBattleEventsFromEntity(
 
 			const result: BattleEvent = {
 				source: bee,
+				animateTo:animateTo,
 				behavior: beBehav,
 				teleportsTo: i.teleportTo,
 				alsoDamages: alsoDmgs,
@@ -217,8 +194,7 @@ export function createPossibleBattleEventsFromEntity(
 				alsoModifiesAggro: modagro,
 				putsStatuses: ptstatuses,
 				stillHappenIfTargetDies: i.requiresSourceDead,
-				itemUsed:i.id,
-				target:targetChosen.entity.unitId,
+				itemUsed:i,
 			} satisfies BattleEvent;
 
 			return result;
@@ -226,7 +202,13 @@ export function createPossibleBattleEventsFromEntity(
 
 		let targetable: BattleEventEntity[] = [];
 		if (iCt.kind == 'anyEnemy') {
-			targetable = opponentsOfBee;
+			targetable = opponentsOfBee.filter(o=>{
+				if(bee.kind != 'enemy')return true
+				if(o.entity.unitId != triggeredBy.unitId){
+					return false
+				}
+				return true
+			});
 		} else if (iCt.kind == 'anyFriendly') {
 			targetable = alliesOfBee;
 		} else {
@@ -235,17 +217,10 @@ export function createPossibleBattleEventsFromEntity(
 
 		for (const t of targetable) {
 			const perTargbe = nBe(t);
-			let enemyImmune = false;
+			let targetImmune = false;
 			if(iCt.kind == 'anyEnemy'){
-				let statuses : Map<StatusId, number> | undefined = undefined
-				if (t.kind == 'enemy') {
-					statuses = t.entity.statuses.get(triggeredBy.unitId);
-				}
-				if(t.kind == 'player'){
-					statuses = t.entity.statuses
-				}
-				if (statuses && immuneDueToStatus(statuses)) {
-					enemyImmune = true;
+				if (immuneDueToStatus(t)) {
+					targetImmune = true;
 				}
 			}
 
@@ -253,7 +228,7 @@ export function createPossibleBattleEventsFromEntity(
 				(i.requiresTargetDamaged &&
 					!(t.entity.health < t.entity.maxHealth && t.entity.health > 0)) ||
 				(i.requiresStatus && !checkHasStatus(t, i.requiresStatus)) ||
-				enemyImmune
+				targetImmune
 			) {
 				continue;
 			}
@@ -269,11 +244,12 @@ export function updatePlayerActions(player: Player) {
 	const possibleBattleEvents = createPossibleBattleEventsFromEntity({kind:'player',entity:player},player.currentUniqueSceneId,player)
 	player.itemActions = [];
 	for(let possibleBe of possibleBattleEvents){
+		let associate = possibleBe.animateTo?.entity.unitId ?? player.unitId
 		const ga: GameAction = {
-			buttonText: `${possibleBe.source.entity.unitId} use ${possibleBe.itemUsed} on ${possibleBe.target}`,
+			buttonText: `${possibleBe.source.entity.unitId} use ${possibleBe.itemUsed.id} on ${associate}`,
 			battleEvent: possibleBe,
-			itemId: possibleBe.itemUsed,
-			associateWithUnit: possibleBe.target,
+			itemId: possibleBe.itemUsed.id,
+			associateWithUnit: associate,
 		};
 		player.itemActions.push(ga);
 	}
@@ -325,14 +301,26 @@ export function checkHasStatus(bee: BattleEventEntity, st: StatusId): boolean {
 	return false;
 }
 
-export function removeStatusesOnProvoke(player: Player): StatusData | undefined {
+export function removeStatusesOnProvoke(bee: BattleEventEntity): StatusData | undefined {
 	let result = undefined;
-	for (const [k, v] of player.statuses) {
-		const statusData = statusDatas.find((s) => s.id == k);
-		if (!statusData) continue;
-		if (statusData.removeOnProvoke) {
-			result = statusData;
-			player.statuses.delete(k);
+	let rem = (s:Map<StatusId,number>)=>{
+		for (const [k, v] of s) {
+			const statusData = statusDatas.find((s) => s.id == k);
+			if (!statusData) continue;
+			if (statusData.removeOnProvoke) {
+				result = statusData;
+				s.delete(k);
+			}
+		}
+
+	}
+
+	if(bee.kind == 'player'){
+		rem(bee.entity.statuses)
+	}
+	if(bee.kind == 'enemy'){
+		for(const [sForp, statuses] of bee.entity.statuses){
+			rem(statuses)
 		}
 	}
 	return result;
@@ -487,7 +475,8 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				battleAnimation: {
 					triggeredBy: player.unitId,
 					source: player.unitId,
-					behavior: { kind: 'melee', animateTo: actionFromId.associateWithUnit },
+					behavior: { kind: 'melee' },
+					animateTo:actionFromId.associateWithUnit,
 					takesItem: true
 				}
 			});
@@ -511,58 +500,65 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				battleAnimation: {
 					triggeredBy: player.unitId,
 					source: player.unitId,
-					behavior: { kind: 'travel', animateTo: actionFromId.associateWithUnit }
+					behavior: { kind: 'travel' },
+					animateTo:actionFromId.associateWithUnit,
 				}
 			});
 		}
 		return;
 	}
 
+	if (!actionFromId.battleEvent) return;
 	if (!actionFromId.itemId) return;
 	const itemUsed = items.find((i) => i.id == actionFromId.itemId);
 	if (!itemUsed) return;
 
 	pushHappening('----');
 
-	if (itemUsed.provoke && itemUsed.provoke > 0) {
-		const r = removeStatusesOnProvoke(player);
-		if (r) {
-			pushAnimation({
-				sceneId: player.currentUniqueSceneId,
-				battleAnimation: {
-					triggeredBy: player.unitId,
-					source: player.unitId,
-					behavior: { kind: 'selfInflicted', extraSprite: r.selfInflictSprite },
-					putsStatuses: [{ statusId: r.id, target: player.unitId, remove: true }]
+	let chosenBattleEvents : BattleEvent[] = []
+	for (const enemy of enemiesInScene(actionStartedInSceneId)) {
+			const aggroForActor = getAggroForPlayer(enemy, player);
+			if (aggroForActor) {
+				if (Math.random() < aggroForActor / 100) {
+					let bEventsForEnemy = createPossibleBattleEventsFromEntity(
+						{kind:'enemy',entity:enemy},
+						actionStartedInSceneId,
+						player,
+					)
+					let selected = bEventsForEnemy.at(0)
+					if(selected){
+						chosenBattleEvents.push(selected)
+					}
 				}
-			});
-		}
+			}
 	}
+	chosenBattleEvents.push(actionFromId.battleEvent)
+	chosenBattleEvents.sort((a,b)=>{
+		return getActionSpeed(b.source,b.itemUsed) - getActionSpeed(a.source,a.itemUsed)
+	})
 
-	handleRetaliations(player, false, itemUsed);
-
-	if (player.health > 0 || itemUsed.requiresSourceDead) {
-		preCombatActionPerformed(player, actionFromId, itemUsed);
-		if (actionFromId.battleEvent) {
-			processBattleEvent(actionFromId.battleEvent, player);
-		}
+	for(let chosenBe of chosenBattleEvents){
+		if (chosenBe.source.entity.health < 1 && !chosenBe.itemUsed.requiresSourceDead) continue
+		if(chosenBe.animateTo && (immuneDueToStatus(chosenBe.animateTo) || chosenBe.animateTo.entity.health < 1))continue
+		processBattleEvent(chosenBe, player);
+		afterItemUsed(chosenBe.source, chosenBe.itemUsed);
 	}
-
-	if (player.health > 0) {
-		handleRetaliations(player, true, itemUsed);
-	}
+	
+	decrementCooldowns({kind:'player',entity:player});
+	
 	if (itemUsed.provoke != undefined) {
 		for (const enemy of enemiesInScene(actionStartedInSceneId)) {
+			decrementCooldowns({kind:'enemy',entity:enemy});
 			let statusesForPlayer = enemy.statuses.get(player.unitId)
 			if (statusesForPlayer) {
-				handleStatusEffects(player, { kind: 'enemy', entity: enemy }, statusesForPlayer)
+				handleStatusEffects(player, { kind: 'enemy', entity: enemy })
 				checkEnemyDeath(enemy)
 			}
 		}
 	}
 
 	if (player.health > 0 && itemUsed.provoke != undefined) {
-		handleStatusEffects(player, { kind: 'player', entity: player }, player.statuses)
+		handleStatusEffects(player, { kind: 'player', entity: player })
 	}
 
 	if (itemUsed.provoke != undefined && player.health > 0) {
@@ -584,28 +580,55 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	}
 }
 
-function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity, statusMap: Map<StatusId, number>) {
+function getActionSpeed(bee:BattleEventEntity,itemUsed:Item):number{
+	let agi = 0
+	if(bee.kind== 'player'){
+		agi = bee.entity.agility
+	}
+	if(bee.kind == 'enemy'){
+		agi = bee.entity.template.agility
+	}
+	agi += (itemUsed.speed ?? 0)
+	return agi;
+}
+
+function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 	const ad: DamageAnimation[] = [];
 	let sprite: AnySprite | undefined = undefined;
-	for (const [k, v] of statusMap) {
-		if (on.entity.health < 0) break
-		if (v < 1) continue;
-		const statusData = statusDatas.find((s) => s.id == k);
-		if (!statusData) continue;
-		if (statusData.damagePercent) {
-			const dmg = Math.ceil(on.entity.health * statusData.damagePercent);
-			on.entity.health -= dmg;
-			ad.push({ target: on.entity.unitId, amount: [dmg] });
-			sprite = statusData.selfInflictSprite;
-			pushHappening(`${on.entity.unitId} took ${dmg} damage from ${k}`);
+	let check = (statusMap: Map<StatusId, number>,full:boolean)=>{
+		for (const [k, v] of statusMap) {
+			if (on.entity.health < 0) break
+			if (v < 1) continue;
+			const statusData = statusDatas.find((s) => s.id == k);
+			if (!statusData) continue;
+			if(!full){
+				if(statusData.decayAnyPlayer){
+					statusMap.set(k, v - 1);
+					continue
+				}
+			}
+			if (statusData.damagePercent) {
+				const dmg = Math.ceil(on.entity.health * statusData.damagePercent);
+				on.entity.health -= dmg;
+				ad.push({ target: on.entity.unitId, amount: [dmg] });
+				sprite = statusData.selfInflictSprite;
+				pushHappening(`${on.entity.unitId} took ${dmg} damage from ${k}`);
+			}
+			if (statusData.giveBonus) {
+				on.entity.bonusStats[statusData.giveBonus.stat] += statusData.giveBonus.amount
+				sprite = statusData.selfInflictSprite
+				pushHappening(`${on.entity.displayName} grows in strength!`);
+			}
+			statusMap.set(k, v - 1);
 		}
-		if (statusData.giveBonus) {
-			on.entity.bonusStats[statusData.giveBonus.stat] += statusData.giveBonus.amount
-			sprite = statusData.selfInflictSprite
-			pushHappening(`${on.entity.displayName} grows in strength!`);
+	}
+	if(on.kind == 'player'){
+		check(on.entity.statuses,true)
+	}
+	if(on.kind == 'enemy'){
+		for(let [p,statuses] of on.entity.statuses){
+			check(statuses,p == playerTriggered.unitId)
 		}
-
-		statusMap.set(k, v - 1);
 	}
 	if (sprite) {
 		pushAnimation({
@@ -620,18 +643,10 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity, sta
 	}
 }
 
-function preCombatActionPerformed(player: Player, gameAction: GameAction, itemUsed: Item) {
-	// Each turn decrement cooldowns, only if time passed ie provoke
-	if (itemUsed.provoke != undefined) {
-		for (const cd of player.inventory) {
-			if (cd.cooldown > 0) cd.cooldown--;
-			if (cd.warmup > 0) cd.warmup--;
-		}
-	}
-
+function afterItemUsed(bee: BattleEventEntity, itemUsed: Item) {
 	// If we used an equipment item set it on cooldown and reduce stock
-	if (gameAction.itemId) {
-		const itemState = player.inventory.find((i) => i.stats.id == gameAction.itemId);
+	if (itemUsed.id) {
+		const itemState = bee.entity.inventory.find((i) => i.stats.id == itemUsed.id);
 		if (itemState) {
 			if (itemState.stats.cooldown) {
 				itemState.cooldown = itemState.stats.cooldown;
@@ -641,101 +656,66 @@ function preCombatActionPerformed(player: Player, gameAction: GameAction, itemUs
 			}
 		}
 	}
-}
-
-export function immuneDueToStatus(statusMap: Map<StatusId, number>): boolean {
-	let immunity = false;
-	for (const [k, v] of statusMap) {
-		if (v < 1) continue;
-		const foundData = statusDatas.find((d) => d.id == k);
-		if (!foundData) continue;
-		if (foundData.immunity) {
-			immunity = true;
+	if(bee.kind == 'enemy'){
+		// enemy aggro to all players goes to zero when it uses an item
+		for (const key of bee.entity.aggros.keys()) {
+			bee.entity.aggros.set(key, 0);
 		}
 	}
-	return immunity;
+}
+function decrementCooldowns(bee: BattleEventEntity) {
+	// Each turn decrement cooldowns, only if time passed ie provoke
+	// if (itemUsed.provoke != undefined) {
+		for (const cd of bee.entity.inventory) {
+			if (cd.cooldown > 0) cd.cooldown--;
+			if (cd.warmup > 0) cd.warmup--;
+		}
+	// }
 }
 
-export function handleRetaliations(
-	player: Player,
-	postAction: boolean,
-	itemUsed: Item
-) {
-	if (itemUsed.grantsImmunity || immuneDueToStatus(player.statuses)) return;
-	let playerHitSpeed = player.agility;
-	if (itemUsed.speed) {
-		playerHitSpeed += itemUsed.speed;
+export function immuneDueToStatus(bee : BattleEventEntity): boolean {
+	// let statusMap: Map<StatusId, number> | undefined = undefined
+	const check = (statusMap: Map<StatusId, number>)=>{
+		let immunity = false;
+		for (const [k, v] of statusMap) {
+			if (v < 1) continue;
+			const foundData = statusDatas.find((d) => d.id == k);
+			if (!foundData) continue;
+			if (foundData.immunity) {
+				immunity = true;
+			}
+		}
+		return immunity;
 	}
-	const sceneEnemies = enemiesInScene(player.currentUniqueSceneId);
-	for (const enemyInScene of sceneEnemies.sort((a, b) => b.template.agility - a.template.agility)) {
-		if (enemyInScene.health < 1) continue;
-		if (player.health < 1) continue;
-		if (
-			(postAction && playerHitSpeed >= enemyInScene.template.agility) ||
-			(!postAction && playerHitSpeed < enemyInScene.template.agility)
-		) {
-			const aggroForActor = getAggroForPlayer(enemyInScene, player);
-			if (aggroForActor) {
-				if (Math.random() < aggroForActor / 100) {
-					let target: BattleEventEntity = { kind: 'player', entity: player };
-					if (enemyInScene.template.randomTarget) {
-						const selfIndex = sceneEnemies.indexOf(enemyInScene);
-						if (selfIndex == -1) {
-							console.log('random targeting failed to find self index');
-							break;
-						}
-						const randomIndex = Math.floor(Math.random() * sceneEnemies.length);
-						if (randomIndex != selfIndex) {
-							const randomEnemy = sceneEnemies.at(randomIndex);
-							if (!randomEnemy) {
-								console.log('random targeting failed to find enemy target');
-								break;
-							}
-							target = { kind: 'enemy', entity: randomEnemy };
-						}
-					}
-					const putsStatuses: StatusModifierEvent[] = [];
-					if (enemyInScene.template.putsStatusOnTarget) {
-						putsStatuses.push({
-							statusId: enemyInScene.template.putsStatusOnTarget.statusId,
-							count: enemyInScene.template.putsStatusOnTarget.count,
-							target: target
-						});
-					}
-					const itemUsed = items.find(i=>i.id == enemyInScene.template.hasItem)
-					if(!itemUsed)continue
-					let iBehav = itemUsed.animation ?? {kind:'melee'}
-					const behav: AnimationBehavior = addAnimateToUnit(iBehav, target.entity.unitId);
-					let alsoDmgs : DamageEvent[]  = []
-					if(itemUsed.damages){
-						alsoDmgs = [
-							{
-								target: target,
-								itemDamageData:itemUsed.damages
-							}
-						]
-					}
-					const be: BattleEvent = {
-						source: { kind: 'enemy', entity: enemyInScene },
-						behavior: behav,
-						putsStatuses: putsStatuses,
-						alsoDamages: alsoDmgs,
-						itemUsed:itemUsed.id,
-						target:target.entity.unitId,
-					};
-					processBattleEvent(be, player);
-
-					// enemy aggro to all players goes to zero when it succeeds an aggro roll
-					for (const key of enemyInScene.aggros.keys()) {
-						enemyInScene.aggros.set(key, 0);
-					}
-				}
+	if(bee.kind == 'player'){
+		return check(bee.entity.statuses)
+	}
+	if(bee.kind=='enemy'){
+		for(const [p,statuses] of bee.entity.statuses){
+			let checked = check(statuses)
+			if(checked){
+				return true
 			}
 		}
 	}
+	return false
 }
 
 function processBattleEvent(battleEvent: BattleEvent, player: Player) {
+	if (battleEvent.itemUsed.provoke && battleEvent.itemUsed.provoke > 0) {
+		const r = removeStatusesOnProvoke(battleEvent.source);
+		if (r) {
+			pushAnimation({
+				sceneId: player.currentUniqueSceneId,
+				battleAnimation: {
+					triggeredBy: player.unitId,
+					source: player.unitId,
+					behavior: { kind: 'selfInflicted', extraSprite: r.selfInflictSprite },
+					putsStatuses: [{ statusId: r.id, target: player.unitId, remove: true }]
+				}
+			});
+		}
+	}
 	if (battleEvent.putsStatuses) {
 		for (const put of battleEvent.putsStatuses) {
 			if (put.target.entity.health < 0 && !battleEvent.stillHappenIfTargetDies) continue;
@@ -784,7 +764,8 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				);
 				if (
 					behav.kind == 'missile' &&
-					healthModifyEvent.target.entity.unitId == behav.animateTo &&
+					battleEvent.animateTo &&
+					healthModifyEvent.target.entity.unitId == battleEvent.animateTo.entity.unitId &&
 					damageAnimationForMissleTarget == undefined
 				) {
 					damageAnimationForMissleTarget = {
@@ -805,15 +786,11 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		for (const healthModifyEvent of battleEvent.alsoHeals) {
 			if (healthModifyEvent.target.entity.health < 0 && !battleEvent.stillHappenIfTargetDies)
 				continue;
-			if (healthModifyEvent.target.kind == 'enemy') {
-				// heal enemy
-			} else if (healthModifyEvent.target.kind == 'player') {
-				const r = healPlayer(healthModifyEvent.target.entity, healthModifyEvent.baseHeal);
+				const r = healEntity(healthModifyEvent.target, healthModifyEvent.baseHeal);
 				healAnimations.push({
 					target: healthModifyEvent.target.entity.unitId,
 					amount: r.healed
 				});
-			}
 		}
 	}
 	const aggroModifiedAnimations: AggroModifier[] = [];
@@ -839,7 +816,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	let leavingScene = undefined;
 	const sceneToPlayAnim = player.currentUniqueSceneId;
 
-	if (battleEvent.teleportsTo) {
+	if (battleEvent.teleportsTo && battleEvent.source.entity.unitId == player.unitId) {
 		leavingScene = player;
 		changeScene(player, battleEvent.teleportsTo);
 	}
@@ -859,6 +836,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		triggeredBy: player.unitId,
 		source: battleEvent.source.entity.unitId,
 		behavior: battleEvent.behavior,
+		animateTo:battleEvent.animateTo?.entity.unitId,
 		alsoDamages: damageAnimations,
 		alsoHeals: healAnimations,
 		alsoModifiesAggro: aggroModifiedAnimations,
@@ -880,16 +858,17 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	});
 	if (damageAnimationForMissleTarget) {
 		for (const i of damageAnimationForMissleTarget.amount) {
+			console.log('extra missle')
 			const xba: BattleAnimation = {
 				triggeredBy: player.unitId,
 				source: battleEvent.source.entity.unitId,
 				behavior: battleEvent.behavior,
+				animateTo:battleEvent.animateTo?.entity.unitId,
 				alsoDamages: [{ target: damageAnimationForMissleTarget.target, amount: [i] }]
 			};
 			pushAnimation({
 				sceneId: sceneToPlayAnim,
 				battleAnimation: xba,
-				leavingScene: leavingScene
 			});
 		}
 	}

@@ -49,7 +49,6 @@ export type EnemyTemplate = {
 	strength: number;
 	agility: number;
 	randomTarget?: boolean;
-	putsStatusOnTarget?: StatusMod;
 	aggroGain: number;
 	startAggro: number;
 	damageLimit?: number;
@@ -75,7 +74,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		aggroGain: 50,
 		startAggro: 20,
 		damageReduction: 2,
-		hasItem:'fist'
+		hasItem:'potion'
 	},
 	darter: {
 		baseHealth: 50,
@@ -83,7 +82,6 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		aggroGain: 10,
 		startAggro: 10,
 		agility: 4,
-		putsStatusOnTarget: { statusId: 'poison', count: 3 },
 		hasItem:'poisonDart'
 	},
 	orc: {
@@ -94,7 +92,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		startAggro: 10,
 		agility: 4,
 		damageLimit: 10,
-		hasItem:'club',
+		hasItem:'thiefCloak',
 	},
 	fireGremlin: {
 		baseHealth: 10,

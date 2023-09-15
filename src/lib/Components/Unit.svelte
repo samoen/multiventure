@@ -86,7 +86,7 @@
 			if (!$currentAnimation) return undefined;
 			if (
 				$currentAnimation.behavior.kind == 'melee' &&
-				$currentAnimation.behavior.animateTo == hostId &&
+				$currentAnimation.animateTo == hostId &&
 				$subAnimationStage == 'fire'
 			) {
 				return $currentAnimation.source;
@@ -126,7 +126,7 @@
 			if (!$currentAnimation) return undefined;
 			if (
 				$currentAnimation.behavior.kind == 'missile' &&
-				$currentAnimation.behavior.animateTo == hostId &&
+				$currentAnimation.animateTo == hostId &&
 				$subAnimationStage == 'fire'
 			) {
 				return { projectileImg: anySprites[$currentAnimation.behavior.extraSprite] };

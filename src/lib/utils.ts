@@ -1,7 +1,7 @@
 // This file is for stuff available to both the server and browser
 
 import type { ActiveEnemy, EnemyTemplate, EnemyTemplateId } from './server/enemies';
-import type { ItemDamageData, ItemId, ItemState } from './server/items';
+import type { Item, ItemDamageData, ItemId, ItemState } from './server/items';
 import type { SceneDataId } from './server/scenes';
 import type { StatusId } from './server/statuses';
 import type { BonusStatsState, HeroName, Player } from './server/users';
@@ -16,6 +16,7 @@ export type BattleAnimation = {
 	source: UnitId;
 	putsStatuses?: StatusModifyAnimation[];
 	behavior: AnimationBehavior;
+	animateTo?:UnitId;
 	alsoDamages?: DamageAnimation[];
 	alsoHeals?: HealAnimation[];
 	alsoModifiesAggro?: AggroModifier[];
@@ -54,14 +55,14 @@ export type BattleEventEntity =
 export type BattleEvent = {
 	source: BattleEventEntity;
 	behavior: AnimationBehavior;
+	animateTo?:BattleEventEntity;
 	putsStatuses?: StatusModifierEvent[];
 	alsoDamages?: DamageEvent[];
 	alsoHeals?: HealEvent[];
 	alsoModifiesAggro?: AggroModifierEvent[];
 	teleportsTo?: SceneDataId;
 	stillHappenIfTargetDies?: boolean;
-	itemUsed:ItemId;
-	target:UnitId;
+	itemUsed:Item;
 };
 
 export const OffenseKinds = {
@@ -144,38 +145,14 @@ export type SelfInflictAnimation = { kind: 'selfInflicted'; extraSprite: AnySpri
 export type AnimateToUnit = { animateTo: UnitId };
 
 export type AnimationBehavior =
-	| (MissleAnimation & AnimateToUnit)
-	| (MeleeAnimation & AnimateToUnit)
-	| (TravelAnimation & AnimateToUnit)
+	| (MissleAnimation)
+	| (MeleeAnimation)
+	| (TravelAnimation)
 	| CenterAnimation
 	| SelfInflictAnimation;
 
 export type AnimationBehaviorAnimatesToUnit = MissleAnimation | MeleeAnimation | TravelAnimation;
 export type ItemAnimationBehaviorAnimatesToUnit = MissleAnimation | MeleeAnimation;
-
-export function animatesToUnit(iab: ItemAnimationBehavior): iab is ItemAnimationBehaviorAnimatesToUnit {
-	if (iab.kind == 'missile' || iab.kind == 'melee') {
-		return true;
-	}
-	return false;
-}
-export function AbAnimatesToUnit(
-	ab: AnimationBehavior
-): ab is AnimationBehaviorAnimatesToUnit & AnimateToUnit {
-	if (ab.kind == 'missile' || ab.kind == 'melee' || ab.kind == 'travel') {
-		return true;
-	}
-	return false;
-}
-export function addAnimateToUnit(iab: ItemAnimationBehavior, uid: UnitId): AnimationBehavior {
-	if (animatesToUnit(iab)) {
-		return {
-			...iab,
-			animateTo: uid
-		};
-	}
-	return iab;
-}
 
 export type ItemAnimationBehavior =
 	| MissleAnimation

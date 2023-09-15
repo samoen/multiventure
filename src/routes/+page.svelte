@@ -573,6 +573,7 @@
 									const oneChoice = slotActions.length == 1;
 									const onlyAction = slotActions.at(0);
 									if (oneChoice && onlyAction) {
+										console.log(onlyAction.buttonText)
 										choose(onlyAction);
 										$latestSlotButtonInput = undefined;
 										return;

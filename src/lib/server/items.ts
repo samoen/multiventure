@@ -73,10 +73,10 @@ export const fireStaff: Item = {
 	id: 'fireStaff',
 	slot: 'weapon',
 	warmup: 2,
-	cooldown: 2,
+	cooldown: 1,
 	provoke: 10,
 	speed: 2,
-	damages: { affects: 'targetOnly', baseDmg: 30, strikes: 2, offenseKind:OffenseKinds.magical, },
+	damages: { affects: 'targetOnly', baseDmg: 20, strikes: 2, offenseKind:OffenseKinds.magical, },
 	animation: { kind: 'missile', extraSprite: 'flame' },
 	modifiesAggro: { affects: 'targetOnly', aggroFor: 'justMe', amount: 80 }
 };

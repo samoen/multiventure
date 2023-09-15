@@ -1,16 +1,4 @@
 import type { Flag, HeroName, PlayerInClient } from '$lib/server/users';
-import {
-	AbAnimatesToUnit,
-	type BattleAnimation,
-	type EnemyInClient,
-	type GameActionSentToClient,
-	type HeroId,
-	type LandscapeImage,
-	type SignupResponse,
-	type StatusState,
-	type UnitId,
-	type VisualActionSourceId
-} from '$lib/utils';
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 
 import type { ItemId, ItemState } from '$lib/server/items';
@@ -28,6 +16,7 @@ import {
 	getSlotImage,
 	heroSpriteFromClass
 } from './assets';
+import type { BattleAnimation, EnemyInClient, GameActionSentToClient, HeroId, LandscapeImage, SignupResponse, StatusState, UnitId, VisualActionSourceId } from '$lib/utils';
 
 type HeroSpecificEnemyState = { hName: HeroName; agg: number; sts: StatusState[] };
 
@@ -696,12 +685,12 @@ function checkAnimationValid(ba: BattleAnimation): boolean {
 		enemiesToCheck.some((e) => e.actual.entity.unitId == ba.source) ||
 		alliesToCheck.some((a) => a.actual.entity.unitId == ba.source);
 	let foundTarget = false;
-	const cb = ba.behavior;
-	if (AbAnimatesToUnit(cb)) {
+	// const cb = ba.behavior;
+	if (ba.animateTo) {
 		foundTarget =
-			enemiesToCheck.some((e) => e.actual.entity.unitId == cb.animateTo) ||
-			alliesToCheck.some((a) => a.actual.entity.unitId == cb.animateTo) ||
-			vasesToCheck.some((v) => v.id == cb.animateTo);
+			enemiesToCheck.some((e) => e.actual.entity.unitId == ba.animateTo) ||
+			alliesToCheck.some((a) => a.actual.entity.unitId == ba.animateTo) ||
+			vasesToCheck.some((v) => v.id == ba.animateTo);
 	} else {
 		foundTarget = true;
 	}

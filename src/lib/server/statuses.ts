@@ -11,6 +11,7 @@ export type StatusData = {
 	immunity?: boolean;
 	removeOnProvoke?: boolean;
 	selfInflictSprite: AnySprite;
+	decayAnyPlayer?:boolean;
 };
 
 export const statusDatas: StatusData[] = [
@@ -28,6 +29,7 @@ export const statusDatas: StatusData[] = [
 		id: 'hidden',
 		immunity: true,
 		removeOnProvoke: true,
-		selfInflictSprite: 'smoke'
+		selfInflictSprite: 'smoke',
+		decayAnyPlayer:true,
 	}
 ];
