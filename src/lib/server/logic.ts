@@ -132,19 +132,13 @@ export function updatePlayerActions(player: Player) {
 		};
 
 		const nBe = (targetChosen: BattleEventEntity) => {
-			let bonus = 0;
-			if (iAb.kind == 'melee') {
-				bonus = player.strength + player.bonusStats.strength;
-			}
 			const alsoDmgs: DamageEvent[] = [];
 			if (i.damages) {
 				const dmgAffected = affectedsFromCanEffect(i.damages.affects, targetChosen);
 				for (const aff of dmgAffected) {
 					alsoDmgs.push({
 						target: aff,
-						baseDamage: i.damages.baseDmg,
-						bonusDamage: bonus,
-						strikes: i.damages.strikes
+						itemDamageData:i.damages,
 					} satisfies DamageEvent);
 				}
 			}
@@ -651,12 +645,12 @@ export function handleRetaliations(
 		playerHitSpeed += itemUsed.speed;
 	}
 	const sceneEnemies = enemiesInScene(player.currentUniqueSceneId);
-	for (const enemyInScene of sceneEnemies.sort((a, b) => b.template.speed - a.template.speed)) {
+	for (const enemyInScene of sceneEnemies.sort((a, b) => b.template.agility - a.template.agility)) {
 		if (enemyInScene.health < 1) continue;
 		if (player.health < 1) continue;
 		if (
-			(postAction && playerHitSpeed >= enemyInScene.template.speed) ||
-			(!postAction && playerHitSpeed < enemyInScene.template.speed)
+			(postAction && playerHitSpeed >= enemyInScene.template.agility) ||
+			(!postAction && playerHitSpeed < enemyInScene.template.agility)
 		) {
 			const aggroForActor = getAggroForPlayer(enemyInScene, player);
 			if (aggroForActor) {
@@ -686,20 +680,24 @@ export function handleRetaliations(
 							target: target
 						});
 					}
-					const iBehav: ItemAnimationBehavior = enemyInScene.template.behavior ?? { kind: 'melee' };
+					const itemUsed = items.find(i=>i.id == enemyInScene.template.hasItem)
+					if(!itemUsed)continue
+					let iBehav = itemUsed.animation ?? {kind:'melee'}
 					const behav: AnimationBehavior = addAnimateToUnit(iBehav, target.entity.unitId);
+					let alsoDmgs : DamageEvent[]  = []
+					if(itemUsed.damages){
+						alsoDmgs = [
+							{
+								target: target,
+								itemDamageData:itemUsed.damages
+							}
+						]
+					}
 					const be: BattleEvent = {
 						source: { kind: 'enemy', entity: enemyInScene },
 						behavior: behav,
 						putsStatuses: putsStatuses,
-						alsoDamages: [
-							{
-								target: target,
-								baseDamage: enemyInScene.template.baseDamage,
-								bonusDamage: enemyInScene.bonusStats.strength,
-								strikes: enemyInScene.template.strikes ?? 1
-							}
-						]
+						alsoDamages: alsoDmgs,
 					};
 					processBattleEvent(be, player);
 
@@ -754,15 +752,11 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 			if (healthModifyEvent.target.entity.health < 0 && !battleEvent.stillHappenIfTargetDies) {
 				continue;
 			}
-			if (healthModifyEvent.baseDamage) {
+			if (healthModifyEvent.itemDamageData.baseDmg) {
 				const r = damageEntity(
+					healthModifyEvent,
 					battleEvent.source,
 					healthModifyEvent.target,
-					healthModifyEvent.baseDamage,
-					healthModifyEvent.strikes,
-					healthModifyEvent.bonusDamage,
-					getDamageReduction(healthModifyEvent.target),
-					getDamageLimit(healthModifyEvent.target),
 				);
 				if (
 					behav.kind == 'missile' &&

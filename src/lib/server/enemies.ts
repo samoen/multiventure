@@ -1,19 +1,22 @@
-import type {
-	AnimationBehavior,
-	BattleAnimation,
-	BattleEventEntity,
-	EnemyId,
-	EnemyName,
-	HeroId,
-	ItemAnimationBehavior,
-	StatusMod
+import {
+	OffenseKinds,
+	type AnimationBehavior,
+	type BattleAnimation,
+	type BattleEventEntity,
+	type DamageEvent,
+	type EnemyId,
+	type EnemyName,
+	type HeroId,
+	type ItemAnimationBehavior,
+	type StatusMod
 } from '$lib/utils';
 import { v4 } from 'uuid';
-import { deepEqual, type EnemyForSpawning } from './logic';
+import { deepEqual, getDamageReduction, type EnemyForSpawning, getDamageLimit } from './logic';
 import { pushHappening } from './messaging';
 import { scenesData, type UniqueSceneIdenfitier } from './scenes';
 import { activePlayersInScene, type BonusStatsState, type Player } from './users';
 import type { StatusId } from './statuses';
+import { items, type Item, type ItemDamageData, type ItemId, type ItemState } from './items';
 
 export const activeEnemies: ActiveEnemy[] = [];
 
@@ -28,6 +31,7 @@ export type ActiveEnemy = {
 	aggros: Map<HeroId, number>;
 	template: EnemyTemplate;
 	statuses: EnemyStatuses;
+	inventory:ItemState[];
 };
 
 export function getAggroForPlayer(enemy: ActiveEnemy, player: Player): number {
@@ -41,72 +45,73 @@ export function getAggroForPlayer(enemy: ActiveEnemy, player: Player): number {
 
 export type EnemyTemplate = {
 	portrait?: string;
-	strikes?: number;
 	baseHealth: number;
-	baseDamage: number;
-	behavior?: ItemAnimationBehavior;
+	strength: number;
+	agility: number;
 	randomTarget?: boolean;
 	putsStatusOnTarget?: StatusMod;
 	aggroGain: number;
 	startAggro: number;
-	speed: number;
 	damageLimit?: number;
 	damageReduction?: number;
+	hasItem:ItemId;
 };
 
 export type EnemyTemplateId = 'rat' | 'goblin' | 'darter' | 'orc' | 'fireGremlin' | 'troll';
 
 export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 	rat: {
-		strikes: 2,
 		baseHealth: 5,
-		baseDamage: 10,
+		strength: 0,
+		agility:0,
 		aggroGain: 10,
 		startAggro: 70,
-		speed: 3
+		hasItem:'fist'
 	},
 	goblin: {
 		baseHealth: 50,
-		baseDamage: 20,
+		strength: 0,
+		agility:3,
 		aggroGain: 50,
 		startAggro: 20,
 		damageReduction: 2,
-		speed: 4
+		hasItem:'fist'
 	},
 	darter: {
 		baseHealth: 50,
-		baseDamage: 2,
+		strength: 0,
 		aggroGain: 10,
 		startAggro: 10,
-		speed: 4,
-		behavior: { kind: 'missile', extraSprite: 'arrow' },
-		putsStatusOnTarget: { statusId: 'poison', count: 3 }
+		agility: 4,
+		putsStatusOnTarget: { statusId: 'poison', count: 3 },
+		hasItem:'poisonDart'
 	},
 	orc: {
 		portrait: 'grunt',
 		baseHealth: 50,
-		baseDamage: 20,
+		strength: 2,
 		aggroGain: 30,
 		startAggro: 10,
-		speed: 4,
-		damageLimit: 10
+		agility: 4,
+		damageLimit: 10,
+		hasItem:'club',
 	},
 	fireGremlin: {
 		baseHealth: 10,
-		baseDamage: 10,
+		strength: 0,
 		aggroGain: 50,
 		startAggro: 100,
-		speed: 10,
-		strikes: 2,
-		behavior: { kind: 'missile', extraSprite: 'flame' },
-		randomTarget: true
+		agility: 10,
+		randomTarget: true,
+		hasItem:'fireStaff',
 	},
 	troll: {
 		baseHealth: 150,
-		baseDamage: 50,
+		strength: 10,
 		aggroGain: 3,
 		startAggro: 80,
-		speed: 1
+		agility: 1,
+		hasItem:'club'
 	}
 };
 
@@ -151,6 +156,15 @@ export function spawnEnemy(
 
 	const uid = v4();
 
+	const item = items.find((i) => i.id == template.hasItem);
+	if (!item) return;
+	const createState: ItemState = {
+		cooldown: 0,
+		warmup: item.warmup ?? 0,
+		stats: item,
+		stock: item.startStock
+	};
+
 	activeEnemies.push({
 		unitId: `enemy${uid}`,
 		displayName: eFs.eName ?? eFs.eTemp,
@@ -164,7 +178,8 @@ export function spawnEnemy(
 		},
 		aggros: aggros,
 		template: template,
-		statuses: mapStatuses
+		statuses: mapStatuses,
+		inventory:[createState],
 	});
 }
 export type EnemyStatuses = Map<HeroId, Map<StatusId, number>>;
@@ -207,22 +222,31 @@ export function enemiesInScene(sceneKey: UniqueSceneIdenfitier): ActiveEnemy[] {
 }
 
 export function damageEntity(
+	hme:DamageEvent,
 	source: BattleEventEntity,
 	toDamage: BattleEventEntity,
-	damage: number,
-	strikes :number,
-	bonusDamage :number,
-	damageReduction:number | undefined,
-	damageLimit:number | undefined,
+	// damage: number,
+	// strikes :number,
 ): { dmgDone: number[] } {
 	if (toDamage.entity.health < 1) return { dmgDone: [] };
-
+	let bone = 0
+	if(hme.itemDamageData.offenseKind && hme.itemDamageData.offenseKind  == OffenseKinds.brutal){
+		bone += source.entity.bonusStats.strength
+		if(source.kind == 'player'){
+			bone += source.entity.strength
+		}else if(source.kind == 'enemy'){
+			bone += source.entity.template.strength
+		}
+	}
+	let strikes = hme.itemDamageData.strikes
 	
+	let damageReduction = getDamageReduction(toDamage)
+	let damageLimit = getDamageLimit(toDamage)
 
 	const dmgDone: number[] = [];
 	let dmgSum = 0
 	for (let i = 0; i < strikes; i++) {
-		let dmg = damage;
+		let dmg = hme.itemDamageData.baseDmg;
 		if (damageReduction != undefined) {
 			dmg = dmg - damageReduction;
 			if (dmg < 1) dmg = 1;
@@ -233,7 +257,7 @@ export function damageEntity(
 			}
 		}
 		if (i == strikes - 1) {
-			dmg += bonusDamage;
+			dmg += bone;
 		}
 		toDamage.entity.health -= dmg;
 		dmgDone.push(dmg);

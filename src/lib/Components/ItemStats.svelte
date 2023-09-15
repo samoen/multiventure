@@ -13,8 +13,10 @@
 	import teeth from '$lib/assets/ui/teeth.png';
 	import crown from '$lib/assets/ui/crown.png';
 	import { statusImages } from '$lib/client/assets';
+	import type { VisualUnitProps } from '$lib/client/ui';
 
 	export let itemState: ItemState;
+    export let vu:VisualUnitProps;
 </script>
 
 <div class="top">
@@ -68,12 +70,14 @@
 					<div>{itemState.stats.speed}</div>
 				</div>
 			{/if}
-			{#if itemState.stats.provoke && itemState.stats.provoke > 0}
-				<div class="statLine">
-					<img src={teeth} alt="a heart" />
-					<div>{itemState.stats.provoke}</div>
-				</div>
-			{/if}
+            {#if vu.actual.kind == 'player'}
+                {#if itemState.stats.provoke && itemState.stats.provoke > 0}
+                    <div class="statLine">
+                        <img src={teeth} alt="a heart" />
+                        <div>{itemState.stats.provoke}</div>
+                    </div>
+                {/if}
+            {/if}
 			{#if itemState.stats.damageReduction}
 				<div class="statLine">
 					<img src={lightShield} alt="a heart" />

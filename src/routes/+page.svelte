@@ -231,8 +231,7 @@
 		} catch (e) {
 			console.log('failed to get world');
 			$clientState.status = 'failed to get world';
-			console.log(e);
-			$clientState.loading = false;
+			leaveGame()
 			return;
 		}
 	}

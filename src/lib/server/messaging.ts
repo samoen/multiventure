@@ -179,7 +179,9 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroId): Messag
 				template: e.template,
 				myAggro: getAggroForPlayer(e, forPlayer),
 				aggros: aggros,
-				statuses: statusesInClient
+				statuses: statusesInClient,
+				inventory:e.inventory,
+				bonusStats:e.bonusStats,
 			} satisfies EnemyInClient;
 		}),
 		playerFlags: Array.from(forPlayer.flags),

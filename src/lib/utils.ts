@@ -1,10 +1,10 @@
 // This file is for stuff available to both the server and browser
 
 import type { ActiveEnemy, EnemyTemplate, EnemyTemplateId } from './server/enemies';
-import type { ItemId } from './server/items';
+import type { ItemDamageData, ItemId, ItemState } from './server/items';
 import type { SceneDataId } from './server/scenes';
 import type { StatusId } from './server/statuses';
-import type { HeroName, Player } from './server/users';
+import type { BonusStatsState, HeroName, Player } from './server/users';
 
 export type UnitId = HeroId | EnemyId | VisualActionSourceId;
 export type HeroId = `hero${string}`;
@@ -62,6 +62,14 @@ export type BattleEvent = {
 	stillHappenIfTargetDies?: boolean;
 };
 
+export const OffenseKinds = {
+	brutal:'brutal',
+	magical: 'magical',
+	skillful:'skillful',
+} as const
+
+export type OffenseKind = typeof OffenseKinds[keyof typeof OffenseKinds]
+
 export type StatusMod = { statusId: StatusId; remove?: boolean; count?: number };
 
 export type StatusModifyAnimation = { target: UnitId } & StatusMod;
@@ -71,9 +79,7 @@ export type HealAnimation = { target: UnitId; amount: number };
 
 export type DamageEvent = {
 	target: BattleEventEntity;
-	baseDamage: number;
-	bonusDamage: number;
-	strikes: number;
+	itemDamageData:ItemDamageData;
 };
 export type HealEvent = {
 	target: BattleEventEntity;
@@ -125,6 +131,8 @@ export type AnySprite =
 
 export type LandscapeImage = 'plains' | 'castle' | 'bridge' | 'grimForest';
 
+// export type UseBonus = 'strength' | 'agility'
+
 export type MeleeAnimation = { kind: 'melee' };
 export type MissleAnimation = { kind: 'missile'; extraSprite: AnySprite };
 export type TravelAnimation = { kind: 'travel' };
@@ -141,9 +149,10 @@ export type AnimationBehavior =
 	| SelfInflictAnimation;
 
 export type AnimationBehaviorAnimatesToUnit = MissleAnimation | MeleeAnimation | TravelAnimation;
+export type ItemAnimationBehaviorAnimatesToUnit = MissleAnimation | MeleeAnimation;
 
-export function animatesToUnit(iab: ItemAnimationBehavior): iab is AnimationBehaviorAnimatesToUnit {
-	if (iab.kind == 'missile' || iab.kind == 'melee' || iab.kind == 'travel') {
+export function animatesToUnit(iab: ItemAnimationBehavior): iab is ItemAnimationBehaviorAnimatesToUnit {
+	if (iab.kind == 'missile' || iab.kind == 'melee') {
 		return true;
 	}
 	return false;
@@ -151,7 +160,7 @@ export function animatesToUnit(iab: ItemAnimationBehavior): iab is AnimationBeha
 export function AbAnimatesToUnit(
 	ab: AnimationBehavior
 ): ab is AnimationBehaviorAnimatesToUnit & AnimateToUnit {
-	if (animatesToUnit(ab)) {
+	if (ab.kind == 'missile' || ab.kind == 'melee' || ab.kind == 'travel') {
 		return true;
 	}
 	return false;
@@ -169,7 +178,6 @@ export function addAnimateToUnit(iab: ItemAnimationBehavior, uid: UnitId): Anima
 export type ItemAnimationBehavior =
 	| MissleAnimation
 	| MeleeAnimation
-	| TravelAnimation
 	| CenterAnimation
 	| SelfInflictAnimation;
 
@@ -188,6 +196,8 @@ export type EnemyInClient = {
 	template: EnemyTemplate;
 	aggros: AggroInClient[];
 	statuses: EnemyStatusInClient[];
+	bonusStats:BonusStatsState;
+	inventory:ItemState[];
 };
 
 export type StatusState = { statusId: StatusId; count: number };

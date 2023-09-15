@@ -1,4 +1,4 @@
-import type { AnimationBehavior, AnySprite, ItemAnimationBehavior, StatusMod } from '$lib/utils';
+import { OffenseKinds, type AnimationBehavior, type AnySprite, type ItemAnimationBehavior, type OffenseKind, type StatusMod } from '$lib/utils';
 import type { SceneDataId } from './scenes';
 import type { StatusId } from './statuses';
 import type { Player } from './users';
@@ -12,7 +12,7 @@ export type CanTarget =
 	| { kind: 'onlySelf' };
 
 export type CanEffect = 'allFriendly' | 'allEnemy' | 'targetOnly' | 'selfOnly';
-
+export type ItemDamageData = { affects: CanEffect; baseDmg: number; strikes: number, offenseKind?:OffenseKind }
 export type Item = {
 	id: ItemId;
 	slot: QuickbarSlot;
@@ -31,7 +31,7 @@ export type Item = {
 	requiresSourceDead?: boolean;
 	excludeFromDetail?: boolean;
 	noAction?: boolean;
-	damages?: { affects: CanEffect; baseDmg: number; strikes: number };
+	damages?: ItemDamageData;
 	heals?: { affects: CanEffect; baseHeal: number };
 	modifiesStatus?: { affects: CanEffect; statusMod: StatusMod };
 	modifiesAggro?: { affects: CanEffect; aggroFor: 'allPlayers' | 'justMe'; amount: number };
@@ -45,7 +45,7 @@ const dagger: Item = {
 	slot: 'weapon',
 	provoke: 7,
 	speed: 4,
-	damages: { affects: 'targetOnly', baseDmg: 7, strikes: 3 }
+	damages: { affects: 'targetOnly', baseDmg: 7, strikes: 3, offenseKind:'brutal' }
 };
 
 const club: Item = {
@@ -53,7 +53,7 @@ const club: Item = {
 	slot: 'weapon',
 	provoke: 40,
 	speed: 1,
-	damages: { affects: 'targetOnly', baseDmg: 28, strikes: 1 }
+	damages: { affects: 'targetOnly', baseDmg: 28, strikes: 1, offenseKind:'brutal' }
 };
 
 export const bow: Item = {
@@ -63,7 +63,7 @@ export const bow: Item = {
 	cooldown: 1,
 	provoke: 10,
 	speed: 3,
-	damages: { affects: 'targetOnly', baseDmg: 20, strikes: 1 },
+	damages: { affects: 'targetOnly', baseDmg: 20, strikes: 1, offenseKind:OffenseKinds.skillful },
 	animation: { kind: 'missile', extraSprite: 'arrow' },
 	modifiesAggro: { affects: 'targetOnly', aggroFor: 'justMe', amount: 20 },
 	modifiesStatus: {affects:'targetOnly',statusMod:{statusId:'rage',count:2}}
@@ -76,7 +76,7 @@ export const fireStaff: Item = {
 	cooldown: 2,
 	provoke: 10,
 	speed: 2,
-	damages: { affects: 'targetOnly', baseDmg: 30, strikes: 2 },
+	damages: { affects: 'targetOnly', baseDmg: 30, strikes: 2, offenseKind:OffenseKinds.magical, },
 	animation: { kind: 'missile', extraSprite: 'flame' },
 	modifiesAggro: { affects: 'targetOnly', aggroFor: 'justMe', amount: 80 }
 };
@@ -155,7 +155,7 @@ const fist: Item = {
 	default: true,
 	provoke: 1,
 	speed: 10,
-	damages: { affects: 'targetOnly', baseDmg: 10, strikes: 2 }
+	damages: { affects: 'targetOnly', baseDmg: 10, strikes: 2, offenseKind:'brutal' }
 };
 const belt: Item = {
 	id: 'belt',

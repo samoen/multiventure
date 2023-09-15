@@ -16,20 +16,18 @@
 	export let vu: VisualUnitProps;
 	$: enemy = vu.actual.kind == 'enemy' ? vu.actual.entity : undefined;
 	$: str =
-		vu.actual.kind == 'enemy' ? vu.actual.entity.template.baseDamage : vu.actual.entity.strength;
+		vu.actual.kind == 'enemy' ? vu.actual.entity.template.strength : vu.actual.entity.strength;
 	let bonusStr = '';
 	$: {
-		if (vu.actual.kind == 'player') {
 			if (vu.actual.entity.bonusStats.strength > 0) {
 				bonusStr = ` +${vu.actual.entity.bonusStats.strength}`;
+			}else{
+				bonusStr = ''
 			}
-		} else {
-			bonusStr = '';
-		}
 	}
-	$: agi = vu.actual.kind == 'enemy' ? vu.actual.entity.template.speed : vu.actual.entity.agility;
+	
+	$: agi = vu.actual.kind == 'enemy' ? vu.actual.entity.template.agility : vu.actual.entity.agility;
 	$: aggGain = vu.actual.kind == 'enemy' ? vu.actual.entity.template.aggroGain : 0;
-	$: strikes = vu.actual.kind == 'enemy' ? vu.actual.entity.template.strikes ?? 1 : 0;
 </script>
 
 <div class="top">
@@ -63,20 +61,18 @@
 			<img src={shieldHealth} alt="an icon" />
 			<div>{vu.actual.entity.maxHealth}</div>
 		</div>
-		<div class="statLine">
-			<img src={strong} alt="an icon" />
-			<div>{str}{bonusStr}</div>
-		</div>
-		{#if strikes > 1}
+		{#if str > 0 || bonusStr.length}
 			<div class="statLine">
-				<img src={crossedSwords} alt="a heart" />
-				<div>{strikes}</div>
+				<img src={strong} alt="an icon" />
+				<div>{str}{bonusStr}</div>
 			</div>
 		{/if}
-		<div class="statLine">
-			<img src={foot} alt="a heart" />
-			<div>{agi}</div>
-		</div>
+		{#if agi > 0}
+			<div class="statLine">
+				<img src={foot} alt="a heart" />
+				<div>{agi}</div>
+			</div>
+		{/if}
 		{#if vu.actual.kind == 'enemy'}
 			<div class="statLine">
 				<img src={teeth} alt="a heart" />
@@ -97,6 +93,13 @@
 		{/if}
 	</div>
 
+	<div class="itemStats">
+		{#each vu.actual.entity.inventory as itemState}
+		{#if itemState.stats && !itemState.stats.excludeFromDetail}
+		<ItemStats itemState={itemState} vu={vu} />
+		{/if}
+		{/each}
+	</div>
 	{#if vu.actual.kind == 'enemy'}
 		{#each vu.actual.heroSpecificStates as hs}
 			<p>{hs.hName}</p>
@@ -115,15 +118,6 @@
 				</div>
 			{/each}
 		{/each}
-	{/if}
-	{#if vu.actual.kind == 'player'}
-		<div class="itemStats">
-			{#each vu.actual.entity.inventory as itemState}
-				{#if itemState.stats && !itemState.stats.excludeFromDetail}
-					<ItemStats {itemState} />
-				{/if}
-			{/each}
-		</div>
 	{/if}
 </div>
 
