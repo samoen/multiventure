@@ -121,7 +121,7 @@ export const plateMail: Item = {
 	cooldown: 2,
 	provoke: 0,
 	speed: 100,
-	damageLimit: 20,
+	damageLimit: 15,
 	animation: { kind: 'selfInflicted', extraSprite: 'flame' },
 	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'rage', count: 1 } },
 	modifiesAggro: { affects: 'allEnemy', aggroFor: 'justMe', amount: 100 }

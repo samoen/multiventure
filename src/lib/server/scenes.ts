@@ -1143,11 +1143,11 @@ const armory: Scene = {
 				associateWithUnit:player.unitId,
 			});
 		}
-		for (const id in enemyTemplates) {
+		for (const t of enemyTemplates) {
 			player.devActions.push({
-				buttonText: `Spawn ${id}`,
+				buttonText: `Spawn ${t.id}`,
 				devAction() {
-					const e: EnemyForSpawning = { eTemp: id as EnemyTemplateId };
+					const e: EnemyForSpawning = { eTemp: t.id as EnemyTemplateId };
 					spawnEnemy(e, player.currentUniqueSceneId, player.unitId);
 				},
 				associateWithUnit:player.unitId

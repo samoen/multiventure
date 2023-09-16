@@ -33,7 +33,7 @@
 <div class="top">
 	<div class="classTitle">
 		{#if vu.actual.kind == 'enemy'}
-			{vu.actual.entity.templateId}
+			{vu.actual.entity.template.id}
 		{/if}
 		{#if vu.actual.kind == 'player'}
 			{vu.actual.entity.class}

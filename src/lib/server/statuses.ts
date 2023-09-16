@@ -12,13 +12,15 @@ export type StatusData = {
 	removeOnProvoke?: boolean;
 	selfInflictSprite: AnySprite;
 	decayAnyPlayer?:boolean;
+	bad?:boolean;
 };
 
 export const statusDatas: StatusData[] = [
 	{
 		id: 'poison',
 		damagePercent: 0.2,
-		selfInflictSprite: 'poison'
+		selfInflictSprite: 'poison',
+		bad:true,
 	},
 	{
 		id: 'rage',

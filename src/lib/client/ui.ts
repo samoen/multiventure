@@ -395,10 +395,10 @@ export function syncVisualsToMsg(lastMsgFromServ: MessageFromServer | undefined)
 			}
 
 			newVups.push({
-				sprite: enemySprites[e.templateId],
+				sprite: enemySprites[e.template.id],
 				portrait: e.template.portrait
 					? getPortrait(e.template.portrait)
-					: enemySprites[e.templateId],
+					: enemySprites[e.template.id],
 				actual: {
 					kind: 'enemy',
 					entity: e,

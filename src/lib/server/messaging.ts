@@ -175,7 +175,6 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroId): Messag
 				health: e.health,
 				maxHealth: e.maxHealth,
 				displayName: e.displayName,
-				templateId: e.templateId,
 				template: e.template,
 				myAggro: getAggroForPlayer(e, forPlayer),
 				aggros: aggros,

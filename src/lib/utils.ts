@@ -168,7 +168,6 @@ export type StatusEffect = {
 export type EnemyInClient = {
 	unitId: UnitId;
 	displayName: EnemyName;
-	templateId: EnemyTemplateId;
 	health: number;
 	maxHealth: number;
 	myAggro: number;

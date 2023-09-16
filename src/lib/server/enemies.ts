@@ -20,7 +20,6 @@ export const activeEnemies: ActiveEnemy[] = [];
 export type ActiveEnemy = {
 	unitId: EnemyId;
 	displayName: EnemyName;
-	templateId: EnemyTemplateId;
 	currentUniqueSceneId: UniqueSceneIdenfitier;
 	health: number;
 	maxHealth: number;
@@ -39,8 +38,10 @@ export function getAggroForPlayer(enemy: ActiveEnemy, player: Player): number {
 	}
 	return existing;
 }
+export type EnemyTemplateId = string
 
 export type EnemyTemplate = {
+	id:EnemyTemplateId
 	portrait?: string;
 	baseHealth: number;
 	strength: number;
@@ -50,18 +51,18 @@ export type EnemyTemplate = {
 	hasItem: ItemId[];
 };
 
-export type EnemyTemplateId = 'rat' | 'goblin' | 'darter' | 'orc' | 'fireGremlin' | 'troll';
-
-export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
-	rat: {
+export const enemyTemplates: EnemyTemplate[] = [
+	{
+		id:'rat',
 		baseHealth: 5,
 		strength: 0,
 		agility: 0,
 		aggroGain: 10,
 		startAggro: 70,
-		hasItem: ['fist'],
+		hasItem: ['fist','thiefCloak'],
 	},
-	goblin: {
+	{
+		id:'goblin',
 		baseHealth: 50,
 		strength: 0,
 		agility: 3,
@@ -69,7 +70,8 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		startAggro: 20,
 		hasItem: ['fist', 'leatherArmor']
 	},
-	darter: {
+	{
+		id:'darter',
 		baseHealth: 50,
 		strength: 0,
 		aggroGain: 10,
@@ -77,7 +79,8 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		agility: 4,
 		hasItem: ['fist', 'poisonDart']
 	},
-	orc: {
+	{
+		id:'orc',
 		portrait: 'grunt',
 		baseHealth: 50,
 		strength: 2,
@@ -86,7 +89,8 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		agility: 4,
 		hasItem: ['club', 'plateMail'],
 	},
-	fireGremlin: {
+	{
+		id:'fireGremlin',
 		baseHealth: 10,
 		strength: 0,
 		aggroGain: 50,
@@ -94,7 +98,8 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		agility: 10,
 		hasItem: ['fireStaff'],
 	},
-	troll: {
+	{
+		id:'troll',
 		baseHealth: 150,
 		strength: 10,
 		aggroGain: 3,
@@ -102,7 +107,7 @@ export const enemyTemplates: Record<EnemyTemplateId, EnemyTemplate> = {
 		agility: 1,
 		hasItem: ['club'],
 	}
-};
+];
 
 export const PERCENT_OF_BASE_ADDED_PER_PLAYER = 0.5;
 
@@ -116,7 +121,8 @@ export function spawnEnemy(
 	where2: UniqueSceneIdenfitier,
 	triggeredBy: HeroId
 ) {
-	const template = enemyTemplates[eFs.eTemp];
+	const template = enemyTemplates.find(t=>t.id == eFs.eTemp);
+	if(!template)return
 
 	let modifiedBaseHealth = template.baseHealth;
 	const scene = scenesData.find((s) => s.sceneDataId == where2.dataId);
@@ -162,7 +168,6 @@ export function spawnEnemy(
 	activeEnemies.push({
 		unitId: `enemy${uid}`,
 		displayName: eFs.eName ?? eFs.eTemp,
-		templateId: eFs.eTemp,
 		currentUniqueSceneId: where2,
 		health: modifiedBaseHealth,
 		maxHealth: modifiedBaseHealth,
