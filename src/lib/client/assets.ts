@@ -52,6 +52,7 @@ import portal from '$lib/assets/scenery/summoning-center.png';
 import signpost from '$lib/assets/scenery/signpost.png';
 import temple from '$lib/assets/scenery/temple1.png';
 import armor from '$lib/assets/scenery/armor.png';
+import pendant from '$lib/assets/scenery/pendant.png';
 import bombpad from '$lib/assets/scenery/bomb-pad.png';
 import altar from '$lib/assets/scenery/altar.png';
 import staff from '$lib/assets/scenery/staff-magic.png';
@@ -103,6 +104,7 @@ export function getSlotImage(id: ItemId): string {
 	if (id == 'leatherArmor') return tunicSlot;
 	if (id == 'thiefCloak') return dressSlot;
 	if (id == 'plateMail') return shieldSlot;
+	if (id == 'pendantOfProtection') return shieldSlot;
 	if (id == 'wait') return waitSlot;
 	if (id == 'succumb') return skullSlot;
 	return blankSlot;
@@ -134,6 +136,7 @@ export function getStatusImage(statusDataId:string): string {
     if(statusDataId == 'rage')return rage
     if(statusDataId == 'hidden')return hidden
     if(statusDataId == 'blessed')return heal
+    if(statusDataId == 'protected')return shield
     return hidden
 };
 
@@ -174,6 +177,7 @@ export const anySprites: Record<AnySprite, string> = {
 	dagger: dagger,
 	bow: bow,
 	staff: staff,
+	pendant: pendant,
 	potion: potion,
 	altar: altar,
 	bombPadded: bombpad,

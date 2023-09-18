@@ -18,11 +18,23 @@
 	$: str =
 		vu.actual.kind == 'enemy' ? vu.actual.entity.template.strength : vu.actual.entity.strength;
 	let bonusStr = '';
+	let bonusAgi = '';
+	let bonusDmgReduce = 0
 	$: {
 			if (vu.actual.entity.bonusStats.strength > 0) {
 				bonusStr = ` +${vu.actual.entity.bonusStats.strength}`;
 			}else{
 				bonusStr = ''
+			}
+			if (vu.actual.entity.bonusStats.agility > 0) {
+				bonusAgi = ` +${vu.actual.entity.bonusStats.agility}`;
+			}else{
+				bonusAgi = ''
+			}
+			if (vu.actual.entity.bonusStats.dmgReduce > 0) {
+				bonusDmgReduce = vu.actual.entity.bonusStats.dmgReduce;
+			}else{
+				bonusDmgReduce = 0
 			}
 	}
 	
@@ -67,10 +79,16 @@
 				<div>{str}{bonusStr}</div>
 			</div>
 		{/if}
-		{#if agi > 0}
+		{#if agi > 0 || bonusAgi.length}
 			<div class="statLine">
 				<img src={foot} alt="a heart" />
-				<div>{agi}</div>
+				<div>{agi}{bonusAgi}</div>
+			</div>
+		{/if}
+		{#if bonusDmgReduce > 0}
+			<div class="statLine">
+				<img src={lightShield} alt="a heart" />
+				<div>{bonusDmgReduce}</div>
 			</div>
 		{/if}
 		{#if vu.actual.kind == 'enemy'}

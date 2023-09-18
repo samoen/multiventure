@@ -67,7 +67,6 @@ export const bow: Item = {
 	animation: { kind: 'missile', extraSprite: 'arrow' },
 	modifiesAggro: { affects: 'targetOnly', aggroFor: 'justMe', amount: 20 },
 	modifiesStatus: {affects:'targetOnly',dispell:'good'}
-
 };
 
 export const fireStaff: Item = {
@@ -119,7 +118,7 @@ export const poisonDart: Item = {
 export const plateMail: Item = {
 	id: 'plateMail',
 	slot: 'body',
-	cooldown: 2,
+	cooldown: 7,
 	provoke: 0,
 	speed: 100,
 	damageLimit: 15,
@@ -148,6 +147,15 @@ export const leatherArmor: Item = {
 	damageReduction: 5,
 	targets: { kind: 'anyFriendly', selfAfflictSprite: 'heal' },
 	modifiesStatus: { affects: 'targetOnly', dispell: 'bad', statusMod:{statusId:'blessed',count:3} }
+};
+
+export const pendantOfProtection: Item = {
+	id: 'pendantOfProtection',
+	slot: 'body',
+	speed: 5,
+	damageReduction: 5,
+	targets: { kind: 'anyFriendly', selfAfflictSprite: 'shield' },
+	modifiesStatus: { affects: 'targetOnly', statusMod:{statusId:'protected',count:3} }
 };
 
 const fist: Item = {
@@ -209,6 +217,7 @@ export const items: Item[] = [
 	rags,
 	plateMail,
 	leatherArmor,
+	pendantOfProtection,
 	thiefCloak,
 	wait,
 	succumb

@@ -117,17 +117,17 @@ export function modifiedEnemyHealth(baseHealth: number, numPlayers: number): num
 }
 
 export function spawnEnemy(
-	eFs: EnemyForSpawning,
-	where2: UniqueSceneIdenfitier,
+	spawnTemplate: EnemyForSpawning,
+	where: UniqueSceneIdenfitier,
 	triggeredBy: HeroId
 ) {
-	const template = enemyTemplates.find(t=>t.id == eFs.eTemp);
+	const template = enemyTemplates.find(t=>t.id == spawnTemplate.template);
 	if(!template)return
 
 	let modifiedBaseHealth = template.baseHealth;
-	const scene = scenesData.find((s) => s.sceneDataId == where2.dataId);
+	const scene = scenesData.find((s) => s.sceneDataId == where.dataId);
 	if (!scene) return;
-	const playersInScene = activePlayersInScene(where2);
+	const playersInScene = activePlayersInScene(where);
 	if (!scene.solo) {
 		modifiedBaseHealth = modifiedEnemyHealth(modifiedBaseHealth, playersInScene.length);
 	}
@@ -141,9 +141,9 @@ export function spawnEnemy(
 
 	const mapStatuses: EnemyStatuses = new Map();
 
-	if (eFs.statuses) {
+	if (spawnTemplate.statuses) {
 		const mapForHeroStatuses: Map<StatusId, number> = new Map();
-		for (const k of eFs.statuses) {
+		for (const k of spawnTemplate.statuses) {
 			mapForHeroStatuses.set(k.statusId, k.count);
 		}
 		mapStatuses.set(triggeredBy, mapForHeroStatuses);
@@ -167,13 +167,14 @@ export function spawnEnemy(
 
 	activeEnemies.push({
 		unitId: `enemy${uid}`,
-		displayName: eFs.eName ?? eFs.eTemp,
-		currentUniqueSceneId: where2,
+		displayName: spawnTemplate.displayName ?? spawnTemplate.template,
+		currentUniqueSceneId: where,
 		health: modifiedBaseHealth,
 		maxHealth: modifiedBaseHealth,
 		bonusStats: {
 			strength: 0,
 			agility: 0,
+			dmgReduce:0,
 		},
 		aggros: aggros,
 		template: template,
@@ -224,8 +225,6 @@ export function damageEntity(
 	hme: DamageEvent,
 	source: BattleEventEntity,
 	toDamage: BattleEventEntity,
-	// damage: number,
-	// strikes :number,
 ): { dmgDone: number[] } {
 	if (toDamage.entity.health < 1) return { dmgDone: [] };
 	let bone = 0
@@ -237,6 +236,14 @@ export function damageEntity(
 			bone += source.entity.template.strength
 		}
 	}
+	if (hme.itemDamageData.offenseKind && hme.itemDamageData.offenseKind == OffenseKinds.skillful) {
+		bone += source.entity.bonusStats.agility
+		if (source.kind == 'player') {
+			bone += source.entity.agility
+		} else if (source.kind == 'enemy') {
+			bone += source.entity.template.agility
+		}
+	}
 	let strikes = hme.itemDamageData.strikes
 
 	let damageReduction = getDamageReduction(toDamage)
@@ -246,17 +253,17 @@ export function damageEntity(
 	let dmgSum = 0
 	for (let i = 0; i < strikes; i++) {
 		let dmg = hme.itemDamageData.baseDmg;
-		if (damageReduction != undefined) {
-			dmg = dmg - damageReduction;
-			if (dmg < 1) dmg = 1;
+		if (i == strikes - 1) {
+			dmg += bone;
 		}
+		console.log('reduce dmg by ' + damageReduction)
+		dmg = dmg - damageReduction;
+		if (dmg < 1) dmg = 1;
+
 		if (damageLimit != undefined) {
 			if (dmg > damageLimit) {
 				dmg = damageLimit;
 			}
-		}
-		if (i == strikes - 1) {
-			dmg += bone;
 		}
 		toDamage.entity.health -= dmg;
 		dmgDone.push(dmg);

@@ -55,6 +55,7 @@ export function addNewUser(heroName: string): { id: string; player: Player } | u
 		bonusStats:{
 			strength:0,
 			agility:0,
+			dmgReduce:0,
 		},
 		devActions: [],
 		itemActions: [],
@@ -124,7 +125,7 @@ export type PlayerCommonStats = {
 
 };
 
-export type BonusStat = 'strength' | 'agility'
+export type BonusStat = 'strength' | 'agility' | 'dmgReduce'
 export type BonusStatsState = Record<BonusStat,number>
 
 export type PlayerInClient = {

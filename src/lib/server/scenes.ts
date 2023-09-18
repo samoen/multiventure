@@ -235,8 +235,8 @@ const trainingRoom0: Scene = {
 	setCheckpointOnEnter: true,
 	spawnsEnemiesOnEnter: [
 		{
-			eName: 'Skitters',
-			eTemp: 'rat'
+			displayName: 'Skitters',
+			template: 'rat'
 		}
 	],
 	sceneTexts: {
@@ -310,20 +310,20 @@ const trainingRoom1: Scene = {
 	setCheckpointOnEnter: true,
 	spawnsEnemiesOnEnter: [
 		{
-			eName: 'Glornak',
-			eTemp: 'goblin'
+			displayName: 'Glornak',
+			template: 'goblin'
 		},
 		{
-			eName: 'Squeaky',
-			eTemp: 'rat'
+			displayName: 'Squeaky',
+			template: 'rat'
 		},
 		{
-			eName: 'Scratchy',
-			eTemp: 'rat'
+			displayName: 'Scratchy',
+			template: 'rat'
 		},
 		{
-			eName: 'Nibbles',
-			eTemp: 'rat'
+			displayName: 'Nibbles',
+			template: 'rat'
 		}
 	],
 	sceneTexts: {
@@ -399,8 +399,8 @@ const trainingRoom2: Scene = {
 	healsOnVictory: true,
 	spawnsEnemiesOnEnter: [
 		{
-			eName: 'Borgus',
-			eTemp: 'orc',
+			displayName: 'Borgus',
+			template: 'orc',
 			statuses: [
 				{
 					statusId: 'rage',
@@ -409,12 +409,12 @@ const trainingRoom2: Scene = {
 			]
 		},
 		{
-			eName: 'Morgal',
-			eTemp: 'orc'
+			displayName: 'Morgal',
+			template: 'orc'
 		},
 		{
-			eName: 'Scortchy',
-			eTemp: 'fireGremlin'
+			displayName: 'Scortchy',
+			template: 'fireGremlin'
 		}
 	],
 	vases: [
@@ -485,8 +485,8 @@ const trainingRoom3: Scene = {
 	healsOnVictory: true,
 	spawnsEnemiesOnEnter: [
 		{
-			eName: 'Ragor',
-			eTemp: 'troll'
+			displayName: 'Ragor',
+			template: 'troll'
 		}
 	],
 	sceneTexts: {
@@ -900,8 +900,8 @@ const realmOfMadness: Scene = {
 	},
 	spawnsEnemiesOnEnter: [
 		{
-			eName: 'Mad Troll',
-			eTemp: 'troll'
+			displayName: 'Mad Troll',
+			template: 'troll'
 		}
 	],
 	vases: [
@@ -1005,12 +1005,12 @@ const goblinCamp: Scene = {
 	setsFlagOnVictory: 'killedGoblins',
 	spawnsEnemiesOnEnter: [
 		{
-			eName: 'Gorlak',
-			eTemp: 'goblin'
+			displayName: 'Gorlak',
+			template: 'goblin'
 		},
 		{
-			eName: 'Murk',
-			eTemp: 'goblin',
+			displayName: 'Murk',
+			template: 'goblin',
 			statuses: [
 				{
 					statusId: 'rage',
@@ -1021,7 +1021,7 @@ const goblinCamp: Scene = {
 	],
 	spawnsEnemiesOnBattleJoin: [
 		{
-			eTemp: 'goblin'
+			template: 'goblin'
 		}
 	],
 	sceneTexts: {
@@ -1034,7 +1034,14 @@ const goblinCamp: Scene = {
 			sprite: 'signpost',
 			startText: 'With the goblins slain you are free to travel about the lands',
 			actionsWithRequirements: [{ travelTo: 'forestPassage' }, { travelTo: 'castle' }]
-		}
+		},
+		{
+			unitId: 'vasPendant',
+			displayName: 'Pendant',
+			sprite: 'pendant',
+			startText: 'A pendant of protection',
+			actionsWithRequirements: [{ pickupItem:'pendantOfProtection' }]
+		},
 	]
 };
 
@@ -1057,12 +1064,12 @@ const tunnelChamber: Scene = {
 					bText: 'Place the medallion upon the altar',
 					spawnsEnemies: [
 						{
-							eName: 'Hooded Figure',
-							eTemp: 'orc'
+							displayName: 'Hooded Figure',
+							template: 'orc'
 						},
 						{
-							eName: 'Shootah',
-							eTemp: 'darter',
+							displayName: 'Shootah',
+							template: 'darter',
 							statuses: [{ statusId: 'hidden', count: 2 }]
 						}
 					]
@@ -1147,7 +1154,7 @@ const armory: Scene = {
 			player.devActions.push({
 				buttonText: `Spawn ${t.id}`,
 				devAction() {
-					const e: EnemyForSpawning = { eTemp: t.id as EnemyTemplateId };
+					const e: EnemyForSpawning = { template: t.id as EnemyTemplateId };
 					spawnEnemy(e, player.currentUniqueSceneId, player.unitId);
 				},
 				associateWithUnit:player.unitId

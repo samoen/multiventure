@@ -39,5 +39,12 @@ export const statusDatas: StatusData[] = [
 		removeOnProvoke: true,
 		selfInflictSprite: 'smoke',
 		decayAnyPlayer:true,
-	}
+	},
+	{
+		id: 'protected',
+		giveBonus:{stat:'dmgReduce',amount:40},
+		selfInflictSprite: 'shield',
+		decayAnyPlayer:true,
+		removeOnProvoke:true,
+	},
 ];

@@ -529,7 +529,7 @@ export function handleHealAnimations(anim: BattleAnimation) {
 			updateUnit(other.target, (vup) => {
 				const amt = other.amount;
 				vup.actual.entity.health += amt;
-				if (vup.actual.entity.health < 1) vup.actual.entity.health = 0;
+				if (vup.actual.entity.health > vup.actual.entity.maxHealth) vup.actual.entity.health = vup.actual.entity.maxHealth;
 			});
 		}
 	}

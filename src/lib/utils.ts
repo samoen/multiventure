@@ -124,6 +124,7 @@ export type AnySprite =
 	| 'shield'
 	| 'skull'
 	| 'club'
+	| 'pendant'
 	| 'bow'
 	| 'box'
 	| 'whiteRing'

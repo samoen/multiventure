@@ -445,6 +445,7 @@ export function scaleEnemyHealth(enemy: ActiveEnemy, playerCount: number) {
 export function resetCooldowns(player: Player) {
 	player.bonusStats.agility = 0
 	player.bonusStats.strength = 0
+	player.bonusStats.dmgReduce = 0
 	for (const itemState of player.inventory) {
 		itemState.cooldown = 0;
 		if (itemState.stats.warmup) {
@@ -619,6 +620,7 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 		for (const [k, v] of statusMap) {
 			if (on.entity.health < 0) break
 			if (v < 1) continue;
+			console.log('checking '+k)
 			const statusData = statusDatas.find((s) => s.id == k);
 			if (!statusData) continue;
 			if (!full) {
@@ -730,17 +732,17 @@ export function immuneDueToStatus(bee: BattleEventEntity): boolean {
 function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	if (battleEvent.itemUsed.provoke && battleEvent.itemUsed.provoke > 0) {
 		const r = removeStatusesOnProvoke(battleEvent.source);
-		if (r) {
-			pushAnimation({
-				sceneId: player.currentUniqueSceneId,
-				battleAnimation: {
-					triggeredBy: player.unitId,
-					source: player.unitId,
-					behavior: { kind: 'selfInflicted', extraSprite: r.selfInflictSprite },
-					putsStatuses: [{ statusId: r.id, target: player.unitId, remove: true }]
-				}
-			});
-		}
+		// if (r) {
+		// 	pushAnimation({
+		// 		sceneId: player.currentUniqueSceneId,
+		// 		battleAnimation: {
+		// 			triggeredBy: player.unitId,
+		// 			source: player.unitId,
+		// 			behavior: { kind: 'selfInflicted', extraSprite: r.selfInflictSprite },
+		// 			putsStatuses: [{ statusId: r.id, target: player.unitId, remove: true }]
+		// 		}
+		// 	});
+		// }
 	}
 	if (battleEvent.putsStatuses) {
 		for (const put of battleEvent.putsStatuses) {
@@ -907,6 +909,10 @@ export function getDamageReduction(from: BattleEventEntity): number {
 			dmgReduc += item.stats.damageReduction
 		}
 	}
+	if(from.entity.bonusStats.dmgReduce > 0){
+		dmgReduc += from.entity.bonusStats.dmgReduce
+	}
+	
 	return dmgReduc
 }
 export function getDamageLimit(from: BattleEventEntity): number | undefined {
@@ -1079,8 +1085,8 @@ export type VasActionData = {
 };
 
 export type EnemyForSpawning = {
-	eName?: string;
-	eTemp: EnemyTemplateId;
+	displayName?: string;
+	template: EnemyTemplateId;
 	statuses?: StatusState[];
 };
 
