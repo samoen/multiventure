@@ -65,13 +65,8 @@ export type BattleEvent = {
 	itemUsed:Item;
 };
 
-export const OffenseKinds = {
-	brutal:'brutal',
-	magical: 'magical',
-	skillful:'skillful',
-} as const
 
-export type OffenseKind = typeof OffenseKinds[keyof typeof OffenseKinds]
+export type OffenseKind = 'brutal' | 'skillful' | 'magical'
 
 export type StatusMod = { statusId: StatusId; count?: number, remove?:boolean };
 export type StatusModifyAnimation = { target: UnitId } & StatusMod;

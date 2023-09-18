@@ -15,7 +15,7 @@
 		enemies,
 		handleHealAnimations,
 		handleModAggros,
-		handleModifyHealth,
+		handleDamageAnimation,
 		handlePutsStatuses,
 		lastMsgFromServer,
 		lastUnitClicked,
@@ -509,7 +509,7 @@
 							if ($currentAnimation != undefined) {
 								let anim = $currentAnimation;
 								handleHealAnimations(anim);
-								let hRes = handleModifyHealth(anim, 0, true);
+								let hRes = handleDamageAnimation(anim, 0, true);
 								let someoneDied = false;
 								if (hRes.died.length) {
 									someoneDied = true;
@@ -1097,7 +1097,7 @@
 		text-align: center;
 		font-size: 30px;
 		z-index: 2;
-		color: gray;
+		color: wheat;
 	}
 	.halfOpacity {
 		opacity: 0.5;

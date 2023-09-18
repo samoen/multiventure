@@ -1,12 +1,3 @@
-import {
-	OffenseKinds,
-	type BattleAnimation,
-	type BattleEventEntity,
-	type DamageEvent,
-	type EnemyId,
-	type EnemyName,
-	type HeroId
-} from '$lib/utils';
 import { v4 } from 'uuid';
 import { items, type ItemId, type ItemState } from './items';
 import { deepEqual, getDamageLimit, getDamageReduction, type EnemyForSpawning } from './logic';
@@ -14,6 +5,7 @@ import { pushHappening } from './messaging';
 import { scenesData, type UniqueSceneIdenfitier } from './scenes';
 import type { StatusId } from './statuses';
 import { activePlayersInScene, type BonusStatsState, type Player } from './users';
+import type { EnemyId, EnemyName, HeroId, DamageEvent, BattleEventEntity, BattleAnimation } from '$lib/utils';
 
 export const activeEnemies: ActiveEnemy[] = [];
 
@@ -227,22 +219,29 @@ export function damageEntity(
 	toDamage: BattleEventEntity,
 ): { dmgDone: number[] } {
 	if (toDamage.entity.health < 1) return { dmgDone: [] };
-	let bone = 0
-	if (hme.itemDamageData.offenseKind && hme.itemDamageData.offenseKind == OffenseKinds.brutal) {
-		bone += source.entity.bonusStats.strength
-		if (source.kind == 'player') {
-			bone += source.entity.strength
-		} else if (source.kind == 'enemy') {
-			bone += source.entity.template.strength
+	let bonusDmg = 0
+	let bonusPierce = false
+	if(hme.itemDamageData.offenseKind){
+		if (hme.itemDamageData.offenseKind.includes("brutal")) {
+			bonusDmg += source.entity.bonusStats.strength
+			if (source.kind == 'player') {
+				bonusDmg += source.entity.strength
+			} else if (source.kind == 'enemy') {
+				bonusDmg += source.entity.template.strength
+			}
 		}
-	}
-	if (hme.itemDamageData.offenseKind && hme.itemDamageData.offenseKind == OffenseKinds.skillful) {
-		bone += source.entity.bonusStats.agility
-		if (source.kind == 'player') {
-			bone += source.entity.agility
-		} else if (source.kind == 'enemy') {
-			bone += source.entity.template.agility
+		if (hme.itemDamageData.offenseKind.includes("skillful")) {
+			bonusDmg += source.entity.bonusStats.agility
+			if (source.kind == 'player') {
+				bonusDmg += source.entity.agility
+			} else if (source.kind == 'enemy') {
+				bonusDmg += source.entity.template.agility
+			}
 		}
+		if (hme.itemDamageData.offenseKind.includes("magical")) {
+			bonusPierce = true
+		}
+
 	}
 	let strikes = hme.itemDamageData.strikes
 
@@ -253,8 +252,8 @@ export function damageEntity(
 	let dmgSum = 0
 	for (let i = 0; i < strikes; i++) {
 		let dmg = hme.itemDamageData.baseDmg;
-		if (i == strikes - 1) {
-			dmg += bone;
+		if (i == strikes - 1 && !bonusPierce) {
+			dmg += bonusDmg;
 		}
 		console.log('reduce dmg by ' + damageReduction)
 		dmg = dmg - damageReduction;
@@ -264,6 +263,9 @@ export function damageEntity(
 			if (dmg > damageLimit) {
 				dmg = damageLimit;
 			}
+		}
+		if (i == strikes - 1 && bonusPierce) {
+			dmg += bonusDmg;
 		}
 		toDamage.entity.health -= dmg;
 		dmgDone.push(dmg);

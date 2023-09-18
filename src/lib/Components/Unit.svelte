@@ -26,7 +26,7 @@
 		handlePutsStatuses,
 		animationsInWaiting,
 		visualOpacity,
-		handleModifyHealth,
+		handleDamageAnimation,
 		handleModAggros,
 		handleHealAnimations
 	} from '$lib/client/ui';
@@ -198,7 +198,7 @@
 									vup.tilt = true;
 								});
 								let stop = false;
-								let r = handleModifyHealth(anim, i);
+								let r = handleDamageAnimation(anim, i);
 								if (r.died.find((d) => d == hostId)) {
 									stop = true;
 								}
@@ -267,7 +267,7 @@
 				on:outrostart={() => {
 					const anim = $currentAnimation;
 					if (!anim) return;
-					handleModifyHealth(anim, 0, true);
+					handleDamageAnimation(anim, 0, true);
 					handleHealAnimations(anim);
 					handlePutsStatuses(anim);
 					if (!$lastMsgFromServer) return;
@@ -297,7 +297,7 @@
 					let delayNextStep = false;
 					handlePutsStatuses(anim);
 					handleHealAnimations(anim);
-					let hRes = handleModifyHealth(anim, 0, true);
+					let hRes = handleDamageAnimation(anim, 0, true);
 					if (hRes.died.length) {
 						delayNextStep = true;
 					}

@@ -245,7 +245,8 @@ export function createPossibleBattleEventsFromEntity(
 			if (
 				(i.requiresTargetDamaged &&
 					!(t.entity.health < t.entity.maxHealth && t.entity.health > 0)) ||
-				(i.requiresStatus && !checkHasStatus(t, i.requiresStatus)) ||
+				// (i.requiresStatus && !checkHasStatus(t, i.requiresStatus)) ||
+				(i.requiresTargetWithoutStatus && checkHasStatus(t, i.requiresTargetWithoutStatus)) ||
 				targetImmune
 			) {
 				continue;
@@ -561,7 +562,6 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		if (chosenBe.source.entity.health < 1 && !chosenBe.itemUsed.requiresSourceDead) continue
 		if (chosenBe.animateTo && (immuneDueToStatus(chosenBe.animateTo) || chosenBe.animateTo.entity.health < 1)) continue
 		processBattleEvent(chosenBe, player);
-		afterItemUsed(chosenBe.source, chosenBe.itemUsed);
 	}
 
 	decrementCooldowns({ kind: 'player', entity: player });
@@ -577,7 +577,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		}
 	}
 
-	if (player.health > 0 && itemUsed.provoke != undefined) {
+	if (player.health > 0) {
 		handleStatusEffects(player, { kind: 'player', entity: player })
 	}
 
@@ -620,7 +620,6 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 		for (const [k, v] of statusMap) {
 			if (on.entity.health < 0) break
 			if (v < 1) continue;
-			console.log('checking '+k)
 			const statusData = statusDatas.find((s) => s.id == k);
 			if (!statusData) continue;
 			if (!full) {
@@ -643,7 +642,7 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 			}
 			if (statusData.giveBonus) {
 				on.entity.bonusStats[statusData.giveBonus.stat] += statusData.giveBonus.amount
-				sprite = statusData.selfInflictSprite
+				// sprite = statusData.selfInflictSprite
 				pushHappening(`${on.entity.displayName} grows in strength!`);
 			}
 			statusMap.set(k, v - 1);
@@ -671,26 +670,6 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 	}
 }
 
-function afterItemUsed(bee: BattleEventEntity, itemUsed: Item) {
-	// If we used an equipment item set it on cooldown and reduce stock
-	if (itemUsed.id) {
-		const itemState = bee.entity.inventory.find((i) => i.stats.id == itemUsed.id);
-		if (itemState) {
-			if (itemState.stats.cooldown) {
-				itemState.cooldown = itemState.stats.cooldown;
-			}
-			if (itemState.stock) {
-				itemState.stock--;
-			}
-		}
-	}
-	if (bee.kind == 'enemy') {
-		// enemy aggro to all players goes to zero when it uses an item
-		for (const key of bee.entity.aggros.keys()) {
-			bee.entity.aggros.set(key, 0);
-		}
-	}
-}
 function decrementCooldowns(bee: BattleEventEntity) {
 	// Each turn decrement cooldowns, only if time passed ie provoke
 	// if (itemUsed.provoke != undefined) {
@@ -732,17 +711,17 @@ export function immuneDueToStatus(bee: BattleEventEntity): boolean {
 function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	if (battleEvent.itemUsed.provoke && battleEvent.itemUsed.provoke > 0) {
 		const r = removeStatusesOnProvoke(battleEvent.source);
-		// if (r) {
-		// 	pushAnimation({
-		// 		sceneId: player.currentUniqueSceneId,
-		// 		battleAnimation: {
-		// 			triggeredBy: player.unitId,
-		// 			source: player.unitId,
-		// 			behavior: { kind: 'selfInflicted', extraSprite: r.selfInflictSprite },
-		// 			putsStatuses: [{ statusId: r.id, target: player.unitId, remove: true }]
-		// 		}
-		// 	});
-		// }
+		if (r) {
+			pushAnimation({
+				sceneId: player.currentUniqueSceneId,
+				battleAnimation: {
+					triggeredBy: player.unitId,
+					source: player.unitId,
+					behavior: { kind: 'selfInflicted', extraSprite: 'smoke' },
+					putsStatuses: [{ statusId: r.id, target: player.unitId, remove: true }]
+				}
+			});
+		}
 	}
 	if (battleEvent.putsStatuses) {
 		for (const put of battleEvent.putsStatuses) {
@@ -898,6 +877,23 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				sceneId: sceneToPlayAnim,
 				battleAnimation: xba,
 			});
+		}
+	}
+	if (battleEvent.itemUsed.id) {
+		const itemState = battleEvent.source.entity.inventory.find((i) => i.stats.id == battleEvent.itemUsed.id);
+		if (itemState) {
+			if (itemState.stats.cooldown) {
+				itemState.cooldown = itemState.stats.cooldown;
+			}
+			if (itemState.stock) {
+				itemState.stock--;
+			}
+		}
+	}
+	if (battleEvent.source.kind == 'enemy') {
+		// enemy aggro to all players goes to zero when it uses an item
+		for (const key of battleEvent.source.entity.aggros.keys()) {
+			battleEvent.source.entity.aggros.set(key, 0);
 		}
 	}
 }

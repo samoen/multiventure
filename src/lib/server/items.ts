@@ -1,4 +1,4 @@
-import { OffenseKinds, type AnimationBehavior, type AnySprite, type ItemAnimationBehavior, type OffenseKind, type StatusMod } from '$lib/utils';
+import type { AnySprite, OffenseKind, StatusMod, ItemAnimationBehavior } from '$lib/utils';
 import type { SceneDataId } from './scenes';
 import type { StatusId } from './statuses';
 import type { Player } from './users';
@@ -12,10 +12,12 @@ export type CanTarget =
 	| { kind: 'onlySelf' };
 
 export type CanEffect = 'allFriendly' | 'allEnemy' | 'targetOnly' | 'selfOnly';
-export type ItemDamageData = { affects: CanEffect; baseDmg: number; strikes: number, offenseKind?:OffenseKind }
+export type ItemDamageData = { affects: CanEffect; baseDmg: number; strikes: number, offenseKind?:OffenseKind[] }
+export type ItemVisualBase = |'dagger'|'staff'|'club'|'none'|'heavyArmor'|'lightArmor'|'bow' |'healer' | 'bomb' | 'dart' | 'necklace' | 'cloak'
 export type Item = {
 	id: ItemId;
 	slot: QuickbarSlot;
+	visualBase?:ItemVisualBase
 	speed?: number;
 	damageLimit?: number;
 	damageReduction?: number;
@@ -27,7 +29,8 @@ export type Item = {
 	startStock?: number;
 	useableOutOfBattle?: boolean;
 	requiresTargetDamaged?: boolean;
-	requiresStatus?: StatusId;
+	// requiresStatus?: StatusId;
+	requiresTargetWithoutStatus?:StatusId;
 	requiresSourceDead?: boolean;
 	excludeFromDetail?: boolean;
 	noAction?: boolean;
@@ -42,47 +45,61 @@ export type Item = {
 
 const dagger: Item = {
 	id: 'dagger',
+	visualBase:'dagger',
 	slot: 'weapon',
 	provoke: 7,
 	speed: 4,
-	damages: { affects: 'targetOnly', baseDmg: 7, strikes: 3, offenseKind:'brutal' }
+	damages: { affects: 'targetOnly', baseDmg: 7, strikes: 3, offenseKind:['brutal','skillful'] }
+};
+
+const vampiricDagger: Item = {
+	id: 'vampDagger',
+	visualBase:'dagger',
+	slot: 'weapon',
+	provoke: 7,
+	speed: 4,
+	damages: { affects: 'targetOnly', baseDmg: 10, strikes: 1, offenseKind:['brutal','skillful','magical'] },
+	heals: {affects:'selfOnly',baseHeal:10}
 };
 
 const club: Item = {
 	id: 'club',
+	visualBase:'club',
 	slot: 'weapon',
 	provoke: 40,
 	speed: 1,
-	damages: { affects: 'targetOnly', baseDmg: 28, strikes: 1, offenseKind:'brutal' }
+	damages: { affects: 'targetOnly', baseDmg: 28, strikes: 1, offenseKind:['brutal'] }
 };
 
 export const bow: Item = {
 	id: 'bow',
+	visualBase:'bow',
 	slot: 'weapon',
 	warmup: 1,
 	cooldown: 1,
-	provoke: 10,
+	provoke: 5,
 	speed: 3,
-	damages: { affects: 'targetOnly', baseDmg: 20, strikes: 1, offenseKind:OffenseKinds.skillful },
+	damages: { affects: 'targetOnly', baseDmg: 10, strikes: 2, offenseKind:['skillful'] },
 	animation: { kind: 'missile', extraSprite: 'arrow' },
-	modifiesAggro: { affects: 'targetOnly', aggroFor: 'justMe', amount: 20 },
-	modifiesStatus: {affects:'targetOnly',dispell:'good'}
+	modifiesAggro: { affects: 'targetOnly', aggroFor: 'justMe', amount: 30 },
 };
 
 export const fireStaff: Item = {
 	id: 'fireStaff',
+	visualBase:'staff',
 	slot: 'weapon',
 	warmup: 2,
 	cooldown: 1,
-	provoke: 10,
+	provoke: 5,
 	speed: 2,
-	damages: { affects: 'targetOnly', baseDmg: 20, strikes: 2, offenseKind:OffenseKinds.magical, },
+	damages: { affects: 'targetOnly', baseDmg: 50, strikes: 1, offenseKind:['magical','skillful'], },
 	animation: { kind: 'missile', extraSprite: 'flame' },
-	modifiesAggro: { affects: 'targetOnly', aggroFor: 'justMe', amount: 80 }
+	modifiesAggro: { affects: 'targetOnly', aggroFor: 'justMe', amount: 30 }
 };
 
 const potion: Item = {
 	id: 'potion',
+	visualBase:'healer',
 	slot: 'utility',
 	startStock: 2,
 	useableOutOfBattle: true,
@@ -96,15 +113,26 @@ const potion: Item = {
 const bomb: Item = {
 	id: 'bomb',
 	slot: 'utility',
-	startStock: 1,
+	startStock: 2,
 	speed: 12,
 	provoke: 5,
 	animation: { kind: 'center', extraSprite: 'bomb' },
-	damages: { affects: 'allEnemy', baseDmg: 5, strikes: 1 },
+	damages: { affects: 'allEnemy', baseDmg: 10, strikes: 1 },
 	modifiesAggro: { affects: 'allEnemy', aggroFor: 'allPlayers', amount: -30 }
 };
 
-export const poisonDart: Item = {
+const holyBomb: Item = {
+	id: 'holy',
+	slot: 'utility',
+	startStock: 3,
+	speed: 12,
+	provoke: 5,
+	animation: { kind: 'center', extraSprite: 'bomb' },
+	damages: { affects: 'allEnemy', baseDmg: 5, strikes: 1, offenseKind:['magical'] },
+	modifiesStatus:{affects:'allEnemy',dispell:'good'},
+};
+
+const poisonDart: Item = {
 	id: 'poisonDart',
 	slot: 'utility',
 	startStock: 2,
@@ -115,13 +143,15 @@ export const poisonDart: Item = {
 	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'poisoned', count: 3 } }
 };
 
-export const plateMail: Item = {
+const plateMail: Item = {
 	id: 'plateMail',
+	visualBase:'heavyArmor',
 	slot: 'body',
 	cooldown: 7,
 	provoke: 0,
 	speed: 100,
 	damageLimit: 15,
+	requiresTargetWithoutStatus:'rage',
 	animation: { kind: 'selfInflicted', extraSprite: 'flame' },
 	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'rage', count: 3 } },
 	modifiesAggro: { affects: 'allEnemy', aggroFor: 'justMe', amount: 100 }
@@ -129,28 +159,30 @@ export const plateMail: Item = {
 
 const thiefCloak: Item = {
 	id: 'thiefCloak',
+	visualBase:'cloak',
 	slot: 'body',
 	cooldown: 3,
-	speed: 100,
+	speed: 5,
 	provoke: 30,
-	// grantsImmunity: true,
 	animation: { kind: 'selfInflicted', extraSprite: 'smoke' },
 	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'hidden', count: 2 } }
 };
 
 export const leatherArmor: Item = {
 	id: 'leatherArmor',
+	visualBase:'lightArmor',
 	slot: 'body',
 	useableOutOfBattle: true,
-	// requiresStatus: 'poison',
 	speed: 5,
 	damageReduction: 5,
+	requiresTargetWithoutStatus:'blessed',
 	targets: { kind: 'anyFriendly', selfAfflictSprite: 'heal' },
 	modifiesStatus: { affects: 'targetOnly', dispell: 'bad', statusMod:{statusId:'blessed',count:3} }
 };
 
 export const pendantOfProtection: Item = {
 	id: 'pendantOfProtection',
+	visualBase:'necklace',
 	slot: 'body',
 	speed: 5,
 	damageReduction: 5,
@@ -164,8 +196,9 @@ const fist: Item = {
 	default: true,
 	provoke: 1,
 	speed: 10,
-	damages: { affects: 'targetOnly', baseDmg: 10, strikes: 2, offenseKind:'brutal' }
+	damages: { affects: 'targetOnly', baseDmg: 10, strikes: 2, offenseKind:['brutal'] }
 };
+
 const belt: Item = {
 	id: 'belt',
 	slot: 'utility',
@@ -173,6 +206,7 @@ const belt: Item = {
 	excludeFromDetail: true,
 	noAction: true
 };
+
 const rags: Item = {
 	id: 'rags',
 	slot: 'body',
@@ -188,7 +222,7 @@ const wait: Item = {
 	excludeFromDetail: true,
 	speed: 999,
 	provoke: 0,
-	animation: { kind: 'selfInflicted', extraSprite: 'shield' }
+	animation: { kind: 'selfInflicted', extraSprite: 'whiteRing' }
 };
 
 const succumb: Item = {
@@ -205,22 +239,24 @@ const succumb: Item = {
 };
 
 export const items: Item[] = [
+	belt,
+	rags,
 	fist,
 	dagger,
 	club,
 	bow,
 	fireStaff,
-	belt,
 	potion,
 	bomb,
+	holyBomb,
 	poisonDart,
-	rags,
+	vampiricDagger,
 	plateMail,
 	leatherArmor,
 	pendantOfProtection,
 	thiefCloak,
 	wait,
-	succumb
+	succumb,
 ];
 
 export type ItemState = {
@@ -261,30 +297,28 @@ export function checkHasItem(player: Player, id: ItemId): boolean {
 	}
 	return false;
 }
-
+export const startClass = 'peasant'
 export type ItemCombination = { className: string; combos: string[] };
 export const itemCombinations = [
-	{ className: 'peasant', combos: ['fist'] },
 	{ className: 'thief', combos: ['dagger'] },
 	{ className: 'ruffian', combos: ['club'] },
 	{ className: 'woodsman', combos: ['bow'] },
-	{ className: 'mage', combos: ['fireStaff'] },
-	{ className: 'thug', combos: ['club', 'leatherArmor'] },
-	{ className: 'bowman', combos: ['bow', 'leatherArmor'] },
-	{ className: 'bowman', combos: ['bow', 'plateMail'] },
-	{ className: 'heavy', combos: ['club', 'plateMail'] },
-	{ className: 'cleric', combos: ['fireStaff', 'potion'] },
-	{ className: 'rogue', combos: ['dagger', 'leatherArmor'] },
-	{ className: 'rogue', combos: ['dagger', 'thiefCloak'] },
-	{ className: 'rogue', combos: ['dagger', 'plateMail'] }
+	{ className: 'mage', combos: ['staff'] },
+	{ className: 'thug', combos: ['club', 'lightArmor'] },
+	{ className: 'bowman', combos: ['bow', 'lightArmor'] },
+	{ className: 'longbowman', combos: ['bow', 'heavyArmor'] },
+	{ className: 'heavy', combos: ['club', 'heavyArmor'] },
+	{ className: 'cleric', combos: ['staff', 'healer'] },
+	{ className: 'rogue', combos: ['dagger', 'lightArmor'] },
+	{ className: 'swordsman', combos: ['dagger', 'heavyArmor'] }
 ];
 
 export function comboFindClassFromInventory(inv: ItemState[]): string {
-	let result = 'peasant';
+	let result = startClass;
 	for (const itemCombination of itemCombinations) {
 		let satisfies = true;
 		for (const itemId of itemCombination.combos) {
-			const found = inv.find((i) => i.stats.id == itemId);
+			const found = inv.find((i) => i.stats.visualBase && i.stats.visualBase == itemId);
 			if (!found) {
 				satisfies = false;
 				break;

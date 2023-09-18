@@ -179,7 +179,7 @@ export const typedInventory = derived(
 					acts: acts,
 					overlayNumber: num,
 					dots: stockDotsOnSlotButton(state),
-					img: getSlotImage(state.stats.id)
+					img: getSlotImage(state.stats)
 				});
 			}
 		}
@@ -498,7 +498,7 @@ export function changeVasLocked(vId: VisualActionSourceId, unlock: boolean) {
 	});
 }
 
-export function handleModifyHealth(
+export function handleDamageAnimation(
 	anim: BattleAnimation,
 	strikeNumber: number,
 	oneShot = false

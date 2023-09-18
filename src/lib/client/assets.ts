@@ -9,6 +9,7 @@ import peasantPortrait from '$lib/assets/portraits/peasant-fists.webp';
 import woodsmanPortrait from '$lib/assets/portraits/woodsman.webp';
 import bowmanPortrait from '$lib/assets/portraits/bowman.webp';
 import generalPortrait from '$lib/assets/portraits/general.webp';
+import swordsmanPortrait from '$lib/assets/portraits/swordsman.webp';
 import ladyPortrait from '$lib/assets/portraits/lady.webp';
 import thiefPortrait from '$lib/assets/portraits/thief.webp';
 import thugPortrait from '$lib/assets/portraits/thug.webp';
@@ -29,7 +30,10 @@ import lady from '$lib/assets/units/lady.png';
 import spectre from '$lib/assets/units/spectre.png';
 import necromancer from '$lib/assets/units/necromancer.png';
 import gruntPortrait from '$lib/assets/portraits/grunt.webp';
+import longbowmanPortrait from '$lib/assets/portraits/longbowman.webp';
 import spearman from '$lib/assets/units/spearman.png';
+import longbowman from '$lib/assets/units/longbowman.png';
+import swordsman from '$lib/assets/units/swordsman.png';
 import rat from '$lib/assets/units/giant-rat.png';
 import grunt from '$lib/assets/units/grunt.png';
 import troll from '$lib/assets/units/young-ogre.png';
@@ -73,12 +77,18 @@ import fistSlot from '$lib/assets/equipment/fist-human.png';
 import shieldSlot from '$lib/assets/equipment/heater-shield.png';
 import waitSlot from '$lib/assets/equipment/wait-slot.png';
 import blankSlot from '$lib/assets/equipment/blank-attack.png';
+import cloakSlot from '$lib/assets/equipment/cloak_leather_brown.png';
 import poisonDartSlot from '$lib/assets/equipment/dagger-thrown-poison-human.png';
+import dartSlot from '$lib/assets/equipment/dagger-thrown-human.png';
 import fireballSlot from '$lib/assets/equipment/fireball.png';
+import cuirassSlot from '$lib/assets/equipment/cuirass_muscled.png';
+import leatherSlot from '$lib/assets/equipment/armor_leather.png';
+import ankhSlot from '$lib/assets/equipment/ankh_necklace.png';
+import magicStaffSlot from '$lib/assets/equipment/staff-magic-slot.png';
 import daggerSlot from '$lib/assets/equipment/dagger-human.png';
 import bowSlot from '$lib/assets/equipment/bow-short.png';
 import type { EnemyTemplateId } from '$lib/server/enemies';
-import type { ItemId, ItemState } from '$lib/server/items';
+import type { Item, ItemId, ItemState } from '$lib/server/items';
 import type { PlayerInClient } from '$lib/server/users';
 import type { AnySprite, LandscapeImage } from '$lib/utils';
 import type { StatusId } from '$lib/server/statuses';
@@ -92,21 +102,26 @@ export const enemySprites: Record<EnemyTemplateId, string> = {
 	fireGremlin: fireghost
 };
 
-export function getSlotImage(id: ItemId): string {
-	if (id == 'fist') return fistSlot;
+export function getSlotImage(item:Item): string {
+    if(!item.visualBase){
+        if(item.slot == 'weapon')return fistSlot
+        if(item.slot == 'body')return tunicSlot
+        if(item.slot == 'utility')return bombSlot
+    }
+    let id = item.visualBase
 	if (id == 'club') return clubSlot;
 	if (id == 'dagger') return daggerSlot;
-	if (id == 'fireStaff') return fireballSlot;
+	if (id == 'staff') return magicStaffSlot;
 	if (id == 'bomb') return bombSlot;
 	if (id == 'bow') return bowSlot;
-	if (id == 'poisonDart') return poisonDartSlot;
-	if (id == 'potion') return potionSlot;
-	if (id == 'leatherArmor') return tunicSlot;
-	if (id == 'thiefCloak') return dressSlot;
-	if (id == 'plateMail') return shieldSlot;
-	if (id == 'pendantOfProtection') return shieldSlot;
-	if (id == 'wait') return waitSlot;
-	if (id == 'succumb') return skullSlot;
+	if (id == 'dart') return dartSlot;
+	if (id == 'necklace') return ankhSlot;
+	if (id == 'cloak') return cloakSlot;
+	if (id == 'healer') return potionSlot;
+	if (id == 'lightArmor') return leatherSlot;
+	if (id == 'heavyArmor') return cuirassSlot;
+	if (item.id == 'wait') return waitSlot;
+	if (item.id == 'succumb') return skullSlot;
 	return blankSlot;
 }
 
@@ -114,8 +129,10 @@ export function getHeroPortrait(className: string): string {
 	if (className == 'peasant') return peasantPortrait;
 	if (className == 'thief') return thiefPortrait;
 	if (className == 'rogue') return thiefPortrait;
+	if (className == 'swordsman') return swordsmanPortrait;
 	if (className == 'woodsman') return woodsmanPortrait;
 	if (className == 'bowman') return bowmanPortrait;
+	if (className == 'longbowman') return longbowmanPortrait;
 	if (className == 'ruffian') return ruffianPortrait;
 	if (className == 'thug') return thugPortrait;
 	if (className == 'heavy') return heavyInfantryPortrait;
@@ -144,10 +161,12 @@ export function heroSpriteFromClass(className: string): string {
 	if (className == 'peasant') return peasant;
 	if (className == 'thief') return thief;
 	if (className == 'rogue') return rogue;
+	if (className == 'swordsman') return swordsman;
 	if (className == 'ruffian') return ruffian;
 	if (className == 'thug') return thug;
 	if (className == 'woodsman') return woodsman;
 	if (className == 'bowman') return bowman;
+	if (className == 'longbowman') return longbowman;
 	if (className == 'mage') return mage;
 	if (className == 'heavy') return heavyInfantry;
 	if (className == 'cleric') return whiteMage;
