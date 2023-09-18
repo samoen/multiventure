@@ -7,6 +7,7 @@ export type StatusId = string;
 export type StatusData = {
 	id: StatusId;
 	damagePercent?: number;
+	heal?: number;
 	giveBonus?:{stat:BonusStat, amount:number}
 	immunity?: boolean;
 	removeOnProvoke?: boolean;
@@ -17,14 +18,19 @@ export type StatusData = {
 
 export const statusDatas: StatusData[] = [
 	{
-		id: 'poison',
+		id: 'poisoned',
 		damagePercent: 0.2,
 		selfInflictSprite: 'poison',
 		bad:true,
 	},
 	{
+		id: 'blessed',
+		heal: 10,
+		selfInflictSprite: 'heal',
+	},
+	{
 		id: 'rage',
-		giveBonus:{stat:'strength',amount:10},
+		giveBonus:{stat:'strength',amount:5},
 		selfInflictSprite: 'flame'
 	},
 	{

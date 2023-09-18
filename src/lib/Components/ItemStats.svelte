@@ -12,7 +12,6 @@
 	import saw from '$lib/assets/ui/saw.png';
 	import teeth from '$lib/assets/ui/teeth.png';
 	import crown from '$lib/assets/ui/crown.png';
-	import { statusImages } from '$lib/client/assets';
 	import type { VisualUnitProps } from '$lib/client/ui';
 
 	export let itemState: ItemState;

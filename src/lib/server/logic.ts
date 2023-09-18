@@ -162,12 +162,30 @@ export function createPossibleBattleEventsFromEntity(
 			if (i.modifiesStatus) {
 				const statusAffected = affectedsFromCanEffect(i.modifiesStatus.affects, targetChosen);
 				for (const aff of statusAffected) {
-					ptstatuses.push({
-						target: aff,
-						statusId: i.modifiesStatus.statusMod.statusId,
-						count: i.modifiesStatus.statusMod.count,
-						remove: i.modifiesStatus.statusMod.remove
-					});
+					if(i.modifiesStatus.dispell){
+						let toRemove : StatusData[] =[]
+						if(i.modifiesStatus.dispell == 'bad'){
+							toRemove = statusDatas.filter(sd=>sd.bad)
+						}
+						if(i.modifiesStatus.dispell == 'good'){
+							toRemove = statusDatas.filter(sd=>!sd.bad)
+						}
+						for(const r of toRemove){
+							ptstatuses.push({
+								target: aff,
+								statusId: r.id,
+								remove: true
+							});
+						}
+					}
+					if(i.modifiesStatus.statusMod){
+						ptstatuses.push({
+							target: aff,
+							statusId: i.modifiesStatus.statusMod.statusId,
+							count: i.modifiesStatus.statusMod.count,
+							remove: i.modifiesStatus.statusMod.remove
+						});
+					}
 				}
 			}
 
@@ -595,6 +613,7 @@ function getActionSpeed(bee: BattleEventEntity, itemUsed: Item): number {
 
 function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 	const ad: DamageAnimation[] = [];
+	const healAnimations: HealAnimation[] = [];
 	let sprite: AnySprite | undefined = undefined;
 	let check = (statusMap: Map<StatusId, number>, full: boolean) => {
 		for (const [k, v] of statusMap) {
@@ -614,6 +633,11 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 				ad.push({ target: on.entity.unitId, amount: [dmg] });
 				sprite = statusData.selfInflictSprite;
 				pushHappening(`${on.entity.unitId} took ${dmg} damage from ${k}`);
+			}
+			if (statusData.heal) {
+				healEntity(on,statusData.heal)
+				healAnimations.push({ target: on.entity.unitId, amount: statusData.heal });
+				sprite = statusData.selfInflictSprite;
 			}
 			if (statusData.giveBonus) {
 				on.entity.bonusStats[statusData.giveBonus.stat] += statusData.giveBonus.amount
@@ -638,6 +662,7 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 				triggeredBy: playerTriggered.unitId,
 				source: on.entity.unitId,
 				alsoDamages: ad,
+				alsoHeals:healAnimations,
 				behavior: { kind: 'selfInflicted', extraSprite: sprite }
 			}
 		});

@@ -33,7 +33,7 @@ export type Item = {
 	noAction?: boolean;
 	damages?: ItemDamageData;
 	heals?: { affects: CanEffect; baseHeal: number };
-	modifiesStatus?: { affects: CanEffect; statusMod: StatusMod };
+	modifiesStatus?: { affects: CanEffect; statusMod?: StatusMod, dispell?:'good'|'bad' };
 	modifiesAggro?: { affects: CanEffect; aggroFor: 'allPlayers' | 'justMe'; amount: number };
 	animation?: ItemAnimationBehavior; // default melee
 	targets?: CanTarget; // for melee or missle defaults anyEnemy, else onlyself
@@ -66,7 +66,8 @@ export const bow: Item = {
 	damages: { affects: 'targetOnly', baseDmg: 20, strikes: 1, offenseKind:OffenseKinds.skillful },
 	animation: { kind: 'missile', extraSprite: 'arrow' },
 	modifiesAggro: { affects: 'targetOnly', aggroFor: 'justMe', amount: 20 },
-	modifiesStatus: {affects:'targetOnly',statusMod:{statusId:'rage',count:2}}
+	modifiesStatus: {affects:'targetOnly',dispell:'good'}
+
 };
 
 export const fireStaff: Item = {
@@ -112,7 +113,7 @@ export const poisonDart: Item = {
 	speed: 20,
 	damages: { affects: 'targetOnly', baseDmg: 3, strikes: 1 },
 	animation: { kind: 'missile', extraSprite: 'arrow' },
-	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'poison', count: 3 } }
+	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'poisoned', count: 3 } }
 };
 
 export const plateMail: Item = {
@@ -123,7 +124,7 @@ export const plateMail: Item = {
 	speed: 100,
 	damageLimit: 15,
 	animation: { kind: 'selfInflicted', extraSprite: 'flame' },
-	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'rage', count: 1 } },
+	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'rage', count: 3 } },
 	modifiesAggro: { affects: 'allEnemy', aggroFor: 'justMe', amount: 100 }
 };
 
@@ -142,11 +143,11 @@ export const leatherArmor: Item = {
 	id: 'leatherArmor',
 	slot: 'body',
 	useableOutOfBattle: true,
-	requiresStatus: 'poison',
+	// requiresStatus: 'poison',
 	speed: 5,
 	damageReduction: 5,
 	targets: { kind: 'anyFriendly', selfAfflictSprite: 'heal' },
-	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'poison', remove: true } }
+	modifiesStatus: { affects: 'targetOnly', dispell: 'bad', statusMod:{statusId:'blessed',count:3} }
 };
 
 const fist: Item = {

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { statusImages } from '$lib/client/assets';
+	import { getStatusImage } from '$lib/client/assets';
 	import {
 		allVisualUnitProps,
 		lastMsgFromServer,
@@ -83,7 +83,7 @@
 		<div class="outerHeroSprite">
 			<div class="statuses">
 				{#each $statuses as s}
-					<img class="status" alt="status" src={statusImages[s.statusId]} />
+					<img class="status" alt="status" src={getStatusImage(s.statusId)} />
 				{/each}
 			</div>
 			<img

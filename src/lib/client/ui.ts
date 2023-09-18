@@ -558,16 +558,9 @@ export function handlePutsStatuses(anim: BattleAnimation) {
 		for (const ps of anim.putsStatuses) {
 			updateUnit(ps.target, (vup) => {
 				if (ps.remove) {
-					if (vup.actual.kind == 'enemy') {
-						// remove enemy status for all sources
-						vup.actual.entity.statuses = vup.actual.entity.statuses.filter(
+					vup.actual.entity.statuses = vup.actual.entity.statuses.filter(
 							(s) => s.statusId != ps.statusId
 						);
-					} else if (vup.actual.kind == 'player') {
-						vup.actual.entity.statuses = vup.actual.entity.statuses.filter(
-							(s) => s.statusId != ps.statusId
-						);
-					}
 				} else {
 					if (ps.count) {
 						if (vup.actual.kind == 'enemy') {

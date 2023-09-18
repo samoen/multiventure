@@ -73,8 +73,7 @@ export const OffenseKinds = {
 
 export type OffenseKind = typeof OffenseKinds[keyof typeof OffenseKinds]
 
-export type StatusMod = { statusId: StatusId; remove?: boolean; count?: number };
-
+export type StatusMod = { statusId: StatusId; count?: number, remove?:boolean };
 export type StatusModifyAnimation = { target: UnitId } & StatusMod;
 export type StatusModifierEvent = { target: BattleEventEntity } & StatusMod;
 export type DamageAnimation = { target: UnitId; amount: number[] };

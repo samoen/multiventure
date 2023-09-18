@@ -129,10 +129,12 @@ export function getPortrait(key: string): string {
 	return gruntPortrait;
 }
 
-export const statusImages: Record<StatusId, string> = {
-	poison: greenDrip,
-	rage: rage,
-	hidden: hidden
+export function getStatusImage(statusDataId:string): string {
+    if(statusDataId == 'poisoned')return greenDrip
+    if(statusDataId == 'rage')return rage
+    if(statusDataId == 'hidden')return hidden
+    if(statusDataId == 'blessed')return heal
+    return hidden
 };
 
 export function heroSpriteFromClass(className: string): string {

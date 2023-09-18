@@ -8,10 +8,10 @@
 	import crossedSwords from '$lib/assets/ui/crossed-swords.png';
 	import lightShield from '$lib/assets/ui/light-shield.png';
 	import heavyShield from '$lib/assets/ui/heavy-shield.png';
-	import { statusImages } from '$lib/client/assets';
 	import type { HeroId } from '$lib/utils';
 	import type { HeroName } from '$lib/server/users';
 	import ItemStats from './ItemStats.svelte';
+	import { getStatusImage } from '$lib/client/assets';
 
 	export let vu: VisualUnitProps;
 	$: enemy = vu.actual.kind == 'enemy' ? vu.actual.entity : undefined;
@@ -48,7 +48,7 @@
 			{#each vu.actual.entity.statuses as s}
 				{#if s.count > 0}
 					<div class="statLine">
-						<img class="statusIm" src={statusImages[s.statusId]} alt="a status" />
+						<img class="statusIm" src={getStatusImage(s.statusId)} alt="a status" />
 						<div>{s.count}</div>
 					</div>
 				{/if}
@@ -99,7 +99,7 @@
 				<div>
 					{#if s.count > 0}
 						<div class="statLine">
-							<img class="statusIm" src={statusImages[s.statusId]} alt="a status" />
+							<img class="statusIm" src={getStatusImage(s.statusId)} alt="a status" />
 							<div>{s.count}</div>
 						</div>
 					{/if}
