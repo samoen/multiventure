@@ -1,6 +1,6 @@
 import { v4 } from 'uuid';
 import { items, type ItemId, type ItemState } from './items';
-import { deepEqual, getDamageLimit, getDamageReduction, type EnemyForSpawning } from './logic';
+import { deepEqual, getDamageLimit, getDamageReduction, type EnemyForSpawning, protectedDueToStatus } from './logic';
 import { pushHappening } from './messaging';
 import { scenesData, type UniqueSceneIdenfitier } from './scenes';
 import type { StatusId } from './statuses';
@@ -255,7 +255,6 @@ export function damageEntity(
 		if (i == strikes - 1 && !bonusPierce) {
 			dmg += bonusDmg;
 		}
-		console.log('reduce dmg by ' + damageReduction)
 		dmg = dmg - damageReduction;
 		if (dmg < 1) dmg = 1;
 
@@ -266,6 +265,9 @@ export function damageEntity(
 		}
 		if (i == strikes - 1 && bonusPierce) {
 			dmg += bonusDmg;
+		}
+		if(protectedDueToStatus(toDamage)){
+			dmg = 5
 		}
 		toDamage.entity.health -= dmg;
 		dmgDone.push(dmg);

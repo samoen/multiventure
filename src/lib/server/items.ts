@@ -134,6 +134,7 @@ const holyBomb: Item = {
 
 const poisonDart: Item = {
 	id: 'poisonDart',
+	visualBase:'dart',
 	slot: 'utility',
 	startStock: 2,
 	provoke: 40,
@@ -141,6 +142,17 @@ const poisonDart: Item = {
 	damages: { affects: 'targetOnly', baseDmg: 3, strikes: 1 },
 	animation: { kind: 'missile', extraSprite: 'arrow' },
 	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'poisoned', count: 3 } }
+};
+
+const deadlyDart: Item = {
+	id: 'deadlyDart',
+	visualBase:'dart',
+	slot: 'utility',
+	startStock: 1,
+	provoke: 40,
+	speed: 20,
+	damages: { affects: 'targetOnly', baseDmg: 100, strikes: 1 },
+	animation: { kind: 'missile', extraSprite: 'arrow' },
 };
 
 const plateMail: Item = {
@@ -250,6 +262,7 @@ export const items: Item[] = [
 	bomb,
 	holyBomb,
 	poisonDart,
+	deadlyDart,
 	vampiricDagger,
 	plateMail,
 	leatherArmor,

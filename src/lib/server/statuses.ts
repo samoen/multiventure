@@ -10,6 +10,7 @@ export type StatusData = {
 	heal?: number;
 	giveBonus?:{stat:BonusStat, amount:number}
 	immunity?: boolean;
+	protection?:boolean;
 	removeOnProvoke?: boolean;
 	selfInflictSprite: AnySprite;
 	decayAnyPlayer?:boolean;
@@ -42,7 +43,8 @@ export const statusDatas: StatusData[] = [
 	},
 	{
 		id: 'protected',
-		giveBonus:{stat:'dmgReduce',amount:40},
+		// giveBonus:{stat:'dmgReduce',amount:40},
+		protection:true,
 		selfInflictSprite: 'shield',
 		decayAnyPlayer:true,
 		removeOnProvoke:true,
