@@ -60,7 +60,7 @@ import pendant from '$lib/assets/scenery/pendant.png';
 import bombpad from '$lib/assets/scenery/bomb-pad.png';
 import altar from '$lib/assets/scenery/altar.png';
 import staff from '$lib/assets/scenery/staff-magic.png';
-import whiteRing from '$lib/assets/scenery/ring-white.png';
+import whiteRing from '$lib/assets/extras/ring-white.png';
 import bag from '$lib/assets/scenery/leather-pack.png';
 import scarecrow from '$lib/assets/scenery/scarecrow.png';
 import dagger from '$lib/assets/scenery/dagger.png';

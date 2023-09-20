@@ -33,7 +33,7 @@ export function addNewUser(heroName: string): { id: string; player: Player } | u
 	let startSceneId: SceneDataId = startSceneDataId;
 	// startSceneId = 'forestPassage'
 	// startSceneId = 'throne'
-	// startSceneId = 'armory'
+	startSceneId = 'armory'
 
 	const startUnique = uniqueFromSceneDataId(pId, startSceneId);
 

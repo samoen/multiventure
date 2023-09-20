@@ -540,6 +540,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	let chosenBattleEvents: BattleEvent[] = []
 	for (const enemy of enemiesInScene(actionStartedInSceneId)) {
 		const aggroForActor = getAggroForPlayer(enemy, player);
+		let chosenForEnemy : BattleEvent | undefined = undefined
 		if (aggroForActor) {
 			if (Math.random() < aggroForActor / 100) {
 				let bEventsForEnemy = createPossibleBattleEventsFromEntity(
@@ -547,17 +548,29 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 					actionStartedInSceneId,
 					player,
 				)
-				const randomIndex = Math.floor(Math.random() * bEventsForEnemy.length);
-				let selected = bEventsForEnemy.at(randomIndex)
-				if (selected) {
-					chosenBattleEvents.push(selected)
+				let itemsPossible = bEventsForEnemy
+					.map(be=>be.itemUsed)
+					.filter((value, index, self) => self.indexOf(value) === index);
+				const randomItemIndex = Math.floor(Math.random() * itemsPossible.length);
+				const randomItemSel = itemsPossible.at(randomItemIndex)
+				if(randomItemSel){
+					let besOfSelItem = bEventsForEnemy.filter(be => be.itemUsed.id == randomItemSel.id)
+					const randomIndex = Math.floor(Math.random() * besOfSelItem.length);
+					let selected = besOfSelItem.at(randomIndex)
+					if (selected) {
+						chosenForEnemy = selected
+					}
 				}
-			}else{
-				handleStatusEffects(player, {kind:'enemy',entity:enemy})
-				handleStatusRemovals({kind:'enemy',entity:enemy},player, false)
 			}
 		}
+		if(chosenForEnemy){
+			chosenBattleEvents.push(chosenForEnemy)
+		} else{
+			handleStatusEffects(player, {kind:'enemy',entity:enemy})
+			handleStatusRemovals({kind:'enemy',entity:enemy},player, false)
+		}
 	}
+
 	chosenBattleEvents.push(actionFromId.battleEvent)
 	chosenBattleEvents.sort((a, b) => {
 		return getActionSpeed(b.source, b.itemUsed) - getActionSpeed(a.source, a.itemUsed)

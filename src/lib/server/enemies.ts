@@ -88,7 +88,7 @@ export const enemyTemplates: EnemyTemplate[] = [
 		aggroGain: 50,
 		startAggro: 100,
 		agility: 5,
-		hasItem: ['gremlinStaff'],
+		hasItem: ['gremlinStaff', 'pendantOfProtection'],
 	},
 	{
 		id:'troll',

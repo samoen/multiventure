@@ -213,6 +213,7 @@ export const trollArmor: Item = {
 	speed: 2,
 	requiresTargetWithoutStatus:'blessed',
 	targets: { kind: 'onlySelf' },
+	animation: { kind: 'selfInflicted', extraSprite: 'shield' },
 	modifiesStatus: { affects: 'targetOnly', statusMod:{statusId:'blessed',count:3} }
 };
 
@@ -233,6 +234,7 @@ export const pendantOfProtection: Item = {
 	cooldown:3,
 	damageReduction: 5,
 	targets: { kind: 'anyFriendly', selfAfflictSprite: 'shield' },
+	requiresTargetWithoutStatus:'protected',
 	modifiesStatus: { affects: 'targetOnly', statusMod:{statusId:'protected',count:3} }
 };
 
@@ -278,7 +280,6 @@ const succumb: Item = {
 	teleportTo: 'dead',
 	default: true,
 	speed: -999,
-	// grantsImmunity: true,
 	requiresSourceDead: true,
 	useableOutOfBattle: true,
 	animation: { kind: 'selfInflicted', extraSprite: 'skull' }
