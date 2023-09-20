@@ -548,19 +548,34 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 					actionStartedInSceneId,
 					player,
 				)
-				let itemsPossible = bEventsForEnemy
-					.map(be=>be.itemUsed)
-					.filter((value, index, self) => self.indexOf(value) === index);
-				const randomItemIndex = Math.floor(Math.random() * itemsPossible.length);
-				const randomItemSel = itemsPossible.at(randomItemIndex)
-				if(randomItemSel){
-					let besOfSelItem = bEventsForEnemy.filter(be => be.itemUsed.id == randomItemSel.id)
-					const randomIndex = Math.floor(Math.random() * besOfSelItem.length);
-					let selected = besOfSelItem.at(randomIndex)
-					if (selected) {
-						chosenForEnemy = selected
+				// enemy prioritize a finishing blow
+				let foundFinisher = bEventsForEnemy.find(be=>{
+					if(be.alsoDamages){
+						let foundBlow = be.alsoDamages.find(ad=>(ad.itemDamageData.baseDmg * ad.itemDamageData.strikes) >= ad.target.entity.health)
+						if(foundBlow){
+							return true
+						}
+					}
+					return false
+				})
+				if(foundFinisher){
+					chosenForEnemy = foundFinisher
+				}else{
+					let itemsPossible = bEventsForEnemy
+						.map(be=>be.itemUsed)
+						.filter((value, index, self) => self.indexOf(value) === index);
+					const randomItemIndex = Math.floor(Math.random() * itemsPossible.length);
+					const randomItemSel = itemsPossible.at(randomItemIndex)
+					if(randomItemSel){
+						let besOfSelItem = bEventsForEnemy.filter(be => be.itemUsed.id == randomItemSel.id)
+						const randomIndex = Math.floor(Math.random() * besOfSelItem.length);
+						let selected = besOfSelItem.at(randomIndex)
+						if (selected) {
+							chosenForEnemy = selected
+						}
 					}
 				}
+
 			}
 		}
 		if(chosenForEnemy){

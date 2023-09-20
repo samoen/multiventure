@@ -12,7 +12,12 @@ export type CanTarget =
 	| { kind: 'onlySelf' };
 
 export type CanEffect = 'allFriendly' | 'allEnemy' | 'targetOnly' | 'selfOnly';
-export type ItemDamageData = { affects: CanEffect; baseDmg: number; strikes: number, offenseKind?:OffenseKind[] }
+export type ItemDamageData = { 
+	affects: CanEffect; 
+	baseDmg: number;
+	strikes: number,
+	offenseKind?:OffenseKind[] 
+}
 export type ItemVisualBase = |'dagger'|'staff'|'club'|'none'|'heavyArmor'|'lightArmor'|'bow' |'healer' | 'bomb' | 'dart' | 'necklace' | 'cloak'
 export type Item = {
 	id: ItemId;
