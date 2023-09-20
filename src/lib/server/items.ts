@@ -193,7 +193,7 @@ const thiefCloak: Item = {
 	slot: 'body',
 	cooldown: 3,
 	speed: 5,
-	provoke: 30,
+	provoke: 0,
 	animation: { kind: 'selfInflicted', extraSprite: 'smoke' },
 	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'hidden', count: 2 } }
 };
@@ -291,26 +291,29 @@ const succumb: Item = {
 };
 
 export const items: Item[] = [
-	belt,
-	rags,
 	fist,
 	dagger,
 	club,
 	bow,
 	fireStaff,
 	gremlinStaff,
+	vampiricDagger,
+
+	belt,
 	potion,
 	bomb,
 	holyBomb,
 	poisonDart,
 	deadlyDart,
-	vampiricDagger,
+	
+	rags,
 	plateMail,
 	leatherArmor,
 	trollArmor,
 	goblinArmor,
 	pendantOfProtection,
 	thiefCloak,
+
 	wait,
 	succumb,
 ];

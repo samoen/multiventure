@@ -38,6 +38,7 @@ export type EnemyTemplate = {
 	baseHealth: number;
 	strength: number;
 	agility: number;
+	mind:number;
 	aggroGain: number;
 	startAggro: number;
 	hasItem: ItemId[];
@@ -49,6 +50,7 @@ export const enemyTemplates: EnemyTemplate[] = [
 		baseHealth: 5,
 		strength: 0,
 		agility: 0,
+		mind:0,
 		aggroGain: 10,
 		startAggro: 70,
 		hasItem: ['fist','thiefCloak'],
@@ -58,6 +60,7 @@ export const enemyTemplates: EnemyTemplate[] = [
 		baseHealth: 50,
 		strength: 0,
 		agility: 3,
+		mind:0,
 		aggroGain: 50,
 		startAggro: 20,
 		hasItem: ['fist', 'goblinArmor']
@@ -67,6 +70,7 @@ export const enemyTemplates: EnemyTemplate[] = [
 		baseHealth: 50,
 		strength: 0,
 		aggroGain: 10,
+		mind:0,
 		startAggro: 10,
 		agility: 4,
 		hasItem: ['fist', 'poisonDart']
@@ -76,15 +80,17 @@ export const enemyTemplates: EnemyTemplate[] = [
 		portrait: 'grunt',
 		baseHealth: 50,
 		strength: 2,
+		mind:0,
 		aggroGain: 30,
-		startAggro: 10,
+		startAggro: 100,
 		agility: 4,
-		hasItem: ['club', 'plateMail'],
+		hasItem: ['club'],
 	},
 	{
 		id:'fireGremlin',
 		baseHealth: 10,
 		strength: 0,
+		mind:3,
 		aggroGain: 50,
 		startAggro: 100,
 		agility: 5,
@@ -94,6 +100,7 @@ export const enemyTemplates: EnemyTemplate[] = [
 		id:'troll',
 		baseHealth: 150,
 		strength: 10,
+		mind:0,
 		aggroGain: 3,
 		startAggro: 80,
 		agility: 1,
@@ -166,7 +173,7 @@ export function spawnEnemy(
 		bonusStats: {
 			strength: 0,
 			agility: 0,
-			dmgReduce:0,
+			mind:0,
 		},
 		aggros: aggros,
 		template: template,
@@ -239,9 +246,14 @@ export function damageEntity(
 			}
 		}
 		if (hme.itemDamageData.offenseKind.includes("magical")) {
+			bonusDmg += source.entity.bonusStats.mind
+			if (source.kind == 'player') {
+				bonusDmg += source.entity.mind
+			} else if (source.kind == 'enemy') {
+				bonusDmg += source.entity.template.mind
+			}
 			bonusPierce = true
 		}
-
 	}
 	let strikes = hme.itemDamageData.strikes
 

@@ -11,6 +11,8 @@
 	import foot from '$lib/assets/ui/foot.png';
 	import saw from '$lib/assets/ui/saw.png';
 	import teeth from '$lib/assets/ui/teeth.png';
+	import sword from '$lib/assets/ui/sword.png';
+	import arrows from '$lib/assets/ui/arrows.png';
 	import crown from '$lib/assets/ui/crown.png';
 	import type { VisualUnitProps } from '$lib/client/ui';
 
@@ -41,13 +43,13 @@
 		{#if itemState.stats}
 			{#if itemState.stats.damages}
 				<div class="statLine">
-					<img src={strong} alt="a heart" />
+					<img src={sword} alt="a heart" />
 					<div>{itemState.stats.damages.baseDmg}</div>
 				</div>
 			{/if}
 			{#if itemState.stats.damages && itemState.stats.damages.strikes > 1}
 				<div class="statLine">
-					<img src={crossedSwords} alt="a heart" />
+					<img src={arrows} alt="a heart" />
 					<div>{itemState.stats.damages.strikes}</div>
 				</div>
 			{/if}

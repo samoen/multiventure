@@ -448,7 +448,7 @@ export function scaleEnemyHealth(enemy: ActiveEnemy, playerCount: number) {
 export function resetCooldowns(player: Player) {
 	player.bonusStats.agility = 0
 	player.bonusStats.strength = 0
-	player.bonusStats.dmgReduce = 0
+	player.bonusStats.mind = 0
 	for (const itemState of player.inventory) {
 		itemState.cooldown = 0;
 		if (itemState.stats.warmup) {
@@ -580,10 +580,12 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		}
 		if(chosenForEnemy){
 			chosenBattleEvents.push(chosenForEnemy)
-		} else{
-			handleStatusEffects(player, {kind:'enemy',entity:enemy})
-			handleStatusRemovals({kind:'enemy',entity:enemy},player, false)
 		}
+		//  else{
+			// handleStatusEffects(player, {kind:'enemy',entity:enemy})
+			// handleStatusRemovals({kind:'enemy',entity:enemy},player, false)
+			// decrementCooldowns({kind:'enemy',entity:enemy})
+		// }
 	}
 
 	chosenBattleEvents.push(actionFromId.battleEvent)
@@ -592,30 +594,35 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	})
 
 	for (let chosenBe of chosenBattleEvents) {
-		if (chosenBe.source.entity.health < 1 && !chosenBe.itemUsed.requiresSourceDead) continue
-		if (chosenBe.animateTo && (immuneDueToStatus(chosenBe.animateTo) || chosenBe.animateTo.entity.health < 1)) continue
+		let cantUse = false
+		if (chosenBe.source.entity.health < 1 && !chosenBe.itemUsed.requiresSourceDead) {
+			cantUse = true
+		}
+		if (chosenBe.animateTo && (immuneDueToStatus(chosenBe.animateTo) || chosenBe.animateTo.entity.health < 1)) {
+			cantUse = true
+		}
+		if(!cantUse){
+			processBattleEvent(chosenBe, player);
+		}
+	}
+
+	handleStatusEffects(player,{ kind: 'player', entity: player });
+	decrementCooldowns({ kind: 'player', entity: player });
+
+	for (const enemy of enemiesInScene(actionStartedInSceneId)) {
+		handleStatusEffects(player,{ kind: 'enemy', entity: enemy });
+		decrementCooldowns({ kind: 'enemy', entity: enemy });
+	}
+
+	for (let chosenBe of chosenBattleEvents) {
+		if(chosenBe.source.entity.health < 1)continue
 		let prov : boolean = false
 		if(chosenBe.itemUsed.provoke && chosenBe.itemUsed.provoke > 0){
 			prov = true
 		}
-		processBattleEvent(chosenBe, player);
-		handleStatusEffects(player, chosenBe.source)
 		handleStatusRemovals(chosenBe.source,player, prov)
 	}
-
-	decrementCooldowns({ kind: 'player', entity: player });
-
-	if (itemUsed.provoke != undefined) {
-		for (const enemy of enemiesInScene(actionStartedInSceneId)) {
-			decrementCooldowns({ kind: 'enemy', entity: enemy });
-			checkEnemyDeath(enemy)
-		}
-	}
-
-	// if (player.health > 0) {
-	// 	handleStatusEffects(player, { kind: 'player', entity: player })
-	// }
-
+	
 	if (itemUsed.provoke != undefined && player.health > 0) {
 		addAggro(player, itemUsed.provoke);
 	}
@@ -648,6 +655,7 @@ function getActionSpeed(bee: BattleEventEntity, itemUsed: Item): number {
 }
 
 function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
+	if(on.entity.health < 1)return
 	const ad: DamageAnimation[] = [];
 	const healAnimations: HealAnimation[] = [];
 	let sprite: AnySprite | undefined = undefined;
@@ -702,6 +710,7 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 		for (let [p, statuses] of on.entity.statuses) {
 			check(statuses, p == playerTriggered.unitId)
 		}
+		checkEnemyDeath(on.entity)
 	}
 }
 

@@ -4,6 +4,7 @@
 	import strong from '$lib/assets/ui/strong.png';
 	import foot from '$lib/assets/ui/foot.png';
 	import teeth from '$lib/assets/ui/teeth.png';
+	import brain from '$lib/assets/ui/brain.png';
 	import shieldHealth from '$lib/assets/ui/shield-health.png';
 	import crossedSwords from '$lib/assets/ui/crossed-swords.png';
 	import lightShield from '$lib/assets/ui/light-shield.png';
@@ -14,12 +15,12 @@
 	import { getStatusImage } from '$lib/client/assets';
 
 	export let vu: VisualUnitProps;
-	$: enemy = vu.actual.kind == 'enemy' ? vu.actual.entity : undefined;
+	// $: enemy = vu.actual.kind == 'enemy' ? vu.actual.entity : undefined;
 	$: str =
 		vu.actual.kind == 'enemy' ? vu.actual.entity.template.strength : vu.actual.entity.strength;
 	let bonusStr = '';
 	let bonusAgi = '';
-	let bonusDmgReduce = 0
+	let bonusMind = ''
 	$: {
 			if (vu.actual.entity.bonusStats.strength > 0) {
 				bonusStr = ` +${vu.actual.entity.bonusStats.strength}`;
@@ -31,14 +32,15 @@
 			}else{
 				bonusAgi = ''
 			}
-			if (vu.actual.entity.bonusStats.dmgReduce > 0) {
-				bonusDmgReduce = vu.actual.entity.bonusStats.dmgReduce;
+			if (vu.actual.entity.bonusStats.mind > 0) {
+				bonusMind = ` +${vu.actual.entity.bonusStats.mind}`
 			}else{
-				bonusDmgReduce = 0
+				bonusMind = ''
 			}
 	}
 	
 	$: agi = vu.actual.kind == 'enemy' ? vu.actual.entity.template.agility : vu.actual.entity.agility;
+	$: mind = vu.actual.kind == 'enemy' ? vu.actual.entity.template.mind : vu.actual.entity.mind;
 	$: aggGain = vu.actual.kind == 'enemy' ? vu.actual.entity.template.aggroGain : 0;
 </script>
 
@@ -85,10 +87,10 @@
 				<div>{agi}{bonusAgi}</div>
 			</div>
 		{/if}
-		{#if bonusDmgReduce > 0}
+		{#if mind > 0 || bonusMind.length}
 			<div class="statLine">
-				<img src={lightShield} alt="a heart" />
-				<div>{bonusDmgReduce}</div>
+				<img src={brain} alt="a heart" />
+				<div>{mind}{bonusMind}</div>
 			</div>
 		{/if}
 		{#if vu.actual.kind == 'enemy'}
