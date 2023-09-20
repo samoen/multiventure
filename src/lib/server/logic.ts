@@ -553,8 +553,8 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 					chosenBattleEvents.push(selected)
 				}
 			}else{
-				handleStatusRemovals({kind:'enemy',entity:enemy},player, false)
 				handleStatusEffects(player, {kind:'enemy',entity:enemy})
+				handleStatusRemovals({kind:'enemy',entity:enemy},player, false)
 			}
 		}
 	}
@@ -570,9 +570,9 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		if(chosenBe.itemUsed.provoke && chosenBe.itemUsed.provoke > 0){
 			prov = true
 		}
-		handleStatusRemovals(chosenBe.source,player, prov)
-		handleStatusEffects(player, chosenBe.source)
 		processBattleEvent(chosenBe, player);
+		handleStatusEffects(player, chosenBe.source)
+		handleStatusRemovals(chosenBe.source,player, prov)
 	}
 
 	decrementCooldowns({ kind: 'player', entity: player });
@@ -629,23 +629,35 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 			if (v < 1) continue;
 			const statusData = statusDatas.find((s) => s.id == k);
 			if (!statusData) continue;
-			// if (!full) {
-			// 	if (statusData.decayAnyPlayer) {
-			// 		statusMap.set(k, v - 1);
-			// 		continue
-			// 	}
-			// }
 			if (statusData.damagePercent) {
 				const dmg = Math.ceil(on.entity.health * statusData.damagePercent);
 				on.entity.health -= dmg;
-				ad.push({ target: on.entity.unitId, amount: [dmg] });
+				// ad.push({ target: on.entity.unitId, amount: [dmg] });
 				sprite = statusData.selfInflictSprite;
+				pushAnimation({
+					sceneId: playerTriggered.currentUniqueSceneId,
+					battleAnimation: {
+						triggeredBy: playerTriggered.unitId,
+						source: on.entity.unitId,
+						alsoDamages: [{ target: on.entity.unitId, amount: [dmg] }],
+						behavior: { kind: 'selfInflicted', extraSprite: sprite }
+					}
+				});
 				pushHappening(`${on.entity.unitId} took ${dmg} damage from ${k}`);
 			}
 			if (statusData.heal) {
 				healEntity(on,statusData.heal)
-				healAnimations.push({ target: on.entity.unitId, amount: statusData.heal });
+				// healAnimations.push({ target: on.entity.unitId, amount: statusData.heal });
 				sprite = statusData.selfInflictSprite;
+				pushAnimation({
+					sceneId: playerTriggered.currentUniqueSceneId,
+					battleAnimation: {
+						triggeredBy: playerTriggered.unitId,
+						source: on.entity.unitId,
+						alsoHeals:[{ target: on.entity.unitId, amount: statusData.heal }],
+						behavior: { kind: 'selfInflicted', extraSprite: sprite }
+					}
+				});
 			}
 			if (statusData.giveBonus) {
 				on.entity.bonusStats[statusData.giveBonus.stat] += statusData.giveBonus.amount
@@ -662,18 +674,6 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 		for (let [p, statuses] of on.entity.statuses) {
 			check(statuses, p == playerTriggered.unitId)
 		}
-	}
-	if (sprite) {
-		pushAnimation({
-			sceneId: playerTriggered.currentUniqueSceneId,
-			battleAnimation: {
-				triggeredBy: playerTriggered.unitId,
-				source: on.entity.unitId,
-				alsoDamages: ad,
-				alsoHeals:healAnimations,
-				behavior: { kind: 'selfInflicted', extraSprite: sprite }
-			}
-		});
 	}
 }
 
@@ -785,24 +785,24 @@ function handleStatusRemovals(bee: BattleEventEntity, triggeredBy: Player, provo
 			decayed.push(...r)
 		}
 	}
-	if(decayed.length){
-		let ptstatuses = decayed.map(d=>{
-			return {
-				statusId:d.id,
-				target:bee.entity.unitId,
-				remove:true
-			}satisfies StatusModifyAnimation
-		})
-		pushAnimation({
-			sceneId: triggeredBy.currentUniqueSceneId,
-			battleAnimation: {
-				triggeredBy: triggeredBy.unitId,
-				source: bee.entity.unitId,
-				behavior: { kind: 'selfInflicted', extraSprite: 'smoke' },
-				putsStatuses: ptstatuses
-			}
-		});
-	}
+	// if(decayed.length){
+	// 	let ptstatuses = decayed.map(d=>{
+	// 		return {
+	// 			statusId:d.id,
+	// 			target:bee.entity.unitId,
+	// 			remove:true
+	// 		}satisfies StatusModifyAnimation
+	// 	})
+	// 	pushAnimation({
+	// 		sceneId: triggeredBy.currentUniqueSceneId,
+	// 		battleAnimation: {
+	// 			triggeredBy: triggeredBy.unitId,
+	// 			source: bee.entity.unitId,
+	// 			behavior: { kind: 'selfInflicted', extraSprite: 'smoke' },
+	// 			putsStatuses: ptstatuses
+	// 		}
+	// 	});
+	// }
 
 }
 

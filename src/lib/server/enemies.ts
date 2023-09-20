@@ -60,7 +60,7 @@ export const enemyTemplates: EnemyTemplate[] = [
 		agility: 3,
 		aggroGain: 50,
 		startAggro: 20,
-		hasItem: ['fist', 'leatherArmor']
+		hasItem: ['fist', 'goblinArmor']
 	},
 	{
 		id:'darter',
@@ -87,8 +87,8 @@ export const enemyTemplates: EnemyTemplate[] = [
 		strength: 0,
 		aggroGain: 50,
 		startAggro: 100,
-		agility: 10,
-		hasItem: ['fireStaff'],
+		agility: 5,
+		hasItem: ['gremlinStaff'],
 	},
 	{
 		id:'troll',
@@ -97,7 +97,7 @@ export const enemyTemplates: EnemyTemplate[] = [
 		aggroGain: 3,
 		startAggro: 80,
 		agility: 1,
-		hasItem: ['club'],
+		hasItem: ['club','trollArmor'],
 	}
 ];
 

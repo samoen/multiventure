@@ -8,6 +8,7 @@
 		type VisualUnitProps
 	} from '$lib/client/ui';
 	import type { StatusId } from '$lib/server/statuses';
+	import dieSound from '$lib/assets/sfx/deathclip.wav'
 
 	import type { StatusEffect, StatusState, UnitId } from '$lib/utils';
 	import { tick } from 'svelte';
@@ -37,6 +38,7 @@
 	async function die() {
 		await tick();
 		shouldDie = true;
+		// new Audio(dieSound).play()
 	}
 	export let flip: boolean;
 	const statuses = derived(vu, ($vu) => {

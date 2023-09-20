@@ -37,7 +37,8 @@
 	import { stringify } from 'uuid';
 	import type { BattleAnimation, UnitId } from '$lib/utils';
 	import { anySprites } from '$lib/client/assets';
-
+	import pewsound from '$lib/assets/sfx/pewnew.wav';
+	import arrowSound from '$lib/assets/sfx/newlongpew.wav';
 	export let hostId: UnitId;
 
 	const host = derived([allVisualUnitProps], ([$allVisualUnitProps]) => {
@@ -194,10 +195,14 @@
 						let animatedTo = anim.alsoDamages.find((a) => a.target == hostId);
 						if (animatedTo) {
 							for (let i = 0; i < animatedTo.amount.length; i++) {
+								// pew.play();
+								let p = new Audio(pewsound)
+								p.play()
 								updateUnit($guestId, (vup) => {
 									vup.tilt = true;
 								});
 								let stop = false;
+
 								let r = handleDamageAnimation(anim, i);
 								if (r.died.find((d) => d == hostId)) {
 									stop = true;
@@ -243,6 +248,9 @@
 				on:introstart={() => {
 					let anim = $currentAnimation;
 					if (!anim) return;
+					if(anim.behavior.kind == 'missile'){
+						new Audio(arrowSound).play()
+					}
 					updateUnit(anim.source, (vup) => {
 						if (vup.actual.kind == 'enemy') {
 							vup.actual.entity.myAggro = 0;

@@ -88,13 +88,25 @@ export const fireStaff: Item = {
 	id: 'fireStaff',
 	visualBase:'staff',
 	slot: 'weapon',
-	warmup: 2,
-	cooldown: 1,
+	warmup: 1,
+	cooldown: 2,
 	provoke: 5,
 	speed: 2,
 	damages: { affects: 'targetOnly', baseDmg: 50, strikes: 1, offenseKind:['magical','skillful'], },
 	animation: { kind: 'missile', extraSprite: 'flame' },
 	modifiesAggro: { affects: 'targetOnly', aggroFor: 'justMe', amount: 30 }
+};
+
+export const gremlinStaff: Item = {
+	id: 'gremlinStaff',
+	visualBase:'staff',
+	slot: 'weapon',
+	warmup: 2,
+	cooldown: 2,
+	provoke: 15,
+	speed: 2,
+	damages: { affects: 'targetOnly', baseDmg: 20, strikes: 2, offenseKind:['magical','skillful'], },
+	animation: { kind: 'missile', extraSprite: 'flame' },
 };
 
 const potion: Item = {
@@ -118,7 +130,7 @@ const bomb: Item = {
 	provoke: 5,
 	animation: { kind: 'center', extraSprite: 'bomb' },
 	damages: { affects: 'allEnemy', baseDmg: 10, strikes: 1 },
-	modifiesAggro: { affects: 'allEnemy', aggroFor: 'allPlayers', amount: -30 }
+
 };
 
 const holyBomb: Item = {
@@ -130,6 +142,7 @@ const holyBomb: Item = {
 	animation: { kind: 'center', extraSprite: 'bomb' },
 	damages: { affects: 'allEnemy', baseDmg: 5, strikes: 1, offenseKind:['magical'] },
 	modifiesStatus:{affects:'allEnemy',dispell:'good'},
+	modifiesAggro: { affects: 'allEnemy', aggroFor: 'allPlayers', amount: -30 }
 };
 
 const poisonDart: Item = {
@@ -180,6 +193,7 @@ const thiefCloak: Item = {
 	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'hidden', count: 2 } }
 };
 
+
 export const leatherArmor: Item = {
 	id: 'leatherArmor',
 	visualBase:'lightArmor',
@@ -192,11 +206,31 @@ export const leatherArmor: Item = {
 	modifiesStatus: { affects: 'targetOnly', dispell: 'bad', statusMod:{statusId:'blessed',count:3} }
 };
 
+export const trollArmor: Item = {
+	id: 'trollArmor',
+	visualBase:'lightArmor',
+	slot: 'body',
+	speed: 2,
+	requiresTargetWithoutStatus:'blessed',
+	targets: { kind: 'onlySelf' },
+	modifiesStatus: { affects: 'targetOnly', statusMod:{statusId:'blessed',count:3} }
+};
+
+export const goblinArmor: Item = {
+	id: 'goblinArmor',
+	visualBase:'lightArmor',
+	slot: 'body',
+	speed: 5,
+	noAction:true,
+	damageReduction: 5,
+};
+
 export const pendantOfProtection: Item = {
 	id: 'pendantOfProtection',
 	visualBase:'necklace',
 	slot: 'body',
-	speed: 5,
+	speed: 999,
+	cooldown:3,
 	damageReduction: 5,
 	targets: { kind: 'anyFriendly', selfAfflictSprite: 'shield' },
 	modifiesStatus: { affects: 'targetOnly', statusMod:{statusId:'protected',count:3} }
@@ -258,6 +292,7 @@ export const items: Item[] = [
 	club,
 	bow,
 	fireStaff,
+	gremlinStaff,
 	potion,
 	bomb,
 	holyBomb,
@@ -266,6 +301,8 @@ export const items: Item[] = [
 	vampiricDagger,
 	plateMail,
 	leatherArmor,
+	trollArmor,
+	goblinArmor,
 	pendantOfProtection,
 	thiefCloak,
 	wait,
