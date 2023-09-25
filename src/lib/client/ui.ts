@@ -619,6 +619,8 @@ export async function nextAnimationIndex(start: boolean, someoneDied: boolean) {
 		return;
 	}
 	let cai = get(currentAnimationIndex);
+	let prevAnim = curAnimations.at(cai)
+
 	if (start) {
 		cai = 0;
 	} else {
@@ -630,7 +632,7 @@ export async function nextAnimationIndex(start: boolean, someoneDied: boolean) {
 		const animsInWaiting = get(animationsInWaiting);
 		if (!animsInWaiting) {
 			// give some time for enemies slain on the last animation to fade out.
-			if (someoneDied) {
+			if (prevAnim && (prevAnim.behavior.kind == 'center' || prevAnim.behavior.kind == 'missile')) {
 				await new Promise((r) => setTimeout(r, 300));
 			}
 			syncVisualsToMsg(latest);
