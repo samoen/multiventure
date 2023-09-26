@@ -183,7 +183,7 @@ const plateMail: Item = {
 	damageLimit: 15,
 	requiresTargetWithoutStatus:'rage',
 	animation: { kind: 'selfInflicted', extraSprite: 'flame' },
-	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'rage', count: 3 } },
+	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'rage', count: 5 } },
 	modifiesAggro: { affects: 'allEnemy', aggroFor: 'justMe', amount: 100 }
 };
 
@@ -217,6 +217,7 @@ export const trollArmor: Item = {
 	slot: 'body',
 	speed: 2,
 	startStock: 1,
+	requiresTargetDamaged:true,
 	requiresTargetWithoutStatus:'blessed',
 	targets: { kind: 'onlySelf' },
 	animation: { kind: 'selfInflicted', extraSprite: 'shield' },

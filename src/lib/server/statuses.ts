@@ -9,12 +9,12 @@ export type StatusData = {
 	damagePercent?: number;
 	heal?: number;
 	giveBonus?:{stat:BonusStat, amount:number}
-	immunity?: boolean;
-	protection?:boolean;
+	untargetable?: boolean;
 	removeOnProvoke?: boolean;
 	selfInflictSprite: AnySprite;
 	decayAnyPlayer?:boolean;
 	bad?:boolean;
+	// statusSprite:AnySprite;
 };
 
 export const statusDatas: StatusData[] = [
@@ -36,15 +36,14 @@ export const statusDatas: StatusData[] = [
 	},
 	{
 		id: 'hidden',
-		immunity: true,
+		untargetable: true,
 		removeOnProvoke: true,
 		selfInflictSprite: 'smoke',
 		decayAnyPlayer:true,
 	},
 	{
 		id: 'protected',
-		// giveBonus:{stat:'dmgReduce',amount:40},
-		protection:true,
+		giveBonus:{stat:'armor',amount:40},
 		selfInflictSprite: 'shield',
 		decayAnyPlayer:true,
 		removeOnProvoke:true,
