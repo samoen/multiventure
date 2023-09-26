@@ -685,7 +685,14 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 				});
 			}
 			if (statusData.giveBonus) {
-				on.entity.bonusStats[statusData.giveBonus.stat] += statusData.giveBonus.amount
+				if(statusData.giveBonus.accumulates){
+					on.entity.bonusStats[statusData.giveBonus.stat] += statusData.giveBonus.amount
+				}else{
+					let existingBonus = on.entity.bonusStats[statusData.giveBonus.stat]
+					if(existingBonus < statusData.giveBonus.amount){
+						on.entity.bonusStats[statusData.giveBonus.stat] = statusData.giveBonus.amount
+					}
+				}
 				// sprite = statusData.selfInflictSprite
 				pushHappening(`${on.entity.displayName} grows in strength!`);
 			}

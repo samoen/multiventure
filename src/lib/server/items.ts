@@ -239,7 +239,6 @@ export const pendantOfProtection: Item = {
 	slot: 'body',
 	speed: 999,
 	cooldown:3,
-	damageReduction: 5,
 	targets: { kind: 'anyFriendly', selfAfflictSprite: 'shield' },
 	requiresTargetWithoutStatus:'protected',
 	modifiesStatus: { affects: 'targetOnly', statusMod:{statusId:'protected',count:3} }

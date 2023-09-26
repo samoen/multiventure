@@ -8,7 +8,7 @@ export type StatusData = {
 	id: StatusId;
 	damagePercent?: number;
 	heal?: number;
-	giveBonus?:{stat:BonusStat, amount:number}
+	giveBonus?:{stat:BonusStat, amount:number, accumulates?:boolean}
 	untargetable?: boolean;
 	removeOnProvoke?: boolean;
 	selfInflictSprite: AnySprite;
@@ -31,7 +31,7 @@ export const statusDatas: StatusData[] = [
 	},
 	{
 		id: 'rage',
-		giveBonus:{stat:'strength',amount:5},
+		giveBonus:{stat:'strength',amount:5,accumulates:true},
 		selfInflictSprite: 'flame'
 	},
 	{
@@ -43,7 +43,7 @@ export const statusDatas: StatusData[] = [
 	},
 	{
 		id: 'protected',
-		giveBonus:{stat:'armor',amount:40},
+		giveBonus:{stat:'armor',amount:100},
 		selfInflictSprite: 'shield',
 		decayAnyPlayer:true,
 		removeOnProvoke:true,
