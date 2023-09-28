@@ -1021,7 +1021,7 @@ const goblinCamp: Scene = {
 	],
 	spawnsEnemiesOnBattleJoin: [
 		{
-			template: 'goblin'
+			template: 'rat'
 		}
 	],
 	sceneTexts: {

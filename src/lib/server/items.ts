@@ -145,7 +145,7 @@ const holyBomb: Item = {
 	speed: 12,
 	provoke: 0,
 	animation: { kind: 'center', extraSprite: 'bomb' },
-	damages: { affects: 'allEnemy', baseDmg: 5, strikes: 1, offenseKind:['magical'] },
+	damages: { affects: 'allEnemy', baseDmg: 1, strikes: 1, offenseKind:['magical'] },
 	modifiesStatus:{affects:'allEnemy',dispell:'good'},
 	modifiesAggro: { affects: 'allEnemy', aggroFor: 'allPlayers', amount: -30 }
 };
@@ -191,11 +191,12 @@ const thiefCloak: Item = {
 	id: 'thiefCloak',
 	visualBase:'cloak',
 	slot: 'body',
-	cooldown: 3,
+	cooldown: 2,
 	speed: 5,
 	provoke: 0,
+	requiresTargetWithoutStatus: 'hidden',
 	animation: { kind: 'selfInflicted', extraSprite: 'smoke' },
-	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'hidden', count: 2 } }
+	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'hidden', count: 4 } }
 };
 
 
