@@ -238,23 +238,23 @@ export function damageEntity(
 				bonusDmg += source.entity.template.strength
 			}
 		}
-		if (hme.itemDamageData.offenseKind.includes("skillful")) {
-			bonusDmg += source.entity.bonusStats.agility
-			if (source.kind == 'player') {
-				bonusDmg += source.entity.agility
-			} else if (source.kind == 'enemy') {
-				bonusDmg += source.entity.template.agility
-			}
-		}
-		if (hme.itemDamageData.offenseKind.includes("magical")) {
-			bonusDmg += source.entity.bonusStats.mind
-			if (source.kind == 'player') {
-				bonusDmg += source.entity.mind
-			} else if (source.kind == 'enemy') {
-				bonusDmg += source.entity.template.mind
-			}
-			bonusPierce = true
-		}
+		// if (hme.itemDamageData.offenseKind.includes("skillful")) {
+		// 	bonusDmg += source.entity.bonusStats.agility
+		// 	if (source.kind == 'player') {
+		// 		bonusDmg += source.entity.agility
+		// 	} else if (source.kind == 'enemy') {
+		// 		bonusDmg += source.entity.template.agility
+		// 	}
+		// }
+		// if (hme.itemDamageData.offenseKind.includes("magical")) {
+		// 	bonusDmg += source.entity.bonusStats.mind
+		// 	if (source.kind == 'player') {
+		// 		bonusDmg += source.entity.mind
+		// 	} else if (source.kind == 'enemy') {
+		// 		bonusDmg += source.entity.template.mind
+		// 	}
+		// 	bonusPierce = true
+		// }
 	}
 	let strikes = hme.itemDamageData.strikes
 

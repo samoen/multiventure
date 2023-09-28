@@ -530,9 +530,9 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		const aggroForActor = getAggroForPlayer(enemy, player);
 		let chosenForEnemy: BattleEvent | undefined = undefined
 		if (aggroForActor) {
-			let r = Math.random()
-			if (r < aggroForActor / 100) {
-				console.log(`${enemy.displayName} rolled a hit! ${r * 100} is below aggro ${aggroForActor}`)
+			let r = Math.floor(Math.random() * 100)
+			if (r < aggroForActor) {
+				console.log(`${enemy.displayName} rolled a hit! ${r} is below aggro ${aggroForActor}`)
 				let bEventsForEnemy = createPossibleBattleEventsFromEntity(
 					{ kind: 'enemy', entity: enemy },
 					actionStartedInSceneId,
@@ -839,41 +839,50 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				resetBonusStats(put.target)
 			}
 			if (put.statusMod) {
-				statusModAnims.push({
-					target: put.target.entity.unitId,
-					statusId: put.statusMod.statusId,
-					count: put.statusMod.count,
-					remove: put.statusMod.remove,
-				})
-				if (put.statusMod.count) {
+				let countToAdd : number | undefined = put.statusMod.count
+				if (countToAdd) {
+					countToAdd += battleEvent.source.entity.bonusStats.mind
+					if(battleEvent.source.kind == 'player'){
+						countToAdd += battleEvent.source.entity.mind
+					}
+					if(battleEvent.source.kind == 'enemy'){
+						countToAdd += battleEvent.source.entity.template.mind
+					}
+					
 					if (put.target.kind == 'enemy') {
 						let found = put.target.entity.statuses.get(player.unitId);
 						if (!found) {
 							found = new Map();
 						}
 						const exist = found.get(put.statusMod.statusId);
-
-						if (!exist || exist < put.statusMod.count) {
-							found.set(put.statusMod.statusId, put.statusMod.count);
+						
+						if (!exist || exist < countToAdd) {
+							found.set(put.statusMod.statusId, countToAdd);
 						}
 						put.target.entity.statuses.set(player.unitId, found);
-
+						
 					}
 					if (put.target.kind == 'player') {
 						const found = put.target.entity.statuses.get(put.statusMod.statusId);
 						if (!found) {
-							put.target.entity.statuses.set(put.statusMod.statusId, put.statusMod.count);
+							put.target.entity.statuses.set(put.statusMod.statusId, countToAdd);
 						} else {
-							if (found < put.statusMod.count) {
-								put.target.entity.statuses.set(put.statusMod.statusId, put.statusMod.count);
+							if (found < countToAdd) {
+								put.target.entity.statuses.set(put.statusMod.statusId, countToAdd);
 							}
 						}
 					}
-
+					
 				}
 				if (put.statusMod.remove) {
 					removeStatus(put.target, put.statusMod.statusId);
 				}
+				statusModAnims.push({
+					target: put.target.entity.unitId,
+					statusId: put.statusMod.statusId,
+					count: countToAdd,
+					remove: put.statusMod.remove,
+				})
 
 			}
 		}

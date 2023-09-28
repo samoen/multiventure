@@ -39,6 +39,7 @@
 	import { anySprites } from '$lib/client/assets';
 	import pewsound from '$lib/assets/sfx/pewnew.wav';
 	import arrowSound from '$lib/assets/sfx/newlongpew.wav';
+	import bloopSound from '$lib/assets/sfx/bloop.wav';
 	export let hostId: UnitId;
 
 	const host = derived([allVisualUnitProps], ([$allVisualUnitProps]) => {
@@ -275,6 +276,7 @@
 				on:outrostart={() => {
 					const anim = $currentAnimation;
 					if (!anim) return;
+					new Audio(bloopSound).play()
 					handleDamageAnimation(anim, 0, true);
 					handleHealAnimations(anim);
 					handlePutsStatuses(anim);

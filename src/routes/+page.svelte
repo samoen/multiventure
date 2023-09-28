@@ -51,6 +51,7 @@
 	import { isSignupResponse, type DataFirstLoad } from '$lib/utils';
 	import { writable, type Writable } from 'svelte/store';
 	import { fade } from 'svelte/transition';
+	import boomSound from '$lib/assets/sfx/boom.wav'
 
 	export let data: DataFirstLoad;
 	let signupInput: string;
@@ -507,6 +508,7 @@
 						in:receiveCenter={{ key: 'center' }}
 						on:introend={() => {
 							if ($currentAnimation != undefined) {
+								new Audio(boomSound).play()
 								let anim = $currentAnimation;
 								handleHealAnimations(anim);
 								let hRes = handleDamageAnimation(anim, 0, true);
