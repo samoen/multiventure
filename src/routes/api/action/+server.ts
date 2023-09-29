@@ -1,4 +1,4 @@
-import { handleAction, updateAllPlayerActions } from '$lib/server/logic';
+import { handlePlayerAction, updateAllPlayerActions } from '$lib/server/logic';
 import {
 	FAKE_LATENCY,
 	buildNextMessage,
@@ -42,7 +42,7 @@ export const POST = (async (r) => {
 		return json(`action ${msg.buttonText} not available`, { status: 400 });
 	}
 	player.animations = [];
-	handleAction(player, actionFromId);
+	handlePlayerAction(player, actionFromId);
 
 	if (player.health < 1) {
 		pushHappening(`${player.displayName} is mortally wounded`);
