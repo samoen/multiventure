@@ -655,7 +655,8 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 			const statusData = statusDatas.find((s) => s.id == k);
 			if (!statusData) continue;
 			if (statusData.damagePercent) {
-				const dmg = Math.ceil(on.entity.health * statusData.damagePercent);
+				let dmg = Math.ceil(on.entity.health * statusData.damagePercent);
+				if(dmg < 5)dmg = 5
 				on.entity.health -= dmg;
 				// ad.push({ target: on.entity.unitId, amount: [dmg] });
 				sprite = statusData.selfInflictSprite;
@@ -665,7 +666,8 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 						triggeredBy: playerTriggered.unitId,
 						source: on.entity.unitId,
 						alsoDamages: [{ target: on.entity.unitId, amount: [dmg] }],
-						behavior: { kind: 'selfInflicted', extraSprite: sprite }
+						behavior: { kind: 'selfInflicted', extraSprite: sprite },
+						noResetAggro:true,
 					}
 				});
 				pushHappening(`${on.entity.unitId} took ${dmg} damage from ${k}`);
@@ -680,7 +682,8 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 						triggeredBy: playerTriggered.unitId,
 						source: on.entity.unitId,
 						alsoHeals: [{ target: on.entity.unitId, amount: statusData.heal }],
-						behavior: { kind: 'selfInflicted', extraSprite: sprite }
+						behavior: { kind: 'selfInflicted', extraSprite: sprite },
+						noResetAggro:true,
 					}
 				});
 			}
@@ -842,12 +845,15 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				let countToAdd : number | undefined = put.statusMod.count
 				if (countToAdd) {
 					countToAdd += battleEvent.source.entity.bonusStats.mind
+					let mind = 0
 					if(battleEvent.source.kind == 'player'){
-						countToAdd += battleEvent.source.entity.mind
+						mind = battleEvent.source.entity.mind
 					}
 					if(battleEvent.source.kind == 'enemy'){
-						countToAdd += battleEvent.source.entity.template.mind
+						mind = battleEvent.source.entity.template.mind
 					}
+					let bonusLongevity = Math.floor(mind / 2)
+					countToAdd += bonusLongevity
 					
 					if (put.target.kind == 'enemy') {
 						let found = put.target.entity.statuses.get(player.unitId);

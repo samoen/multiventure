@@ -22,6 +22,7 @@ export type BattleAnimation = {
 	alsoModifiesAggro?: AggroModifier[];
 	takesItem?: boolean;
 	teleporting?: boolean;
+	noResetAggro?:boolean;
 };
 
 export type DataFirstLoad = {

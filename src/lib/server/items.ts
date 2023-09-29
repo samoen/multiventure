@@ -64,16 +64,16 @@ const vampiricDagger: Item = {
 	provoke: 7,
 	speed: 4,
 	damages: { affects: 'targetOnly', baseDmg: 10, strikes: 1, offenseKind:['brutal','skillful','magical'] },
-	heals: {affects:'selfOnly',baseHeal:10}
+	heals: {affects:'selfOnly',baseHeal:7}
 };
 
 const club: Item = {
 	id: 'club',
 	visualBase:'club',
 	slot: 'weapon',
-	provoke: 40,
+	provoke: 20,
 	speed: 1,
-	damages: { affects: 'targetOnly', baseDmg: 28, strikes: 1, offenseKind:['brutal'] }
+	damages: { affects: 'targetOnly', baseDmg: 35, strikes: 1, offenseKind:['brutal'] }
 };
 
 export const bow: Item = {
@@ -84,7 +84,7 @@ export const bow: Item = {
 	cooldown: 1,
 	provoke: 5,
 	speed: 3,
-	damages: { affects: 'targetOnly', baseDmg: 10, strikes: 2, offenseKind:['skillful'] },
+	damages: { affects: 'targetOnly', baseDmg: 15, strikes: 2, offenseKind:['skillful'] },
 	animation: { kind: 'missile', extraSprite: 'arrow' },
 	modifiesAggro: { affects: 'targetOnly', aggroFor: 'justMe', amount: 30 },
 };
@@ -166,10 +166,11 @@ const deadlyDart: Item = {
 	id: 'deadlyDart',
 	visualBase:'dart',
 	slot: 'utility',
-	startStock: 1,
+	startStock: 2,
+	cooldown: 2,
 	provoke: 40,
 	speed: 20,
-	damages: { affects: 'targetOnly', baseDmg: 100, strikes: 1 },
+	damages: { affects: 'targetOnly', baseDmg: 70, strikes: 1 },
 	animation: { kind: 'missile', extraSprite: 'arrow' },
 };
 
@@ -180,7 +181,7 @@ const plateMail: Item = {
 	cooldown: 7,
 	provoke: 0,
 	speed: 100,
-	damageLimit: 15,
+	damageLimit: 10,
 	requiresTargetWithoutStatus:'rage',
 	animation: { kind: 'selfInflicted', extraSprite: 'flame' },
 	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'rage', count: 5 } },
@@ -206,10 +207,10 @@ export const leatherArmor: Item = {
 	slot: 'body',
 	useableOutOfBattle: true,
 	speed: 5,
-	damageReduction: 5,
+	damageReduction: 3,
 	requiresTargetWithoutStatus:'blessed',
 	targets: { kind: 'anyFriendly', selfAfflictSprite: 'heal' },
-	modifiesStatus: { affects: 'targetOnly', dispell: 'bad', statusMod:{statusId:'blessed',count:3} }
+	modifiesStatus: { affects: 'targetOnly', dispell: 'bad', statusMod:{statusId:'blessed',count:2} }
 };
 
 export const trollArmor: Item = {

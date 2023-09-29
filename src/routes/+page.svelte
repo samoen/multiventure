@@ -38,7 +38,10 @@
 		visualOpacity,
 		visualSceneLabel,
 		waitingForMyAnimation,
-		worldReceived
+		worldReceived,
+
+		handleResetAggro
+
 	} from '$lib/client/ui';
 	import type { MessageFromServer } from '$lib/server/messaging';
 	import { onMount, tick } from 'svelte';
@@ -520,6 +523,7 @@
 								if ($lastMsgFromServer) {
 									handleModAggros(anim, $lastMsgFromServer.yourInfo.unitId);
 								}
+								handleResetAggro(anim)
 								nextAnimationIndex(false, someoneDied);
 							}
 						}}

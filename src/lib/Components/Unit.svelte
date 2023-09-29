@@ -28,7 +28,10 @@
 		visualOpacity,
 		handleDamageAnimation,
 		handleModAggros,
-		handleHealAnimations
+		handleHealAnimations,
+
+		handleResetAggro
+
 	} from '$lib/client/ui';
 	import { tick } from 'svelte';
 	import { derived, writable, type Writable } from 'svelte/store';
@@ -226,12 +229,7 @@
 					if ($lastMsgFromServer) {
 						handleModAggros(anim, $lastMsgFromServer.yourInfo.unitId);
 					}
-					if ($guestId == undefined) return;
-					updateUnit($guestId, (vup) => {
-						if (vup.actual.kind == 'enemy') {
-							vup.actual.entity.myAggro = 0;
-						}
-					});
+					handleResetAggro(anim)
 					$subAnimationStage = 'sentHome';
 				}}
 			>
@@ -247,16 +245,12 @@
 				class:endAlignSelf={$hostIsNotHero}
 				in:fade={{ duration: 0 }}
 				on:introstart={() => {
-					let anim = $currentAnimation;
+					const anim = $currentAnimation;
 					if (!anim) return;
 					if(anim.behavior.kind == 'missile'){
 						new Audio(arrowSound).play()
 					}
-					updateUnit(anim.source, (vup) => {
-						if (vup.actual.kind == 'enemy') {
-							vup.actual.entity.myAggro = 0;
-						}
-					});
+					handleResetAggro(anim)
 				}}
 			>
 				<img
@@ -282,6 +276,7 @@
 					handlePutsStatuses(anim);
 					if (!$lastMsgFromServer) return;
 					handleModAggros(anim, $lastMsgFromServer.yourInfo.unitId);
+					handleResetAggro(anim)
 				}}
 				on:outroend={() => {
 					nextAnimationIndex(false, false);

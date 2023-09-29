@@ -81,7 +81,7 @@ export const enemyTemplates: EnemyTemplate[] = [
 		baseHealth: 50,
 		strength: 2,
 		mind:0,
-		aggroGain: 30,
+		aggroGain: 20,
 		startAggro: 50,
 		agility: 4,
 		hasItem: ['club', 'plateMail'],

@@ -553,6 +553,16 @@ export function handleModAggros(anim: BattleAnimation, myId: HeroId) {
 	}
 }
 
+export function handleResetAggro(anim:BattleAnimation){
+	if(!anim.noResetAggro){
+		updateUnit(anim.source, (vup) => {
+			if (vup.actual.kind == 'enemy') {
+				vup.actual.entity.myAggro = 0;
+			}
+		});
+	}
+}
+
 export function handlePutsStatuses(anim: BattleAnimation) {
 	if (anim.putsStatuses) {
 		for (const ps of anim.putsStatuses) {

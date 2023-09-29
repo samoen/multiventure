@@ -20,7 +20,7 @@ export type StatusData = {
 export const statusDatas: StatusData[] = [
 	{
 		id: 'poisoned',
-		damagePercent: 0.2,
+		damagePercent: 0.25,
 		selfInflictSprite: 'poison',
 		bad:true,
 	},
