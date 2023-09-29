@@ -1,5 +1,5 @@
 import { goto } from '$app/navigation';
-import type { BattleEventEntity, BattleEvent, ItemAnimationBehavior, DamageEvent, HealEvent, AggroModifierEvent, StatusModifierEvent, AnimationBehavior, DamageAnimation, AnySprite, HealAnimation, AggroModifier, HeroId, BattleAnimation, StatusModifyAnimation, GameActionSentToClient, VisualActionSourceId, StatusState } from '$lib/utils';
+import type { BattleEventEntity, BattleEvent, ItemAnimationBehavior, DamageEvent, HealEvent, AggroModifierEvent, StatusModifierEvent, AnimationBehavior, DamageAnimation, AnySprite, HealAnimation, AggroModifier, HeroId, BattleAnimation, StatusModifyAnimation, GameActionSentToClient, VisualActionSourceId, StatusState, UnitId } from '$lib/utils';
 import {
 	enemiesInScene,
 	activeEnemies,
@@ -140,7 +140,7 @@ export function validSourceAndTarget(bee: BattleEventEntity, t: BattleEventEntit
 
 	// can't target untargetable entity not on your team
 	if (bee.kind != t.kind) {
-		if (hasStatusWithKey(t,'untargetable')) {
+		if (hasStatusWithKey(t, 'untargetable')) {
 			console.log(`${bee.entity.displayName} cant target untargetable`)
 			return false
 		}
@@ -434,52 +434,47 @@ export function handlePlayerAction(player: Player, action: GameAction) {
 	chosenBattleEvents.push(action.battleEvent)
 
 	let startEnemies = enemiesInScene(player.currentUniqueSceneId)
+	let didntSelectAction : ActiveEnemy[] = []
 	for (const enemy of startEnemies) {
-		const aggroForActor = getAggroForPlayer(enemy, player);
-		let chosenForEnemy: BattleEvent | undefined = undefined
-		if (aggroForActor) {
-			let r = Math.floor(Math.random() * 100)
-			console.log(`${enemy.displayName} rolled ${r} with aggro ${aggroForActor}`)
-			if (r < aggroForActor) {
-				let bEventsForEnemy = createPossibleBattleEventsFromEntity(
-					{ kind: 'enemy', entity: enemy },
-					player,
-				)
-				// enemy prioritize a finishing blow
-				let foundFinisher = bEventsForEnemy.find(be => {
-					if (be.itemUsed.damages) {
-						if ((be.itemUsed.damages.baseDmg * be.itemUsed.damages.strikes) >= be.primaryTarget.entity.health) {
-							return true
-						}
-					}
-					return false
-				})
-				if (foundFinisher) {
-					chosenForEnemy = foundFinisher
-					console.log(`${enemy.displayName} chose finishing blow ${chosenForEnemy.itemUsed.id}`)
-				} else {
-					let itemsPossible = bEventsForEnemy
-						.map(be => be.itemUsed)
-						.filter((value, index, self) => self.indexOf(value) === index);
-					const randomItemIndex = Math.floor(Math.random() * itemsPossible.length);
-					const randomItemSel = itemsPossible.at(randomItemIndex)
-					if (randomItemSel) {
-						let besOfSelItem = bEventsForEnemy.filter(be => be.itemUsed.id == randomItemSel.id)
-						const randomIndex = Math.floor(Math.random() * besOfSelItem.length);
-						let selected = besOfSelItem.at(randomIndex)
-						if (selected) {
-							chosenForEnemy = selected
-							console.log(`${enemy.displayName} selected ${chosenForEnemy.itemUsed.id}`)
-						}
-					}
+		let bEventsForEnemy = createPossibleBattleEventsFromEntity(
+			{ kind: 'enemy', entity: enemy },
+			player,
+		)
+		// enemy prioritize a finishing blow
+		let foundFinisher = bEventsForEnemy.find(be => {
+			if (be.itemUsed.damages) {
+				if ((be.itemUsed.damages.baseDmg * be.itemUsed.damages.strikes) >= be.primaryTarget.entity.health) {
+					return true
 				}
-				if (!chosenForEnemy) {
-					console.log(`${enemy.displayName} rolled hit but chose nothing`)
+			}
+			return false
+		})
+		let chosenForEnemy: BattleEvent | undefined = undefined
+		if (foundFinisher) {
+			chosenForEnemy = foundFinisher
+			// console.log(`${enemy.displayName} chose finishing blow ${chosenForEnemy.itemUsed.id}`)
+		} else {
+			let itemsPossible = bEventsForEnemy
+				.map(be => be.itemUsed)
+				.filter((value, index, self) => self.indexOf(value) === index);
+			const randomItemIndex = Math.floor(Math.random() * itemsPossible.length);
+			const randomItemSel = itemsPossible.at(randomItemIndex)
+			if (randomItemSel) {
+				let besOfSelItem = bEventsForEnemy.filter(be => be.itemUsed.id == randomItemSel.id)
+				const randomIndex = Math.floor(Math.random() * besOfSelItem.length);
+				let selected = besOfSelItem.at(randomIndex)
+				if (selected) {
+					chosenForEnemy = selected
+					// console.log(`${enemy.displayName} randomly selected ${chosenForEnemy.itemUsed.id}`)
 				}
 			}
 		}
+
 		if (chosenForEnemy) {
 			chosenBattleEvents.push(chosenForEnemy)
+		}else{
+			console.log(`${enemy.displayName} failed to select an action`)
+			didntSelectAction.push(enemy)
 		}
 	}
 
@@ -491,24 +486,28 @@ export function handlePlayerAction(player: Player, action: GameAction) {
 		decrementCooldowns(chosenBe.source);
 
 		if (validSourceAndTarget(chosenBe.source, chosenBe.primaryTarget, chosenBe.itemUsed)) {
-			processBattleEvent(chosenBe, player);
-		} else {
-			console.log(`${chosenBe.source.entity.displayName} tried to use ${chosenBe.itemUsed.id} on ${chosenBe.primaryTarget.entity.displayName} but its now invalid`)
+			let succeedRoll = true
+			if(chosenBe.source.kind == 'enemy'){
+				const aggroForActor = getAggroForPlayer(chosenBe.source.entity, player);
+				let r = Math.floor(Math.random() * 100)
+				console.log(`${chosenBe.source.entity.displayName} rolled ${r} with aggro ${aggroForActor}`)
+				if (r > aggroForActor) {
+					succeedRoll = false
+				}
+			}
+			if(succeedRoll){
+				processBattleEvent(chosenBe, player);
+			}
 		}
 
-		handleStatusEffects(player, chosenBe.source);
+		handleStatusEffects(chosenBe.source,player);
+		decrementStatusCounts(chosenBe.source,player)
 	}
 
-	decrementStatusCounts({ kind: 'player', entity: player }, player)
-
-	for (const enemy of enemiesInScene(player.currentUniqueSceneId)) {
-		let tookAction = chosenBattleEvents.find(b => b.source.entity.unitId == enemy.unitId)
-		if (!tookAction) {
-			handleStatusEffects(player, { kind: 'enemy', entity: enemy });
-		}
+	for (const enemy of didntSelectAction) {
+		handleStatusEffects({kind: 'enemy', entity: enemy }, player);
 		decrementStatusCounts({ kind: 'enemy', entity: enemy }, player)
 	}
-
 
 	if (triggeredFromItem.provoke != undefined && player.health > 0) {
 		addAggro(player, triggeredFromItem.provoke);
@@ -542,7 +541,7 @@ function getActionSpeed(bee: BattleEventEntity, itemUsed: Item): number {
 	return agi;
 }
 
-function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
+function handleStatusEffects(on: BattleEventEntity, playerTriggered: Player) {
 	if (on.entity.health < 1) return
 	let check = (statusMap: Map<StatusId, number>) => {
 		for (const [k, v] of statusMap) {
@@ -554,7 +553,7 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 				let dmg = Math.ceil(on.entity.health * statusData.damagesEachTurn.perc);
 				if (dmg < statusData.damagesEachTurn.minDmg) dmg = statusData.damagesEachTurn.minDmg
 				on.entity.health -= dmg;
-				if(statusData.eachTurnSprite){
+				if (statusData.eachTurnSprite) {
 					pushAnimation({
 						sceneId: playerTriggered.currentUniqueSceneId,
 						battleAnimation: {
@@ -571,7 +570,7 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 			}
 			if (statusData.healsEachTurn) {
 				healEntity(on, statusData.healsEachTurn)
-				if(statusData.eachTurnSprite){
+				if (statusData.eachTurnSprite) {
 					pushAnimation({
 						sceneId: playerTriggered.currentUniqueSceneId,
 						battleAnimation: {
@@ -658,7 +657,7 @@ function decrementCooldowns(bee: BattleEventEntity) {
 }
 
 
-export function hasStatusWithKey(bee: BattleEventEntity, key:StatusDataKey): boolean {
+export function hasStatusWithKey(bee: BattleEventEntity, key: StatusDataKey): boolean {
 	const check = (statusMap: Map<StatusId, number>) => {
 		let hasIt = false;
 		for (const [k, v] of statusMap) {
@@ -992,7 +991,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 }
 
 export function getDamageReduction(from: BattleEventEntity): number {
-	if(hasStatusWithKey(from, 'disarmors')){
+	if (hasStatusWithKey(from, 'disarmors')) {
 		return 0
 	}
 	let dmgReduc: number = 0
@@ -1008,7 +1007,7 @@ export function getDamageReduction(from: BattleEventEntity): number {
 	return dmgReduc
 }
 export function getDamageLimit(from: BattleEventEntity): number | undefined {
-	if(hasStatusWithKey(from, 'disarmors')){
+	if (hasStatusWithKey(from, 'disarmors')) {
 		return undefined
 	}
 
