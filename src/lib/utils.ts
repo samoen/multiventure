@@ -57,8 +57,6 @@ export type BattleEvent = {
 	source: BattleEventEntity;
 	primaryTarget:BattleEventEntity;
 	putsStatuses?: StatusModifierEvent[];
-	alsoHeals?: HealEvent[];
-	alsoModifiesAggro?: AggroModifierEvent[];
 	itemUsed:Item;
 };
 

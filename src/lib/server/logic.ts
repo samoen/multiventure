@@ -119,45 +119,6 @@ export function createPossibleBattleEventsFromEntity(
 		};
 
 		const nBe = (targetChosen: BattleEventEntity) => {
-			const alsoDmgs: DamageEvent[] = [];
-			if (i.damages) {
-				const dmgAffected = affectedsFromCanEffect(i.damages.affects, targetChosen);
-				for (const aff of dmgAffected) {
-					alsoDmgs.push({
-						target: aff,
-						itemDamageData: i.damages,
-					} satisfies DamageEvent);
-				}
-			}
-			const alsoHeals: HealEvent[] = [];
-			if (i.heals) {
-				const healAffected = affectedsFromCanEffect(i.heals.affects, targetChosen);
-				for (const aff of healAffected) {
-					if (i.heals) {
-						alsoHeals.push({
-							target: aff,
-							baseHeal: i.heals.baseHeal
-						} satisfies HealEvent);
-					}
-				}
-			}
-			const modagro: AggroModifierEvent[] = [];
-			if (i.modifiesAggro) {
-				const aggroAffected = affectedsFromCanEffect(i.modifiesAggro.affects, targetChosen);
-				for (const aff of aggroAffected) {
-					if (aff.kind == 'enemy') {
-						let fHeroes = [triggeredBy];
-						if (i.modifiesAggro.aggroFor == 'allPlayers') {
-							fHeroes = scenePlayers;
-						}
-						modagro.push({
-							targetEnemy: aff.entity,
-							forHeros: fHeroes,
-							baseAmount: i.modifiesAggro.amount
-						});
-					}
-				}
-			}
 			const ptstatuses: StatusModifierEvent[] = [];
 			if (i.modifiesStatus) {
 				const statusAffected = affectedsFromCanEffect(i.modifiesStatus.affects, targetChosen);
@@ -172,24 +133,15 @@ export function createPossibleBattleEventsFromEntity(
 				}
 			}
 
-			let beBehav: AnimationBehavior = iAb;
 
-			let animateTo: BattleEventEntity | undefined = undefined
-			if (iAb.kind == 'missile' || iAb.kind == 'melee') {
-				animateTo = targetChosen
-			}
-
-			if (iCt.kind == 'anyFriendly' && targetChosen) {
-				if (targetChosen.entity.unitId == bee.entity.unitId) {
-					beBehav = { kind: 'selfInflicted', extraSprite: iCt.selfAfflictSprite };
-				}
-			}
+			// let animateTo: BattleEventEntity | undefined = undefined
+			// if (iAb.kind == 'missile' || iAb.kind == 'melee') {
+			// 	animateTo = targetChosen
+			// }
 
 			const result: BattleEvent = {
 				source: bee,
 				primaryTarget:targetChosen,
-				alsoHeals: alsoHeals,
-				alsoModifiesAggro: modagro,
 				putsStatuses: ptstatuses,
 				itemUsed: i,
 			} satisfies BattleEvent;
@@ -855,7 +807,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		alliesOfBee = sceneEnemiesEntities
 		opponentsOfBee = scenePlayersEntities
 	}
-	const affectedsFromCanEffect = (ca: CanEffect, t: BattleEventEntity) => {
+	const affectedsFromCanEffect = (ca: CanEffect) => {
 		let affecteds: BattleEventEntity[] = [];
 		if (ca == 'allEnemy') {
 			affecteds = opponentsOfBee;
@@ -864,7 +816,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		} else if (ca == 'selfOnly') {
 			affecteds = [battleEvent.source];
 		} else if (ca == 'targetOnly') {
-			affecteds = [t];
+			affecteds = [battleEvent.primaryTarget];
 		}
 		return affecteds;
 	};
@@ -971,7 +923,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	const damageAnimations: DamageAnimation[] = [];
 	let damageAnimationForMissleTarget: DamageAnimation | undefined = undefined;
 	if (battleEvent.itemUsed.damages) {
-		let ads = affectedsFromCanEffect(battleEvent.itemUsed.damages.affects,battleEvent.primaryTarget)
+		let ads = affectedsFromCanEffect(battleEvent.itemUsed.damages.affects)
 		for (const healthModifyEvent of ads) {
 			if (healthModifyEvent.entity.health < 1) {
 				continue;
@@ -1001,33 +953,48 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		}
 	}
 	const healAnimations: HealAnimation[] = [];
-	if (battleEvent.alsoHeals) {
-		for (const healthModifyEvent of battleEvent.alsoHeals) {
-			if (healthModifyEvent.target.entity.health < 1)
+	if (battleEvent.itemUsed.heals) {
+		const healAffected = affectedsFromCanEffect(battleEvent.itemUsed.heals.affects);
+		for (const healthModifyEvent of healAffected) {
+			if (healthModifyEvent.entity.health < 1)
 				continue;
-			const r = healEntity(healthModifyEvent.target, healthModifyEvent.baseHeal);
+			const r = healEntity(healthModifyEvent, battleEvent.itemUsed.heals.baseHeal);
 			healAnimations.push({
-				target: healthModifyEvent.target.entity.unitId,
+				target: healthModifyEvent.entity.unitId,
 				amount: r.healed
 			});
 		}
 	}
 	const aggroModifiedAnimations: AggroModifier[] = [];
-	if (battleEvent.alsoModifiesAggro) {
-		for (const modifyEvent of battleEvent.alsoModifiesAggro) {
-			if (modifyEvent.targetEnemy.health < 1) continue;
-			const foHeros: { hId: HeroId; amount: number }[] = [];
-			for (const hero of modifyEvent.forHeros) {
-				const r = modifyAggroForPlayer(hero, modifyEvent.targetEnemy, modifyEvent.baseAmount);
-				foHeros.push({
-					hId: hero.unitId,
-					amount: r.increasedBy
-				});
+	if (battleEvent.itemUsed.modifiesAggro) {
+		const aggroAffected = affectedsFromCanEffect(battleEvent.itemUsed.modifiesAggro.affects);
+		const aggroAffectedEnemies : ActiveEnemy[] = []
+		for(const ae of aggroAffected){
+			if(ae.kind == 'enemy'){
+				aggroAffectedEnemies.push(ae.entity)
 			}
-
+		}
+		for (const affEnemy of aggroAffectedEnemies) {
+			if (affEnemy.health < 1) continue;
+			const foHeros: { hId: HeroId; amount: number }[] = [];
+			if(battleEvent.itemUsed.modifiesAggro.aggroFor == "allPlayers"){
+				for (const hero of scenePlayers) {
+					const r = modifyAggroForPlayer(hero, affEnemy, battleEvent.itemUsed.modifiesAggro.amount);
+					foHeros.push({
+						hId: hero.unitId,
+						amount: r.increasedBy
+					});
+				}
+			}else{
+				modifyAggroForPlayer(player,affEnemy,battleEvent.itemUsed.modifiesAggro.amount)
+				foHeros.push({
+					hId:player.unitId,
+					amount:battleEvent.itemUsed.modifiesAggro.amount
+				})
+			}
 			aggroModifiedAnimations.push({
 				forHeros: foHeros,
-				target: modifyEvent.targetEnemy.unitId
+				target: affEnemy.unitId
 			});
 		}
 	}
