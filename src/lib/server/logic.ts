@@ -85,55 +85,30 @@ export function createPossibleBattleEventsFromEntity(
 	for (const itemState of bee.entity.inventory) {
 		const i = items.find((item) => item.id == itemState.stats.id);
 		if (i == undefined) continue;
-		if (i.noAction) continue;
 		if (!i.useableOutOfBattle && !opponentsOfBee.length) continue;
-		if (i.requiresSourceDead && bee.entity.health > 0) continue;
-		if (!i.requiresSourceDead && bee.entity.health < 1) continue;
-		if (itemState.cooldown > 0) continue;
-		if (itemState.warmup > 0) continue;
-		if (itemState.stock != undefined && itemState.stock < 1) continue;
-
-		const iAb: ItemAnimationBehavior = i.animation ?? { kind: 'melee' };
-		let iCt: CanTarget;
-		if (i.targets) {
-			iCt = i.targets;
-		} else if (iAb.kind == 'melee' || iAb.kind == 'missile') {
-			iCt = { kind: 'anyEnemy' };
-		} else {
-			iCt = { kind: 'onlySelf' };
-		}
+		if (!entityCanUseItem(bee, i)) continue
 
 		let targetables: BattleEventEntity[] = [];
-		if (iCt.kind == 'anyEnemy') {
+		if (i.targets.kind == 'anyEnemy') {
 			targetables = opponentsOfBee;
-		} else if (iCt.kind == 'anyFriendly') {
+		} else if (i.targets.kind == 'anyFriendly') {
 			targetables = alliesOfBee;
 		} else {
 			targetables = [bee];
 		}
 
 		for (const t of targetables) {
-			
-			// check untargetable status, only when source and target on different team
-			if (bee.kind != t.kind) {
-				if (immuneDueToStatus(t)) {
-					continue
-				}
-			}
 
 			// mobs can only directly target the player that triggered the event
-			if(bee.kind == 'enemy' && t.kind == 'player'){
-				if(t.entity.unitId != triggeredBy.unitId)continue
+			if (bee.kind == 'enemy' && t.kind == 'player') {
+				if (t.entity.unitId != triggeredBy.unitId) continue
 			}
 
+			if (!validSourceAndTarget(bee, t, i)) continue
 
-			if(i.requiresTargetDamaged && (t.entity.health >= t.entity.maxHealth)) continue
-			if(i.requiresTargetWithoutStatus && checkHasStatus(t, i.requiresTargetWithoutStatus))continue
-			if(t.entity.health < 1 && !i.requiresTargetDead)continue
-			
-			const perTargbe : BattleEvent = {
+			const perTargbe: BattleEvent = {
 				source: bee,
-				primaryTarget:t,
+				primaryTarget: t,
 				itemUsed: i,
 			};
 			result.push(perTargbe)
@@ -142,6 +117,42 @@ export function createPossibleBattleEventsFromEntity(
 
 
 	return result
+}
+
+export function entityCanUseItem(bee: BattleEventEntity, i: Item): boolean {
+	const itemState = bee.entity.inventory.find(is => is.stats.id == i.id)
+	if (!itemState) return false
+	if (i.noAction) return false;
+	if (i.requiresSourceDead && bee.entity.health > 0) return false;
+	if (!i.requiresSourceDead && bee.entity.health < 1) return false;
+	if (itemState.cooldown > 0) return false;
+	if (itemState.warmup > 0) return false;
+	if (itemState.stock != undefined && itemState.stock < 1) return false;
+	return true
+}
+
+export function validSourceAndTarget(bee: BattleEventEntity, t: BattleEventEntity, i: Item): boolean {
+	if (!entityCanUseItem(bee, i)){
+
+		
+		return false
+	} 
+
+	// can't target untargetable entity not on your team
+	if (bee.kind != t.kind) {
+		if (immuneDueToStatus(t)) {
+			console.log(`${bee.entity.displayName} cant target untargetable`)
+			return false
+		}
+	}
+
+	if (i.requiresTargetDamaged && (t.entity.health >= t.entity.maxHealth)) return false
+
+	if (i.requiresTargetWithoutStatus && checkHasStatus(t, i.requiresTargetWithoutStatus)) return false
+
+	if (t.entity.health < 1 && !i.requiresTargetDead) return false
+
+	return true
 }
 
 export function updatePlayerActions(player: Player) {
@@ -205,39 +216,17 @@ export function checkHasStatus(bee: BattleEventEntity, st: StatusId): boolean {
 	return false;
 }
 
-export function removeStatusesOnProvoke(bee: BattleEventEntity): StatusData[] {
 
-	let result: StatusData[] = [];
-	let rem = (s: Map<StatusId, number>) => {
-		for (const [k, v] of s) {
-			const statusData = statusDatas.find((s) => s.id == k);
-			if (!statusData) continue;
-			if (statusData.removeOnProvoke) {
-				result.push(statusData);
-				s.delete(k);
-			}
-		}
-
+export function removeStatus(bee: BattleEventEntity, st: StatusData) {
+	if (st.giveBonus) {
+		bee.entity.bonusStats[st.giveBonus.stat] = 0
 	}
-
 	if (bee.kind == 'player') {
-		rem(bee.entity.statuses)
-	}
-	if (bee.kind == 'enemy') {
-		for (const [sForp, statuses] of bee.entity.statuses) {
-			rem(statuses)
-		}
-	}
-	return result;
-}
-
-export function removeStatus(bee: BattleEventEntity, st: StatusId) {
-	if (bee.kind == 'player') {
-		bee.entity.statuses.delete(st);
+		bee.entity.statuses.delete(st.id);
 	}
 	if (bee.kind == 'enemy') {
 		for (const [key, value] of bee.entity.statuses) {
-			value.delete(st);
+			value.delete(st.id);
 		}
 	}
 }
@@ -329,7 +318,7 @@ export function scaleEnemyHealth(enemy: ActiveEnemy, playerCount: number) {
 	enemy.health = Math.floor(percentHealthBefore * enemy.maxHealth);
 }
 
-export function resetBonusStats(bee : BattleEventEntity){
+export function resetBonusStats(bee: BattleEventEntity) {
 	bee.entity.bonusStats.agility = 0
 	bee.entity.bonusStats.strength = 0
 	bee.entity.bonusStats.mind = 0
@@ -357,7 +346,7 @@ export function changeScene(player: Player, goTo: SceneDataId) {
 	player.currentUniqueSceneId = uniqueTo;
 
 	resetCooldowns(player)
-	resetBonusStats({kind:'player',entity:player})
+	resetBonusStats({ kind: 'player', entity: player })
 
 	// should status persist after battles?
 	player.statuses = new Map();
@@ -418,32 +407,32 @@ export function handlePlayerAction(player: Player, action: GameAction) {
 
 	if (!action.battleEvent) return;
 	if (!action.itemId) return;
-	if(!action.battleEvent)return;
+	if (!action.battleEvent) return;
 	const triggeredFromItem = items.find((i) => i.id == action.itemId);
-	if(!triggeredFromItem)return
+	if (!triggeredFromItem) return
 
-	if(triggeredFromItem.teleportTo){
+	if (triggeredFromItem.teleportTo) {
 		const battleAnimation: BattleAnimation = {
 			triggeredBy: player.unitId,
 			source: player.unitId,
-			behavior: triggeredFromItem.animation ?? {kind:'selfInflicted',extraSprite:'skull'},
+			behavior: triggeredFromItem.animation ?? { kind: 'selfInflicted', extraSprite: 'skull' },
 			teleporting: true
 		};
 		pushAnimation({
-			sceneId:player.currentUniqueSceneId,
-			battleAnimation:battleAnimation,
+			sceneId: player.currentUniqueSceneId,
+			battleAnimation: battleAnimation,
 		})
-		changeScene(player,triggeredFromItem.teleportTo)
+		changeScene(player, triggeredFromItem.teleportTo)
 		return
 	}
 
 	pushHappening('----');
 	console.log('-----starting combat round----')
-	
+
 	let chosenBattleEvents: BattleEvent[] = []
-	
+
 	chosenBattleEvents.push(action.battleEvent)
-	
+
 	let startEnemies = enemiesInScene(player.currentUniqueSceneId)
 	for (const enemy of startEnemies) {
 		const aggroForActor = getAggroForPlayer(enemy, player);
@@ -459,8 +448,8 @@ export function handlePlayerAction(player: Player, action: GameAction) {
 				// enemy prioritize a finishing blow
 				let foundFinisher = bEventsForEnemy.find(be => {
 					if (be.itemUsed.damages) {
-						if((be.itemUsed.damages.baseDmg * be.itemUsed.damages.strikes) >= be.primaryTarget.entity.health){
-							return true							
+						if ((be.itemUsed.damages.baseDmg * be.itemUsed.damages.strikes) >= be.primaryTarget.entity.health) {
+							return true
 						}
 					}
 					return false
@@ -484,7 +473,7 @@ export function handlePlayerAction(player: Player, action: GameAction) {
 						}
 					}
 				}
-				if(!chosenForEnemy){
+				if (!chosenForEnemy) {
 					console.log(`${enemy.displayName} rolled hit but chose nothing`)
 				}
 			}
@@ -499,38 +488,28 @@ export function handlePlayerAction(player: Player, action: GameAction) {
 	})
 
 	for (let chosenBe of chosenBattleEvents) {
-		let cantUse = false
-		if (chosenBe.source.entity.health < 1 && !chosenBe.itemUsed.requiresSourceDead) {
-			cantUse = true
-		}
-		if (chosenBe.primaryTarget && (immuneDueToStatus(chosenBe.primaryTarget) || chosenBe.primaryTarget.entity.health < 1)) {
-			cantUse = true
-		}
-
-		if (!cantUse) {
-			if(chosenBe.itemUsed.provoke){
-				handleRemoveStatusOnProvoke(chosenBe.source,player,chosenBe.itemUsed.provoke > 0)
+			if (validSourceAndTarget(chosenBe.source, chosenBe.primaryTarget, chosenBe.itemUsed)) {
+				processBattleEvent(chosenBe, player);
+			}else{
+				console.log(`${chosenBe.source.entity.displayName} tried to use ${chosenBe.itemUsed.id} on ${chosenBe.primaryTarget.entity.displayName} but its now invalid`)
 			}
 
-			processBattleEvent(chosenBe, player);
 			handleStatusEffects(player, chosenBe.source);
-		}
 	}
 
-	// handleStatusEffects(player, { kind: 'player', entity: player });
 	decrementCooldowns({ kind: 'player', entity: player });
 	decrementStatusCounts({ kind: 'player', entity: player }, player)
 
 	for (const enemy of enemiesInScene(player.currentUniqueSceneId)) {
 		let tookAction = chosenBattleEvents.find(b => b.source.entity.unitId == enemy.unitId)
-		if(!tookAction){
+		if (!tookAction) {
 			handleStatusEffects(player, { kind: 'enemy', entity: enemy });
 		}
 		decrementCooldowns({ kind: 'enemy', entity: enemy });
 		decrementStatusCounts({ kind: 'enemy', entity: enemy }, player)
 	}
 
-	
+
 	if (triggeredFromItem.provoke != undefined && player.health > 0) {
 		addAggro(player, triggeredFromItem.provoke);
 	}
@@ -540,7 +519,7 @@ export function handlePlayerAction(player: Player, action: GameAction) {
 	if (startEnemies.length && !postReactionEnemies.length) {
 		for (const playerInScene of activePlayersInScene(player.currentUniqueSceneId)) {
 			resetCooldowns(playerInScene)
-			resetBonusStats({kind:'player',entity:playerInScene})
+			resetBonusStats({ kind: 'player', entity: playerInScene })
 			if (playerScene.healsOnVictory) {
 				playerInScene.health = playerInScene.maxHealth;
 			}
@@ -576,7 +555,7 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 			if (!statusData) continue;
 			if (statusData.damagePercent) {
 				let dmg = Math.ceil(on.entity.health * statusData.damagePercent);
-				if(dmg < 5)dmg = 5
+				if (dmg < 5) dmg = 5
 				on.entity.health -= dmg;
 				// ad.push({ target: on.entity.unitId, amount: [dmg] });
 				sprite = statusData.selfInflictSprite;
@@ -587,7 +566,7 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 						source: on.entity.unitId,
 						alsoDamages: [{ target: on.entity.unitId, amount: [dmg] }],
 						behavior: { kind: 'selfInflicted', extraSprite: sprite },
-						noResetAggro:true,
+						noResetAggro: true,
 					}
 				});
 				pushHappening(`${on.entity.unitId} took ${dmg} damage from ${k}`);
@@ -603,16 +582,16 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 						source: on.entity.unitId,
 						alsoHeals: [{ target: on.entity.unitId, amount: statusData.heal }],
 						behavior: { kind: 'selfInflicted', extraSprite: sprite },
-						noResetAggro:true,
+						noResetAggro: true,
 					}
 				});
 			}
 			if (statusData.giveBonus) {
-				if(statusData.giveBonus.accumulates){
+				if (statusData.giveBonus.accumulates) {
 					on.entity.bonusStats[statusData.giveBonus.stat] += statusData.giveBonus.amount
-				}else{
+				} else {
 					let existingBonus = on.entity.bonusStats[statusData.giveBonus.stat]
-					if(existingBonus < statusData.giveBonus.amount){
+					if (existingBonus < statusData.giveBonus.amount) {
 						on.entity.bonusStats[statusData.giveBonus.stat] = statusData.giveBonus.amount
 					}
 				}
@@ -627,7 +606,7 @@ function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 	}
 	if (on.kind == 'enemy') {
 		let fp = on.entity.statuses.get(playerTriggered.unitId)
-		if(fp){
+		if (fp) {
 			check(fp)
 		}
 		checkEnemyDeath(on.entity)
@@ -646,7 +625,7 @@ function decrementStatusCounts(bee: BattleEventEntity, playerTriggered: Player):
 				let decremented = v - 1
 
 				if (decremented < 1) {
-					if(statusData.giveBonus){
+					if (statusData.giveBonus) {
 						bee.entity.bonusStats[statusData.giveBonus.stat] = 0
 					}
 					decayed.push(statusData)
@@ -708,21 +687,42 @@ export function immuneDueToStatus(bee: BattleEventEntity): boolean {
 }
 
 
-function handleRemoveStatusOnProvoke(bee: BattleEventEntity, triggeredBy: Player, provoke: boolean){
+function handleRemoveStatusOnProvoke(bee: BattleEventEntity, triggeredBy: Player, provoke: number | undefined) {
 	let decayed: StatusData[] = []
-	if (provoke) {
-		const r = removeStatusesOnProvoke(bee);
-		if (r) {
-			decayed.push(...r)
+	if (!provoke) return
+	// const r = removeStatusesOnProvoke(bee);
+	// let r: StatusData[] = [];
+	let rem = (s: Map<StatusId, number>) => {
+		for (const [k, v] of s) {
+			const statusData = statusDatas.find((s) => s.id == k);
+			if (!statusData) continue;
+			if (statusData.removeOnProvoke) {
+				removeStatus(bee, statusData)
+				decayed.push(statusData);
+				// s.delete(k);
+			}
+		}
+
+	}
+
+	if (bee.kind == 'player') {
+		rem(bee.entity.statuses)
+	}
+	if (bee.kind == 'enemy') {
+		for (const [sForp, statuses] of bee.entity.statuses) {
+			rem(statuses)
 		}
 	}
-	if(decayed.length){
-		let ptstatuses = decayed.map(d=>{
+	// if (r) {
+	// 	decayed.push(...r)
+	// }
+	if (decayed.length) {
+		let ptstatuses = decayed.map(d => {
 			return {
-				statusId:d.id,
-				target:bee.entity.unitId,
-				remove:true
-			}satisfies StatusModifyAnimation
+				statusId: d.id,
+				target: bee.entity.unitId,
+				remove: true
+			} satisfies StatusModifyAnimation
 		})
 		pushAnimation({
 			sceneId: triggeredBy.currentUniqueSceneId,
@@ -737,6 +737,8 @@ function handleRemoveStatusOnProvoke(bee: BattleEventEntity, triggeredBy: Player
 }
 
 function processBattleEvent(battleEvent: BattleEvent, player: Player) {
+	handleRemoveStatusOnProvoke(battleEvent.source, player, battleEvent.itemUsed.provoke)
+
 	let scenePlayers = activePlayersInScene(player.currentUniqueSceneId)
 	let scenePlayersEntities: BattleEventEntity[] = scenePlayers.map((sp) => {
 		return {
@@ -775,27 +777,12 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	};
 
 	const iAb: ItemAnimationBehavior = battleEvent.itemUsed.animation ?? { kind: 'melee' };
-	let iCt: CanTarget;
-	if (battleEvent.itemUsed.targets) {
-		iCt = battleEvent.itemUsed.targets;
-	} else if (iAb.kind == 'melee' || iAb.kind == 'missile') {
-		iCt = { kind: 'anyEnemy' };
-	} else {
-		iCt = { kind: 'onlySelf' };
-	}
 	let beBehav: AnimationBehavior = iAb;
-	if (iCt.kind == 'anyFriendly') {
+	if (battleEvent.itemUsed.targets.kind == 'anyFriendly') {
 		if (battleEvent.primaryTarget.entity.unitId == battleEvent.source.entity.unitId) {
-			beBehav = { kind: 'selfInflicted', extraSprite: iCt.selfAfflictSprite };
+			beBehav = { kind: 'selfInflicted', extraSprite: battleEvent.itemUsed.targets.selfAfflictSprite };
 		}
 	}
-
-	// const checkShouldStillAffect = (aff:BattleEventEntity)=>{
-		// if(battleEvent.itemUsed.requiresSourceDead && rce.entity.health > 0)return false
-		// if(battleEvent.itemUsed.requiresTargetDead && battleEvent.primaryTarget.entity.health < 1)
-		// if(aff.entity.health < 1)return false
-		// return true
-	// }
 
 	let statusModAnims: StatusModifyAnimation[] = []
 	if (battleEvent.itemUsed.modifiesStatus) {
@@ -812,7 +799,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				}
 				for (const r of toRemove) {
 					if (checkHasStatus(put, r.id)) {
-						removeStatus(put, r.id)
+						removeStatus(put, r)
 						statusModAnims.push({
 							statusId: r.id,
 							target: put.entity.unitId,
@@ -823,47 +810,44 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				resetBonusStats(put)
 			}
 			if (battleEvent.itemUsed.modifiesStatus.statusMod) {
-				let countToAdd : number | undefined = battleEvent.itemUsed.modifiesStatus.statusMod.count
-				if (countToAdd != undefined) {
-					let mind = 0
-					if(battleEvent.source.kind == 'player'){
-						mind = battleEvent.source.entity.mind
-					}
-					if(battleEvent.source.kind == 'enemy'){
-						mind = battleEvent.source.entity.template.mind
-					}
-					mind += battleEvent.source.entity.bonusStats.mind
-					let bonusLongevity = Math.floor(mind / 2)
-					countToAdd += bonusLongevity
-					
-					if (put.kind == 'enemy') {
-						let found = put.entity.statuses.get(player.unitId);
-						if (!found) {
-							found = new Map();
-						}
-						const exist = found.get(battleEvent.itemUsed.modifiesStatus.statusMod.statusId);
-						
-						if (!exist || exist < countToAdd) {
-							found.set(battleEvent.itemUsed.modifiesStatus.statusMod.statusId, countToAdd);
-						}
-						put.entity.statuses.set(player.unitId, found);
-					}
-					if (put.kind == 'player') {
-						const exist = put.entity.statuses.get(battleEvent.itemUsed.modifiesStatus.statusMod.statusId);
-						if (!exist || exist < countToAdd) {
-							put.entity.statuses.set(battleEvent.itemUsed.modifiesStatus.statusMod.statusId, countToAdd);
-						}
-					}
-					
+				let countToAdd = battleEvent.itemUsed.modifiesStatus.statusMod.count
+				let mind = 0
+				if (battleEvent.source.kind == 'player') {
+					mind = battleEvent.source.entity.mind
 				}
-				if (battleEvent.itemUsed.modifiesStatus.statusMod.remove) {
-					removeStatus(put, battleEvent.itemUsed.modifiesStatus.statusMod.statusId);
+				if (battleEvent.source.kind == 'enemy') {
+					mind = battleEvent.source.entity.template.mind
 				}
+				mind += battleEvent.source.entity.bonusStats.mind
+				let bonusLongevity = Math.floor(mind / 2)
+				countToAdd += bonusLongevity
+
+				if (put.kind == 'enemy') {
+					let found = put.entity.statuses.get(player.unitId);
+					if (!found) {
+						found = new Map();
+					}
+					const exist = found.get(battleEvent.itemUsed.modifiesStatus.statusMod.statusId);
+
+					if (!exist || exist < countToAdd) {
+						found.set(battleEvent.itemUsed.modifiesStatus.statusMod.statusId, countToAdd);
+					}
+					put.entity.statuses.set(player.unitId, found);
+				}
+				if (put.kind == 'player') {
+					const exist = put.entity.statuses.get(battleEvent.itemUsed.modifiesStatus.statusMod.statusId);
+					if (!exist || exist < countToAdd) {
+						put.entity.statuses.set(battleEvent.itemUsed.modifiesStatus.statusMod.statusId, countToAdd);
+					}
+				}
+
+				// if (battleEvent.itemUsed.modifiesStatus.statusMod.remove) {
+				// 	removeStatus(put, battleEvent.itemUsed.modifiesStatus.statusMod.statusId);
+				// }
 				statusModAnims.push({
 					target: put.entity.unitId,
 					statusId: battleEvent.itemUsed.modifiesStatus.statusMod.statusId,
 					count: countToAdd,
-					remove: battleEvent.itemUsed.modifiesStatus.statusMod.remove,
 				})
 			}
 		}
@@ -884,16 +868,16 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	const aggroModifiedAnimations: AggroModifier[] = [];
 	if (battleEvent.itemUsed.modifiesAggro) {
 		const aggroAffected = affectedsFromCanEffect(battleEvent.itemUsed.modifiesAggro.affects);
-		const aggroAffectedEnemies : ActiveEnemy[] = []
-		for(const ae of aggroAffected){
-			if(ae.kind == 'enemy'){
+		const aggroAffectedEnemies: ActiveEnemy[] = []
+		for (const ae of aggroAffected) {
+			if (ae.kind == 'enemy') {
 				aggroAffectedEnemies.push(ae.entity)
 			}
 		}
 		for (const affEnemy of aggroAffectedEnemies) {
 			if (affEnemy.health < 1) continue;
 			const foHeros: { hId: HeroId; amount: number }[] = [];
-			if(battleEvent.itemUsed.modifiesAggro.aggroFor == "allPlayers"){
+			if (battleEvent.itemUsed.modifiesAggro.aggroFor == "allPlayers") {
 				for (const hero of scenePlayers) {
 					const r = modifyAggroForPlayer(hero, affEnemy, battleEvent.itemUsed.modifiesAggro.amount);
 					foHeros.push({
@@ -901,11 +885,11 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 						amount: r.increasedBy
 					});
 				}
-			}else{
-				modifyAggroForPlayer(player,affEnemy,battleEvent.itemUsed.modifiesAggro.amount)
+			} else {
+				modifyAggroForPlayer(player, affEnemy, battleEvent.itemUsed.modifiesAggro.amount)
 				foHeros.push({
-					hId:player.unitId,
-					amount:battleEvent.itemUsed.modifiesAggro.amount
+					hId: player.unitId,
+					amount: battleEvent.itemUsed.modifiesAggro.amount
 				})
 			}
 			aggroModifiedAnimations.push({
@@ -1015,7 +999,7 @@ export function getDamageReduction(from: BattleEventEntity): number {
 			dmgReduc += item.stats.damageReduction
 		}
 	}
-	if(from.entity.bonusStats.armor > 0){
+	if (from.entity.bonusStats.armor > 0) {
 		dmgReduc += from.entity.bonusStats.armor
 	}
 

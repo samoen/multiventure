@@ -45,7 +45,7 @@ export type Item = {
 	modifiesStatus?: { affects: CanEffect; statusMod?: StatusMod, dispell?:'good'|'bad' };
 	modifiesAggro?: { affects: CanEffect; aggroFor: 'allPlayers' | 'justMe'; amount: number };
 	animation?: ItemAnimationBehavior; // default melee
-	targets?: CanTarget; // for melee or missle defaults anyEnemy, else onlyself
+	targets: CanTarget;
 	teleportTo?: SceneDataId;
 };
 
@@ -55,6 +55,7 @@ const dagger: Item = {
 	slot: 'weapon',
 	provoke: 7,
 	speed: 4,
+	targets:{kind:'anyEnemy'},
 	damages: { affects: 'targetOnly', baseDmg: 7, strikes: 3, offenseKind:['brutal','skillful'] }
 };
 
@@ -64,6 +65,7 @@ const vampiricDagger: Item = {
 	slot: 'weapon',
 	provoke: 7,
 	speed: 4,
+	targets:{kind:'anyEnemy'},
 	damages: { affects: 'targetOnly', baseDmg: 10, strikes: 1, offenseKind:['brutal','skillful','magical'] },
 	heals: {affects:'selfOnly',baseHeal:7}
 };
@@ -72,6 +74,7 @@ const club: Item = {
 	id: 'club',
 	visualBase:'club',
 	slot: 'weapon',
+	targets:{kind:'anyEnemy'},
 	provoke: 20,
 	speed: 1,
 	damages: { affects: 'targetOnly', baseDmg: 35, strikes: 1, offenseKind:['brutal'] }
@@ -81,6 +84,7 @@ export const bow: Item = {
 	id: 'bow',
 	visualBase:'bow',
 	slot: 'weapon',
+	targets:{kind:'anyEnemy'},
 	warmup: 1,
 	cooldown: 1,
 	provoke: 5,
@@ -94,6 +98,7 @@ export const fireStaff: Item = {
 	id: 'fireStaff',
 	visualBase:'staff',
 	slot: 'weapon',
+	targets:{kind:'anyEnemy'},
 	warmup: 1,
 	cooldown: 2,
 	provoke: 5,
@@ -107,6 +112,7 @@ export const gremlinStaff: Item = {
 	id: 'gremlinStaff',
 	visualBase:'staff',
 	slot: 'weapon',
+	targets:{kind:'anyEnemy'},
 	warmup: 2,
 	cooldown: 2,
 	provoke: 15,
@@ -131,6 +137,7 @@ const potion: Item = {
 const bomb: Item = {
 	id: 'bomb',
 	slot: 'utility',
+	targets:{kind:'onlySelf'},
 	startStock: 2,
 	speed: 12,
 	provoke: 5,
@@ -143,6 +150,7 @@ const holyBomb: Item = {
 	id: 'holy',
 	slot: 'utility',
 	startStock: 3,
+	targets:{kind:'onlySelf'},
 	speed: 12,
 	provoke: 0,
 	animation: { kind: 'center', extraSprite: 'bomb' },
@@ -155,6 +163,7 @@ const poisonDart: Item = {
 	id: 'poisonDart',
 	visualBase:'dart',
 	slot: 'utility',
+	targets:{kind:'anyEnemy'},
 	startStock: 2,
 	provoke: 40,
 	speed: 20,
@@ -167,6 +176,7 @@ const deadlyDart: Item = {
 	id: 'deadlyDart',
 	visualBase:'dart',
 	slot: 'utility',
+	targets:{kind:'anyEnemy'},
 	startStock: 2,
 	cooldown: 2,
 	provoke: 40,
@@ -179,6 +189,7 @@ const plateMail: Item = {
 	id: 'plateMail',
 	visualBase:'heavyArmor',
 	slot: 'body',
+	targets:{kind:'onlySelf'},
 	cooldown: 7,
 	provoke: 0,
 	speed: 100,
@@ -193,6 +204,7 @@ const thiefCloak: Item = {
 	id: 'thiefCloak',
 	visualBase:'cloak',
 	slot: 'body',
+	targets:{kind:'onlySelf'},
 	cooldown: 2,
 	speed: 5,
 	provoke: 0,
@@ -210,6 +222,7 @@ export const leatherArmor: Item = {
 	speed: 5,
 	damageReduction: 3,
 	requiresTargetWithoutStatus:'blessed',
+	// animation:{kind:'melee'},
 	targets: { kind: 'anyFriendly', selfAfflictSprite: 'heal' },
 	modifiesStatus: { affects: 'targetOnly', dispell: 'bad', statusMod:{statusId:'blessed',count:2} }
 };
@@ -232,6 +245,7 @@ export const goblinArmor: Item = {
 	visualBase:'lightArmor',
 	slot: 'body',
 	speed: 5,
+	targets:{kind:'onlySelf'},
 	noAction:true,
 	damageReduction: 5,
 };
@@ -242,7 +256,9 @@ export const pendantOfProtection: Item = {
 	slot: 'body',
 	speed: 999,
 	cooldown:3,
-	targets: { kind: 'anyFriendly', selfAfflictSprite: 'shield' },
+	provoke:1,
+	targets: { kind: 'onlySelf' },
+	animation: {kind:'selfInflicted', extraSprite:'shield'},
 	requiresTargetWithoutStatus:'protected',
 	modifiesStatus: { affects: 'targetOnly', statusMod:{statusId:'protected',count:3} }
 };
@@ -253,6 +269,7 @@ const fist: Item = {
 	default: true,
 	provoke: 1,
 	speed: 10,
+	targets:{kind:'anyEnemy'},
 	damages: { affects: 'targetOnly', baseDmg: 10, strikes: 2, offenseKind:['brutal'] }
 };
 
@@ -261,7 +278,8 @@ const belt: Item = {
 	slot: 'utility',
 	default: true,
 	excludeFromDetail: true,
-	noAction: true
+	noAction: true,
+	targets:{kind:'onlySelf'},
 };
 
 const rags: Item = {
@@ -269,7 +287,8 @@ const rags: Item = {
 	slot: 'body',
 	default: true,
 	excludeFromDetail: true,
-	noAction: true
+	noAction: true,
+	targets:{kind:'onlySelf'},
 };
 
 const wait: Item = {
@@ -279,6 +298,7 @@ const wait: Item = {
 	excludeFromDetail: true,
 	speed: 999,
 	provoke: 0,
+	targets:{kind:'onlySelf'},
 	animation: { kind: 'selfInflicted', extraSprite: 'whiteRing' }
 };
 
@@ -288,11 +308,10 @@ const succumb: Item = {
 	excludeFromDetail: true,
 	teleportTo: 'dead',
 	default: true,
-	speed: -999,
-	// noReactions:true,
 	requiresSourceDead: true,
 	requiresTargetDead: true,
 	useableOutOfBattle: true,
+	targets:{kind:'onlySelf'},
 	animation: { kind: 'selfInflicted', extraSprite: 'skull' }
 };
 

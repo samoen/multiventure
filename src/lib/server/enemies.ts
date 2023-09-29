@@ -49,7 +49,7 @@ export const enemyTemplates: EnemyTemplate[] = [
 		id:'rat',
 		baseHealth: 5,
 		strength: 0,
-		agility: 0,
+		agility: 2,
 		mind:0,
 		aggroGain: 10,
 		startAggro: 70,
