@@ -132,11 +132,11 @@ export function entityCanUseItem(bee: BattleEventEntity, i: Item): boolean {
 }
 
 export function validSourceAndTarget(bee: BattleEventEntity, t: BattleEventEntity, i: Item): boolean {
-	if (!entityCanUseItem(bee, i)){
+	if (!entityCanUseItem(bee, i)) {
 
-		
+
 		return false
-	} 
+	}
 
 	// can't target untargetable entity not on your team
 	if (bee.kind != t.kind) {
@@ -488,16 +488,17 @@ export function handlePlayerAction(player: Player, action: GameAction) {
 	})
 
 	for (let chosenBe of chosenBattleEvents) {
-			if (validSourceAndTarget(chosenBe.source, chosenBe.primaryTarget, chosenBe.itemUsed)) {
-				processBattleEvent(chosenBe, player);
-			}else{
-				console.log(`${chosenBe.source.entity.displayName} tried to use ${chosenBe.itemUsed.id} on ${chosenBe.primaryTarget.entity.displayName} but its now invalid`)
-			}
+		decrementCooldowns(chosenBe.source);
 
-			handleStatusEffects(player, chosenBe.source);
+		if (validSourceAndTarget(chosenBe.source, chosenBe.primaryTarget, chosenBe.itemUsed)) {
+			processBattleEvent(chosenBe, player);
+		} else {
+			console.log(`${chosenBe.source.entity.displayName} tried to use ${chosenBe.itemUsed.id} on ${chosenBe.primaryTarget.entity.displayName} but its now invalid`)
+		}
+
+		handleStatusEffects(player, chosenBe.source);
 	}
 
-	decrementCooldowns({ kind: 'player', entity: player });
 	decrementStatusCounts({ kind: 'player', entity: player }, player)
 
 	for (const enemy of enemiesInScene(player.currentUniqueSceneId)) {
@@ -505,7 +506,6 @@ export function handlePlayerAction(player: Player, action: GameAction) {
 		if (!tookAction) {
 			handleStatusEffects(player, { kind: 'enemy', entity: enemy });
 		}
-		decrementCooldowns({ kind: 'enemy', entity: enemy });
 		decrementStatusCounts({ kind: 'enemy', entity: enemy }, player)
 	}
 
