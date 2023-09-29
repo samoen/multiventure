@@ -56,7 +56,6 @@ export type BattleEventEntity =
 export type BattleEvent = {
 	source: BattleEventEntity;
 	primaryTarget:BattleEventEntity;
-	putsStatuses?: StatusModifierEvent[];
 	itemUsed:Item;
 };
 

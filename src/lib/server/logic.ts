@@ -104,34 +104,7 @@ export function createPossibleBattleEventsFromEntity(
 			iCt = { kind: 'onlySelf' };
 		}
 
-		const affectedsFromCanEffect = (ca: CanEffect, t: BattleEventEntity) => {
-			let affecteds: BattleEventEntity[] = [];
-			if (ca == 'allEnemy') {
-				affecteds = opponentsOfBee;
-			} else if (ca == 'allFriendly') {
-				affecteds = alliesOfBee;
-			} else if (ca == 'selfOnly') {
-				affecteds = [bee];
-			} else if (ca == 'targetOnly') {
-				affecteds = [t];
-			}
-			return affecteds;
-		};
-
 		const nBe = (targetChosen: BattleEventEntity) => {
-			const ptstatuses: StatusModifierEvent[] = [];
-			if (i.modifiesStatus) {
-				const statusAffected = affectedsFromCanEffect(i.modifiesStatus.affects, targetChosen);
-				for (const aff of statusAffected) {
-					// if (i.modifiesStatus.statusMod) {
-					ptstatuses.push({
-						target: aff,
-						statusMod: i.modifiesStatus.statusMod,
-						dispell: i.modifiesStatus.dispell,
-					});
-					// }
-				}
-			}
 
 
 			// let animateTo: BattleEventEntity | undefined = undefined
@@ -142,7 +115,6 @@ export function createPossibleBattleEventsFromEntity(
 			const result: BattleEvent = {
 				source: bee,
 				primaryTarget:targetChosen,
-				putsStatuses: ptstatuses,
 				itemUsed: i,
 			} satisfies BattleEvent;
 
@@ -845,33 +817,33 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	// }
 
 	let statusModAnims: StatusModifyAnimation[] = []
-	if (battleEvent.putsStatuses) {
-		for (const put of battleEvent.putsStatuses) {
-			if (put.target.entity.health < 1) continue;
-			if (put.dispell != undefined) {
+	if (battleEvent.itemUsed.modifiesStatus) {
+		const statusAffected = affectedsFromCanEffect(battleEvent.itemUsed.modifiesStatus.affects);
+		for (const put of statusAffected) {
+			if (put.entity.health < 1) continue;
+			if (battleEvent.itemUsed.modifiesStatus.dispell != undefined) {
 				let toRemove: StatusData[] = []
-				if (put.dispell == 'bad') {
+				if (battleEvent.itemUsed.modifiesStatus.dispell == 'bad') {
 					toRemove = statusDatas.filter(sd => sd.bad)
 				}
-				if (put.dispell == 'good') {
+				if (battleEvent.itemUsed.modifiesStatus.dispell == 'good') {
 					toRemove = statusDatas.filter(sd => !sd.bad)
 				}
 				for (const r of toRemove) {
-					if (checkHasStatus(put.target, r.id)) {
-						removeStatus(put.target, r.id)
+					if (checkHasStatus(put, r.id)) {
+						removeStatus(put, r.id)
 						statusModAnims.push({
 							statusId: r.id,
-							target: put.target.entity.unitId,
+							target: put.entity.unitId,
 							remove: true,
 						})
 					}
 				}
-				resetBonusStats(put.target)
+				resetBonusStats(put)
 			}
-			if (put.statusMod) {
-				let countToAdd : number | undefined = put.statusMod.count
-				if (countToAdd) {
-					countToAdd += battleEvent.source.entity.bonusStats.mind
+			if (battleEvent.itemUsed.modifiesStatus.statusMod) {
+				let countToAdd : number | undefined = battleEvent.itemUsed.modifiesStatus.statusMod.count
+				if (countToAdd != undefined) {
 					let mind = 0
 					if(battleEvent.source.kind == 'player'){
 						mind = battleEvent.source.entity.mind
@@ -879,76 +851,39 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 					if(battleEvent.source.kind == 'enemy'){
 						mind = battleEvent.source.entity.template.mind
 					}
+					mind += battleEvent.source.entity.bonusStats.mind
 					let bonusLongevity = Math.floor(mind / 2)
 					countToAdd += bonusLongevity
 					
-					if (put.target.kind == 'enemy') {
-						let found = put.target.entity.statuses.get(player.unitId);
+					if (put.kind == 'enemy') {
+						let found = put.entity.statuses.get(player.unitId);
 						if (!found) {
 							found = new Map();
 						}
-						const exist = found.get(put.statusMod.statusId);
+						const exist = found.get(battleEvent.itemUsed.modifiesStatus.statusMod.statusId);
 						
 						if (!exist || exist < countToAdd) {
-							found.set(put.statusMod.statusId, countToAdd);
+							found.set(battleEvent.itemUsed.modifiesStatus.statusMod.statusId, countToAdd);
 						}
-						put.target.entity.statuses.set(player.unitId, found);
-						
+						put.entity.statuses.set(player.unitId, found);
 					}
-					if (put.target.kind == 'player') {
-						const found = put.target.entity.statuses.get(put.statusMod.statusId);
-						if (!found) {
-							put.target.entity.statuses.set(put.statusMod.statusId, countToAdd);
-						} else {
-							if (found < countToAdd) {
-								put.target.entity.statuses.set(put.statusMod.statusId, countToAdd);
-							}
+					if (put.kind == 'player') {
+						const exist = put.entity.statuses.get(battleEvent.itemUsed.modifiesStatus.statusMod.statusId);
+						if (!exist || exist < countToAdd) {
+							put.entity.statuses.set(battleEvent.itemUsed.modifiesStatus.statusMod.statusId, countToAdd);
 						}
 					}
 					
 				}
-				if (put.statusMod.remove) {
-					removeStatus(put.target, put.statusMod.statusId);
+				if (battleEvent.itemUsed.modifiesStatus.statusMod.remove) {
+					removeStatus(put, battleEvent.itemUsed.modifiesStatus.statusMod.statusId);
 				}
 				statusModAnims.push({
-					target: put.target.entity.unitId,
-					statusId: put.statusMod.statusId,
+					target: put.entity.unitId,
+					statusId: battleEvent.itemUsed.modifiesStatus.statusMod.statusId,
 					count: countToAdd,
-					remove: put.statusMod.remove,
+					remove: battleEvent.itemUsed.modifiesStatus.statusMod.remove,
 				})
-
-			}
-		}
-	}
-	const damageAnimations: DamageAnimation[] = [];
-	let damageAnimationForMissleTarget: DamageAnimation | undefined = undefined;
-	if (battleEvent.itemUsed.damages) {
-		let ads = affectedsFromCanEffect(battleEvent.itemUsed.damages.affects)
-		for (const healthModifyEvent of ads) {
-			if (healthModifyEvent.entity.health < 1) {
-				continue;
-			}
-			if (battleEvent.itemUsed.damages.baseDmg) {
-				const r = damageEntity(
-					battleEvent.itemUsed.damages,
-					battleEvent.source,
-					healthModifyEvent,
-				);
-				if (
-					beBehav.kind == 'missile' &&
-					healthModifyEvent.entity.unitId == battleEvent.primaryTarget.entity.unitId &&
-					damageAnimationForMissleTarget == undefined
-				) {
-					damageAnimationForMissleTarget = {
-						target: healthModifyEvent.entity.unitId,
-						amount: r.dmgDone
-					};
-				} else {
-					damageAnimations.push({
-						target: healthModifyEvent.entity.unitId,
-						amount: r.dmgDone
-					});
-				}
 			}
 		}
 	}
@@ -1000,6 +935,38 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	}
 
 
+	const damageAnimations: DamageAnimation[] = [];
+	let damageAnimationForMissleTarget: DamageAnimation | undefined = undefined;
+	if (battleEvent.itemUsed.damages) {
+		let ads = affectedsFromCanEffect(battleEvent.itemUsed.damages.affects)
+		for (const healthModifyEvent of ads) {
+			if (healthModifyEvent.entity.health < 1) {
+				continue;
+			}
+			if (battleEvent.itemUsed.damages.baseDmg) {
+				const r = damageEntity(
+					battleEvent.itemUsed.damages,
+					battleEvent.source,
+					healthModifyEvent,
+				);
+				if (
+					beBehav.kind == 'missile' &&
+					healthModifyEvent.entity.unitId == battleEvent.primaryTarget.entity.unitId &&
+					damageAnimationForMissleTarget == undefined
+				) {
+					damageAnimationForMissleTarget = {
+						target: healthModifyEvent.entity.unitId,
+						amount: r.dmgDone
+					};
+				} else {
+					damageAnimations.push({
+						target: healthModifyEvent.entity.unitId,
+						amount: r.dmgDone
+					});
+				}
+			}
+		}
+	}
 	if (damageAnimationForMissleTarget) {
 		const firstStrike = damageAnimationForMissleTarget.amount.at(0);
 		if (firstStrike) {
