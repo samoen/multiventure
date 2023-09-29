@@ -55,14 +55,10 @@ export type BattleEventEntity =
 
 export type BattleEvent = {
 	source: BattleEventEntity;
-	behavior: AnimationBehavior;
-	animateTo?:BattleEventEntity;
+	primaryTarget:BattleEventEntity;
 	putsStatuses?: StatusModifierEvent[];
-	alsoDamages?: DamageEvent[];
 	alsoHeals?: HealEvent[];
 	alsoModifiesAggro?: AggroModifierEvent[];
-	teleportsTo?: SceneDataId;
-	stillHappenIfTargetDies?: boolean;
 	itemUsed:Item;
 };
 

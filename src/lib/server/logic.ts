@@ -187,14 +187,10 @@ export function createPossibleBattleEventsFromEntity(
 
 			const result: BattleEvent = {
 				source: bee,
-				animateTo: animateTo,
-				behavior: beBehav,
-				teleportsTo: i.teleportTo,
-				alsoDamages: alsoDmgs,
+				primaryTarget:targetChosen,
 				alsoHeals: alsoHeals,
 				alsoModifiesAggro: modagro,
 				putsStatuses: ptstatuses,
-				stillHappenIfTargetDies: i.requiresSourceDead,
 				itemUsed: i,
 			} satisfies BattleEvent;
 
@@ -246,7 +242,7 @@ export function updatePlayerActions(player: Player) {
 	const possibleBattleEvents = createPossibleBattleEventsFromEntity({ kind: 'player', entity: player }, player.currentUniqueSceneId, player)
 	player.itemActions = [];
 	for (let possibleBe of possibleBattleEvents) {
-		let associate = possibleBe.animateTo?.entity.unitId ?? player.unitId
+		let associate = possibleBe.primaryTarget.entity.unitId
 		const ga: GameAction = {
 			buttonText: `${possibleBe.source.entity.unitId} use ${possibleBe.itemUsed.id} on ${associate}`,
 			battleEvent: possibleBe,
@@ -517,23 +513,26 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 	if (!actionFromId.battleEvent) return;
 	if (!actionFromId.itemId) return;
 	if(!actionFromId.battleEvent)return;
+	const triggeredFromItem = items.find((i) => i.id == actionFromId.itemId);
+	if(!triggeredFromItem)return
 
-	if(actionFromId.battleEvent.teleportsTo){
+	if(triggeredFromItem.teleportTo){
 		const battleAnimation: BattleAnimation = {
 			triggeredBy: player.unitId,
 			source: player.unitId,
-			behavior: actionFromId.battleEvent.behavior,
+			behavior: {kind:'selfInflicted',extraSprite:'skull'},
 			teleporting: true
 		};
 		pushAnimation({
 			sceneId:actionStartedInSceneId,
 			battleAnimation:battleAnimation,
 		})
-		changeScene(player,actionFromId.battleEvent.teleportsTo)
+		changeScene(player,triggeredFromItem.teleportTo)
 		return
 	}
 
 	pushHappening('----');
+	console.log('-----starting combat round----')
 	
 	let chosenBattleEvents: BattleEvent[] = []
 	
@@ -554,16 +553,16 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 				)
 				// enemy prioritize a finishing blow
 				let foundFinisher = bEventsForEnemy.find(be => {
-					if (be.alsoDamages) {
-						let foundBlow = be.alsoDamages.find(ad => (ad.itemDamageData.baseDmg * ad.itemDamageData.strikes) >= ad.target.entity.health)
-						if (foundBlow) {
-							return true
+					if (be.itemUsed.damages) {
+						if((be.itemUsed.damages.baseDmg * be.itemUsed.damages.strikes) >= be.primaryTarget.entity.health){
+							return true							
 						}
 					}
 					return false
 				})
 				if (foundFinisher) {
 					chosenForEnemy = foundFinisher
+					console.log(`${enemy.displayName} chose finishing blow ${chosenForEnemy.itemUsed.id}`)
 				} else {
 					let itemsPossible = bEventsForEnemy
 						.map(be => be.itemUsed)
@@ -576,10 +575,13 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 						let selected = besOfSelItem.at(randomIndex)
 						if (selected) {
 							chosenForEnemy = selected
+							console.log(`${enemy.displayName} selected ${chosenForEnemy.itemUsed.id}`)
 						}
 					}
 				}
-
+				if(!chosenForEnemy){
+					console.log(`${enemy.displayName} rolled hit but chose nothing`)
+				}
 			}
 		}
 		if (chosenForEnemy) {
@@ -596,7 +598,7 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		if (chosenBe.source.entity.health < 1 && !chosenBe.itemUsed.requiresSourceDead) {
 			cantUse = true
 		}
-		if (chosenBe.animateTo && (immuneDueToStatus(chosenBe.animateTo) || chosenBe.animateTo.entity.health < 1)) {
+		if (chosenBe.primaryTarget && (immuneDueToStatus(chosenBe.primaryTarget) || chosenBe.primaryTarget.entity.health < 1)) {
 			cantUse = true
 		}
 
@@ -623,8 +625,8 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		decrementStatusCounts({ kind: 'enemy', entity: enemy }, player)
 	}
 
-	const triggeredFromItem = items.find((i) => i.id == actionFromId.itemId);
-	if (triggeredFromItem && triggeredFromItem.provoke != undefined && player.health > 0) {
+	
+	if (triggeredFromItem.provoke != undefined && player.health > 0) {
 		addAggro(player, triggeredFromItem.provoke);
 	}
 
@@ -830,10 +832,70 @@ function handleRemoveStatusOnProvoke(bee: BattleEventEntity, triggeredBy: Player
 }
 
 function processBattleEvent(battleEvent: BattleEvent, player: Player) {
+	let scenePlayers = activePlayersInScene(player.currentUniqueSceneId)
+	let scenePlayersEntities: BattleEventEntity[] = scenePlayers.map((sp) => {
+		return {
+			kind: 'player',
+			entity: sp
+		};
+	})
+	let sceneEnemiesEntities: BattleEventEntity[] = enemiesInScene(player.currentUniqueSceneId).map(se => {
+		return {
+			kind: 'enemy',
+			entity: se
+		}
+	})
+	let alliesOfBee: BattleEventEntity[] = []
+	let opponentsOfBee: BattleEventEntity[] = []
+	if (battleEvent.source.kind == 'player') {
+		alliesOfBee = scenePlayersEntities
+		opponentsOfBee = sceneEnemiesEntities
+	}
+	if (battleEvent.source.kind == 'enemy') {
+		alliesOfBee = sceneEnemiesEntities
+		opponentsOfBee = scenePlayersEntities
+	}
+	const affectedsFromCanEffect = (ca: CanEffect, t: BattleEventEntity) => {
+		let affecteds: BattleEventEntity[] = [];
+		if (ca == 'allEnemy') {
+			affecteds = opponentsOfBee;
+		} else if (ca == 'allFriendly') {
+			affecteds = alliesOfBee;
+		} else if (ca == 'selfOnly') {
+			affecteds = [battleEvent.source];
+		} else if (ca == 'targetOnly') {
+			affecteds = [t];
+		}
+		return affecteds;
+	};
+
+	const iAb: ItemAnimationBehavior = battleEvent.itemUsed.animation ?? { kind: 'melee' };
+	let iCt: CanTarget;
+	if (battleEvent.itemUsed.targets) {
+		iCt = battleEvent.itemUsed.targets;
+	} else if (iAb.kind == 'melee' || iAb.kind == 'missile') {
+		iCt = { kind: 'anyEnemy' };
+	} else {
+		iCt = { kind: 'onlySelf' };
+	}
+	let beBehav: AnimationBehavior = iAb;
+	if (iCt.kind == 'anyFriendly') {
+		if (battleEvent.primaryTarget.entity.unitId == battleEvent.source.entity.unitId) {
+			beBehav = { kind: 'selfInflicted', extraSprite: iCt.selfAfflictSprite };
+		}
+	}
+
+	// const checkShouldStillAffect = (aff:BattleEventEntity)=>{
+		// if(battleEvent.itemUsed.requiresSourceDead && rce.entity.health > 0)return false
+		// if(battleEvent.itemUsed.requiresTargetDead && battleEvent.primaryTarget.entity.health < 1)
+		// if(aff.entity.health < 1)return false
+		// return true
+	// }
+
 	let statusModAnims: StatusModifyAnimation[] = []
 	if (battleEvent.putsStatuses) {
 		for (const put of battleEvent.putsStatuses) {
-			if (put.target.entity.health < 0 && !battleEvent.stillHappenIfTargetDies) continue;
+			if (put.target.entity.health < 1) continue;
 			if (put.dispell != undefined) {
 				let toRemove: StatusData[] = []
 				if (put.dispell == 'bad') {
@@ -908,31 +970,30 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	}
 	const damageAnimations: DamageAnimation[] = [];
 	let damageAnimationForMissleTarget: DamageAnimation | undefined = undefined;
-	const behav = battleEvent.behavior;
-	if (battleEvent.alsoDamages) {
-		for (const healthModifyEvent of battleEvent.alsoDamages) {
-			if (healthModifyEvent.target.entity.health < 0 && !battleEvent.stillHappenIfTargetDies) {
+	if (battleEvent.itemUsed.damages) {
+		let ads = affectedsFromCanEffect(battleEvent.itemUsed.damages.affects,battleEvent.primaryTarget)
+		for (const healthModifyEvent of ads) {
+			if (healthModifyEvent.entity.health < 1) {
 				continue;
 			}
-			if (healthModifyEvent.itemDamageData.baseDmg) {
+			if (battleEvent.itemUsed.damages.baseDmg) {
 				const r = damageEntity(
-					healthModifyEvent,
+					battleEvent.itemUsed.damages,
 					battleEvent.source,
-					healthModifyEvent.target,
+					healthModifyEvent,
 				);
 				if (
-					behav.kind == 'missile' &&
-					battleEvent.animateTo &&
-					healthModifyEvent.target.entity.unitId == battleEvent.animateTo.entity.unitId &&
+					beBehav.kind == 'missile' &&
+					healthModifyEvent.entity.unitId == battleEvent.primaryTarget.entity.unitId &&
 					damageAnimationForMissleTarget == undefined
 				) {
 					damageAnimationForMissleTarget = {
-						target: healthModifyEvent.target.entity.unitId,
+						target: healthModifyEvent.entity.unitId,
 						amount: r.dmgDone
 					};
 				} else {
 					damageAnimations.push({
-						target: healthModifyEvent.target.entity.unitId,
+						target: healthModifyEvent.entity.unitId,
 						amount: r.dmgDone
 					});
 				}
@@ -942,7 +1003,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	const healAnimations: HealAnimation[] = [];
 	if (battleEvent.alsoHeals) {
 		for (const healthModifyEvent of battleEvent.alsoHeals) {
-			if (healthModifyEvent.target.entity.health < 0 && !battleEvent.stillHappenIfTargetDies)
+			if (healthModifyEvent.target.entity.health < 1)
 				continue;
 			const r = healEntity(healthModifyEvent.target, healthModifyEvent.baseHeal);
 			healAnimations.push({
@@ -954,7 +1015,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	const aggroModifiedAnimations: AggroModifier[] = [];
 	if (battleEvent.alsoModifiesAggro) {
 		for (const modifyEvent of battleEvent.alsoModifiesAggro) {
-			if (modifyEvent.targetEnemy.health < 0 && !battleEvent.stillHappenIfTargetDies) continue;
+			if (modifyEvent.targetEnemy.health < 1) continue;
 			const foHeros: { hId: HeroId; amount: number }[] = [];
 			for (const hero of modifyEvent.forHeros) {
 				const r = modifyAggroForPlayer(hero, modifyEvent.targetEnemy, modifyEvent.baseAmount);
@@ -986,8 +1047,8 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 	const battleAnimation: BattleAnimation = {
 		triggeredBy: player.unitId,
 		source: battleEvent.source.entity.unitId,
-		behavior: battleEvent.behavior,
-		animateTo: battleEvent.animateTo?.entity.unitId,
+		behavior: beBehav,
+		animateTo: battleEvent.primaryTarget.entity.unitId,
 		alsoDamages: damageAnimations,
 		alsoHeals: healAnimations,
 		alsoModifiesAggro: aggroModifiedAnimations,
@@ -1003,8 +1064,8 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 			const xba: BattleAnimation = {
 				triggeredBy: player.unitId,
 				source: battleEvent.source.entity.unitId,
-				behavior: battleEvent.behavior,
-				animateTo: battleEvent.animateTo?.entity.unitId,
+				behavior: beBehav,
+				animateTo: battleEvent.primaryTarget.entity.unitId,
 				alsoDamages: [{ target: damageAnimationForMissleTarget.target, amount: [i] }]
 			};
 			pushAnimation({

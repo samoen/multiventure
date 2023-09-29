@@ -37,6 +37,7 @@ export type Item = {
 	// requiresStatus?: StatusId;
 	requiresTargetWithoutStatus?:StatusId;
 	requiresSourceDead?: boolean;
+	requiresTargetDead?: boolean;
 	excludeFromDetail?: boolean;
 	noAction?: boolean;
 	damages?: ItemDamageData;
@@ -290,6 +291,7 @@ const succumb: Item = {
 	speed: -999,
 	// noReactions:true,
 	requiresSourceDead: true,
+	requiresTargetDead: true,
 	useableOutOfBattle: true,
 	animation: { kind: 'selfInflicted', extraSprite: 'skull' }
 };

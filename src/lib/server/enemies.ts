@@ -1,5 +1,5 @@
 import { v4 } from 'uuid';
-import { items, type ItemId, type ItemState } from './items';
+import { items, type ItemId, type ItemState, type Item, type ItemDamageData } from './items';
 import { deepEqual, getDamageLimit, getDamageReduction, type EnemyForSpawning } from './logic';
 import { pushHappening } from './messaging';
 import { scenesData, type UniqueSceneIdenfitier } from './scenes';
@@ -222,15 +222,16 @@ export function enemiesInScene(sceneKey: UniqueSceneIdenfitier): ActiveEnemy[] {
 }
 
 export function damageEntity(
-	hme: DamageEvent,
+	// hme: DamageEvent,
+	idd:ItemDamageData,
 	source: BattleEventEntity,
 	toDamage: BattleEventEntity,
 ): { dmgDone: number[] } {
 	if (toDamage.entity.health < 1) return { dmgDone: [] };
 	let bonusDmg = 0
 	let bonusPierce = false
-	if(hme.itemDamageData.offenseKind){
-		if (hme.itemDamageData.offenseKind.includes("brutal")) {
+	if(idd.offenseKind){
+		if (idd.offenseKind.includes("brutal")) {
 			bonusDmg += source.entity.bonusStats.strength
 			if (source.kind == 'player') {
 				bonusDmg += source.entity.strength
@@ -256,7 +257,7 @@ export function damageEntity(
 		// 	bonusPierce = true
 		// }
 	}
-	let strikes = hme.itemDamageData.strikes
+	let strikes = idd.strikes
 
 	let damageReduction = getDamageReduction(toDamage)
 	let damageLimit = getDamageLimit(toDamage)
@@ -264,7 +265,7 @@ export function damageEntity(
 	const dmgDone: number[] = [];
 	let dmgSum = 0
 	for (let i = 0; i < strikes; i++) {
-		let dmg = hme.itemDamageData.baseDmg;
+		let dmg = idd.baseDmg;
 		if (i == strikes - 1 && !bonusPierce) {
 			dmg += bonusDmg;
 		}
