@@ -190,6 +190,19 @@ const plateMail: Item = {
 	visualBase:'heavyArmor',
 	slot: 'body',
 	targets:{kind:'onlySelf'},
+	cooldown: 3,
+	provoke: 5,
+	speed: 5,
+	damageLimit: 10,
+	animation: { kind: 'selfInflicted', extraSprite: 'shield' },
+	modifiesStatus: { affects: 'allEnemy', statusMod: { statusId: 'vulnerable', count: 3 } },
+};
+
+const rageMail: Item = {
+	id: 'rageMail',
+	visualBase:'heavyArmor',
+	slot: 'body',
+	targets:{kind:'onlySelf'},
 	cooldown: 7,
 	provoke: 0,
 	speed: 100,
@@ -333,6 +346,7 @@ export const items: Item[] = [
 	
 	rags,
 	plateMail,
+	rageMail,
 	leatherArmor,
 	trollArmor,
 	goblinArmor,

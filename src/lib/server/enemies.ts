@@ -84,7 +84,7 @@ export const enemyTemplates: EnemyTemplate[] = [
 		aggroGain: 20,
 		startAggro: 50,
 		agility: 4,
-		hasItem: ['club', 'plateMail'],
+		hasItem: ['club', 'rageMail'],
 	},
 	{
 		id:'fireGremlin',
@@ -229,7 +229,6 @@ export function damageEntity(
 ): { dmgDone: number[] } {
 	if (toDamage.entity.health < 1) return { dmgDone: [] };
 	let bonusDmg = 0
-	let bonusPierce = false
 	if(idd.offenseKind){
 		if (idd.offenseKind.includes("brutal")) {
 			bonusDmg += source.entity.bonusStats.strength
@@ -239,23 +238,24 @@ export function damageEntity(
 				bonusDmg += source.entity.template.strength
 			}
 		}
-		// if (hme.itemDamageData.offenseKind.includes("skillful")) {
-		// 	bonusDmg += source.entity.bonusStats.agility
-		// 	if (source.kind == 'player') {
-		// 		bonusDmg += source.entity.agility
-		// 	} else if (source.kind == 'enemy') {
-		// 		bonusDmg += source.entity.template.agility
-		// 	}
-		// }
-		// if (hme.itemDamageData.offenseKind.includes("magical")) {
-		// 	bonusDmg += source.entity.bonusStats.mind
-		// 	if (source.kind == 'player') {
-		// 		bonusDmg += source.entity.mind
-		// 	} else if (source.kind == 'enemy') {
-		// 		bonusDmg += source.entity.template.mind
-		// 	}
-		// 	bonusPierce = true
-		// }
+		if (idd.offenseKind.includes("skillful")) {
+			let agi = source.entity.bonusStats.agility
+			if (source.kind == 'player') {
+				agi += source.entity.agility
+			} else if (source.kind == 'enemy') {
+				agi += source.entity.template.agility
+			}
+			bonusDmg += Math.floor(agi/3)
+		}
+		if (idd.offenseKind.includes("magical")) {
+			let mind = source.entity.bonusStats.mind
+			if (source.kind == 'player') {
+				mind += source.entity.mind
+			} else if (source.kind == 'enemy') {
+				mind += source.entity.template.mind
+			}
+			bonusDmg += Math.floor(mind/3)
+		}
 	}
 	let strikes = idd.strikes
 
@@ -266,7 +266,7 @@ export function damageEntity(
 	let dmgSum = 0
 	for (let i = 0; i < strikes; i++) {
 		let dmg = idd.baseDmg;
-		if (i == strikes - 1 && !bonusPierce) {
+		if (i == strikes - 1) {
 			dmg += bonusDmg;
 		}
 		dmg = dmg - damageReduction;
@@ -277,12 +277,6 @@ export function damageEntity(
 				dmg = damageLimit;
 			}
 		}
-		if (i == strikes - 1 && bonusPierce) {
-			dmg += bonusDmg;
-		}
-		// if(protectedDueToStatus(toDamage)){
-		// 	dmg = 5
-		// }
 		toDamage.entity.health -= dmg;
 		dmgDone.push(dmg);
 		dmgSum += dmg

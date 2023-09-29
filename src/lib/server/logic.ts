@@ -37,7 +37,7 @@ import {
 	dead,
 	uniqueFromSceneDataId
 } from './scenes';
-import { statusDatas, type StatusData, type StatusId } from './statuses';
+import { statusDatas, type StatusData, type StatusId, type StatusDataKey } from './statuses';
 import {
 	users,
 	type Player,
@@ -140,7 +140,7 @@ export function validSourceAndTarget(bee: BattleEventEntity, t: BattleEventEntit
 
 	// can't target untargetable entity not on your team
 	if (bee.kind != t.kind) {
-		if (immuneDueToStatus(t)) {
+		if (hasStatusWithKey(t,'untargetable')) {
 			console.log(`${bee.entity.displayName} cant target untargetable`)
 			return false
 		}
@@ -544,47 +544,46 @@ function getActionSpeed(bee: BattleEventEntity, itemUsed: Item): number {
 
 function handleStatusEffects(playerTriggered: Player, on: BattleEventEntity) {
 	if (on.entity.health < 1) return
-	// const ad: DamageAnimation[] = [];
-	// const healAnimations: HealAnimation[] = [];
-	let sprite: AnySprite | undefined = undefined;
 	let check = (statusMap: Map<StatusId, number>) => {
 		for (const [k, v] of statusMap) {
 			if (on.entity.health < 0) break
 			if (v < 1) continue;
 			const statusData = statusDatas.find((s) => s.id == k);
 			if (!statusData) continue;
-			if (statusData.damagePercent) {
-				let dmg = Math.ceil(on.entity.health * statusData.damagePercent);
-				if (dmg < 5) dmg = 5
+			if (statusData.damagesEachTurn) {
+				let dmg = Math.ceil(on.entity.health * statusData.damagesEachTurn.perc);
+				if (dmg < statusData.damagesEachTurn.minDmg) dmg = statusData.damagesEachTurn.minDmg
 				on.entity.health -= dmg;
-				// ad.push({ target: on.entity.unitId, amount: [dmg] });
-				sprite = statusData.selfInflictSprite;
-				pushAnimation({
-					sceneId: playerTriggered.currentUniqueSceneId,
-					battleAnimation: {
-						triggeredBy: playerTriggered.unitId,
-						source: on.entity.unitId,
-						alsoDamages: [{ target: on.entity.unitId, amount: [dmg] }],
-						behavior: { kind: 'selfInflicted', extraSprite: sprite },
-						noResetAggro: true,
-					}
-				});
+				if(statusData.eachTurnSprite){
+					pushAnimation({
+						sceneId: playerTriggered.currentUniqueSceneId,
+						battleAnimation: {
+							triggeredBy: playerTriggered.unitId,
+							source: on.entity.unitId,
+							alsoDamages: [{ target: on.entity.unitId, amount: [dmg] }],
+							behavior: { kind: 'selfInflicted', extraSprite: statusData.eachTurnSprite },
+							noResetAggro: true,
+						}
+					});
+
+				}
 				pushHappening(`${on.entity.unitId} took ${dmg} damage from ${k}`);
 			}
-			if (statusData.heal) {
-				healEntity(on, statusData.heal)
-				// healAnimations.push({ target: on.entity.unitId, amount: statusData.heal });
-				sprite = statusData.selfInflictSprite;
-				pushAnimation({
-					sceneId: playerTriggered.currentUniqueSceneId,
-					battleAnimation: {
-						triggeredBy: playerTriggered.unitId,
-						source: on.entity.unitId,
-						alsoHeals: [{ target: on.entity.unitId, amount: statusData.heal }],
-						behavior: { kind: 'selfInflicted', extraSprite: sprite },
-						noResetAggro: true,
-					}
-				});
+			if (statusData.healsEachTurn) {
+				healEntity(on, statusData.healsEachTurn)
+				if(statusData.eachTurnSprite){
+					pushAnimation({
+						sceneId: playerTriggered.currentUniqueSceneId,
+						battleAnimation: {
+							triggeredBy: playerTriggered.unitId,
+							source: on.entity.unitId,
+							alsoHeals: [{ target: on.entity.unitId, amount: statusData.healsEachTurn }],
+							behavior: { kind: 'selfInflicted', extraSprite: statusData.eachTurnSprite },
+							noResetAggro: true,
+						}
+					});
+
+				}
 			}
 			if (statusData.giveBonus) {
 				if (statusData.giveBonus.accumulates) {
@@ -658,19 +657,19 @@ function decrementCooldowns(bee: BattleEventEntity) {
 	// }
 }
 
-export function immuneDueToStatus(bee: BattleEventEntity): boolean {
-	// let statusMap: Map<StatusId, number> | undefined = undefined
+
+export function hasStatusWithKey(bee: BattleEventEntity, key:StatusDataKey): boolean {
 	const check = (statusMap: Map<StatusId, number>) => {
-		let immunity = false;
+		let hasIt = false;
 		for (const [k, v] of statusMap) {
 			if (v < 1) continue;
 			const foundData = statusDatas.find((d) => d.id == k);
 			if (!foundData) continue;
-			if (foundData.untargetable) {
-				immunity = true;
+			if (foundData[key]) {
+				hasIt = true;
 			}
 		}
-		return immunity;
+		return hasIt;
 	}
 	if (bee.kind == 'player') {
 		return check(bee.entity.statuses)
@@ -993,6 +992,9 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 }
 
 export function getDamageReduction(from: BattleEventEntity): number {
+	if(hasStatusWithKey(from, 'disarmors')){
+		return 0
+	}
 	let dmgReduc: number = 0
 	for (const item of from.entity.inventory) {
 		if (item.stats.damageReduction) {
@@ -1006,6 +1008,10 @@ export function getDamageReduction(from: BattleEventEntity): number {
 	return dmgReduc
 }
 export function getDamageLimit(from: BattleEventEntity): number | undefined {
+	if(hasStatusWithKey(from, 'disarmors')){
+		return undefined
+	}
+
 	let dmgLim: number | undefined = undefined
 	for (const item of from.entity.inventory) {
 		if (item.stats.damageLimit) {

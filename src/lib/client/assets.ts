@@ -47,6 +47,7 @@ import bomb from '$lib/assets/extras/bomb.png';
 import box from '$lib/assets/scenery/box.png';
 import shield from '$lib/assets/extras/shield.png';
 import smoke from '$lib/assets/extras/smoke.png';
+import noShield from '$lib/assets/extras/vulnerable.png';
 import flame from '$lib/assets/extras/flame.png';
 import heal from '$lib/assets/extras/heal.png';
 import lighthouse from '$lib/assets/scenery/lighthouse.png';
@@ -154,6 +155,7 @@ export function getStatusImage(statusDataId:string): string {
     if(statusDataId == 'hidden')return hidden
     if(statusDataId == 'blessed')return heal
     if(statusDataId == 'protected')return shield
+    if(statusDataId == 'vulnerable')return noShield
     return hidden
 };
 

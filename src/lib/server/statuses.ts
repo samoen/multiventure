@@ -3,15 +3,20 @@ import type { BonusStat } from './users';
 
 // export type StatusId = 'poison' | 'rage' | 'hidden'
 export type StatusId = string;
+export type Prettify<T> = {
+	[K in keyof T]: T[K];
+  } & {};
+export type StatusDataKey = Prettify< keyof StatusData>
 
 export type StatusData = {
 	id: StatusId;
-	damagePercent?: number;
-	heal?: number;
+	damagesEachTurn?: {perc : number, minDmg:number};
+	healsEachTurn?: number;
+	eachTurnSprite?: AnySprite;
 	giveBonus?:{stat:BonusStat, amount:number, accumulates?:boolean}
+	disarmors?:boolean;
 	untargetable?: boolean;
 	removeOnProvoke?: boolean;
-	selfInflictSprite: AnySprite;
 	decayAnyPlayer?:boolean;
 	bad?:boolean;
 	// statusSprite:AnySprite;
@@ -20,31 +25,37 @@ export type StatusData = {
 export const statusDatas: StatusData[] = [
 	{
 		id: 'poisoned',
-		damagePercent: 0.25,
-		selfInflictSprite: 'poison',
+		damagesEachTurn: {perc:0.25,minDmg: 5},
+		eachTurnSprite: 'poison',
+		bad:true,
+	},
+	{
+		id: 'vulnerable',
+		disarmors:true,
+		decayAnyPlayer:true,
 		bad:true,
 	},
 	{
 		id: 'blessed',
-		heal: 10,
-		selfInflictSprite: 'heal',
+		healsEachTurn: 10,
+		eachTurnSprite: 'heal',
 	},
 	{
 		id: 'rage',
 		giveBonus:{stat:'strength',amount:5,accumulates:true},
-		selfInflictSprite: 'flame'
+		eachTurnSprite: 'flame'
 	},
 	{
 		id: 'hidden',
 		untargetable: true,
 		removeOnProvoke: true,
-		selfInflictSprite: 'smoke',
+		eachTurnSprite: 'smoke',
 		decayAnyPlayer:true,
 	},
 	{
 		id: 'protected',
 		giveBonus:{stat:'armor',amount:100},
-		selfInflictSprite: 'shield',
+		eachTurnSprite: 'shield',
 		decayAnyPlayer:true,
 		removeOnProvoke:true,
 	},

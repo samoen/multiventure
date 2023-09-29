@@ -14,7 +14,6 @@ import { comboFindClassFromInventory } from './items';
 import {
 	convertServerActionToClientAction,
 	convertVasToClient,
-	immuneDueToStatus,
 	type VisualActionSourceInClient
 } from './logic';
 import { getSceneData } from './scenes';
