@@ -302,18 +302,13 @@ export function damageEntity(
 export function pushAnimation({
 	sceneId,
 	battleAnimation,
-	leavingScene
 }: {
 	sceneId: UniqueSceneIdenfitier;
 	battleAnimation: BattleAnimation;
-	leavingScene?: Player;
 }) {
 	activePlayersInScene(sceneId).forEach((p) => {
 		p.animations.push(battleAnimation);
 	});
-	if (leavingScene) {
-		leavingScene.animations.push(battleAnimation);
-	}
 }
 
 export function checkEnemyDeath(target: ActiveEnemy): { killed: boolean } {

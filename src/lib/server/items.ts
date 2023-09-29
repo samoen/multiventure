@@ -288,6 +288,7 @@ const succumb: Item = {
 	teleportTo: 'dead',
 	default: true,
 	speed: -999,
+	// noReactions:true,
 	requiresSourceDead: true,
 	useableOutOfBattle: true,
 	animation: { kind: 'selfInflicted', extraSprite: 'skull' }

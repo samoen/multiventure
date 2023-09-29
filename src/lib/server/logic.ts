@@ -466,16 +466,26 @@ export function changeScene(player: Player, goTo: SceneDataId) {
 export function handleAction(player: Player, actionFromId: GameAction) {
 	const actionStartedInSceneId = player.currentUniqueSceneId;
 
-	// if (actionFromId.goTo) {
-	// 	changeScene(player, actionFromId.goTo)
-	// 	return
-	// }
 	if (actionFromId.devAction) {
 		actionFromId.devAction();
 		return;
 	}
 
 	if (actionFromId.unlockableActData) {
+		if (actionFromId.unlockableActData.travelTo) {
+			pushAnimation({
+				sceneId: actionStartedInSceneId,
+				battleAnimation: {
+					triggeredBy: player.unitId,
+					source: player.unitId,
+					behavior: { kind: 'travel' },
+					animateTo: actionFromId.associateWithUnit,
+				}
+			});
+			changeScene(player, actionFromId.unlockableActData.travelTo);
+			return
+		}
+
 		if (actionFromId.unlockableActData.pickupItem) {
 			const idToPickup = actionFromId.unlockableActData.pickupItem;
 			equipItem(player, idToPickup);
@@ -501,38 +511,42 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 			}
 		}
 
-		if (actionFromId.unlockableActData.travelTo) {
-			changeScene(player, actionFromId.unlockableActData.travelTo);
-			pushAnimation({
-				leavingScene: player,
-				sceneId: actionStartedInSceneId,
-				battleAnimation: {
-					triggeredBy: player.unitId,
-					source: player.unitId,
-					behavior: { kind: 'travel' },
-					animateTo: actionFromId.associateWithUnit,
-				}
-			});
-		}
 		return;
 	}
 
 	if (!actionFromId.battleEvent) return;
 	if (!actionFromId.itemId) return;
-	const itemUsed = items.find((i) => i.id == actionFromId.itemId);
-	if (!itemUsed) return;
+	if(!actionFromId.battleEvent)return;
+
+	if(actionFromId.battleEvent.teleportsTo){
+		const battleAnimation: BattleAnimation = {
+			triggeredBy: player.unitId,
+			source: player.unitId,
+			behavior: actionFromId.battleEvent.behavior,
+			teleporting: true
+		};
+		pushAnimation({
+			sceneId:actionStartedInSceneId,
+			battleAnimation:battleAnimation,
+		})
+		changeScene(player,actionFromId.battleEvent.teleportsTo)
+		return
+	}
 
 	pushHappening('----');
-
-	let startEnemies = enemiesInScene(actionStartedInSceneId)
+	
 	let chosenBattleEvents: BattleEvent[] = []
+	
+	chosenBattleEvents.push(actionFromId.battleEvent)
+	
+	let startEnemies = enemiesInScene(actionStartedInSceneId)
 	for (const enemy of startEnemies) {
 		const aggroForActor = getAggroForPlayer(enemy, player);
 		let chosenForEnemy: BattleEvent | undefined = undefined
 		if (aggroForActor) {
 			let r = Math.floor(Math.random() * 100)
+			console.log(`${enemy.displayName} rolled ${r} with aggro ${aggroForActor}`)
 			if (r < aggroForActor) {
-				console.log(`${enemy.displayName} rolled a hit! ${r} is below aggro ${aggroForActor}`)
 				let bEventsForEnemy = createPossibleBattleEventsFromEntity(
 					{ kind: 'enemy', entity: enemy },
 					actionStartedInSceneId,
@@ -573,7 +587,6 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		}
 	}
 
-	chosenBattleEvents.push(actionFromId.battleEvent)
 	chosenBattleEvents.sort((a, b) => {
 		return getActionSpeed(b.source, b.itemUsed) - getActionSpeed(a.source, a.itemUsed)
 	})
@@ -610,9 +623,9 @@ export function handleAction(player: Player, actionFromId: GameAction) {
 		decrementStatusCounts({ kind: 'enemy', entity: enemy }, player)
 	}
 
-
-	if (itemUsed.provoke != undefined && player.health > 0) {
-		addAggro(player, itemUsed.provoke);
+	const triggeredFromItem = items.find((i) => i.id == actionFromId.itemId);
+	if (triggeredFromItem && triggeredFromItem.provoke != undefined && player.health > 0) {
+		addAggro(player, triggeredFromItem.provoke);
 	}
 
 	const playerScene = getSceneDataSimple(actionStartedInSceneId.dataId);
@@ -958,13 +971,6 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		}
 	}
 
-	let leavingScene = undefined;
-	const sceneToPlayAnim = player.currentUniqueSceneId;
-
-	if (battleEvent.teleportsTo && battleEvent.source.entity.unitId == player.unitId) {
-		leavingScene = player;
-		changeScene(player, battleEvent.teleportsTo);
-	}
 
 	if (damageAnimationForMissleTarget) {
 		const firstStrike = damageAnimationForMissleTarget.amount.at(0);
@@ -986,17 +992,14 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 		alsoHeals: healAnimations,
 		alsoModifiesAggro: aggroModifiedAnimations,
 		putsStatuses: statusModAnims,
-		teleporting: battleEvent.teleportsTo ? true : undefined
 	};
 
 	pushAnimation({
-		sceneId: sceneToPlayAnim,
+		sceneId: player.currentUniqueSceneId,
 		battleAnimation: battleAnimation,
-		leavingScene: leavingScene
 	});
 	if (damageAnimationForMissleTarget) {
 		for (const i of damageAnimationForMissleTarget.amount) {
-			console.log('extra missle')
 			const xba: BattleAnimation = {
 				triggeredBy: player.unitId,
 				source: battleEvent.source.entity.unitId,
@@ -1005,7 +1008,7 @@ function processBattleEvent(battleEvent: BattleEvent, player: Player) {
 				alsoDamages: [{ target: damageAnimationForMissleTarget.target, amount: [i] }]
 			};
 			pushAnimation({
-				sceneId: sceneToPlayAnim,
+				sceneId: player.currentUniqueSceneId,
 				battleAnimation: xba,
 			});
 		}
