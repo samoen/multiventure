@@ -1168,7 +1168,45 @@ const armory: Scene = {
 			sprite: 'portal',
 			startText: `A portal that takes you to your last checkpoint`,
 			actionsWithRequirements: [{ travelToCheckpoint: true }]
-		}
+		},
+		{
+			unitId: 'vasShrine',
+			displayName: 'Shrine',
+			sprite: 'altar',
+			startText: `Modify your stats`,
+			actionsWithRequirements: [
+				{
+					bText:'Gain strength, lose agility',
+					requiresNonzeroStat:'agility',
+					trainStat:{inc:'strength',dec:'agility'}
+				},
+				{
+					bText:'Gain strength, lose intelligence',
+					requiresNonzeroStat:'mind',
+					trainStat:{inc:'strength', dec:'mind'}
+				},
+				{
+					bText:'Gain agility, lose intelligence',
+					requiresNonzeroStat:'mind',
+					trainStat:{inc:'agility', dec:'mind'}
+				},
+				{
+					bText:'Gain agility, lose strength',
+					requiresNonzeroStat:'strength',
+					trainStat:{inc:'agility', dec:'strength'}
+				},
+				{
+					bText:'Gain intelligence, lose strength',
+					requiresNonzeroStat:'strength',
+					trainStat:{inc:'mind', dec:'strength'}
+				},
+				{
+					bText:'Gain intelligence, lose agility',
+					requiresNonzeroStat:'agility',
+					trainStat:{inc:'mind', dec:'agility'}
+				},
+			],
+		},
 	]
 };
 

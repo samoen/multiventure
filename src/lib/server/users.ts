@@ -121,13 +121,12 @@ export type PlayerCommonStats = {
 	displayName: HeroName;
 	health: number;
 	maxHealth: number;
-	agility: number;
-	strength: number;
-	mind: number;
 	bonusStats:BonusStatsState;
-};
+} & PrimaryStatsState;
 
-export type BonusStat = 'strength' | 'agility' | 'mind' | 'armor'
+export type PrimaryStat = 'strength' | 'agility' | 'mind'
+export type PrimaryStatsState = Record<PrimaryStat,number>
+export type BonusStat = PrimaryStat | 'armor'
 export type BonusStatsState = Record<BonusStat,number>
 
 export type PlayerInClient = {

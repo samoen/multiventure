@@ -44,7 +44,9 @@ import {
 	type GameAction,
 	healEntity,
 	type Flag,
-	activePlayersInScene
+	activePlayersInScene,
+	type BonusStat,
+	type PrimaryStat
 } from './users';
 
 export function updateAllPlayerActions() {
@@ -396,6 +398,23 @@ export function handlePlayerAction(player: Player, action: GameAction) {
 			player.flags.add(action.unlockableActData.setsFlag);
 		}
 
+		if(action.unlockableActData.trainStat){
+			let decremented = player[action.unlockableActData.trainStat.dec] - 1
+			if(decremented >= 0){
+				player[action.unlockableActData.trainStat.inc] += 1
+				player[action.unlockableActData.trainStat.dec] = decremented
+				pushAnimation({
+					sceneId: player.currentUniqueSceneId,
+					battleAnimation: {
+						triggeredBy: player.unitId,
+						source: player.unitId,
+						behavior: { kind: 'melee' },
+						animateTo: action.associateWithUnit,
+					}
+				});
+			}
+		}
+
 		if (action.unlockableActData.spawnsEnemies) {
 			for (const e of action.unlockableActData.spawnsEnemies) {
 				spawnEnemy(e, player.currentUniqueSceneId, player.unitId);
@@ -473,7 +492,7 @@ export function handlePlayerAction(player: Player, action: GameAction) {
 		if (chosenForEnemy) {
 			chosenBattleEvents.push(chosenForEnemy)
 		}else{
-			console.log(`${enemy.displayName} failed to select an action`)
+			console.log(`${enemy.displayName} has no valid actions`)
 			didntSelectAction.push(enemy)
 		}
 	}
@@ -1042,6 +1061,11 @@ export function getValidGameActionsFromVas(vas: VisualActionSource, player: Play
 					}
 				}
 			}
+			if (unlockableActData.requiresNonzeroStat != undefined) {
+				if(player[unlockableActData.requiresNonzeroStat] < 1){
+					passedRequirements = false
+				}
+			}
 			if (unlockableActData.requiresNotFlags != undefined) {
 				for (const flagNotAllowed of unlockableActData.requiresNotFlags) {
 					if (player.flags.has(flagNotAllowed)) {
@@ -1169,6 +1193,7 @@ export type VisualActionSourceInClient = {
 
 export type VasActionData = {
 	requiresFlags?: Flag[];
+	requiresNonzeroStat?:PrimaryStat;
 	requiresNotFlags?: Flag[];
 	requiresGear?: ItemId[];
 	pickupItem?: ItemId;
@@ -1176,6 +1201,7 @@ export type VasActionData = {
 	travelToCheckpoint?: boolean;
 	setsFlag?: Flag;
 	bText?: string;
+	trainStat?: {inc : PrimaryStat, dec:PrimaryStat};
 	spawnsEnemies?: EnemyForSpawning[];
 };
 
