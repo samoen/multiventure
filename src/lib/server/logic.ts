@@ -37,7 +37,7 @@ import {
 	dead,
 	uniqueFromSceneDataId
 } from './scenes';
-import { statusDatas, type StatusData, type StatusId, type StatusDataKey } from './statuses';
+import { statusDatas, type StatusData, type StatusId, type StatusDataKey, PROTECT_LIMIT } from './statuses';
 import {
 	users,
 	type Player,
@@ -45,8 +45,7 @@ import {
 	healEntity,
 	type Flag,
 	activePlayersInScene,
-	type BonusStat,
-	type PrimaryStat
+	type UnitStat
 } from './users';
 
 export function updateAllPlayerActions() {
@@ -324,7 +323,6 @@ export function resetBonusStats(bee: BattleEventEntity) {
 	bee.entity.bonusStats.agility = 0
 	bee.entity.bonusStats.strength = 0
 	bee.entity.bonusStats.mind = 0
-	bee.entity.bonusStats.armor = 0
 }
 
 export function resetCooldowns(player: Player) {
@@ -571,6 +569,11 @@ function handleStatusEffects(on: BattleEventEntity, playerTriggered: Player) {
 			if (statusData.damagesEachTurn) {
 				let dmg = Math.ceil(on.entity.health * statusData.damagesEachTurn.perc);
 				if (dmg < statusData.damagesEachTurn.minDmg) dmg = statusData.damagesEachTurn.minDmg
+				if(hasStatusWithKey(on, 'protects')){
+					if(dmg > PROTECT_LIMIT){
+						dmg = PROTECT_LIMIT
+					}
+				}
 				on.entity.health -= dmg;
 				if (statusData.eachTurnSprite) {
 					pushAnimation({
@@ -666,15 +669,11 @@ function decrementStatusCounts(bee: BattleEventEntity, playerTriggered: Player):
 }
 
 function decrementCooldowns(bee: BattleEventEntity) {
-	// Each turn decrement cooldowns, only if time passed ie provoke
-	// if (itemUsed.provoke != undefined) {
 	for (const cd of bee.entity.inventory) {
 		if (cd.cooldown > 0) cd.cooldown--;
 		if (cd.warmup > 0) cd.warmup--;
 	}
-	// }
 }
-
 
 export function hasStatusWithKey(bee: BattleEventEntity, key: StatusDataKey): boolean {
 	const check = (statusMap: Map<StatusId, number>) => {
@@ -1019,9 +1018,6 @@ export function getDamageReduction(from: BattleEventEntity): number {
 			dmgReduc += item.stats.damageReduction
 		}
 	}
-	if (from.entity.bonusStats.armor > 0) {
-		dmgReduc += from.entity.bonusStats.armor
-	}
 
 	return dmgReduc
 }
@@ -1193,7 +1189,7 @@ export type VisualActionSourceInClient = {
 
 export type VasActionData = {
 	requiresFlags?: Flag[];
-	requiresNonzeroStat?:PrimaryStat;
+	requiresNonzeroStat?:UnitStat;
 	requiresNotFlags?: Flag[];
 	requiresGear?: ItemId[];
 	pickupItem?: ItemId;
@@ -1201,7 +1197,7 @@ export type VasActionData = {
 	travelToCheckpoint?: boolean;
 	setsFlag?: Flag;
 	bText?: string;
-	trainStat?: {inc : PrimaryStat, dec:PrimaryStat};
+	trainStat?: {inc : UnitStat, dec:UnitStat};
 	spawnsEnemies?: EnemyForSpawning[];
 };
 

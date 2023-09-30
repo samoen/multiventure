@@ -1,5 +1,5 @@
 import type { AnySprite } from '$lib/utils';
-import type { BonusStat } from './users';
+import type { UnitStat } from './users';
 
 // export type StatusId = 'poison' | 'rage' | 'hidden'
 export type StatusId = string;
@@ -13,14 +13,17 @@ export type StatusData = {
 	damagesEachTurn?: {perc : number, minDmg:number};
 	healsEachTurn?: number;
 	eachTurnSprite?: AnySprite;
-	giveBonus?:{stat:BonusStat, amount:number, accumulates?:boolean}
+	giveBonus?:{stat:UnitStat, amount:number, accumulates?:boolean}
 	disarmors?:boolean;
 	untargetable?: boolean;
+	protects?:boolean;
 	removeOnProvoke?: boolean;
 	decayAnyPlayer?:boolean;
 	bad?:boolean;
 	// statusSprite:AnySprite;
 };
+
+export const PROTECT_LIMIT = 4
 
 export const statusDatas: StatusData[] = [
 	{
@@ -54,7 +57,7 @@ export const statusDatas: StatusData[] = [
 	},
 	{
 		id: 'protected',
-		giveBonus:{stat:'armor',amount:100},
+		protects:true,
 		eachTurnSprite: 'shield',
 		decayAnyPlayer:true,
 		removeOnProvoke:true,

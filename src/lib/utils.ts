@@ -4,7 +4,7 @@ import type { ActiveEnemy, EnemyTemplate, EnemyTemplateId } from './server/enemi
 import type { Item, ItemDamageData, ItemId, ItemState } from './server/items';
 import type { SceneDataId } from './server/scenes';
 import type { StatusId } from './server/statuses';
-import type { BonusStatsState, HeroName, Player } from './server/users';
+import type { HeroName, Player, UnitStatsState } from './server/users';
 
 export type UnitId = HeroId | EnemyId | VisualActionSourceId;
 export type HeroId = `hero${string}`;
@@ -163,7 +163,7 @@ export type EnemyInClient = {
 	template: EnemyTemplate;
 	aggros: AggroInClient[];
 	statuses: EnemyStatusInClient[];
-	bonusStats:BonusStatsState;
+	bonusStats:UnitStatsState;
 	inventory:ItemState[];
 };
 

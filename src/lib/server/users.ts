@@ -20,7 +20,6 @@ import {
 import type { StatusId } from './statuses';
 
 export const users = new Map<UserId, Player>();
-export const globalFlags = new Set<GlobalFlag>();
 
 export function addNewUser(heroName: string): { id: string; player: Player } | undefined {
 	const pId: HeroId = `hero${heroName}`;
@@ -57,7 +56,6 @@ export function addNewUser(heroName: string): { id: string; player: Player } | u
 			strength:0,
 			agility:0,
 			mind:0,
-			armor:0,
 		},
 		devActions: [],
 		itemActions: [],
@@ -94,7 +92,6 @@ export type Flag =
 	| 'smashedMedallion'
 	| 'placedMedallion';
 
-export type GlobalFlag = 'unused';
 
 export type Player = {
 	connectionState: {
@@ -121,13 +118,11 @@ export type PlayerCommonStats = {
 	displayName: HeroName;
 	health: number;
 	maxHealth: number;
-	bonusStats:BonusStatsState;
-} & PrimaryStatsState;
+	bonusStats:UnitStatsState;
+} & UnitStatsState;
 
-export type PrimaryStat = 'strength' | 'agility' | 'mind'
-export type PrimaryStatsState = Record<PrimaryStat,number>
-export type BonusStat = PrimaryStat | 'armor'
-export type BonusStatsState = Record<BonusStat,number>
+export type UnitStat = 'strength' | 'agility' | 'mind'
+export type UnitStatsState = Record<UnitStat,number>
 
 export type PlayerInClient = {
 	currentSceneDisplay: string;

@@ -1,10 +1,10 @@
 import { v4 } from 'uuid';
 import { items, type ItemId, type ItemState, type Item, type ItemDamageData } from './items';
-import { deepEqual, getDamageLimit, getDamageReduction, type EnemyForSpawning } from './logic';
+import { deepEqual, getDamageLimit, getDamageReduction, type EnemyForSpawning, hasStatusWithKey } from './logic';
 import { pushHappening } from './messaging';
 import { scenesData, type UniqueSceneIdenfitier } from './scenes';
-import type { StatusId } from './statuses';
-import { activePlayersInScene, type BonusStatsState, type Player } from './users';
+import { PROTECT_LIMIT, type StatusId } from './statuses';
+import { activePlayersInScene, type Player, type UnitStatsState } from './users';
 import type { EnemyId, EnemyName, HeroId, DamageEvent, BattleEventEntity, BattleAnimation } from '$lib/utils';
 
 export const activeEnemies: ActiveEnemy[] = [];
@@ -15,7 +15,7 @@ export type ActiveEnemy = {
 	currentUniqueSceneId: UniqueSceneIdenfitier;
 	health: number;
 	maxHealth: number;
-	bonusStats: BonusStatsState;
+	bonusStats: UnitStatsState;
 	aggros: Map<HeroId, number>;
 	template: EnemyTemplate;
 	statuses: EnemyStatuses;
@@ -36,13 +36,10 @@ export type EnemyTemplate = {
 	id:EnemyTemplateId
 	portrait?: string;
 	baseHealth: number;
-	strength: number;
-	agility: number;
-	mind:number;
 	aggroGain: number;
 	startAggro: number;
 	hasItem: ItemId[];
-};
+} & UnitStatsState;
 
 export const enemyTemplates: EnemyTemplate[] = [
 	{
@@ -174,7 +171,6 @@ export function spawnEnemy(
 			strength: 0,
 			agility: 0,
 			mind:0,
-			armor:0,
 		},
 		aggros: aggros,
 		template: template,
@@ -261,6 +257,11 @@ export function damageEntity(
 
 	let damageReduction = getDamageReduction(toDamage)
 	let damageLimit = getDamageLimit(toDamage)
+	if(hasStatusWithKey(toDamage, 'protects')){
+		if(!damageLimit || damageLimit > PROTECT_LIMIT){
+			damageLimit = PROTECT_LIMIT
+		}
+	}
 
 	const dmgDone: number[] = [];
 	let dmgSum = 0

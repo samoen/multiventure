@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { FAKE_LATENCY } from '$lib/server/messaging';
-import { users, type Player, type Flag, globalFlags, addNewUser } from '$lib/server/users';
+import { users, addNewUser } from '$lib/server/users';
 import type { SignupResponse } from '$lib/utils';
 
 function isGuestSignupMsg(msg: object): msg is { hi: string } {

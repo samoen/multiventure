@@ -21,10 +21,8 @@ import type { StatusId } from './statuses';
 import {
 	activePlayers,
 	activePlayersInScene,
-	globalFlags,
 	users,
 	type Flag,
-	type GlobalFlag,
 	type HeroName,
 	type Player,
 	type PlayerInClient
@@ -47,7 +45,6 @@ export type MessageFromServer = {
 	animations: BattleAnimation[];
 	enemiesInScene: EnemyInClient[];
 	playerFlags: Flag[];
-	globalFlags: GlobalFlag[];
 	visualActionSources: VisualActionSourceInClient[];
 	landscape: LandscapeImage;
 };
@@ -185,7 +182,6 @@ export function buildNextMessage(forPlayer: Player, triggeredBy: HeroId): Messag
 			} satisfies EnemyInClient;
 		}),
 		playerFlags: Array.from(forPlayer.flags),
-		globalFlags: Array.from(globalFlags)
 	};
 	// console.log('sending vases '+JSON.stringify(nextMsg.visualActionSources.at(0)))
 	return nextMsg;

@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { isJoin, type SignupResponse } from '$lib/utils';
 import { FAKE_LATENCY } from '$lib/server/messaging';
-import { users, type Player, type Flag, globalFlags, addNewUser } from '$lib/server/users';
+import { users, addNewUser } from '$lib/server/users';
 
 export const POST: RequestHandler = async (r) => {
 	await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY));

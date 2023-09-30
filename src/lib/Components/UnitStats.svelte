@@ -21,7 +21,6 @@
 	let bonusStr = '';
 	let bonusAgi = '';
 	let bonusMind = ''
-	let bonusArmor = 0
 	$: {
 			if (vu.actual.entity.bonusStats.strength > 0) {
 				bonusStr = ` +${vu.actual.entity.bonusStats.strength}`;
@@ -37,11 +36,6 @@
 				bonusMind = ` +${vu.actual.entity.bonusStats.mind}`
 			}else{
 				bonusMind = ''
-			}
-			if (vu.actual.entity.bonusStats.armor > 0) {
-				bonusArmor = vu.actual.entity.bonusStats.armor
-			}else{
-				bonusArmor = 0
 			}
 	}
 	
@@ -97,12 +91,6 @@
 			<div class="statLine">
 				<img src={brain} alt="a heart" />
 				<div>{mind}{bonusMind}</div>
-			</div>
-		{/if}
-		{#if bonusArmor > 0}
-			<div class="statLine">
-				<img src={lightShield} alt="bonus armor" />
-				<div>{bonusArmor}</div>
 			</div>
 		{/if}
 		{#if vu.actual.kind == 'enemy'}
