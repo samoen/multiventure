@@ -45,7 +45,8 @@ import {
 	healEntity,
 	type Flag,
 	activePlayersInScene,
-	type UnitStat
+	type UnitStat,
+	playerMaxHealth
 } from './users';
 
 export function updateAllPlayerActions() {
@@ -410,6 +411,8 @@ export function handlePlayerAction(player: Player, action: GameAction) {
 						animateTo: action.associateWithUnit,
 					}
 				});
+				player.maxHealth = playerMaxHealth(player)
+				player.health = player.maxHealth
 			}
 		}
 

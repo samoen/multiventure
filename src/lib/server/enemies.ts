@@ -241,7 +241,7 @@ export function damageEntity(
 			} else if (source.kind == 'enemy') {
 				agi += source.entity.template.agility
 			}
-			bonusDmg += Math.floor(agi/3)
+			bonusDmg += Math.floor(agi)
 		}
 		if (idd.offenseKind.includes("magical")) {
 			let mind = source.entity.bonusStats.mind
@@ -250,7 +250,7 @@ export function damageEntity(
 			} else if (source.kind == 'enemy') {
 				mind += source.entity.template.mind
 			}
-			bonusDmg += Math.floor(mind/3)
+			bonusDmg += Math.floor(mind)
 		}
 	}
 	let strikes = idd.strikes

@@ -1137,6 +1137,8 @@ const tunnelChamber: Scene = {
 const armory: Scene = {
 	sceneDataId: `armory`,
 	displayName: 'Dev Room',
+	healsOnEnter:true,
+	healsOnVictory:true,
 	sceneTexts: {
 		fallback: `Grab some gear!`
 	},

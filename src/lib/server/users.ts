@@ -47,8 +47,8 @@ export function addNewUser(heroName: string): { id: string; player: Player } | u
 		lastCheckpoint: startUnique,
 		currentUniqueSceneId: startUnique,
 		inventory: [],
-		health: 100,
-		maxHealth: 100,
+		health: 1,
+		maxHealth:1,
 		agility: 5,
 		strength: 5,
 		mind:5,
@@ -66,6 +66,9 @@ export function addNewUser(heroName: string): { id: string; player: Player } | u
 		animations: [],
 		statuses: new Map()
 	};
+
+	player.maxHealth = playerMaxHealth(player)
+	player.health = player.maxHealth
 
 	items
 		.filter((i) => i.default)
@@ -111,6 +114,10 @@ export type Player = {
 	currentUniqueSceneId: UniqueSceneIdenfitier;
 	statuses: Map<StatusId, number>;
 } & PlayerCommonStats;
+
+export function playerMaxHealth(p:Player):number{
+	return (p.strength * 25) + 25
+}
 
 export type PlayerCommonStats = {
 	inventory: ItemState[];
