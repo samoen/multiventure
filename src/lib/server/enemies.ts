@@ -78,10 +78,10 @@ export const enemyTemplates: EnemyTemplate[] = [
 		baseHealth: 50,
 		strength: 2,
 		mind:0,
-		aggroGain: 20,
-		startAggro: 50,
+		aggroGain: 10,
+		startAggro: 10,
 		agility: 4,
-		hasItem: ['club', 'rageMail'],
+		hasItem: ['club', 'orcPlate'],
 	},
 	{
 		id:'fireGremlin',
@@ -91,7 +91,7 @@ export const enemyTemplates: EnemyTemplate[] = [
 		aggroGain: 50,
 		startAggro: 25,
 		agility: 5,
-		hasItem: ['gremlinStaff', 'pendantOfProtection'],
+		hasItem: ['gremlinStaff'],
 	},
 	{
 		id:'troll',
@@ -101,7 +101,7 @@ export const enemyTemplates: EnemyTemplate[] = [
 		aggroGain: 3,
 		startAggro: 80,
 		agility: 1,
-		hasItem: ['club','trollArmor'],
+		hasItem: ['club'],
 	}
 ];
 
@@ -180,8 +180,11 @@ export function spawnEnemy(
 }
 export type EnemyStatuses = Map<HeroId, Map<StatusId, number>>;
 
-export function addAggro(actor: Player, provoke: number) {
-	for (const respondingEnemy of enemiesInScene(actor.currentUniqueSceneId)) {
+export function addAggro(actor: Player, provoke: number | undefined, respondingEnemy:ActiveEnemy) {
+	if(provoke == undefined)return
+	if(actor.health < 1)return
+	if(respondingEnemy.health < 1)return
+	// for (const respondingEnemy of enemiesInScene(actor.currentUniqueSceneId)) {
 		const aggroGain = provoke + respondingEnemy.template.aggroGain;
 		const existingAggro = getAggroForPlayer(respondingEnemy, actor);
 		let newAggro = existingAggro + aggroGain;
@@ -189,7 +192,7 @@ export function addAggro(actor: Player, provoke: number) {
 			newAggro = 100;
 		}
 		respondingEnemy.aggros.set(actor.unitId, newAggro);
-	}
+	// }
 }
 
 export function modifyAggroForPlayer(
@@ -227,12 +230,13 @@ export function damageEntity(
 	let bonusDmg = 0
 	if(idd.offenseKind){
 		if (idd.offenseKind.includes("brutal")) {
-			bonusDmg += source.entity.bonusStats.strength
+			let str = source.entity.bonusStats.strength
 			if (source.kind == 'player') {
-				bonusDmg += source.entity.strength
+				str += source.entity.strength
 			} else if (source.kind == 'enemy') {
-				bonusDmg += source.entity.template.strength
+				str += source.entity.template.strength
 			}
+			bonusDmg += Math.floor(str)
 		}
 		if (idd.offenseKind.includes("skillful")) {
 			let agi = source.entity.bonusStats.agility

@@ -220,7 +220,7 @@ export function checkHasStatus(bee: BattleEventEntity, st: StatusId): boolean {
 
 
 export function removeStatus(bee: BattleEventEntity, st: StatusData) {
-	if (st.giveBonus) {
+	if (st.giveBonus && !st.giveBonus.persists) {
 		bee.entity.bonusStats[st.giveBonus.stat] = 0
 	}
 	if (bee.kind == 'player') {
@@ -521,20 +521,21 @@ export function handlePlayerAction(player: Player, action: GameAction) {
 		}
 
 		handleStatusEffects(chosenBe.source,player);
-		decrementStatusCounts(chosenBe.source,player)
 	}
-
+	
 	for (const enemy of didntSelectAction) {
+		decrementCooldowns({kind: 'enemy', entity: enemy });
 		handleStatusEffects({kind: 'enemy', entity: enemy }, player);
-		decrementStatusCounts({ kind: 'enemy', entity: enemy }, player)
 	}
-
-	if (triggeredFromItem.provoke != undefined && player.health > 0) {
-		addAggro(player, triggeredFromItem.provoke);
+	
+	decrementStatusCounts({kind:'player',entity:player},player)
+	const postReactionEnemies = enemiesInScene(player.currentUniqueSceneId);
+	for(const enemy of postReactionEnemies){
+		decrementStatusCounts({ kind: 'enemy', entity: enemy }, player)
+		addAggro(player, triggeredFromItem.provoke, enemy);
 	}
 
 	const playerScene = getSceneDataSimple(player.currentUniqueSceneId.dataId);
-	const postReactionEnemies = enemiesInScene(player.currentUniqueSceneId);
 	if (startEnemies.length && !postReactionEnemies.length) {
 		for (const playerInScene of activePlayersInScene(player.currentUniqueSceneId)) {
 			resetCooldowns(playerInScene)
@@ -636,9 +637,8 @@ function handleStatusEffects(on: BattleEventEntity, playerTriggered: Player) {
 	}
 }
 
-function decrementStatusCounts(bee: BattleEventEntity, playerTriggered: Player): StatusData[] {
+function decrementStatusCounts(bee: BattleEventEntity, playerTriggered: Player) {
 	let decayed: StatusData[] = []
-	// let  = new Map()
 
 	let dec = (statusMap: Map<StatusId, number>, full: boolean) => {
 		for (const [k, v] of statusMap) {
@@ -646,18 +646,11 @@ function decrementStatusCounts(bee: BattleEventEntity, playerTriggered: Player):
 			if (!statusData) continue;
 			if (full || statusData.decayAnyPlayer) {
 				let decremented = v - 1
-
+				statusMap.set(k, decremented)
 				if (decremented < 1) {
-					if (statusData.giveBonus) {
-						bee.entity.bonusStats[statusData.giveBonus.stat] = 0
-					}
 					decayed.push(statusData)
-					statusMap.delete(k);
-				} else {
-					statusMap.set(k, decremented)
 				}
 			}
-
 		}
 	}
 	if (bee.kind == 'player') {
@@ -668,7 +661,9 @@ function decrementStatusCounts(bee: BattleEventEntity, playerTriggered: Player):
 			dec(statuses, p == playerTriggered.unitId)
 		}
 	}
-	return decayed
+	for (const d of decayed){
+		removeStatus(bee, d)
+	}
 }
 
 function decrementCooldowns(bee: BattleEventEntity) {

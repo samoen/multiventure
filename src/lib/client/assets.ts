@@ -153,6 +153,7 @@ export function getPortrait(key: string): string {
 export function getStatusImage(statusDataId:string): string {
     if(statusDataId == 'poisoned')return greenDrip
     if(statusDataId == 'rage')return rage
+    if(statusDataId == 'fervor')return rage
     if(statusDataId == 'hidden')return hidden
     if(statusDataId == 'blessed')return heal
     if(statusDataId == 'protected')return shield

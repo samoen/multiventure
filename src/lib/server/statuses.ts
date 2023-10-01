@@ -13,7 +13,7 @@ export type StatusData = {
 	damagesEachTurn?: {perc : number, minDmg:number};
 	healsEachTurn?: number;
 	eachTurnSprite?: AnySprite;
-	giveBonus?:{stat:UnitStat, amount:number, accumulates?:boolean}
+	giveBonus?:{stat:UnitStat, amount:number, accumulates?:boolean, persists?:boolean}
 	disarmors?:boolean;
 	untargetable?: boolean;
 	protects?:boolean;
@@ -46,6 +46,11 @@ export const statusDatas: StatusData[] = [
 	{
 		id: 'rage',
 		giveBonus:{stat:'strength',amount:5,accumulates:true},
+		eachTurnSprite: 'flame'
+	},
+	{
+		id: 'fervor',
+		giveBonus:{stat:'mind',amount:5,accumulates:true, persists:true},
 		eachTurnSprite: 'flame'
 	},
 	{

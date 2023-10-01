@@ -347,25 +347,25 @@ const trainingRoom1: Scene = {
 				{
 					responseId: 'whyslow',
 					responseText: `I attacked the goblin but he hit me first, what's that about?`,
-					retort: `An enemy with a higher agility than you will strike first. Some weapons give bonus agility, take this dagger.`,
-					unlockVas: ['vasEquipDagger']
+					retort: `An enemy with a higher agility than you will strike first. Some weapons give bonus agility - equip this bow.`,
+					unlockVas: ['vasWep']
 				},
 				{
 					responseId: 'gimmie',
 					responseText: `What's my next battle?`,
-					retort: `Your next battle is against Orcs. Orcs wear heavy armor, which limits the amount of damage taken from each strike. There's a fire gremlin in there too, but he's as much a danger to his allies as he is to you.`,
+					retort: `Orcs wear heavy armor, which limits the amount of damage taken from each strike.`,
 					unlockVas: ['vasGoTrain2']
 				}
 			]
 		},
 		{
-			unitId: 'vasEquipDagger',
-			displayName: 'Dagger',
-			sprite: 'dagger',
+			unitId: 'vasWep',
+			displayName: 'Bow',
+			sprite: 'bow',
 			startText:
-				'A dagger is fast and strikes multiple times per attack. It is effective against heavy armor.',
+				'A bow is fast and provokes only the target. It is good at sniping high priority enemies.',
 			startsLocked: true,
-			actionsWithRequirements: [{ pickupItem: 'dagger' }]
+			actionsWithRequirements: [{ pickupItem: 'bow' }]
 		},
 		{
 			unitId: 'vasEquipBandage',
@@ -380,10 +380,10 @@ const trainingRoom1: Scene = {
 			displayName: 'Training Room',
 			sprite: 'castle',
 			startsLocked: true,
-			startText: `The sign reads: 'The Orc named Borgus becomes more dangerous as the battle goes on due to his rage. Kill him as soon as possible!'`,
+			startText: `The sign reads: 'Kill the fire gremlin as soon as possible!'`,
 			actionsWithRequirements: [
 				{
-					requiresGear: ['dagger', 'potion'],
+					requiresGear: ['bow', 'potion'],
 					travelTo: `soloTrain2`
 				}
 			]
@@ -401,20 +401,16 @@ const trainingRoom2: Scene = {
 		{
 			displayName: 'Borgus',
 			template: 'orc',
-			statuses: [
-				{
-					statusId: 'rage',
-					count: 5
-				}
-			]
-		},
-		{
-			displayName: 'Morgal',
-			template: 'orc'
 		},
 		{
 			displayName: 'Scortchy',
-			template: 'fireGremlin'
+			template: 'fireGremlin',
+			statuses: [
+				{
+					statusId: 'fervor',
+					count: 3
+				}
+			]
 		}
 	],
 	vases: [

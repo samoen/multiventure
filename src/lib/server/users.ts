@@ -31,8 +31,8 @@ export function addNewUser(heroName: string): { id: string; player: Player } | u
 
 	let startSceneId: SceneDataId = startSceneDataId;
 	// startSceneId = 'forestPassage'
-	// startSceneId = 'throne'
-	startSceneId = 'armory'
+	// startSceneId = 'armory'
+	// startSceneId = 'soloTrain2'
 
 	const startUnique = uniqueFromSceneDataId(pId, startSceneId);
 
@@ -49,9 +49,9 @@ export function addNewUser(heroName: string): { id: string; player: Player } | u
 		inventory: [],
 		health: 1,
 		maxHealth:1,
-		agility: 5,
-		strength: 5,
-		mind:5,
+		agility: 3,
+		strength: 3,
+		mind:3,
 		bonusStats:{
 			strength:0,
 			agility:0,
@@ -75,9 +75,9 @@ export function addNewUser(heroName: string): { id: string; player: Player } | u
 		.forEach((i) => {
 			equipItem(player, i.id);
 		});
-	// equipItem(player, 'potion')
-	// equipItem(player,'leatherArmor')
-	// equipItem(player, 'poisonDart')
+		// equipItem(player,'bow')
+		// equipItem(player,'potion')
+		// equipItem(player,'leatherArmor')
 
 	const userId = v4();
 	users.set(userId, player);
