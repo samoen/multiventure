@@ -85,6 +85,7 @@ import fireballSlot from '$lib/assets/equipment/fireball.png';
 import cuirassSlot from '$lib/assets/equipment/cuirass_muscled.png';
 import leatherSlot from '$lib/assets/equipment/armor_leather.png';
 import ankhSlot from '$lib/assets/equipment/ankh_necklace.png';
+import ankhNecklace from '$lib/assets/scenery/ankh-necklace.png';
 import magicStaffSlot from '$lib/assets/equipment/staff-magic-slot.png';
 import daggerSlot from '$lib/assets/equipment/dagger-human.png';
 import bowSlot from '$lib/assets/equipment/bow-short.png';
@@ -198,6 +199,7 @@ export const anySprites: Record<AnySprite, string> = {
 	dagger: dagger,
 	bow: bow,
 	staff: staff,
+	necklace: ankhNecklace,
 	pendant: pendant,
 	potion: potion,
 	altar: altar,

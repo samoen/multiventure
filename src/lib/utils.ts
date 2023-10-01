@@ -100,6 +100,7 @@ export type AnySprite =
 	| 'lady'
 	| 'necromancer'
 	| 'arrow'
+	| 'necklace'
 	| 'bomb'
 	| 'bombPadded'
 	| 'potion'

@@ -257,7 +257,7 @@ const trainingRoom0: Scene = {
 			unitId: 'vasEquipBomb',
 			displayName: 'Bomb',
 			sprite: 'bombPadded',
-			startText: 'A powderbomb deals splash damage and reduces aggression of all nearby enemies.',
+			startText: 'A powderbomb deals splash damage to all nearby enemies.',
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'bomb' }]
 		},
@@ -1167,7 +1167,7 @@ const armory: Scene = {
 			displayName: 'Portal',
 			sprite: 'portal',
 			startText: `A portal that takes you to your last checkpoint`,
-			actionsWithRequirements: [{ travelToCheckpoint: true }]
+			actionsWithRequirements: [{ travelToCheckpoint: true },{travelTo:'tutorial'},{travelTo:'forest'}]
 		},
 		{
 			unitId: 'vasShrine',
