@@ -57,7 +57,7 @@ import portal from '$lib/assets/scenery/summoning-center.png';
 import signpost from '$lib/assets/scenery/signpost.png';
 import temple from '$lib/assets/scenery/temple1.png';
 import armor from '$lib/assets/scenery/armor.png';
-import pendant from '$lib/assets/scenery/pendant.png';
+import pendant from '$lib/assets/scenery/ankh-necklace.png';
 import bombpad from '$lib/assets/scenery/bomb-pad.png';
 import altar from '$lib/assets/scenery/altar.png';
 import staff from '$lib/assets/scenery/staff-magic.png';
