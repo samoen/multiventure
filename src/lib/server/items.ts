@@ -75,7 +75,7 @@ const club: Item = {
 	visualBase: 'club',
 	slot: 'weapon',
 	targets: { kind: 'anyEnemy' },
-	provoke: 20,
+	provoke: 25,
 	speed: 1,
 	damages: { affects: 'targetOnly', baseDmg: 35, strikes: 1, offenseKind: ['brutal'] }
 };
@@ -98,11 +98,11 @@ export const fireStaff: Item = {
 	visualBase: 'staff',
 	slot: 'weapon',
 	targets: { kind: 'anyEnemy' },
-	warmup: 1,
+	warmup: 3,
 	cooldown: 2,
 	provoke: 5,
 	speed: 2,
-	damages: { affects: 'targetOnly', baseDmg: 50, strikes: 1, offenseKind: ['magical', 'skillful'], },
+	damages: { affects: 'targetOnly', baseDmg: 30, strikes: 1, offenseKind: ['magical', 'skillful'], },
 	animation: { kind: 'missile', extraSprite: 'flame' },
 	modifiesAggro: { affects: 'targetOnly', aggroFor: 'justMe', amount: 30 }
 };
@@ -138,7 +138,7 @@ const bomb: Item = {
 	targets: { kind: 'onlySelf' },
 	startStock: 2,
 	speed: 12,
-	provoke: 5,
+	provoke: 50,
 	animation: { kind: 'center', extraSprite: 'bomb' },
 	damages: { affects: 'allEnemy', baseDmg: 10, strikes: 1 },
 
@@ -217,9 +217,9 @@ const thiefCloak: Item = {
 	visualBase: 'cloak',
 	slot: 'body',
 	targets: { kind: 'onlySelf' },
-	cooldown: 2,
+	cooldown: 3,
 	speed: 5,
-	provoke: 1,
+	provoke: 20,
 	requiresTargetWithoutStatus: 'hidden',
 	animation: { kind: 'selfInflicted', extraSprite: 'smoke' },
 	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'hidden', count: 4 } }
@@ -275,6 +275,18 @@ export const pendantOfProtection: Item = {
 	modifiesStatus: { affects: 'targetOnly', statusMod: { statusId: 'protected', count: 3 } }
 };
 
+// export const blades: Item = {
+// 	id: 'blades',
+// 	visualBase: 'heavyArmor',
+// 	slot: 'feet',
+// 	speed: 4,
+// 	cooldown: 1,
+// 	provoke: 1,
+// 	targets: { kind: 'anyEnemy' },
+// 	animation: { kind: 'melee' },
+// 	damages:{affects:'targetOnly',baseDmg:10,strikes:1,offenseKind:['skillful']}
+// };
+
 const fist: Item = {
 	id: 'fist',
 	slot: 'weapon',
@@ -302,6 +314,15 @@ const rags: Item = {
 	noAction: true,
 	targets: { kind: 'onlySelf' },
 };
+
+// const shoes: Item = {
+// 	id: 'shoes',
+// 	slot: 'feet',
+// 	default: true,
+// 	excludeFromDetail: true,
+// 	noAction: true,
+// 	targets: { kind: 'onlySelf' },
+// };
 
 const wait: Item = {
 	id: 'wait',
@@ -351,6 +372,9 @@ export const items: Item[] = [
 	goblinArmor,
 	pendantOfProtection,
 	thiefCloak,
+
+	// shoes,
+	// blades,
 
 	wait,
 	succumb,

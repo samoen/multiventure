@@ -511,7 +511,8 @@ export function handlePlayerAction(player: Player, action: GameAction) {
 				const aggroForActor = getAggroForPlayer(chosenBe.source.entity, player);
 				let r = Math.floor(Math.random() * 100)
 				console.log(`${chosenBe.source.entity.displayName} rolled ${r} with aggro ${aggroForActor}`)
-				if (r > aggroForActor) {
+				// if (r > aggroForActor) {
+				if ( aggroForActor < 100) {
 					succeedRoll = false
 				}
 			}

@@ -109,8 +109,8 @@ export const dead: Scene = {
 				},
 				{
 					responseId: 'dev',
-					responseText: `I'm testing the game.`,
-					retort: `Here's a special room for that.`,
+					responseText: `I hear there's a secret room for balance testing.`,
+					retort: `Yep. Take this portal to the dev room.`,
 					unlockVas: [`vasDev`]
 				}
 			],
@@ -233,6 +233,7 @@ const trainingRoom0: Scene = {
 	landscape: 'bridge',
 	solo: true,
 	setCheckpointOnEnter: true,
+	healsOnVictory:true,
 	spawnsEnemiesOnEnter: [
 		{
 			displayName: 'Skitters',
@@ -257,7 +258,7 @@ const trainingRoom0: Scene = {
 			unitId: 'vasEquipBomb',
 			displayName: 'Bomb',
 			sprite: 'bombPadded',
-			startText: 'A powderbomb deals splash damage to all nearby enemies.',
+			startText: 'A powderbomb deals splash damage to all nearby enemies. Good against swarms and stealth enemies.',
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'bomb' }]
 		},
@@ -311,7 +312,7 @@ const trainingRoom1: Scene = {
 	spawnsEnemiesOnEnter: [
 		{
 			displayName: 'Glornak',
-			template: 'goblin'
+			template: 'goblin',
 		},
 		{
 			displayName: 'Squeaky',
@@ -346,8 +347,8 @@ const trainingRoom1: Scene = {
 				},
 				{
 					responseId: 'whyslow',
-					responseText: `I attacked the goblin but he hit me first, what's that about?`,
-					retort: `An enemy with a higher agility than you will strike first. Some weapons give bonus agility - equip this bow.`,
+					responseText: `I got hit before my attack landed, what's up with that?`,
+					retort: `An enemy with a higher agility than you will strike first. Some weapons give bonus agility - like this bow.`,
 					unlockVas: ['vasWep']
 				},
 				{
@@ -454,7 +455,7 @@ const trainingRoom2: Scene = {
 			unitId: 'vasEquipCloak',
 			displayName: 'Thief Cloak',
 			sprite: 'armorStand',
-			startText: `A thief's cloak lets you become hidden, preventing retaliation from enemies. Hiding is a good way to wait for your magic to warm up. Poison your enemy first for extra value!`,
+			startText: `A thief's cloak lets you become hidden, preventing retaliation from enemies. Hiding is a good way to wait for cooldowns and poison.`,
 			startsLocked: true,
 			actionsWithRequirements: [{ pickupItem: 'thiefCloak' }]
 		},
@@ -911,7 +912,45 @@ const realmOfMadness: Scene = {
 					travelTo: 'throne'
 				}
 			]
-		}
+		},
+		{
+			unitId: 'vasMadShrine',
+			displayName: 'Shrine',
+			sprite: 'altar',
+			startText: `You can use this shrine to modify your stats`,
+			actionsWithRequirements: [
+				{
+					bText:'Gain strength, lose agility',
+					requiresNonzeroStat:'agility',
+					trainStat:{inc:'strength',dec:'agility'}
+				},
+				{
+					bText:'Gain strength, lose intelligence',
+					requiresNonzeroStat:'mind',
+					trainStat:{inc:'strength', dec:'mind'}
+				},
+				{
+					bText:'Gain agility, lose intelligence',
+					requiresNonzeroStat:'mind',
+					trainStat:{inc:'agility', dec:'mind'}
+				},
+				{
+					bText:'Gain agility, lose strength',
+					requiresNonzeroStat:'strength',
+					trainStat:{inc:'agility', dec:'strength'}
+				},
+				{
+					bText:'Gain intelligence, lose strength',
+					requiresNonzeroStat:'strength',
+					trainStat:{inc:'mind', dec:'strength'}
+				},
+				{
+					bText:'Gain intelligence, lose agility',
+					requiresNonzeroStat:'agility',
+					trainStat:{inc:'mind', dec:'agility'}
+				},
+			],
+		},
 	]
 };
 
@@ -949,7 +988,7 @@ const forestPassage: Scene = {
 					responseId: 'tips',
 					startsLocked: true,
 					responseText: `Any tips for the battle?`,
-					retort: `Remember goblins wear light armor. Target enraged enemies first. Make sure you've found the potion hidden at the castle.`
+					retort: `Remember goblins wear light armor. Target enraged enemies first. Psst.. there's a potion hidden at the castle.`
 				}
 			],
 			sprite: 'druid'
@@ -1047,6 +1086,7 @@ const tunnelChamber: Scene = {
 	sceneTexts: {
 		fallback: `You wend your way down a neverending series of corridors and pathways that seem to go on for an enternity. It becomes narrower and narrower, and the heat becomes almost unbearable. The path suddenly opens into a great chamber.`
 	},
+	setsFlagOnVictory:'placedMedallion',
 	vases: [
 		{
 			unitId: 'vasDungeonAltar',
@@ -1056,7 +1096,6 @@ const tunnelChamber: Scene = {
 			actionsWithRequirements: [
 				{
 					requiresNotFlags: ['placedMedallion', 'smashedMedallion'],
-					setsFlag: 'placedMedallion',
 					bText: 'Place the medallion upon the altar',
 					spawnsEnemies: [
 						{
